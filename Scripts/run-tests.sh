@@ -19,6 +19,15 @@ if [ "${1:-}" = "--exec" ]; then
     shift
     name=$1 opt=$2
     shift 2
+    case "$name" in
+        codex-turn-test|installed-ai-test)
+            # Login-shell startup must preserve the fixture PATH instead of discovering real accounts.
+            export ZDOTDIR="$BIN/$name-shell"
+            mkdir -p "$ZDOTDIR"
+            printf '%s\n' 'export TINYCAST_FIXTURE_PATH="$PATH"' > "$ZDOTDIR/.zshenv"
+            printf '%s\n' 'export PATH="$TINYCAST_FIXTURE_PATH"' > "$ZDOTDIR/.zprofile"
+            ;;
+    esac
     : > "$BIN/$name.running"
     trap 'rm -f "$BIN/$name.running" "$BIN/$name.time"' EXIT
     fail() {

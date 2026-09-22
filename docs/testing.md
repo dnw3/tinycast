@@ -134,6 +134,10 @@ If a change touches anything in the right column, the harness on the left is man
 | `mcp-test` | `MCP/Model/` and `MCPSettingsStore` — JSON-RPC framing, handles, tool names, output flattening, trust, `@server` addressing |
 | `mcp-stdio-test` | `MCP/Service/` against a stub server — handshake, listing, calling, and every way one can go away |
 
+The `codex-turn-test` and `installed-ai-test` workers use private zsh startup directories so a login
+shell preserves the fixture PATH. Personal shell configuration must never replace a stub with a real
+installed provider or access its account during tests.
+
 The two harnesses that need a server to talk to bring their own: `Tests/ai-fixtures/codex-stub.js`
 and `mcp-stub.js`, each copied into a scratch directory and put in front of PATH so the locator finds
 it the way it would find a real one. Both read fd 0 synchronously rather than through a stream —
