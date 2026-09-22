@@ -47,7 +47,7 @@ enum CommandID: String, CaseIterable, Sendable {
         case .aiChat: return "AI Chat"
         case .fixGrammar: return BuiltInQuickAction.fixGrammar.title
         case .rewrite: return BuiltInQuickAction.rewrite.title
-        case .translate: return BuiltInQuickAction.translate.title
+        case .translate: return "Translate"
         case .summarize: return BuiltInQuickAction.summarize.title
         case .calculatorHistory: return "Calculator History"
         case .clipboardHistory: return "Clipboard History"
@@ -91,7 +91,7 @@ enum CommandID: String, CaseIterable, Sendable {
         case .aiChat: return "sparkles"
         case .fixGrammar: return BuiltInQuickAction.fixGrammar.symbol
         case .rewrite: return BuiltInQuickAction.rewrite.symbol
-        case .translate: return BuiltInQuickAction.translate.symbol
+        case .translate: return "translate"
         case .summarize: return BuiltInQuickAction.summarize.symbol
         case .calculatorHistory: return "plus.forwardslash.minus"
         case .clipboardHistory: return "doc.on.clipboard"
@@ -135,7 +135,6 @@ enum CommandID: String, CaseIterable, Sendable {
         switch action {
         case .fixGrammar: self = .fixGrammar
         case .rewrite: self = .rewrite
-        case .translate: self = .translate
         case .summarize: self = .summarize
         }
     }
@@ -144,7 +143,6 @@ enum CommandID: String, CaseIterable, Sendable {
         switch self {
         case .fixGrammar: return .fixGrammar
         case .rewrite: return .rewrite
-        case .translate: return .translate
         case .summarize: return .summarize
         default: return nil
         }

@@ -110,6 +110,19 @@ struct InterfaceMetrics: Equatable, Sendable {
         var quickActionScrollFade: CGFloat { scaledPoints(Theme.Size.quickActionScrollFade, scale) }
         var quickActionPanelBody: CGFloat { scaledPoints(Theme.Size.quickActionPanelBody, scale) }
         var quickActionPanelMinBody: CGFloat { scaledPoints(Theme.Size.quickActionPanelMinBody, scale) }
+        var translationPanel: CGSize {
+            CGSize(
+                width: scaledPoints(Theme.Size.translationPanel.width, scale),
+                height: scaledPoints(Theme.Size.translationPanel.height, scale))
+        }
+        var translationInputHeight: CGFloat { scaledPoints(Theme.Size.translationInputHeight, scale) }
+        var translationMiniPanel: CGSize {
+            CGSize(
+                width: scaledPoints(Theme.Size.translationMiniPanel.width, scale),
+                height: scaledPoints(Theme.Size.translationMiniPanel.height, scale))
+        }
+        var translationMiniInputHeight: CGFloat { scaledPoints(Theme.Size.translationMiniInputHeight, scale) }
+        var translationMiniResultHeight: CGFloat { scaledPoints(Theme.Size.translationMiniResultHeight, scale) }
 
         var dialogCompactWidth: CGFloat { scaledPoints(Theme.Size.dialogCompactWidth, scale) }
         var dialogWidth: CGFloat { scaledPoints(Theme.Size.dialogWidth, scale) }
@@ -152,6 +165,7 @@ struct InterfaceMetrics: Equatable, Sendable {
         }
 
         var rowTitle: Font { font(Theme.Typography.rowTitle, .body) }
+        @MainActor var bodyNSFont: NSFont { nsFont(.body) }
         var rowTrailing: Font { font(Theme.Typography.rowTrailing, .callout) }
         var sectionHeader: Font { font(Theme.Typography.sectionHeader, .subheadline, .medium) }
         var panelTitle: Font { font(Theme.Typography.panelTitle, .headline) }

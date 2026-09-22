@@ -3,8 +3,8 @@
 Tinycast has one app-wide provider layer for features that need text generation. AI Chat chooses its
 model from the chat header; callers ask `AppCore.aiProvider()` for the current provider and stream an
 `AIRequest`.
-AI Chat is the first consumer and [Quick Actions](quick-actions.md) the second; the provider layer
-depends on neither, and Quick Actions carries its own route rather than borrowing this one.
+AI Chat, [Quick Actions](quick-actions.md) and [Translation](translation.md) consume the provider layer.
+The provider layer depends on none of them; each feature owns its model route and request instructions.
 
 ## Invariants
 

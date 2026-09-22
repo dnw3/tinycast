@@ -49,7 +49,10 @@ extension SettingsAnchor {
     static let quickActionsQuickActions = Self(tab: .quickActions, title: "Quick Actions")
     static let quickActionsActions = Self(tab: .quickActions, title: "Actions")
     static let quickActionsModel = Self(tab: .quickActions, title: "Model")
-    static let quickActionsTranslate = Self(tab: .quickActions, title: "Translate")
+    static let translationTranslation = Self(tab: .translation, title: "Translation")
+    static let translationLanguages = Self(tab: .translation, title: "Languages")
+    static let translationEngine = Self(tab: .translation, title: "Engine")
+    static let translationCommands = Self(tab: .translation, title: "Commands")
 
     static let fileSearchFileSearch = Self(tab: .fileSearch, title: "File Search")
     static let fileSearchCommands = Self(tab: .fileSearch, title: "Commands")

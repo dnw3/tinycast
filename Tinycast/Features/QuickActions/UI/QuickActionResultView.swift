@@ -4,12 +4,9 @@ struct QuickActionResultView: View {
 
     @Environment(\.metrics) private var metrics
     let state: QuickActionPanelState
-    let languages: [Locale.Language]
     let onReplace: () -> Void
     let onCopy: () -> Void
     let onCancel: () -> Void
-    let onRetranslate: (Locale.Language) -> Void
-    let onOpenLanguageSettings: () -> Void
     let onHeight: (CGFloat) -> Void
 
     @State private var contentHeight: CGFloat = 0
@@ -98,7 +95,6 @@ struct QuickActionResultView: View {
                 Spacer(minLength: metrics.spacing.md)
             }
             .windowDraggable(true)
-            if state.action == .translate, !languages.isEmpty { languageMenu }
         }
         .padding(.horizontal, metrics.spacing.xxl)
         .padding(.top, metrics.spacing.xl)
@@ -120,8 +116,6 @@ struct QuickActionResultView: View {
             Label(message, systemImage: "exclamationmark.triangle")
                 .font(metrics.typography.rowTitle)
                 .foregroundStyle(Theme.Colors.textSecondary)
-        case .needsLanguageDownload:
-            downloadPrompt
         }
     }
 
@@ -163,34 +157,6 @@ struct QuickActionResultView: View {
                 result.append(run)
             }
         }
-    }
-
-    /// System Settings, not `prepareTranslation`: its sheet never appears over this panel.
-    private var downloadPrompt: some View {
-        let language = TextTranslator.displayName(of: state.targetLanguage)
-        return VStack(alignment: .leading, spacing: metrics.spacing.lg) {
-            VStack(alignment: .leading, spacing: metrics.spacing.xs) {
-                Text("\(language) hasn't been downloaded yet.")
-                    .font(metrics.typography.rowTitle)
-                    .foregroundStyle(Theme.Colors.textSecondary)
-                Text("Click **Translation Languages…** in Language & Region, then download it.")
-                    .font(metrics.typography.rowTrailing)
-                    .foregroundStyle(Theme.Colors.textTertiary)
-            }
-            Button("Open Language & Region", action: onOpenLanguageSettings)
-                .buttonStyle(.modalAction(.standard, fillsWidth: false))
-        }
-    }
-
-    private var languageMenu: some View {
-        Menu(TextTranslator.displayName(of: state.targetLanguage)) {
-            ForEach(languages, id: \.minimalIdentifier) { language in
-                Button(TextTranslator.displayName(of: language)) { onRetranslate(language) }
-            }
-        }
-        .menuStyle(.button)
-        .buttonStyle(.accessoryBar)
-        .fixedSize()
     }
 
     private var footer: some View {

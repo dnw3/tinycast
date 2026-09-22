@@ -6,7 +6,6 @@ enum QuickAction: Hashable, Identifiable, Sendable {
 
     static let fixGrammar = QuickAction.builtIn(.fixGrammar)
     static let rewrite = QuickAction.builtIn(.rewrite)
-    static let translate = QuickAction.builtIn(.translate)
     static let summarize = QuickAction.builtIn(.summarize)
 
     static let allBuiltIn: [QuickAction] = BuiltInQuickAction.allCases.map(QuickAction.builtIn)
@@ -52,6 +51,4 @@ enum QuickAction: Hashable, Identifiable, Sendable {
     var alwaysPreviews: Bool { builtInAction?.alwaysPreviews ?? false }
 
     var showsDiff: Bool { builtInAction?.showsDiff ?? false }
-
-    var usesTranslationFramework: Bool { builtInAction?.usesTranslationFramework ?? false }
 }

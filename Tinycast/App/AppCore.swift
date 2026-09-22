@@ -58,6 +58,8 @@ final class AppCore {
     let mcpSettings = MCPSettingsStore()
     let mcp = MCPServerManager()
     let quickActionSettings = QuickActionSettingsStore()
+    let translationSettings = TranslationSettingsStore()
+    let translation = TranslationState()
     let customQuickActions = CustomQuickActionStore()
     let chatGPTSubscription = ChatGPTSubscriptionManager()
     let installedAI = InstalledAIManager()
@@ -186,6 +188,8 @@ final class AppCore {
         injector: textInjector, appIndex: appIndex, hotKeys: hotKeys, favorites: favorites,
         visibility: visibility, ranking: launcherRanking, aliases: aliases,
         paletteCoordinator: paletteCoordinator, core: self)
+    @ObservationIgnored private(set) lazy var translationCoordinator = TranslationCoordinator(
+        state: translation, store: translationSettings, core: self)
     @ObservationIgnored private(set) lazy var mcpCoordinator = MCPCoordinator(
         settings: settings, store: mcpSettings, manager: mcp, core: self)
     @ObservationIgnored private(set) lazy var aiChatCoordinator = AIChatCoordinator(
@@ -261,6 +265,7 @@ final class AppCore {
             // Before `hotKeys.start` even when off: the prune reads it.
             customQuickActions.load()
             quickActionCoordinator.applyEnabled()
+            translationCoordinator.applyEnabled()
             customCommands.onChange = { [weak self] _ in
                 self?.customCommandCoordinator.applyCustomCommandsPresence()
             }
@@ -474,6 +479,7 @@ final class AppCore {
         snippetListener.stop()
         snippetsStore.stop()
         aiChat.cancel()
+        translationCoordinator.cancel()
         chatGPTSubscription.stop()
         mcp.stop()
         installedAI.stop()
@@ -482,7 +488,7 @@ final class AppCore {
     @discardableResult
     func applyInstalledAILifecycle() -> Task<Void, Never> {
         let enabledKinds =
-            settings.aiEnabled || settings.quickActionsEnabled
+            settings.aiEnabled || settings.quickActionsEnabled || translationCoordinator.requiresAI
             ? aiSettings.enabledInstalledProviders : []
         var tasks: [Task<Void, Never>] = []
         if enabledKinds.contains(.codex) {
@@ -500,6 +506,15 @@ final class AppCore {
     func aiProvider() throws -> any AIProvider {
         try AIProviderFactory.make(
             settings: aiSettings, subscription: chatGPTSubscription, installedAI: installedAI)
+    }
+
+    func translationProvider() throws -> any AIProvider {
+        guard let selection = translationSettings.model else {
+            throw AIProviderError.unavailable("Choose a model in Settings → Translation.")
+        }
+        return try AIProviderFactory.make(
+            selection: selection, settings: aiSettings, subscription: chatGPTSubscription,
+            installedAI: installedAI, guardrails: .permissiveContentTransformations)
     }
 
     /// Permissive guardrails: the text transformed is the reader's own, which `.default` refuses.
@@ -568,6 +583,9 @@ final class AppCore {
         track(
             { _ = $0.quickActionsEnabled },
             reproject: { $0.quickActionCoordinator.applyEnabled() })
+        track(
+            { _ = $0.translationEnabled },
+            reproject: { $0.translationCoordinator.applyEnabled() })
         track(
             {
                 _ = $0.calendarEnabled

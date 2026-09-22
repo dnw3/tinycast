@@ -110,7 +110,7 @@ enum SettingsSearchCatalog {
     static let entries: [SettingsSearchEntry] =
         general + applications + systemSettings + systemActions + commands + quicklinks
         + appleShortcuts + fallbacks + clipboard + snippets + fileSearch + windowManagement
-        + navigation + notes + calendar + emoji + ai + quickActions + extensions + permissions
+        + navigation + notes + calendar + emoji + translation + ai + quickActions + extensions + permissions
         + backup + about
 
     private static let general: [SettingsSearchEntry] = [
@@ -302,7 +302,7 @@ enum SettingsSearchCatalog {
     private static let quickActions: [SettingsSearchEntry] = [
         .init(
             pane: .quickActions,
-            keywords: ["selected text", "rewrite", "translate", "summarize"]),
+            keywords: ["selected text", "rewrite", "summarize"]),
         .init(
             .quickActionsQuickActions, "Enable Quick Actions",
             keywords: ["selected text", "accessibility"]),
@@ -314,10 +314,18 @@ enum SettingsSearchCatalog {
             keywords: ["new", "custom", "prompt", "instructions", "alias"]),
         .init(
             .quickActionsModel, "Model",
-            keywords: ["llm", "ai", "default"]),
-        .init(
-            .quickActionsTranslate, "Translate to",
-            keywords: ["language", "locale"])
+            keywords: ["llm", "ai", "default"])
+    ]
+
+    private static let translation: [SettingsSearchEntry] = [
+        .init(pane: .translation, keywords: ["translate", "language", "selected text", "手输", "翻译"]),
+        .init(.translationTranslation, "Enable Translation", keywords: ["hotkey", "input"]),
+        .init(.translationLanguages, "Primary language", keywords: ["automatic", "detect", "Chinese"]),
+        .init(.translationLanguages, "Secondary language", keywords: ["English", "direction"]),
+        .init(.translationEngine, "Default engine", keywords: ["Apple", "AI", "offline"]),
+        .init(.translationEngine, "Translation model", keywords: ["llm", "provider", "quality"]),
+        .init(.translationEngine, "Reasoning effort", keywords: ["model", "thinking"]),
+        .init(group: .translationCommands, "Translation commands", keywords: ["shortcut", "alias"])
     ]
 
     private static let fileSearch: [SettingsSearchEntry] = [

@@ -71,7 +71,8 @@ keep it actively maintained. GitHub Sponsors isn't available in my country, so p
   the palette and rendered as you write.
 - **Emoji picker** — a searchable emoji grid, one keystroke away.
 - **AI chat** — use your own key or an installed AI account, chat from the palette. Off out of the box, like every AI feature.
-- **Quick Actions** — fix grammar, rewrite, translate or summarize the selected text in any app.
+- **Translation** — translate selected or typed text, detect its language, and copy or apply the result.
+- **Quick Actions** — fix grammar, rewrite or summarize the selected text in any app.
 - **Raycast extensions** — run the ones you already have natively, rendered as SwiftUI.
 - **Backup and import** — export your settings to a file, or import your setup from Raycast.
 

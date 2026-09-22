@@ -7,34 +7,26 @@ final class QuickActionPanelController: NSObject, NSWindowDelegate {
     private var panel: QuickActionPanel?
     private var state: QuickActionPanelState?
     private var onReplace: ((String) -> Void)?
-    private var onRetranslate: ((Locale.Language) -> Void)?
 
     /// Clear of the pointer, so the panel never opens under the hand that summoned it.
     private static let cursorOffset: CGFloat = 12
     private static let screenMargin: CGFloat = 8
-    private static let languageSettingsPane = "com.apple.Localization-Settings.extension"
 
     func present(
         _ state: QuickActionPanelState,
         metrics: InterfaceMetrics,
-        languages: [Locale.Language],
-        onRetranslate: @escaping (Locale.Language) -> Void,
         onReplace: @escaping (String) -> Void
     ) {
         dismiss()
         self.state = state
         self.onReplace = onReplace
-        self.onRetranslate = onRetranslate
 
         let hosting = NSHostingView(
             rootView: QuickActionResultView(
                 state: state,
-                languages: languages,
                 onReplace: { [weak self] in self?.replace(state.output) },
                 onCopy: { [weak self] in self?.copyOutput() },
                 onCancel: { [weak self] in self?.dismiss() },
-                onRetranslate: { [weak self] in self?.onRetranslate?($0) },
-                onOpenLanguageSettings: { [weak self] in self?.openLanguageSettings() },
                 onHeight: { [weak self] in self?.resize(toHeight: $0) }
             ).environment(\.metrics, metrics))
         // The controller owns the frame; without this the top edge drifts as the reply grows.
@@ -67,7 +59,6 @@ final class QuickActionPanelController: NSObject, NSWindowDelegate {
         panel = nil
         state = nil
         onReplace = nil
-        onRetranslate = nil
         closing.delegate = nil
         closing.onKey = nil
         closing.fadeOut(duration: Theme.Duration.exit)
@@ -76,11 +67,6 @@ final class QuickActionPanelController: NSObject, NSWindowDelegate {
     private func copyOutput() {
         guard let state else { return }
         Paster.copyPlainText(state.output)
-    }
-
-    private func openLanguageSettings() {
-        dismiss()
-        AppLauncher.openSettingsPane(bundleID: Self.languageSettingsPane)
     }
 
     private func replace(_ text: String) {

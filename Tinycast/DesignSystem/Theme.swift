@@ -245,6 +245,12 @@ enum Theme {
         static let quickActionPanelBody: CGFloat = 320
         /// Keeps a two-word grammar fix from collapsing the panel to a slot.
         static let quickActionPanelMinBody: CGFloat = 44
+        static let translationPanel = CGSize(width: 640, height: 540)
+        static let translationInputHeight: CGFloat = 130
+        static let translationMiniPanel = CGSize(width: 420, height: 260)
+        static let translationMiniInputHeight: CGFloat = 76
+        static let translationMiniResultHeight: CGFloat = 220
+        static let translationScreenMargin: CGFloat = 8
         /// Transient volume HUD shown after any volume or mute command.
         static let hudWidth: CGFloat = 200
         static let hudHeight: CGFloat = 100

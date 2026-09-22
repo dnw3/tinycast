@@ -82,7 +82,6 @@ struct QuickActionTests {
             "resolution leaves a route the reader chose alone")
 
         store.settings.setPreviewsResult(true, for: .fixGrammar)
-        store.settings.targetLanguage = "de"
         store.settings.setInstructionOverride("Use British English.", for: .fixGrammar)
 
         let reopened = QuickActionSettingsStore(defaults: defaults)
@@ -92,7 +91,6 @@ struct QuickActionTests {
         expect(
             reopened.settings.previewsResult(BuiltInQuickAction.fixGrammar),
             "a preview choice survives a relaunch")
-        expect(reopened.settings.targetLanguage == "de", "the target language survives a relaunch")
         expect(
             reopened.settings.instructionOverride(for: BuiltInQuickAction.fixGrammar)
                 == "Use British English.",
@@ -154,14 +152,12 @@ struct QuickActionTests {
         store.select(.appleIntelligence)
         store.setModelOverride(.claude(model: "opus", effort: "high"), for: .summarize)
         store.setModelOverride(api, for: custom)
-        store.setModelOverride(.codex(model: "gpt", effort: nil), for: .translate)
 
         expect(
             store.model(for: .summarize) == .claude(model: "opus", effort: "high"),
             "an action with its own route uses it")
         expect(store.model(for: .rewrite) == .appleIntelligence, "an action without one follows")
         expect(store.model(for: custom) == api, "a custom action keeps a route of its own")
-        expect(store.modelOverride(for: .translate) == nil, "Translate never takes a model")
 
         let reopened = QuickActionSettingsStore(defaults: defaults)
         expect(
@@ -214,12 +210,6 @@ struct QuickActionTests {
             !BuiltInQuickAction.rewrite.replacesDirectlyByDefault,
             "a rewrite changes the voice, so it is previewed by default")
         expect(
-            BuiltInQuickAction.translate.usesTranslationFramework,
-            "Translate goes to Apple's translator, not the model")
-        expect(
-            BuiltInQuickAction.allCases.filter(\.usesTranslationFramework) == [.translate],
-            "nothing else claims the translator")
-        expect(
             BuiltInQuickAction.summarize.showsDiff == false,
             "a summary is not the input edited, so a diff would be noise")
     }
@@ -259,23 +249,15 @@ struct QuickActionTests {
         expect(
             QuickActionPrompt.instructions(for: BuiltInQuickAction.rewrite, override: "").isEmpty,
             "an empty override deliberately sends no instructions")
-        expect(
-            QuickActionPrompt.instructions(for: BuiltInQuickAction.translate, override: "My instructions")
-                == QuickActionPrompt.instructions(for: BuiltInQuickAction.translate),
-            "Translate never accepts model instructions")
 
         var settings = QuickActionSettings()
         settings.setInstructionOverride("Custom", for: .rewrite)
-        settings.setInstructionOverride("Ignored", for: .translate)
         expect(
             settings.instructionOverride(for: BuiltInQuickAction.rewrite) == "Custom",
             "each model-backed action keeps its own instructions")
         expect(
             settings.instructionOverride(for: BuiltInQuickAction.fixGrammar) == nil,
             "customizing one action leaves the others on their defaults")
-        expect(
-            settings.instructionOverride(for: BuiltInQuickAction.translate) == nil,
-            "Translate cannot persist model instructions")
     }
 
     static func previewChoicesRememberOnlyWhatWasChosen() {
@@ -373,9 +355,6 @@ struct QuickActionTests {
         expect(action.progressTitle == "Make Snarky…", "the pill names the action the reader pressed")
         expect(!action.alwaysPreviews, "nothing forces a custom action into a panel")
         expect(!action.showsDiff, "an arbitrary prompt is not the input edited, so no diff")
-        expect(
-            !action.usesTranslationFramework,
-            "only the shipped Translate reaches Apple's translator")
         expect(action.id == record.entryID, "a custom action keys everything on its entry id")
         expect(
             CustomQuickAction.id(fromEntryID: record.entryID) == record.id,

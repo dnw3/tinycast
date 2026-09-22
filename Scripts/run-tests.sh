@@ -545,6 +545,16 @@ run quick-action-test      Tinycast/Features/Settings/AppSettingsKey.swift \
                            Tinycast/Features/AI/Model/InstalledAI.swift \
                            Tinycast/Features/QuickActions/Model/*.swift \
                            Tinycast/Features/QuickActions/Settings/QuickActionSettingsStore.swift
+run translation-test       Tinycast/Features/Settings/AppSettingsKey.swift \
+                           Tinycast/Features/AI/Model/*.swift \
+                           Tinycast/Features/AI/Service/AIProvider.swift \
+                           Tinycast/Features/Translation/Model/*.swift \
+                           Tinycast/Features/Translation/Service/TranslationLanguageService.swift \
+                           Tinycast/Features/Translation/Service/AITranslationService.swift \
+                           Tinycast/Features/Translation/Service/TranslationInputSession.swift \
+                           Tinycast/Features/Translation/Settings/TranslationSettingsStore.swift \
+                           Tinycast/Features/Translation/UI/TranslationState.swift \
+                           Tinycast/Features/Translation/UI/TranslationTextView.swift
 run apple-intelligence-test Tinycast/Features/Settings/AppSettingsKey.swift \
                            Tinycast/Features/AI/Model/*.swift \
                            Tinycast/Features/AI/Service/AIProvider.swift \

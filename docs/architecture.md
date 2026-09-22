@@ -139,6 +139,12 @@ driven imperatively from AppKit. Extension menu extras are dynamic `NSStatusItem
 - **The main menu** — shaped by `TinycastApp`'s `.commands`, which rebinds ⌘Q to Close Settings. It is
   only ever on screen while a titled window is open, so it is Settings' menu bar. It must stay
   declarative.
+- **Translation** — a floating, non-activating `TranslationPanel`, managed by
+  `TranslationPanelController` and `TranslationCoordinator`. It contains an editable TextKit 2 source
+  and a SwiftUI result in a compact or expanded frame. Unpinned windows close on focus loss; pinning
+  retains the query across applications, and delivery protects its focus transition. `AppCore` owns its state and
+  settings. Translation borrows the AI provider layer and the validated text-delivery queue.
+  See [features/translation.md](features/translation.md).
 - **Dialogs** — borderless `DialogPanel`s driven by `DialogController`, the app's only presenter for
   confirmations, failure reports and value prompts. Presentation is `async`, so nothing blocks the main
   actor, and the presenter refuses a second dialog while one is up — that, not a flag, is what stops a
