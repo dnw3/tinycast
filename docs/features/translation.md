@@ -98,9 +98,18 @@ Read-only pages and editors without sufficient AX information remain usable for 
 translation, but expose Copy instead of guessing where to write. A failed delivery keeps the result
 in the window and does not overwrite the clipboard without an explicit Copy.
 
-Translation does not synthesize Command-C to discover a selection: some editors copy the whole line
-when nothing is selected. If Accessibility cannot confirm selected text, the window accepts manual
-input instead. This keeps the empty-selection shortcut predictable and leaves the clipboard untouched.
+Translation first reads Accessibility selection attributes and browser text-marker ranges. If neither
+returns text and no editable target was captured, it invokes the source application's enabled Copy
+menu command, identified by its Command-C equivalent rather than a localized title. This supports
+read-only content in applications such as ChatGPT that may not expose their selection over AX.
+It does not synthesize Command-C or copy from a confirmed empty editable target.
+
+The shared `TextInjector` snapshots the clipboard, waits for its change count to advance and restores
+all original formats after reading. Old clipboard content is never used as selected text. The Copy
+command is revalidated against the original foreground application immediately before execution;
+switching applications or cancelling invalidates pending selection work. The translation panel is
+presented only after selection reading, so its editor cannot steal the source's focus. Missing
+permission, secure input, a disabled Copy command or a failed read leaves manual input available.
 
 Input is limited to 12,000 UTF-8 bytes. AI requests allow up to 8,192 output tokens and require a
 finished event. The shared HTTP decoder reports OpenAI `length`/`content_filter` and Anthropic
@@ -120,6 +129,12 @@ window placement on secondary displays, debounce coalescing, cancellation on cle
 and marked-text commit notifications. The debounce tests control the wait with continuations instead
 of relying on wall-clock sleeps. It uses deterministic provider fixtures; it does
 not claim live translation quality or cross-application delivery from unit results.
+
+`snippets-test` exercises the shared menu-copy hook with a private pasteboard: a newly copied
+selection is returned, plain text and HTML are restored, a refused action cannot return stale
+clipboard content, and cancellation does not invoke Copy. These fixtures do not replace a native
+ChatGPT selection check. `TranslationSelection` logs only the source bundle ID, retrieval route and
+success or permission state, never the source text or translation.
 
 Before shipping, check a writable native editor, a browser input, a read-only browser selection,
 Chinese input-method composition, a changed target, a missing language pack and a configured live

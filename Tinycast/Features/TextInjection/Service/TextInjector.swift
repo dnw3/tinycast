@@ -222,26 +222,40 @@ final class TextInjector {
     }
 
     /// A `changeCount` that never moves means nothing was selected, not that the old clipboard won.
-    func copySelection(from targetApp: NSRunningApplication?) async -> String? {
+    func copySelection(
+        from targetApp: NSRunningApplication?, performCopy: (@MainActor () -> Bool)? = nil
+    ) async -> String? {
         await deliveryQueue.drain()
-        guard finishPendingPasteboardOwnership(),
-            await activateAndWaitForTarget(targetApp, automaticGeneration: nil),
-            deliveryIsAllowed(
-                automaticGeneration: nil, targetApp: targetApp,
-                promptForInteractiveAccessibility: true)
-        else { return nil }
-        return await copySelection(from: targetApp, pasteboard: NSPasteboard.general)
+        guard finishPendingPasteboardOwnership(), !Task.isCancelled else { return nil }
+        if performCopy != nil {
+            guard let targetApp, Permissions.isAccessibilityTrusted(),
+                NSWorkspace.shared.frontmostApplication?.processIdentifier == targetApp.processIdentifier
+            else { return nil }
+        } else {
+            guard await activateAndWaitForTarget(targetApp, automaticGeneration: nil),
+                deliveryIsAllowed(
+                    automaticGeneration: nil, targetApp: targetApp,
+                    promptForInteractiveAccessibility: true)
+            else { return nil }
+        }
+        return await copySelection(from: targetApp, pasteboard: NSPasteboard.general, performCopy: performCopy)
     }
 
     /// Split for the harness, which drives a stub pasteboard rather than another app.
     func copySelection(
-        from targetApp: NSRunningApplication?, pasteboard: any PasteboardAccess
+        from targetApp: NSRunningApplication?, pasteboard: any PasteboardAccess,
+        performCopy: (@MainActor () -> Bool)? = nil
     ) async -> String? {
+        guard !Task.isCancelled else { return nil }
         clipboardManager.prepareForTinycastPasteboardMutation()
         guard let original = PasteboardSnapshot(pasteboard: pasteboard) else { return nil }
         defer { restore(original, to: pasteboard) }
 
-        Paster.postCommandC(toPid: targetApp?.processIdentifier)
+        if let performCopy {
+            guard performCopy() else { return nil }
+        } else {
+            Paster.postCommandC(toPid: targetApp?.processIdentifier)
+        }
         for _ in 0..<Self.copyPollAttempts {
             guard await wait(for: Self.copyPollInterval) else { return nil }
             guard pasteboard.changeCount != original.changeCount else { continue }

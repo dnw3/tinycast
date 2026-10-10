@@ -589,9 +589,10 @@ struct SnippetsTests {
         defer { backing.releaseGlobally() }
         let pasteboard = StubPasteboard(backing: backing)
 
-        func seed(_ text: String) {
+        func seed(_ text: String, html: String? = nil) {
             let item = NSPasteboardItem()
             item.setString(text, forType: .string)
+            if let html { item.setString(html, forType: .html) }
             backing.clearContents()
             _ = backing.writeObjects([item])
         }
@@ -617,6 +618,35 @@ struct SnippetsTests {
         check(
             "the reader's clipboard is restored afterwards",
             backing.string(forType: .string) == "Original")
+
+        seed("Original menu clipboard", html: "<b>Original menu clipboard</b>")
+        var menuInvocations = 0
+        let menuCopy = await injector.copySelection(from: nil, pasteboard: pasteboard, performCopy: {
+            menuInvocations += 1
+            seed("Selected ChatGPT response")
+            return true
+        })
+        check("a menu copy reads the new selection", menuCopy == "Selected ChatGPT response" && menuInvocations == 1)
+        check("menu selection restores the original clipboard", backing.string(forType: .string) == "Original menu clipboard")
+        check(
+            "menu selection preserves rich clipboard formats",
+            backing.string(forType: .html) == "<b>Original menu clipboard</b>")
+
+        let refusedCopy = await injector.copySelection(from: nil, pasteboard: pasteboard, performCopy: { false })
+        check("a disabled menu cannot reuse old clipboard text", refusedCopy == nil)
+        check("a refused menu preserves the clipboard", backing.string(forType: .string) == "Original menu clipboard")
+
+        let cancelled = Task { @MainActor in
+            await injector.copySelection(from: nil, pasteboard: pasteboard, performCopy: {
+                menuInvocations += 1
+                return true
+            })
+        }
+        cancelled.cancel()
+        let cancelledCopy = await cancelled.value
+        check("cancelled selection cannot return stale clipboard text", cancelledCopy == nil)
+        check("cancellation never invokes the source Copy command", menuInvocations == 1)
+        check("cancelled menu selection restores the clipboard", backing.string(forType: .string) == "Original menu clipboard")
     }
 
     /// Our panels never activate, so the frontmost app is not where the typist's caret is.

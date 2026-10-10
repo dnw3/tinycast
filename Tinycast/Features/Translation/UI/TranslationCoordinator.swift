@@ -1,6 +1,7 @@
 import AppKit
 import Carbon.HIToolbox
 import Observation
+import OSLog
 
 @MainActor
 @Observable
@@ -10,6 +11,7 @@ final class TranslationCoordinator {
     private unowned let core: AppCore
     private let panels = TranslationPanelController()
     private let inputSession = TranslationInputSession()
+    private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.tinycast.app", category: "TranslationSelection")
     private(set) var languages = ["zh-Hans", "zh-Hant", "en", "ja", "ko", "fr", "de", "es"]
     private(set) var isVisible = false
     private var settingsVisible = false
@@ -48,9 +50,15 @@ final class TranslationCoordinator {
         state.reset(preferences: store.preferences)
         isVisible = true
         loadLanguages()
-        capture(from: app)
-        panels.present(self, metrics: core.settings.interfaceSize.metrics)
-        if state.canSubmit { submit() }
+        let revision = state.revision
+        task = Task { [weak self] in
+            guard let self else { return }
+            await self.capture(from: app, revision: revision)
+            guard self.isCurrent(revision) else { return }
+            self.task = nil
+            self.panels.present(self, metrics: self.core.settings.interfaceSize.metrics)
+            if self.state.canSubmit { self.submit() }
+        }
     }
 
     func open(
@@ -86,18 +94,36 @@ final class TranslationCoordinator {
         return try await AITranslationService.translate(request, provider: core.translationProvider())
     }
 
-    private func capture(from app: NSRunningApplication?) {
+    private func capture(from app: NSRunningApplication?, revision: Int) async {
+        guard isCurrent(revision) else { return }
         guard let app, app.processIdentifier != ProcessInfo.processInfo.processIdentifier else {
             state.notice = "Type or paste text to translate."
             return
         }
-        guard Permissions.isAccessibilityTrusted(), !IsSecureEventInputEnabled() else {
+        guard Permissions.isAccessibilityTrusted() else {
+            logger.info("Selection unavailable: Accessibility not granted")
             state.notice = "Type or paste text. Selection and replacement need Accessibility permission."
+            return
+        }
+        guard !IsSecureEventInputEnabled() else {
+            state.notice = "Secure input is active. Type or paste text to translate."
             return
         }
         target = TranslationTarget.capture(in: app)
         state.deliveryTitle = target?.title
-        let selection = AccessibilityText.selection(in: app) ?? target?.selectedText
+        var selection = AccessibilityText.selection(in: app) ?? target?.selectedText
+        var usedMenu = false
+        if selection == nil, target == nil, let copy = TranslationSelectionReader.copyAction(in: app) {
+            usedMenu = true
+            selection = await core.textInjector.copySelection(from: app, performCopy: copy)
+        }
+        guard isCurrent(revision) else { return }
+        if usedMenu, NSWorkspace.shared.frontmostApplication?.processIdentifier != app.processIdentifier {
+            cancel()
+            return
+        }
+        let bundleID = app.bundleIdentifier ?? "unknown"
+        logger.info("Selection app=\(bundleID, privacy: .public) menu=\(usedMenu) found=\(selection != nil)")
         if let selection {
             state.input = selection
         }
