@@ -18,6 +18,30 @@
 本 checkout 没有名为 `upstream` 的 remote。其他教程中的 `upstream/main` 在这里对应 `origin/main`。
 GitHub 的 Sync fork 操作或更新 fork 的 `main`，不能代替维护分支上的冲突处理与验证。
 
+## 翻译分支统一维护
+
+`dnw/capture-workspace` 是 Capture 与 Translation 的统一维护入口。
+`dnw/translation-panel` 保留为早期实现的历史参考，不再单独维护同一套翻译功能。
+
+2026-10-10 对比 `17580527` 与集成分支 `e37f3d9f`：独立翻译窗口、自动语言方向、
+Apple / AI 引擎、选中文字回填及原有翻译测试均已整合；集成分支进一步增加截图 OCR 接入、
+截图预览、选段翻译和多段批量翻译。旧分支的 `b6ce5314` 仅隔离已被新版上游删除的
+`codex-turn-test` / `installed-ai-test`，无需恢复这项测试启动配置。
+
+这次整合以集成分支的现有源码为准，使用保留当前树的 merge 记录旧翻译分支已被吸收，
+避免重新引入旧上游实现。两个远程分支均保留，fork `main` 不变。
+本机 checkout 的 `origin` 指向 `dnw3/tinycast`，`upstream` 指向原仓库；上表记录的是
+此前 checkout 的配置，执行同步时仍须按 URL 确认角色。
+
+无需合入 `main` 就能从维护分支构建安装。本地 Release 安装使用同一个自签名身份，
+替换前保留旧应用备份。当前 Release 更新源仍指向上游，不能用应用内更新保留 fork 功能；
+后续更新此安装需继续从维护分支重新构建。
+
+本次本机验证：101 个 harness 全部通过（174 秒），Debug / Release 构建通过，
+无 Swift 编译警告，仅有 AppIntents 元数据提取提示；lint 检查通过并保留既有警告，
+Model import 纯度及严格签名检查通过。未重新执行截图、翻译质量或录制的原生验收，
+此前交付状态中的未关闭项仍然有效。
+
 ## 我们保留的改动
 
 | 范围 | 内容与维护入口 |
