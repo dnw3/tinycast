@@ -1,0 +1,201 @@
+{
+  "policyVersion": 3,
+  "scenario": "ordinary",
+  "samples": 2077,
+  "mainPeak": 357646336,
+  "helperPeak": 0,
+  "concurrentPeak": 357646336,
+  "peakPassed": false,
+  "coldBaseline": 140951552,
+  "baselineSeconds": 8.871885832981206,
+  "coldPassed": true,
+  "recovery": [
+    {
+      "stage": "cycle-01-closed",
+      "maximumAtFiveSeconds": 195264512,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790669070.831382,
+      "samplesInWindow": 3
+    },
+    {
+      "stage": "cycle-02-closed",
+      "maximumAtFiveSeconds": 201916416,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790669096.635256,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-03-closed",
+      "maximumAtFiveSeconds": 202096640,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790669122.761564,
+      "samplesInWindow": 3
+    },
+    {
+      "stage": "cycle-04-closed",
+      "maximumAtFiveSeconds": 201965568,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790669151.36069,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-05-closed",
+      "maximumAtFiveSeconds": 202571776,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790669179.852967,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-06-closed",
+      "maximumAtFiveSeconds": 204881920,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790669221.878144,
+      "samplesInWindow": 3
+    },
+    {
+      "stage": "cycle-07-closed",
+      "maximumAtFiveSeconds": 204079104,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790669244.472991,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-08-closed",
+      "maximumAtFiveSeconds": 204013568,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790669266.845178,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-09-closed",
+      "maximumAtFiveSeconds": 204439552,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790669297.436166,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-10-closed",
+      "maximumAtFiveSeconds": 204144640,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790669319.919655,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-11-closed",
+      "maximumAtFiveSeconds": 205766656,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790669341.857182,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-12-closed",
+      "maximumAtFiveSeconds": 205602816,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790669377.095737,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-13-closed",
+      "maximumAtFiveSeconds": 205094912,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790669399.994036,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-14-closed",
+      "maximumAtFiveSeconds": 206012416,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790669422.027423,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-15-closed",
+      "maximumAtFiveSeconds": 205864960,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790669448.587683,
+      "samplesInWindow": 3
+    },
+    {
+      "stage": "cycle-16-closed",
+      "maximumAtFiveSeconds": 205963264,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790669470.161004,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-17-closed",
+      "maximumAtFiveSeconds": 205979648,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790669496.409861,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-18-closed",
+      "maximumAtFiveSeconds": 205930496,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790669524.496968,
+      "samplesInWindow": 3
+    },
+    {
+      "stage": "cycle-19-closed",
+      "maximumAtFiveSeconds": 206176256,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790669546.113174,
+      "samplesInWindow": 3
+    },
+    {
+      "stage": "cycle-20-closed",
+      "maximumAtFiveSeconds": 206045184,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790669572.823672,
+      "samplesInWindow": 4
+    }
+  ],
+  "cyclesPassed": true,
+  "nativeClosureCount": 20,
+  "nativeClosureEvent": "copy-closed",
+  "warmedGrowth": 1835008,
+  "resourcePassed": false,
+  "latency": {
+    "selection-ready": {
+      "count": 20,
+      "p95Milliseconds": 531.942958,
+      "passed": false
+    },
+    "scroll-preview-ready": {
+      "count": 0,
+      "p95Milliseconds": null,
+      "passed": null
+    }
+  },
+  "date": "2026-09-29",
+  "status": "All twenty native save/copy cycles completed. Recovery and growth passed; peak and selection P95 failed.",
+  "buildLog": "/tmp/tinycast-completion-2_njcdaj/capture-inline-view-profile-build.log",
+  "sourceSHA256": {
+    "Tinycast/Features/Capture/UI/CaptureCanvas.swift": "1b6badd6024438b3e2703271185f8d41698142fa62f752f4a0fde6fbad7c8633",
+    "Tinycast/Features/Capture/UI/CaptureSelectionView.swift": "d0905a898cf3e3813d8ecb1e5c9e268cb259551692ec86e472d9a8dcb0b70a36"
+  },
+  "rawSamples": "ordinary-inline-20-rss-20260929.json.gz",
+  "rawEvents": "ordinary-inline-20-events-20260929.ndjson.gz",
+  "files": "ordinary-inline-20-files-20260929.json"
+}

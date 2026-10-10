@@ -1,0 +1,449 @@
+{
+  "policyVersion": 3,
+  "scenario": "ordinary",
+  "samples": 1977,
+  "mainPeak": 272187392,
+  "helperPeak": 0,
+  "concurrentPeak": 272187392,
+  "peakPassed": true,
+  "coldBaseline": 141361152.0,
+  "baselineSeconds": 23.25302458391525,
+  "coldPassed": true,
+  "recovery": [
+    {
+      "stage": "cycle-01-closed",
+      "maximumAtFiveSeconds": 189235200,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790676165.014213,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-02-closed",
+      "maximumAtFiveSeconds": 188186624,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790676187.001338,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-03-closed",
+      "maximumAtFiveSeconds": 193052672,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790676209.191269,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-04-closed",
+      "maximumAtFiveSeconds": 198000640,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790676237.243255,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-05-closed",
+      "maximumAtFiveSeconds": 194887680,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790676265.651022,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-06-closed",
+      "maximumAtFiveSeconds": 188563456,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790676286.908886,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-07-closed",
+      "maximumAtFiveSeconds": 190234624,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790676314.231597,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-08-closed",
+      "maximumAtFiveSeconds": 189857792,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790676335.609104,
+      "samplesInWindow": 3
+    },
+    {
+      "stage": "cycle-09-closed",
+      "maximumAtFiveSeconds": 189267968,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790676358.093852,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-10-closed",
+      "maximumAtFiveSeconds": 189251584,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790676385.306318,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-11-closed",
+      "maximumAtFiveSeconds": 189497344,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790676407.838861,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-12-closed",
+      "maximumAtFiveSeconds": 189825024,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790676429.476096,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-13-closed",
+      "maximumAtFiveSeconds": 190185472,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790676457.85589,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-14-closed",
+      "maximumAtFiveSeconds": 188055552,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790676480.785769,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-15-closed",
+      "maximumAtFiveSeconds": 195067904,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790676502.428118,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-16-closed",
+      "maximumAtFiveSeconds": 193937408,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790676526.505875,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-17-closed",
+      "maximumAtFiveSeconds": 195297280,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790676548.867602,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-18-closed",
+      "maximumAtFiveSeconds": 198836224,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790676570.744878,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-19-closed",
+      "maximumAtFiveSeconds": 196395008,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790676595.140763,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-20-closed",
+      "maximumAtFiveSeconds": 196902912,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790676620.551911,
+      "samplesInWindow": 4
+    }
+  ],
+  "cyclesPassed": true,
+  "nativeClosureCount": 20,
+  "nativeClosureEvent": "copy-closed",
+  "warmedGrowth": 7127040,
+  "resourcePassed": true,
+  "latency": {
+    "selection-ready": {
+      "count": 20,
+      "p95Milliseconds": 455.853375,
+      "passed": true
+    },
+    "scroll-preview-ready": {
+      "count": 0,
+      "p95Milliseconds": null,
+      "passed": null
+    }
+  },
+  "date": "2026-09-29",
+  "status": "Passed twenty native full-screen Save/Copy cycles after overlapping palette hiding with ScreenCaptureKit target discovery.",
+  "files": [
+    {
+      "cycle": 1,
+      "localPath": "/var/folders/yx/3sqnzqw12sb68q4sd3sb0c980000gn/T/tinycast-acceptance-20260929-u50qlziy/ordinary-overlap-01.png",
+      "dimensions": [
+        3456,
+        2234
+      ],
+      "mode": "RGBA",
+      "bytes": 775180,
+      "sha256": "e28e679783d34c671888bddaa51a3299f848453f3425bfd565fa86a5243f3e6a",
+      "decoded": true
+    },
+    {
+      "cycle": 2,
+      "localPath": "/var/folders/yx/3sqnzqw12sb68q4sd3sb0c980000gn/T/tinycast-acceptance-20260929-u50qlziy/ordinary-overlap-02.png",
+      "dimensions": [
+        3456,
+        2234
+      ],
+      "mode": "RGBA",
+      "bytes": 775893,
+      "sha256": "0444398137b3059b9b7dec85e0aa22928687eb87a8b7805ad91957231abe3900",
+      "decoded": true
+    },
+    {
+      "cycle": 3,
+      "localPath": "/var/folders/yx/3sqnzqw12sb68q4sd3sb0c980000gn/T/tinycast-acceptance-20260929-u50qlziy/ordinary-overlap-03.png",
+      "dimensions": [
+        3456,
+        2234
+      ],
+      "mode": "RGBA",
+      "bytes": 776118,
+      "sha256": "544f07c5cd70d82da63ede0c9a81f01ab996c6ca8a0b405447a0f7a4091aee90",
+      "decoded": true
+    },
+    {
+      "cycle": 4,
+      "localPath": "/var/folders/yx/3sqnzqw12sb68q4sd3sb0c980000gn/T/tinycast-acceptance-20260929-u50qlziy/ordinary-overlap-04.png",
+      "dimensions": [
+        3456,
+        2234
+      ],
+      "mode": "RGBA",
+      "bytes": 775795,
+      "sha256": "12e0050a936d06f7aedfb6125b2f74e25930817758f9a3b5f27df027bec2da2b",
+      "decoded": true
+    },
+    {
+      "cycle": 5,
+      "localPath": "/var/folders/yx/3sqnzqw12sb68q4sd3sb0c980000gn/T/tinycast-acceptance-20260929-u50qlziy/ordinary-overlap-05.png",
+      "dimensions": [
+        3456,
+        2234
+      ],
+      "mode": "RGBA",
+      "bytes": 776308,
+      "sha256": "0ffbacb9fcbedeb516ad18c7be95f8f13c82e262761bc262423cd83ca89e9adb",
+      "decoded": true
+    },
+    {
+      "cycle": 6,
+      "localPath": "/var/folders/yx/3sqnzqw12sb68q4sd3sb0c980000gn/T/tinycast-acceptance-20260929-u50qlziy/ordinary-overlap-06.png",
+      "dimensions": [
+        3456,
+        2234
+      ],
+      "mode": "RGBA",
+      "bytes": 775823,
+      "sha256": "2dee950c1108f03072a8a0fdd577fe6e0f160cf47470f62eaa087cb4058ede67",
+      "decoded": true
+    },
+    {
+      "cycle": 7,
+      "localPath": "/var/folders/yx/3sqnzqw12sb68q4sd3sb0c980000gn/T/tinycast-acceptance-20260929-u50qlziy/ordinary-overlap-07.png",
+      "dimensions": [
+        3456,
+        2234
+      ],
+      "mode": "RGBA",
+      "bytes": 775849,
+      "sha256": "dc6fefa0ebf614ec49132c1621b359d061b64ac2914f3812534606ff78060b29",
+      "decoded": true
+    },
+    {
+      "cycle": 8,
+      "localPath": "/var/folders/yx/3sqnzqw12sb68q4sd3sb0c980000gn/T/tinycast-acceptance-20260929-u50qlziy/ordinary-overlap-08.png",
+      "dimensions": [
+        3456,
+        2234
+      ],
+      "mode": "RGBA",
+      "bytes": 775591,
+      "sha256": "d38d18499a92285a0087ff5dc106015a7f85f0519602ee2fcbedc6cfb7b65f33",
+      "decoded": true
+    },
+    {
+      "cycle": 9,
+      "localPath": "/var/folders/yx/3sqnzqw12sb68q4sd3sb0c980000gn/T/tinycast-acceptance-20260929-u50qlziy/ordinary-overlap-09.png",
+      "dimensions": [
+        3456,
+        2234
+      ],
+      "mode": "RGBA",
+      "bytes": 776151,
+      "sha256": "7a9b039e91588371c5539d708add888720cfc0d01c69bcbacd6e7bc713b29749",
+      "decoded": true
+    },
+    {
+      "cycle": 10,
+      "localPath": "/var/folders/yx/3sqnzqw12sb68q4sd3sb0c980000gn/T/tinycast-acceptance-20260929-u50qlziy/ordinary-overlap-10.png",
+      "dimensions": [
+        3456,
+        2234
+      ],
+      "mode": "RGBA",
+      "bytes": 776045,
+      "sha256": "74e8979e6956cf1b28288d8b16a7bab6d8bdee9c847435a04306ab88f8bd3939",
+      "decoded": true
+    },
+    {
+      "cycle": 11,
+      "localPath": "/var/folders/yx/3sqnzqw12sb68q4sd3sb0c980000gn/T/tinycast-acceptance-20260929-u50qlziy/ordinary-overlap-11.png",
+      "dimensions": [
+        3456,
+        2234
+      ],
+      "mode": "RGBA",
+      "bytes": 775811,
+      "sha256": "8e90f9ef28e8292dec1226fcbe39f18502788d66ec3ecf802ee7811ebe8c8d21",
+      "decoded": true
+    },
+    {
+      "cycle": 12,
+      "localPath": "/var/folders/yx/3sqnzqw12sb68q4sd3sb0c980000gn/T/tinycast-acceptance-20260929-u50qlziy/ordinary-overlap-12.png",
+      "dimensions": [
+        3456,
+        2234
+      ],
+      "mode": "RGBA",
+      "bytes": 774380,
+      "sha256": "df5805911add31e97538bb595d59373883fc8ee20a04f390697f6109e268ebfd",
+      "decoded": true
+    },
+    {
+      "cycle": 13,
+      "localPath": "/var/folders/yx/3sqnzqw12sb68q4sd3sb0c980000gn/T/tinycast-acceptance-20260929-u50qlziy/ordinary-overlap-13.png",
+      "dimensions": [
+        3456,
+        2234
+      ],
+      "mode": "RGBA",
+      "bytes": 775803,
+      "sha256": "4520e5a50e1a7bac692451e99b3255e91f6907fd7a45369d823f6f5a7ea4860f",
+      "decoded": true
+    },
+    {
+      "cycle": 14,
+      "localPath": "/var/folders/yx/3sqnzqw12sb68q4sd3sb0c980000gn/T/tinycast-acceptance-20260929-u50qlziy/ordinary-overlap-14.png",
+      "dimensions": [
+        3456,
+        2234
+      ],
+      "mode": "RGBA",
+      "bytes": 776418,
+      "sha256": "21b4607d45c727f4ca796e0e3620bc7822c5e78339c5409e368ec19998dcbc93",
+      "decoded": true
+    },
+    {
+      "cycle": 15,
+      "localPath": "/var/folders/yx/3sqnzqw12sb68q4sd3sb0c980000gn/T/tinycast-acceptance-20260929-u50qlziy/ordinary-overlap-15.png",
+      "dimensions": [
+        3456,
+        2234
+      ],
+      "mode": "RGBA",
+      "bytes": 776513,
+      "sha256": "35525ca3f79ba0b760b2f3d990be8fae40d6b5e45de3204db3de5583099802da",
+      "decoded": true
+    },
+    {
+      "cycle": 16,
+      "localPath": "/var/folders/yx/3sqnzqw12sb68q4sd3sb0c980000gn/T/tinycast-acceptance-20260929-u50qlziy/ordinary-overlap-16.png",
+      "dimensions": [
+        3456,
+        2234
+      ],
+      "mode": "RGBA",
+      "bytes": 775783,
+      "sha256": "7f591d4d7030abba82a46b8ef5a10c98349054767f7642717633d726c100ddb7",
+      "decoded": true
+    },
+    {
+      "cycle": 17,
+      "localPath": "/var/folders/yx/3sqnzqw12sb68q4sd3sb0c980000gn/T/tinycast-acceptance-20260929-u50qlziy/ordinary-overlap-17.png",
+      "dimensions": [
+        3456,
+        2234
+      ],
+      "mode": "RGBA",
+      "bytes": 776120,
+      "sha256": "592bb41734f907844c37c7444ba2f9459d67eb70ff052e16f4746c995c4ebc7c",
+      "decoded": true
+    },
+    {
+      "cycle": 18,
+      "localPath": "/var/folders/yx/3sqnzqw12sb68q4sd3sb0c980000gn/T/tinycast-acceptance-20260929-u50qlziy/ordinary-overlap-18.png",
+      "dimensions": [
+        3456,
+        2234
+      ],
+      "mode": "RGBA",
+      "bytes": 776070,
+      "sha256": "15e6561697e245bf234b163d53bfe09718124094a0e31bac1031255274bbbe56",
+      "decoded": true
+    },
+    {
+      "cycle": 19,
+      "localPath": "/var/folders/yx/3sqnzqw12sb68q4sd3sb0c980000gn/T/tinycast-acceptance-20260929-u50qlziy/ordinary-overlap-19.png",
+      "dimensions": [
+        3456,
+        2234
+      ],
+      "mode": "RGBA",
+      "bytes": 776279,
+      "sha256": "d098d84c3b37eaf932b5b8c277282fabaa0de447c7ab348e9e229c88d0119a80",
+      "decoded": true
+    },
+    {
+      "cycle": 20,
+      "localPath": "/var/folders/yx/3sqnzqw12sb68q4sd3sb0c980000gn/T/tinycast-acceptance-20260929-u50qlziy/ordinary-overlap-20.png",
+      "dimensions": [
+        3456,
+        2234
+      ],
+      "mode": "RGBA",
+      "bytes": 776177,
+      "sha256": "9a6f3eef6a509bf8ba798e1611a9d12d9921e8f170f0800de15fb6bb5802a1a7",
+      "decoded": true
+    }
+  ],
+  "sourceSHA256": {
+    "Tinycast/Features/Capture/Service/CaptureRasterStore.swift": "d452e2a30203cec4a84aad3bf52cb94f645fb8ccfbb013ddc4164f8e781b50c3",
+    "Tinycast/Features/Capture/UI/CaptureCanvas.swift": "1b6badd6024438b3e2703271185f8d41698142fa62f752f4a0fde6fbad7c8633",
+    "Tinycast/Features/Capture/UI/CaptureSelectionView.swift": "d0905a898cf3e3813d8ecb1e5c9e268cb259551692ec86e472d9a8dcb0b70a36",
+    "Tinycast/Features/Capture/UI/CaptureCoordinator+Workspace.swift": "fb5e754e7f0f6f5a9d0ee2ac074c8182d4dd4e6f32acaa3ede53aeef4812f97e",
+    "Tinycast/Features/Capture/UI/CaptureCoordinator+Output.swift": "3a861f5746cdbd53f96a29cb2af6d3a3098e0d400071aa26b45d81f8e46f1f69",
+    "Tinycast/Features/Capture/UI/CaptureCoordinator.swift": "003e0930305f3246ee74643da682be6090a207f4e39789f0f4102d56bdf5b35f",
+    "Tinycast/Features/Capture/UI/CaptureOverlayController.swift": "543e2d253204234934612530f39612d846e0bc2b69c67a4f366f87078ed08dc9",
+    "Scripts/capture-memory.py": "ee087d6b9418df9e38de5cc14339386671d40c71326140660eb8f10ff2b61908",
+    "Tinycast/Features/Capture/Service/CaptureScreenService.swift": "47f7a8f734b13a07962bbee957828d418f08a2f1eba2e763bfe815a00e822295"
+  },
+  "optimizedDebugLog": "/var/folders/yx/3sqnzqw12sb68q4sd3sb0c980000gn/T/tinycast-acceptance-20260929-u50qlziy/overlap-final-profile-build.log",
+  "rawSamples": "ordinary-overlap-20-rss-20260929.json.gz",
+  "rawEvents": "ordinary-overlap-20-events-20260929.ndjson.gz"
+}

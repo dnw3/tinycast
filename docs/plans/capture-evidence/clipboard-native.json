@@ -1,0 +1,27 @@
+{
+  "testedAt": "2026-09-24T10:53:00+08:00",
+  "appPID": 84783,
+  "appBuild": "2026-09-23T21:19:35+08:00",
+  "flow": "Screenshot History > editor > Copy > Preview New from Clipboard",
+  "width": 906,
+  "height": 561,
+  "pngBytes": 45921,
+  "pngSHA256": "959b5079df30ffd19a4f92a71578b85a316bdfc29f108a8adf6eb66bee60848f",
+  "receiver": "com.apple.Preview",
+  "receiverInspector": "906 × 561 pixels, PNG 45,921 bytes, RGB sRGB",
+  "clipboardMatchingRows": [
+    {
+      "id": "2F7453F2-1704-43B9-9F3C-0A5B604FD3C2",
+      "createdAt": "2026-09-24T10:52:56.799488+08:00",
+      "sourceApp": "com.electron.lark"
+    }
+  ],
+  "clipboardMatchingRowCount": 1,
+  "captureHistoryNewID": "C6EE9010-8A61-4ED7-90E6-5C75E7867757",
+  "captureHistoryCountBefore": 3,
+  "captureHistoryCountAfter": 4,
+  "limitations": [
+    "History-editor copy only; direct region/window/fullscreen copy not covered.",
+    "Preview displayed the received image; evidence PNG is the Capture history output for this copy, not a Preview re-export."
+  ]
+}

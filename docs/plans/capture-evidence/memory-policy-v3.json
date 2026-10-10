@@ -1,0 +1,16 @@
+{
+  "version": 3,
+  "effectiveDate": "2026-09-29",
+  "unit": "bytes (MB = 1000000 bytes)",
+  "coldIdleMaximum": 160000000,
+  "baselineMinimumSeconds": 5,
+  "peakMaximum": {"ordinary": 300000000, "image": 512000000, "video": 600000000},
+  "recoverySeconds": 5,
+  "recoveryAbsoluteMaximum": {"ordinary": 250000000, "image": 300000000, "video": 300000000},
+  "recoveryAboveColdMaximum": {"ordinary": 100000000, "image": 160000000, "video": 160000000},
+  "warmedCycleGrowthMaximum": 10000000,
+  "cycleCount": 20,
+  "warmupCycles": 5,
+  "latencyP95Milliseconds": 500,
+  "minimumLatencySamples": 20
+}

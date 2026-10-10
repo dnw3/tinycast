@@ -1,0 +1,19 @@
+{
+  "date": "2026-09-29",
+  "scope": "Diagnostic comparison of active overlay backing surfaces, separate from RSS resource acceptance.",
+  "units": "MiB as reported by vmmap; not decimal MB and not the acceptance metric.",
+  "change": "The capture overlay explicitly uses sRGB to match its canonical SDR source. The inline editor also uses Canvas directly; the standalone editor retains NSScrollView.",
+  "before": {
+    "log": "/tmp/tinycast-completion-2_njcdaj/ordinary-native-active-vmmap.txt",
+    "CoreAnimation": 69.5,
+    "IOSurface": 59.1
+  },
+  "after": {
+    "log": "/tmp/tinycast-completion-2_njcdaj/ordinary-srgb-active-vmmap.txt",
+    "CoreAnimation": 39.2,
+    "IOSurface": 29.5
+  },
+  "traceFinding": "The 59.06 MiB IOSurface was allocated through CA backing-store preparation and IOSurfaceCreate. Diagnostic tracing ran separately from resource acceptance.",
+  "rawTraceIncludedInRepository": false,
+  "resourceReport": "ordinary-srgb-interrupted-report-20260929.json"
+}

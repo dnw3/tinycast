@@ -1,0 +1,627 @@
+{
+  "date": "2026-09-29",
+  "repositoryHEAD": "5a787533eceb9833e5cba4628433b21f67e97956",
+  "uncommittedSources": {
+    "Tinycast/Features/Capture/Service/CaptureWebPEncoder.swift": "acdf54bdd45ba38f3977283043099140f562a2f3de7f2d7a74aa3618d3ea4d8f",
+    "Tinycast/Features/Capture/Service/CaptureRenderer.swift": "a671a92a1733a0344cbcbbd3aab149c2421baf4f9187ddcb6e6f42c0be038039",
+    "Tests/capture-export-performance.swift": "ac45137c0ab5bf42e8f20bbc7f5bff1818ed0528c04588262ba5368ba9e61c5f"
+  },
+  "machine": "M1 Pro, 32 GB; macOS 27 (26A428), Xcode 27; not a macOS 26 hardware acceptance",
+  "dependency": {
+    "name": "libwebp",
+    "version": "1.6.0",
+    "archiveSHA256": "e4ab7009bf0629fd11982d4c2aa83964cf244cffba7347ecd39019a9e38c4564",
+    "unmodifiedFilesVerified": 208
+  },
+  "nativeSavePanel": {
+    "build": "optimized Debug, PID 57315, first implementation before memory tuning",
+    "webpSideLimitKeepsPanelOpen": true,
+    "fourMegapixelLimitKeepsPanelOpen": true,
+    "validQuarterSize": [
+      400,
+      7500
+    ],
+    "losslessDefaultQualityHidden": true,
+    "lossyQuality92Visible": true,
+    "restoredPreferences": [
+      "PNG",
+      "Original pixels",
+      "sRGB",
+      "Lossless"
+    ],
+    "files": [
+      {
+        "file": "webp-native-long-reference.png",
+        "bytes": 160055,
+        "sha256": "baa8381cf6de0313c0bee9c7457c2e2d40846e95616e04f53091a046e36e9952",
+        "dimensions": [
+          400,
+          7500
+        ],
+        "mode": "RGBA",
+        "iccBytes": 0,
+        "maximumChannelDifferenceFromPNG": 0,
+        "rgbaEqual": true,
+        "path": "/tmp/tinycast-completion-2_njcdaj/webp-native-long-reference.png"
+      },
+      {
+        "file": "webp-native-long-lossless.webp",
+        "bytes": 27810,
+        "sha256": "e7339a8a2a628853497c63216fdadfff25d3e3e462a2192e2683a02fc106c005",
+        "dimensions": [
+          400,
+          7500
+        ],
+        "mode": "RGB",
+        "iccBytes": 3144,
+        "maximumChannelDifferenceFromPNG": 0,
+        "rgbaEqual": true,
+        "path": "/tmp/tinycast-completion-2_njcdaj/webp-native-long-lossless.webp"
+      },
+      {
+        "file": "webp-native-long-smaller.webp",
+        "bytes": 31990,
+        "sha256": "3e478f58a7fd5cc102eec416a880162bb25c4ac627f64c884a6f52affe4759d0",
+        "dimensions": [
+          400,
+          7500
+        ],
+        "mode": "RGB",
+        "iccBytes": 3144,
+        "maximumChannelDifferenceFromPNG": 10,
+        "rgbaEqual": false,
+        "path": "/tmp/tinycast-completion-2_njcdaj/webp-native-long-smaller.webp"
+      },
+      {
+        "file": "webp-native-source.png",
+        "bytes": 645896,
+        "sha256": "18297d689e39f364c5e1e5e7cfd00b80996580b46f5ed4341c5b55f3f10f5d18",
+        "dimensions": [
+          1600,
+          30000
+        ],
+        "mode": "RGBA",
+        "iccBytes": 0,
+        "path": "/tmp/tinycast-completion-2_njcdaj/webp-native-source.png"
+      }
+    ]
+  },
+  "nativeObservedRSS": {
+    "build": "first implementation before memory tuning",
+    "samples": 1535,
+    "raw": "webp-native-rss-20260929.json.gz",
+    "rawSHA256": "572742fc77eebdd5fcf136d89d7393fc25c5f8ed4b1300e23b612a85ef0fcdc0",
+    "peak": 251117568,
+    "last": 207273984,
+    "coldBaseline": null,
+    "exactCloseRecovery": null,
+    "resourcePassed": null,
+    "scope": "Started after lossless save; includes lossy save and PNG reference/original save, then close. No cold baseline, no 20 cycles; coarse close marker is not exact five-second evidence."
+  },
+  "firstConfiguration": {
+    "preset": 4,
+    "combinedBenchmark": [
+      {
+        "corpus": "text",
+        "format": "png",
+        "repeats": 1,
+        "bytes": 42230,
+        "medianEncodeMilliseconds": 123.561917
+      },
+      {
+        "corpus": "text",
+        "format": "avif",
+        "repeats": 1,
+        "bytes": 15310,
+        "medianEncodeMilliseconds": 459.831458
+      },
+      {
+        "corpus": "text",
+        "format": "webp-lossless",
+        "repeats": 30,
+        "bytes": 11978,
+        "medianEncodeMilliseconds": 43.9043335
+      },
+      {
+        "corpus": "text",
+        "format": "webp-smaller",
+        "repeats": 1,
+        "bytes": 18344,
+        "medianEncodeMilliseconds": 174.036083
+      },
+      {
+        "corpus": "noise",
+        "format": "png",
+        "repeats": 1,
+        "bytes": 13737535,
+        "medianEncodeMilliseconds": 683.360458
+      },
+      {
+        "corpus": "noise",
+        "format": "avif",
+        "repeats": 1,
+        "bytes": 4499070,
+        "medianEncodeMilliseconds": 399.767917
+      },
+      {
+        "corpus": "noise",
+        "format": "webp-lossless",
+        "repeats": 30,
+        "bytes": 12003250,
+        "medianEncodeMilliseconds": 361.9578955
+      },
+      {
+        "corpus": "noise",
+        "format": "webp-smaller",
+        "repeats": 1,
+        "bytes": 3522894,
+        "medianEncodeMilliseconds": 851.773959
+      },
+      {
+        "corpus": "photo",
+        "format": "png",
+        "repeats": 1,
+        "bytes": 828733,
+        "medianEncodeMilliseconds": 130.834667
+      },
+      {
+        "corpus": "photo",
+        "format": "avif",
+        "repeats": 1,
+        "bytes": 114907,
+        "medianEncodeMilliseconds": 115.357083
+      },
+      {
+        "corpus": "photo",
+        "format": "webp-lossless",
+        "repeats": 1,
+        "bytes": 491036,
+        "medianEncodeMilliseconds": 278.9745
+      },
+      {
+        "corpus": "photo",
+        "format": "webp-smaller",
+        "repeats": 1,
+        "bytes": 129720,
+        "medianEncodeMilliseconds": 106.186958
+      }
+    ],
+    "encodeOnly": [
+      {
+        "corpus": "text",
+        "mode": "png",
+        "repeats": 1,
+        "importPeakRSS": 11010048,
+        "processPeakRSS": 14860288,
+        "bytes": 42230,
+        "medianMilliseconds": 132.433709
+      },
+      {
+        "corpus": "text",
+        "mode": "avif",
+        "repeats": 1,
+        "importPeakRSS": 11026432,
+        "processPeakRSS": 138117120,
+        "bytes": 15310,
+        "medianMilliseconds": 530.750333
+      },
+      {
+        "corpus": "text",
+        "mode": "webp-lossless",
+        "repeats": 30,
+        "importPeakRSS": 11010048,
+        "processPeakRSS": 118013952,
+        "bytes": 11978,
+        "medianMilliseconds": 43.914854
+      },
+      {
+        "corpus": "text",
+        "mode": "webp-smaller",
+        "repeats": 1,
+        "importPeakRSS": 11026432,
+        "processPeakRSS": 82214912,
+        "bytes": 18344,
+        "medianMilliseconds": 216.671
+      },
+      {
+        "corpus": "noise",
+        "mode": "png",
+        "repeats": 1,
+        "importPeakRSS": 22953984,
+        "processPeakRSS": 27295744,
+        "bytes": 13737535,
+        "medianMilliseconds": 722.83975
+      },
+      {
+        "corpus": "noise",
+        "mode": "avif",
+        "repeats": 1,
+        "importPeakRSS": 23003136,
+        "processPeakRSS": 198819840,
+        "bytes": 4499070,
+        "medianMilliseconds": 441.90475
+      },
+      {
+        "corpus": "noise",
+        "mode": "webp-lossless",
+        "repeats": 30,
+        "importPeakRSS": 23035904,
+        "processPeakRSS": 348192768,
+        "bytes": 12003250,
+        "medianMilliseconds": 397.892021
+      },
+      {
+        "corpus": "noise",
+        "mode": "webp-smaller",
+        "repeats": 1,
+        "importPeakRSS": 23068672,
+        "processPeakRSS": 134021120,
+        "bytes": 3522894,
+        "medianMilliseconds": 919.326875
+      }
+    ],
+    "textOCR": [
+      {
+        "file": "png.png",
+        "lines": [
+          "SMALL TEXT TOTAL 6284",
+          "中文截图金额7391元",
+          "订单 Order 4826 已完成",
+          "File capture_output_5738.png",
+          "Email qa@example.test",
+          "含税价格 128.50 CNY",
+          "REPEATED RECEIPT 9157",
+          "REPEATED RECEIPT 9157"
+        ]
+      },
+      {
+        "file": "avif.avif",
+        "lines": [
+          "SMALL TEXT TOTAL 6284",
+          "中文截图金额7391元",
+          "订单 Order 4826 已完成",
+          "File capture_output_5738.png",
+          "Email qa@example.test",
+          "含税价格 128.50 CNY",
+          "REPEATED RECEIPT 9157",
+          "REPEATED RECEIPT 9157"
+        ]
+      },
+      {
+        "file": "webp-lossless.webp",
+        "lines": [
+          "SMALL TEXT TOTAL 6284",
+          "中文截图金额7391元",
+          "订单 Order 4826 已完成",
+          "File capture_output_5738.png",
+          "Email qa@example.test",
+          "含税价格 128.50 CNY",
+          "REPEATED RECEIPT 9157",
+          "REPEATED RECEIPT 9157"
+        ]
+      },
+      {
+        "file": "webp-smaller.webp",
+        "lines": [
+          "SMALL TEXT TOTAL 6284",
+          "中文截图金额7391元",
+          "订单 Order 4826 已完成",
+          "File capture_output_5738.png",
+          "Email qa@example.test",
+          "含税价格 128.50 CNY",
+          "REPEATED RECEIPT 9157",
+          "REPEATED RECEIPT 9157"
+        ]
+      }
+    ]
+  },
+  "presetProbe": {
+    "scope": "Standalone raw RGBA C probe, not the complete Tinycast renderer or app",
+    "rows": [
+      {
+        "preset": 0,
+        "bytes": 12000258,
+        "maximumRSS": 179339264,
+        "meanCPUms": 113.756,
+        "corpus": "noise-4mp",
+        "maximumChannelDifference": 0
+      },
+      {
+        "preset": 1,
+        "bytes": 12000080,
+        "maximumRSS": 233029632,
+        "meanCPUms": 150.056,
+        "corpus": "noise-4mp",
+        "maximumChannelDifference": 0
+      },
+      {
+        "preset": 2,
+        "bytes": 12000080,
+        "maximumRSS": 245284864,
+        "meanCPUms": 196.521,
+        "corpus": "noise-4mp",
+        "maximumChannelDifference": 0
+      },
+      {
+        "preset": 4,
+        "bytes": 12000080,
+        "maximumRSS": 261570560,
+        "meanCPUms": 350.201,
+        "corpus": "noise-4mp",
+        "maximumChannelDifference": 0
+      },
+      {
+        "preset": 0,
+        "bytes": 364848,
+        "maximumRSS": 126402560,
+        "meanCPUms": 51.689,
+        "corpus": "small-text-input",
+        "maximumChannelDifference": 0
+      },
+      {
+        "preset": 1,
+        "bytes": 8652,
+        "maximumRSS": 59588608,
+        "meanCPUms": 18.713,
+        "corpus": "small-text-input",
+        "maximumChannelDifference": 0
+      },
+      {
+        "preset": 2,
+        "bytes": 8588,
+        "maximumRSS": 62308352,
+        "meanCPUms": 18.893,
+        "corpus": "small-text-input",
+        "maximumChannelDifference": 0
+      },
+      {
+        "preset": 4,
+        "bytes": 8808,
+        "maximumRSS": 66928640,
+        "meanCPUms": 23.865,
+        "corpus": "small-text-input",
+        "maximumChannelDifference": 0
+      }
+    ]
+  },
+  "finalConfiguration": {
+    "preset": 1,
+    "improvements": [
+      "avoid redundant sRGB export conversion",
+      "release encoding input before mux",
+      "borrow writer bytes through mux lifetime",
+      "synchronous write from borrowed final buffer"
+    ],
+    "encodeOnly": [
+      {
+        "corpus": "text",
+        "mode": "webp-lossless",
+        "repeats": 30,
+        "importPeakRSS": 10960896,
+        "processPeakRSS": 84344832,
+        "bytes": 11822,
+        "medianMilliseconds": 34.171271000000004,
+        "maximumChannelDifferenceFromPNG": 0
+      },
+      {
+        "corpus": "text",
+        "mode": "webp-smaller",
+        "repeats": 1,
+        "importPeakRSS": 11010048,
+        "processPeakRSS": 56868864,
+        "bytes": 18344,
+        "medianMilliseconds": 216.308916,
+        "maximumChannelDifferenceFromPNG": 8
+      },
+      {
+        "corpus": "noise",
+        "mode": "webp-lossless",
+        "repeats": 30,
+        "importPeakRSS": 22921216,
+        "processPeakRSS": 267730944,
+        "bytes": 12003250,
+        "medianMilliseconds": 177.574604,
+        "maximumChannelDifferenceFromPNG": 0
+      },
+      {
+        "corpus": "noise",
+        "mode": "webp-smaller",
+        "repeats": 1,
+        "importPeakRSS": 22953984,
+        "processPeakRSS": 98238464,
+        "bytes": 3522894,
+        "medianMilliseconds": 885.631833,
+        "maximumChannelDifferenceFromPNG": 254
+      }
+    ],
+    "nativeResourcePassed": null,
+    "nativeFiles": [
+      {
+        "file": "webp-final-native-noise.webp",
+        "dimensions": [
+          2000,
+          2000
+        ],
+        "bytes": 12003250,
+        "sha256": "cb8d8f300e101e5c43fb59a3817c89539aeeb2307b3f3b45df4b04e4f5b85a2f",
+        "iccBytes": 3144,
+        "maximumChannelDifferenceFromOriginal": 0
+      },
+      {
+        "file": "webp-final-native-noise-lossy.webp",
+        "dimensions": [
+          2000,
+          2000
+        ],
+        "bytes": 3522894,
+        "sha256": "8d8925a89c92ae3dbc4f2ddd1fd4d74ce522006b526411adc1f997aa7a58ccc7",
+        "iccBytes": 3144,
+        "maximumChannelDifferenceFromOriginal": 254
+      },
+      {
+        "file": "webp-final-native-noise-reference.png",
+        "dimensions": [
+          2000,
+          2000
+        ],
+        "bytes": 13737535,
+        "sha256": "d40ad7944f77e076b6a2d61d4dbc57a94e228ddb0a5478487052673c00cdb0a0",
+        "iccBytes": 0,
+        "maximumChannelDifferenceFromOriginal": 0
+      }
+    ],
+    "nativeBeforeAllocatorReclaim": {
+      "coldBaseline": 141983744,
+      "peak": 393428992,
+      "recoveryAtFiveSeconds": 276627456,
+      "nativeCloseTime": 1790657103.603732,
+      "fiveSecondSamples": 4,
+      "peakPassed": true,
+      "recoveryPassed": false,
+      "resourcePassed": false,
+      "scope": "One 4 MP native import, lossless/lossy WebP and PNG saves. No 20 cycles. Latest encoder, before allocator cache reclaim.",
+      "policyVersion": 2,
+      "raw": "webp-native-4mp-before-reclaim-20260929.json.gz"
+    },
+    "diagnosis": {
+      "liveCaptureSourceOrEditorState": 0,
+      "vmmapMallocSmallEmptyResidentMiB": 78.6,
+      "heapLargestAllocationKiB": 304,
+      "note": "Post-measurement diagnostics. No retained image pixels found; empty malloc regions remained resident. Footprint is diagnostic only and does not replace RSS."
+    },
+    "policyV3Reevaluation": {
+      "policyVersion": 3,
+      "sameNativeSourceHashVerified": true,
+      "peakRSS": 393428992,
+      "peakMaximum": 512000000,
+      "peakPassed": true,
+      "fiveSecondRSS": 276627456,
+      "recoveryMaximumForThisColdBaseline": 300000000,
+      "recoveryPassed": true,
+      "nativeCloseTime": 1790657103.603732,
+      "cyclesPassed": null,
+      "resourcePassed": null,
+      "scope": "Reevaluated the retained pre-reclaim native measurement under the explicitly revised budget; not a new 20-cycle run. Original v2 failure remains unchanged."
+    }
+  },
+  "limits": [
+    "4 MP export-only source process measurements are not full application RSS or native 20-cycle acceptance.",
+    "Mixed encode/decode benchmark peak includes ImageIO and comparison buffers and is not attributed solely to libwebp.",
+    "Native 4 MP save and exact five-second recovery measured; v2 failed, v3 single-run numerical checks pass. Full 20-cycle/resource/latency gate remains open.",
+    "WebP helper isolation now passes 20 native 4 MP lossless export cycles. Other image/OCR/pin, recording and P95 scenarios remain separate."
+  ],
+  "allocatorReclaimExperiment": {
+    "status": "reverted",
+    "reason": "No RSS recovery improvement",
+    "peakRSS": 406159360,
+    "fiveSecondRSS": 277889024,
+    "coldBaseline": 141688832.0,
+    "raw": "webp-native-4mp-reclaim-experiment-20260929.json.gz",
+    "rawSHA256": "dd8ba776c9ab42f2a13a384462e8d4ad1ec9c2499a5fcb46adf4c2ce417902aa",
+    "policyVersion": 2,
+    "resourcePassed": false
+  },
+  "finalVerification": {
+    "allHarnesses": {
+      "count": 86,
+      "jobs": 2,
+      "seconds": 345,
+      "passed": true,
+      "log": "/tmp/tinycast-completion-2_njcdaj/webp-final-full-suite-retry.log"
+    },
+    "additional4MPRegression": {
+      "passed": true,
+      "seconds": 58,
+      "log": "/tmp/tinycast-completion-2_njcdaj/webp-final-large-test.log"
+    },
+    "debugBuild": {
+      "passed": true,
+      "log": "/tmp/tinycast-completion-2_njcdaj/webp-final-debug-build.log"
+    },
+    "releaseBuild": {
+      "passed": true,
+      "signed": false,
+      "run": false,
+      "log": "/tmp/tinycast-completion-2_njcdaj/webp-final-release-build.log"
+    },
+    "lintPassed": true,
+    "modelPurityPassed": true,
+    "diffWhitespacePassed": true,
+    "strictDebugSignaturePassed": true,
+    "bundledLicenseFilesMatch": true,
+    "existingWarnings": [
+      "ClipboardView.swift:284 Content/Placeholder isolated conformances",
+      "AppIntents metadata extraction skipped"
+    ],
+    "sourceSHA256": {
+      "Tinycast/Features/Capture/Service/CaptureWebPEncoder.swift": "acdf54bdd45ba38f3977283043099140f562a2f3de7f2d7a74aa3618d3ea4d8f",
+      "Tinycast/Features/Capture/Service/CaptureRenderer.swift": "a671a92a1733a0344cbcbbd3aab149c2421baf4f9187ddcb6e6f42c0be038039",
+      "Tests/capture-webp-test.swift": "d5f8154619c726900ea76f0cc5409832d45078edad4a47f9df3d2ef48b559142"
+    },
+    "scope": "Before short-lived WebP helper implementation"
+  },
+  "losslessOnlyRecoveryFailure": {
+    "policyVersion": 3,
+    "coldBaseline": 103759872,
+    "peakRSS": 374620160,
+    "closeTimestamp": "2026-09-29 13:12:19.010535+0800",
+    "fiveSecondRSS": 359186432,
+    "fiveSecondSampleCount": 4,
+    "resourcePassed": false,
+    "reason": "Lossless-only save then close exceeded recovery limits; stopped before repeating or heap diagnosis.",
+    "raw": "webp-native-lossless-recovery-failure-20260929.json.gz",
+    "rawSHA256": "538395c414be8f04bd019a9649c6e082dfc239f523f5229740125364fe6cf98d",
+    "diagnosis": {
+      "captureObjectsAlive": 0,
+      "mallocSmallEmptyResidentMiB": 75.3,
+      "mallocLargeEmptyResidentMiB": 85.1,
+      "pressureReliefAllZonesBytes": 0,
+      "maximumLiveAllocationKiB": 304,
+      "note": "After sampling stopped; diagnostic only."
+    }
+  },
+  "helperIsolation": {
+    "status": "20 native lossless save cycles passed under v3",
+    "reason": "Released codec allocations remained resident after lossless-only native save",
+    "memoryIncludesHelper": true,
+    "report": "webp-worker-20-report-20260929.json",
+    "resourcePassed": true,
+    "peakRSS": 407437312,
+    "maximumFiveSecondRSS": 218300416,
+    "warmedGrowth": 3915776,
+    "sourceSHA256": {
+      "Tinycast/Features/Capture/Service/CaptureWebPWorker.swift": "4ba905bd435bbd5607b1e81d2b42ef00980fb448a6246d4a63c037cb74757203",
+      "Tinycast/Features/Capture/Service/CaptureWebPInput.swift": "16af8d5e6029184210e5722213a9d8b63146b83f022cebc52a449556ab0d77c0",
+      "Tinycast/Features/Capture/Service/CaptureWebPEncoder.swift": "b4a39f1641471e699ff70e9e3df253c8ac6b12012908dae37c5ec02ce6067106",
+      "Tinycast/Features/Capture/Service/WebPHelper/CaptureWebPHelper.swift": "b626b2b961818de7ac521542519b7c79d7f18f932d178e801a2e7eb4fbd85fd7",
+      "Tinycast/Features/Capture/UI/CaptureCoordinator+Output.swift": "2525609457a17d38a2bc99a74c548b69b98294eafa91c85c37e232286f1b239a"
+    },
+    "outputHashesIdentical": true,
+    "independentPixelDifference": 0,
+    "postMeasurementLiveObjects": {
+      "CaptureSource": 0,
+      "CaptureEditorState": 0,
+      "CaptureWorkspaceState": 0,
+      "CapturePinController": 0
+    },
+    "verification": {
+      "fullHarnesses": 86,
+      "allPassed": true,
+      "seconds": 360,
+      "jobs": 2,
+      "log": "/tmp/tinycast-completion-2_njcdaj/webp-worker-full-suite.log",
+      "focusedContractPassed": true,
+      "strictDebugSignaturePassed": true,
+      "lintCaptureWarnings": 0,
+      "releaseBuild": "passed (unsigned validation artifact, not launched)",
+      "releaseBuildLog": "/tmp/tinycast-completion-2_njcdaj/webp-worker-release-build.log",
+      "releaseBuildTimestamp": "2026-09-29 13:53:12 +0800",
+      "debugSealRechecked": "codesign --verify --deep --strict passed for app and both helpers, 2026-09-29",
+      "notarizationAuditOnDebug": {
+        "status": "expected rejection; not a Release artifact",
+        "log": "/tmp/tinycast-completion-2_njcdaj/final-profile-signature.log",
+        "reason": "Debug intentionally lacks hardened runtime and carries get-task-allow; public release notarization remains separate"
+      }
+    }
+  }
+}

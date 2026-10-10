@@ -1,0 +1,79 @@
+{
+  "date": "2026-09-29",
+  "appPath": "/Users/bytedance/code/github/tinycast/build/DerivedData/Build/Products/Debug/Tinycast Dev.app",
+  "pid": 4419,
+  "sourceSHA256": {
+    "Tinycast/Features/Capture/UI/CaptureSelectionView.swift": "0a69a2c358cd4ad758408c67fa7f246f667925371a81164a4e5cdf79fd8825b2",
+    "Tinycast/Features/Capture/UI/CaptureCoordinator+Workspace.swift": "fb5e754e7f0f6f5a9d0ee2ac074c8182d4dd4e6f32acaa3ede53aeef4812f97e",
+    "Tinycast/Features/Capture/UI/ScrollCaptureSession.swift": "aaa87201110412e3d5a8594ab206eaee1464213410707d43f41739e4ee22147b",
+    "Tinycast/Features/Capture/Model/CaptureVisibilityPolicy.swift": "5761c151588aa8ed6f0cfec41c049e1b25040012b1465047351781bf7a1bc74e"
+  },
+  "reselection": {
+    "failure": "Switching a full-screen screenshot to scrolling left the old full-screen rectangle active. The first drag moved that rectangle instead of defining the scrolling region.",
+    "fix": "Hide the previous selected rectangle while requiresScrollRegion is true, and observe that property.",
+    "nativeAfterFix": {
+      "passed": true,
+      "flow": [
+        "Capture Full Screen",
+        "Scrolling Screenshot",
+        "First drag inside PDF body",
+        "Start Scrolling"
+      ],
+      "regionPixels": [
+        2060,
+        1740
+      ],
+      "previousFullScreenPixels": [
+        3456,
+        2234
+      ]
+    },
+    "optimizedDebugLog": "/var/folders/yx/3sqnzqw12sb68q4sd3sb0c980000gn/T/tinycast-acceptance-20260929-u50qlziy/scroll-selection-profile-build.log"
+  },
+  "scrolling": {
+    "source": "/tmp/tinycast-completion-2_njcdaj/native-scroll.pdf",
+    "sourceWindowID": 41224,
+    "sourcePID": 83606,
+    "sourceProcess": "Preview",
+    "successfulPreviewSamples": 0,
+    "previewP95Milliseconds": null,
+    "previewP95Passed": null,
+    "nativeObstruction": [
+      {
+        "localTime": "2026-09-29 18:37:21.309+0800",
+        "windowID": 41282,
+        "pid": 91527,
+        "layer": 1000
+      },
+      {
+        "localTime": "2026-09-29 18:37:39.623+0800",
+        "windowID": 41301,
+        "pid": 91527,
+        "layer": 102
+      }
+    ],
+    "obstructingProcess": "Codex Computer Use.app/Contents/MacOS/SkyComputerUseService",
+    "frontmostPID": 83606,
+    "outcome": "Correctly paused with Another window covers the capture region. Tool overlay remained above the target. No production exemption was added.",
+    "pendingUserAction": "Manually choose Auto Scroll for approximately thirty seconds, then Pause, with computer-use interactions idle; at least twenty successful previews are required.",
+    "rawEvents": "/var/folders/yx/3sqnzqw12sb68q4sd3sb0c980000gn/T/tinycast-acceptance-20260929-u50qlziy/scroll-selection-fixed-events.ndjson",
+    "obstructionLog": "/var/folders/yx/3sqnzqw12sb68q4sd3sb0c980000gn/T/tinycast-acceptance-20260929-u50qlziy/scroll-selection-obstruction.ndjson",
+    "observedObstructionEvents": [
+      {
+        "timestamp": "2026-09-29 18:37:21.309158+0800",
+        "processID": 4419,
+        "eventMessage": "Capture paused: obscured, target=41224, pid=83606, frontmost=83606, obstruction=41282, owner=91527, layer=1000"
+      },
+      {
+        "timestamp": "2026-09-29 18:37:39.623758+0800",
+        "processID": 4419,
+        "eventMessage": "Capture paused: obscured, target=41224, pid=83606, frontmost=83606, obstruction=41301, owner=91527, layer=102"
+      }
+    ]
+  },
+  "notes": [
+    "The first-drag selection defect is verified fixed. Cross-page PDF output and scroll-preview latency remain separate pending gates.",
+    "Samples during final harnesses or builds are excluded from performance acceptance.",
+    "Existing ordinary and video resource cycles are not repeated for a scrolling-only selection change."
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "date": "2026-09-29",
+  "repositoryHEAD": "5a787533eceb9833e5cba4628433b21f67e97956",
+  "uncommittedSources": true,
+  "machine": "M1 Pro, 32 GB; macOS 27 (26A428), Xcode 27; not macOS 26 hardware acceptance",
+  "bundle": "com.tinycast.app.dev",
+  "pid": 6507,
+  "build": "Debug with Swift -O and wholemodule; stable local signature",
+  "buildLog": "/tmp/tinycast-completion-2_njcdaj/capture-combined-profile-build.log",
+  "scenario": "20 native cycles: import 1600x30000 PNG, pin three copies, Extract Text through real Vision helper, verify 90 normalized rows, close Translation, Save original-size sRGB PNG, Copy and close editor, close all pins",
+  "ocrComparison": "Only whitespace normalized; all 90 rows including Chinese, numbers, and repeated lines matched in all 20 cycles",
+  "recoveryAnchor": "Native pins-closed event after editor and OCR were closed; no observer timestamp substitution",
+  "samplingRequestedMilliseconds": 200,
+  "samplingMedianMilliseconds": 260.1577084278688,
+  "report": "combined-20-report-20260929.json",
+  "pixels": "combined-20-pixels-20260929.json",
+  "resourcePassed": true,
+  "mainPeak": 237305856,
+  "helperPeak": 139264000,
+  "concurrentPeak": 357351424,
+  "maximumFiveSecondRSS": 218611712,
+  "warmedGrowth": 3129344,
+  "liveObjectsAfterMeasurement": {
+    "CaptureSource": 0,
+    "CaptureEditorState": 0,
+    "CaptureWorkspaceState": 0,
+    "CapturePinController": 0,
+    "CaptureRecordingSession": 0,
+    "CaptureVideoState": 0
+  },
+  "heapLog": "/tmp/tinycast-completion-2_njcdaj/combined-20-post-heap.log",
+  "diagnosticOrder": "Sampler and logger stopped before heap inspection and independent decoding",
+  "sourceSHA256": {
+    "Scripts/capture-memory.py": "fed7b69832e29abddc76d8f19b1a63a7cb693c2bc255f8a4d7075a58f3fc1d0f",
+    "Tinycast/Features/Capture/Service/CapturePerformance.swift": "bd9ce54f9054a439e438021a4f4c23c6273f3f52a3074ac4880b859ec010bc4c",
+    "Tinycast/Features/Capture/UI/CaptureCoordinator.swift": "3aa106a12a0c54421e2e02fea2a27662e80a91d9242552c2654ffdbf31fc1e6f",
+    "Tinycast/Features/Capture/UI/CaptureCoordinator+Library.swift": "c5b0a0472f3e9176e6b9e3820dbd5d83bf05f6b0491a6919d7839dc169a19ebc",
+    "Tinycast/Features/Capture/UI/CaptureCoordinator+Output.swift": "2525609457a17d38a2bc99a74c548b69b98294eafa91c85c37e232286f1b239a"
+  },
+  "notCovered": [
+    "Ordinary capture current-build 20 cycles",
+    "Video 20 cycles",
+    "Selection and scroll-preview P95",
+    "5K or mixed-DPI hardware"
+  ]
+}

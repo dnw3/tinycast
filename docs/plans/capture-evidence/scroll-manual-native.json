@@ -1,0 +1,70 @@
+{
+  "verifiedAt": "2026-09-24T15:09:38+08:00",
+  "mode": "native vertical manual scrolling",
+  "appPID": 48571,
+  "bundlePath": "build/DerivedData/Build/Products/Debug/Tinycast Dev.app",
+  "fixture": "Tests/Fixtures/capture/scroll.html#vertical",
+  "selectionPixels": [
+    1500,
+    1540
+  ],
+  "observedHeights": [
+    1540,
+    2408,
+    3276
+  ],
+  "manualScrollActions": 2,
+  "output": {
+    "file": "scroll-manual-native.png",
+    "bytes": 437424,
+    "width": 1500,
+    "height": 3276,
+    "sha256": "32ab5bdd52a41e9ff38f4de72fca5febb23c9ab285f2f3f91ce7dbcd395f1585"
+  },
+  "verification": {
+    "independentDecode": "ImageIO and Pillow",
+    "visionOCRRows": [
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24
+    ],
+    "rowsContiguous": true,
+    "missingRows": [],
+    "duplicateRows": [],
+    "rowBoundarySpacingPixels": [
+      142
+    ],
+    "rowBoundaryCount": 23,
+    "seamsPreserveRowSpacing": true,
+    "matchingCaptureHistoryEntries": [
+      "CBDCF2D1-5760-4EB3-AAA4-11FD7D526CE4"
+    ],
+    "matchingCaptureHistoryCount": 1
+  },
+  "limitations": [
+    "The vertical fixture anchor places row 001 under its sticky header before capture; the first selected row is 002.",
+    "Original process-directed events did not move Arc; the subsequent session-event route passed automatic vertical acceptance in scroll-auto-native.json.",
+    "Horizontal samples subsequently passed in their own records; fixed headers inside the selection and the broader native corpus remain pending.",
+    "This debugger-inspected process is not a memory benchmark; the absolute RSS gate remains unmet."
+  ]
+}

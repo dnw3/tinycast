@@ -1,0 +1,88 @@
+{
+  "date": "2026-09-29",
+  "pid": 23262,
+  "result": "Interrupted before cycle 1 completed; ordinary resource and P95 gates remain incomplete",
+  "observed": "Inline Full Screen Save panel kept Save and New Folder disabled; entering target directory and leaving filename field did not enable them. Cancel then Expand Editor then Save enabled both buttons for the same 3456x2234 image and options.",
+  "filesSaved": 0,
+  "report": {
+    "policyVersion": 3,
+    "scenario": "ordinary",
+    "samples": 559,
+    "mainPeak": 263536640,
+    "helperPeak": 0,
+    "concurrentPeak": 263536640,
+    "peakPassed": true,
+    "coldBaseline": 141918208,
+    "baselineSeconds": 52.70272320799995,
+    "coldPassed": true,
+    "recovery": [],
+    "cyclesPassed": null,
+    "nativeClosureCount": 0,
+    "nativeClosureEvent": "workspace-closed",
+    "resourcePassed": null,
+    "latency": {
+      "selection-ready": {
+        "count": 1,
+        "p95Milliseconds": 631.825792,
+        "passed": null
+      },
+      "scroll-preview-ready": {
+        "count": 0,
+        "p95Milliseconds": null,
+        "passed": null
+      }
+    }
+  },
+  "hypothesis": "Standalone Save panel needs the existing ActivationPolicy window lifetime; verify native behavior after fixing ownership",
+  "resolution": {
+    "status": "Native Save and Cancel passed after window-lifetime fix",
+    "change": "Present Save panels through the existing ActivationPolicy owner; focus only a visible pending panel on app reopen; clear coordinator reference immediately after panel returns; detach accessory view from the local panel at operation end",
+    "build": "Normal Debug, inline-save-final-debug-build.log",
+    "native": [
+      "Inline full-screen Save: controls enabled, file 3456x2234 saved and workspace restored",
+      "Saving from a standalone pin: controls enabled, file 1600x30000 saved and identical to original PNG",
+      "Standalone pin Save cancellation returned to the existing pin without publishing pin-cancelled.png",
+      "App reopen during the earlier active Save panel kept filename and allowed Save; stale-panel reference was subsequently narrowed to visible panels only"
+    ],
+    "pixels": [
+      {
+        "file": "inline-save-final.png",
+        "bytes": 4220177,
+        "dimensions": [
+          3456,
+          2234
+        ],
+        "sha256": "2ccb4d5748f85c199eeba9ad080f3328140aaa9e9de3a3e0f70e9ee11e08ee16"
+      },
+      {
+        "file": "pin-save-final.png",
+        "bytes": 645896,
+        "dimensions": [
+          1600,
+          30000
+        ],
+        "sha256": "18297d689e39f364c5e1e5e7cfd00b80996580b46f5ed4341c5b55f3f10f5d18",
+        "pixelDifferenceFromReference": 0
+      }
+    ],
+    "cancelOutputAbsent": true,
+    "newCaptureWarnings": 0,
+    "knownWarnings": [
+      "Existing ClipboardView.swift:284 isolation warnings",
+      "Existing AppIntents metadata extraction skipped"
+    ],
+    "sourceSHA256": {
+      "Tinycast/Features/Capture/UI/CaptureCoordinator.swift": "964f5f8d4f1b117ac2308c1c98dbe36d84f920b32a64a471247f0fb0fa41acc2",
+      "Tinycast/Features/Capture/UI/CaptureCoordinator+Output.swift": "361f83cd6b3f512c19561d569e3235564cdf57411f1fedd644d5294efc095b42",
+      "Tinycast/Features/Capture/UI/CaptureCoordinator+Recording.swift": "268e4477a387e3ef2a3c5df265bf7ef6f542b9782df2ecf3e8ba92c3990d7960",
+      "Tinycast/Features/Capture/UI/CaptureEditorController.swift": "07b452d84b13a0d0e3ce39918f1c4594c3ed9ff4694d4c56de2631223bd8f874",
+      "Tinycast/Features/Capture/UI/CaptureVideoController.swift": "32646a3f561fe41a3664d22477933d408f8d44886fefef37abc288ef69f2b8fd"
+    },
+    "optimizedDebugBuild": "passed: inline-save-complete-profile-build.log",
+    "releaseBuild": "passed unsigned: inline-save-final-release-build.log",
+    "lintExitCode": 0,
+    "captureLintWarnings": 0,
+    "modelPurityPassed": true,
+    "diffCheckPassed": true
+  }
+}

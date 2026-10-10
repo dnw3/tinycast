@@ -1,0 +1,289 @@
+{
+  "date": "2026-09-29",
+  "scope": "Overlapping ScreenCaptureKit target discovery with palette hiding, phase timing, and first-drag region selection when switching Screen/Window to Scrolling",
+  "sourceSHA256": {
+    "Scripts/capture-memory.py": "ee087d6b9418df9e38de5cc14339386671d40c71326140660eb8f10ff2b61908",
+    "Tinycast/Features/Capture/Service/CaptureRasterStore.swift": "d452e2a30203cec4a84aad3bf52cb94f645fb8ccfbb013ddc4164f8e781b50c3",
+    "Tinycast/Features/Capture/Service/CaptureScreenService.swift": "47f7a8f734b13a07962bbee957828d418f08a2f1eba2e763bfe815a00e822295",
+    "Tinycast/Features/Capture/UI/CaptureCanvas.swift": "1b6badd6024438b3e2703271185f8d41698142fa62f752f4a0fde6fbad7c8633",
+    "Tinycast/Features/Capture/UI/CaptureCoordinator+Output.swift": "3a861f5746cdbd53f96a29cb2af6d3a3098e0d400071aa26b45d81f8e46f1f69",
+    "Tinycast/Features/Capture/UI/CaptureCoordinator+Workspace.swift": "fb5e754e7f0f6f5a9d0ee2ac074c8182d4dd4e6f32acaa3ede53aeef4812f97e",
+    "Tinycast/Features/Capture/UI/CaptureCoordinator.swift": "003e0930305f3246ee74643da682be6090a207f4e39789f0f4102d56bdf5b35f",
+    "Tinycast/Features/Capture/UI/CaptureOverlayController.swift": "543e2d253204234934612530f39612d846e0bc2b69c67a4f366f87078ed08dc9",
+    "Tinycast/Features/Capture/UI/CaptureSelectionView.swift": "0a69a2c358cd4ad758408c67fa7f246f667925371a81164a4e5cdf79fd8825b2",
+    "Tinycast/Features/Capture/UI/ScrollCaptureSession.swift": "aaa87201110412e3d5a8594ab206eaee1464213410707d43f41739e4ee22147b"
+  },
+  "gitHead": "5a787533eceb9833e5cba4628433b21f67e97956",
+  "checks": {
+    "fullHarnesses": {
+      "check": "fullHarnesses",
+      "startUTC": "2026-09-29T10:44:14.451889+00:00",
+      "endUTC": "2026-09-29T10:51:05.840618+00:00",
+      "seconds": 411.388,
+      "exitCode": 0,
+      "parallelism": 2,
+      "log": "/var/folders/yx/3sqnzqw12sb68q4sd3sb0c980000gn/T/tinycast-acceptance-20260929-u50qlziy/acceptance-full-suite.log",
+      "performanceSamplesExcludedDuringThisInterval": true,
+      "passed": true,
+      "count": 86,
+      "harnessSeconds": 394
+    },
+    "normalDebugBuild": true,
+    "normalDebug": {
+      "configuration": "Debug",
+      "startUTC": "2026-09-29T10:45:29.374854+00:00",
+      "endUTC": "2026-09-29T10:45:54.216724+00:00",
+      "seconds": 24.839,
+      "exitCode": 0,
+      "log": "/var/folders/yx/3sqnzqw12sb68q4sd3sb0c980000gn/T/tinycast-acceptance-20260929-u50qlziy/acceptance-debug-build.log",
+      "derivedData": "/Users/bytedance/code/github/tinycast/build/CaptureFinalDebugValidation",
+      "codeSigningAllowed": false,
+      "ranOrInstalled": false,
+      "performanceSamplesExcludedDuringThisInterval": true
+    },
+    "releaseBuild": true,
+    "release": {
+      "configuration": "Release",
+      "startUTC": "2026-09-29T10:45:54.219195+00:00",
+      "endUTC": "2026-09-29T10:49:21.328642+00:00",
+      "seconds": 207.109,
+      "exitCode": 0,
+      "log": "/var/folders/yx/3sqnzqw12sb68q4sd3sb0c980000gn/T/tinycast-acceptance-20260929-u50qlziy/acceptance-release-build.log",
+      "derivedData": "/Users/bytedance/code/github/tinycast/build/CaptureFinalReleaseValidation",
+      "codeSigningAllowed": false,
+      "ranOrInstalled": false,
+      "performanceSamplesExcludedDuringThisInterval": true
+    },
+    "optimizedDebugBuild": true,
+    "optimizedDebugLog": "/var/folders/yx/3sqnzqw12sb68q4sd3sb0c980000gn/T/tinycast-acceptance-20260929-u50qlziy/scroll-selection-profile-build.log",
+    "captureLintWarnings": 0,
+    "repositoryLintWarnings": 59,
+    "lintExitCode": 0,
+    "lintLog": "/var/folders/yx/3sqnzqw12sb68q4sd3sb0c980000gn/T/tinycast-acceptance-20260929-u50qlziy/acceptance-lint.log",
+    "modelImports": true,
+    "diffWhitespace": true,
+    "debugSignatureAndBothHelpers": true,
+    "signatureLog": "/var/folders/yx/3sqnzqw12sb68q4sd3sb0c980000gn/T/tinycast-acceptance-20260929-u50qlziy/acceptance-signature.log",
+    "knownWarnings": [
+      "ClipboardView.swift:284 Content/Placeholder isolated conformance",
+      "AppIntents metadata skipped; no AppIntents dependency"
+    ],
+    "newWarnings": 0,
+    "releaseRanInstalledOrNotarized": false,
+    "normalDebugSignatureNote": "Offside validation uses CODE_SIGNING_ALLOWED=NO; the running optimized Debug and both helpers retain the verified strict signature."
+  },
+  "nativeAcceptance": {
+    "priorFiveCycleOrdinaryPeakPassed": false,
+    "priorFiveCycleOrdinaryPeakBytes": 309985280,
+    "priorFiveCycleRecoveryMaximumBytes": 209158144,
+    "afterBatchFirstSelectionMilliseconds": 559.874,
+    "afterDirectCanvas": {
+      "functionalPassed": true,
+      "build": "normal Debug",
+      "checks": [
+        "Settings Region to Screen",
+        "Launcher Capture Full Screen",
+        "Arrow and one-step undo",
+        "Native standalone Save and toolbar return",
+        "Copy and close"
+      ],
+      "output": {
+        "localPath": "/tmp/tinycast-completion-2_njcdaj/native-canvas-debug.png",
+        "size": [
+          3456,
+          2234
+        ],
+        "mode": "RGBA",
+        "bytes": 838333,
+        "sha256": "07b9219f9e4725b9916c006809d61a4ae1aca09c8684de7a9d2246968df8ddad"
+      },
+      "resourceTwentyCycles": "pending",
+      "searchObservationCorrection": "AX merged the real search result with the following fallback heading. Command executes. No command omission or wrong-process binding was established."
+    },
+    "afterInlineNSView": {
+      "report": "ordinary-inline-20-report-20260929.json",
+      "completeCycles": 20,
+      "resourcePassed": false,
+      "selectionP95Passed": false
+    },
+    "afterSRGBOverlay": {
+      "report": "ordinary-srgb-interrupted-report-20260929.json",
+      "surfaceDiagnostic": "ordinary-overlay-surfaces-20260929.json",
+      "completeCycles": 15,
+      "decodedFiles": 16,
+      "concurrentPeakBytes": 284606464,
+      "recoveryMaximumBytes": 210239488,
+      "resourcePassed": null,
+      "selectionP95Passed": null,
+      "status": "Paused after tool transport errors and a changed workspace. User confirmed current use; preserve UI."
+    },
+    "afterOverlappingPreparation": {
+      "report": "ordinary-overlap-20-report-20260929.json",
+      "completeCycles": 20,
+      "resourcePassed": true,
+      "selectionLatency": {
+        "count": 20,
+        "p95Milliseconds": 455.853375,
+        "passed": true
+      },
+      "concurrentPeakBytes": 272187392,
+      "warmedGrowthBytes": 7127040
+    },
+    "recordingTwentyCycles": {
+      "report": "video-native-20-report-20260929.json",
+      "completeCycles": 20,
+      "resourcePassed": true,
+      "selectionLatency": {
+        "count": 20,
+        "p95Milliseconds": 466.606208,
+        "passed": true
+      },
+      "concurrentPeakBytes": 339394560,
+      "warmedGrowthBytes": 4161536
+    },
+    "scrollReselection": {
+      "report": "scroll-reselection-20260929.json",
+      "firstDragPassed": true,
+      "multiFrameAndLatencyPassed": null,
+      "note": "The scrolling-only first-drag fix does not alter the ordinary or recording flow measured in the twenty-cycle reports."
+    }
+  },
+  "pendingNativeScenarios": [
+    "PDF cross-page and manual native-list scrolling; scroll-preview P95 requires at least twenty successful samples without build/test load or computer-use overlay occlusion",
+    "Physical 5K and mixed 1x/2x display matrix",
+    "Real lock/sleep/disconnect/revoked-permission/global-hotkey matrix",
+    "Native IME candidates, VoiceOver, Spaces and broader corpus/Apple language pack",
+    "Camera/microphone permission and native enhanced recording matrix",
+    "Optional cloud upload with configured real destinations and authorized test files",
+    "Other explicit B/C/D acceptance items in capture-delivery-status.md"
+  ],
+  "appPath": "/Users/bytedance/code/github/tinycast/build/DerivedData/Build/Products/Debug/Tinycast Dev.app",
+  "unrelatedDev": {
+    "pidObserved": 48115,
+    "path": "/Users/bytedance/.codex/worktrees/translation-community-pr/tinycast/build/ContributionBaseline/Build/Products/Debug/Tinycast Dev.app",
+    "action": "User explicitly confirmed quitting; exact-path PID 48115 received SIGTERM and exit was verified. Only current checkout Dev remained."
+  },
+  "previousWindowRevisionChecks": {
+    "sourceSHA256": {
+      "Tinycast/Features/Capture/Service/CaptureRasterStore.swift": "d452e2a30203cec4a84aad3bf52cb94f645fb8ccfbb013ddc4164f8e781b50c3",
+      "Tinycast/Features/Capture/UI/CaptureCanvas.swift": "4698a69fb4881e35efea4a74f238b8069ea37afa7c70d02765aabf2372ebe598",
+      "Tinycast/Features/Capture/UI/CaptureSelectionView.swift": "be22c15978929d5b66609cabc15e5c304fc2efde735784d5569a23f835f751af",
+      "Tinycast/Features/Capture/UI/CaptureCoordinator+Workspace.swift": "47a0097936866a2f26b6d02dae3f9efe78c5cff4770e3ef521c726ca8024677d",
+      "Tinycast/Features/Capture/UI/CaptureCoordinator+Output.swift": "3a861f5746cdbd53f96a29cb2af6d3a3098e0d400071aa26b45d81f8e46f1f69",
+      "Tinycast/Features/Capture/UI/CaptureCoordinator.swift": "45f8219fbdde342725a5344709aa5c0282504c29668ae054ca44b00e1d0a5a1a",
+      "Tinycast/Features/Capture/UI/CaptureOverlayController.swift": "034060a4ece55f9894151fdb277c6e02397a2a32a064f59125ba51402c661cdc",
+      "Scripts/capture-memory.py": "ee087d6b9418df9e38de5cc14339386671d40c71326140660eb8f10ff2b61908"
+    },
+    "fullHarnesses": {
+      "passed": true,
+      "count": 86,
+      "seconds": 403,
+      "parallelism": 2,
+      "log": "/tmp/tinycast-completion-2_njcdaj/capture-native-canvas-full-suite.log"
+    },
+    "normalDebugLog": "/tmp/tinycast-completion-2_njcdaj/capture-native-canvas-debug-build.log",
+    "releaseLog": "/tmp/tinycast-completion-2_njcdaj/capture-native-canvas-release-build.log",
+    "releaseBuild": true,
+    "note": "This successful Release build predates the inline NSView and explicit sRGB overlay changes; it is not validation of the current source."
+  },
+  "resourceCycleLedger": {
+    "minimumCompleted": 150,
+    "ordinaryPriorBuild": 20,
+    "ordinaryFiveCycleDiagnostic": 5,
+    "ordinaryBeforeDirectNSView": 3,
+    "ordinaryDirectNSView": 20,
+    "ordinarySRGB": 15,
+    "webp": 20,
+    "largeImageOCRThreePins": 20,
+    "excluded": "One saved-only cycle and single functional/timing diagnostics; prior unsuccessful cycles are not spliced into successful batches.",
+    "remainingPlannedCompleteCycles": {},
+    "remainingScrollLatencySamplesMinimum": 20,
+    "uiAutomation": "User authorized resumption. Current PDF capture is paused; direct user input is required because the computer-use overlay obstructs the region.",
+    "ordinaryLoggingDiagnostic": 1,
+    "ordinaryLatencyDiagnostic": 6,
+    "ordinaryOverlappingPreparation": 20,
+    "recordingVideo": 20
+  },
+  "previousSRGBRevisionChecks": {
+    "sourceSHA256": {
+      "Tinycast/Features/Capture/Service/CaptureRasterStore.swift": "d452e2a30203cec4a84aad3bf52cb94f645fb8ccfbb013ddc4164f8e781b50c3",
+      "Tinycast/Features/Capture/UI/CaptureCanvas.swift": "1b6badd6024438b3e2703271185f8d41698142fa62f752f4a0fde6fbad7c8633",
+      "Tinycast/Features/Capture/UI/CaptureSelectionView.swift": "d0905a898cf3e3813d8ecb1e5c9e268cb259551692ec86e472d9a8dcb0b70a36",
+      "Tinycast/Features/Capture/UI/CaptureCoordinator+Workspace.swift": "47a0097936866a2f26b6d02dae3f9efe78c5cff4770e3ef521c726ca8024677d",
+      "Tinycast/Features/Capture/UI/CaptureCoordinator+Output.swift": "3a861f5746cdbd53f96a29cb2af6d3a3098e0d400071aa26b45d81f8e46f1f69",
+      "Tinycast/Features/Capture/UI/CaptureCoordinator.swift": "45f8219fbdde342725a5344709aa5c0282504c29668ae054ca44b00e1d0a5a1a",
+      "Tinycast/Features/Capture/UI/CaptureOverlayController.swift": "543e2d253204234934612530f39612d846e0bc2b69c67a4f366f87078ed08dc9",
+      "Scripts/capture-memory.py": "ee087d6b9418df9e38de5cc14339386671d40c71326140660eb8f10ff2b61908"
+    },
+    "checks": {
+      "fullHarnesses": {
+        "passed": true,
+        "count": 86,
+        "seconds": 388,
+        "parallelism": 2,
+        "log": "/tmp/tinycast-completion-2_njcdaj/capture-srgb-full-suite.log"
+      },
+      "optimizedDebugBuild": true,
+      "captureLintWarnings": 0,
+      "modelImports": true,
+      "diffWhitespace": true,
+      "debugSignatureAndBothHelpers": true,
+      "normalDebugBuild": true,
+      "normalDebugLog": "/tmp/tinycast-completion-2_njcdaj/capture-srgb-normal-debug-build.log",
+      "normalDebugDeepSignature": null,
+      "knownWarnings": [
+        "ClipboardView.swift:284 Content/Placeholder isolated conformance",
+        "AppIntents metadata skipped; no AppIntents dependency"
+      ],
+      "releaseBuild": null,
+      "releaseLog": null,
+      "releaseRanInstalledOrNotarized": false,
+      "optimizedDebugLog": "/tmp/tinycast-completion-2_njcdaj/capture-srgb-overlay-profile-build.log",
+      "lintExitCode": 0,
+      "repositoryLintWarnings": 59,
+      "lintLog": "/tmp/tinycast-completion-2_njcdaj/capture-srgb-lint.log",
+      "normalDebugOutputDirectory": "/Users/bytedance/code/github/tinycast/build/CaptureFinalDebugValidation",
+      "normalDebugSignatureNote": "Offside normal Debug verification uses CODE_SIGNING_ALLOWED=NO; the running optimized Debug retains its verified strict signature.",
+      "releaseNote": "Current window-only change has Debug verification; prior Release result is historical."
+    },
+    "note": "Successful checks before overlapping target preparation and the scrolling first-drag fix."
+  },
+  "updatedAtUTC": "2026-09-29T10:51:18.734982+00:00",
+  "environment": {
+    "chip": "Apple M1 Pro",
+    "memoryBytes": 34359738368,
+    "osVersion": "27.0",
+    "osBuild": "26A428",
+    "architecture": "arm64",
+    "toolchain": "Xcode 27.0\nBuild version 27A266a",
+    "displays": [
+      {
+        "_name": "Color LCD",
+        "_spdisplays_resolution": "1728 x 1117 @ 120.00Hz",
+        "spdisplays_display_type": "spdisplays_built-in-liquid-retina-xdr"
+      },
+      {
+        "_name": "HP Z27k G3",
+        "_spdisplays_resolution": "1920 x 1080 @ 60.00Hz",
+        "spdisplays_resolution": "1920 x 1080 @ 60.00Hz"
+      }
+    ]
+  },
+  "performanceExcludedIntervals": [
+    {
+      "startUTC": "2026-09-29T10:44:14.451889+00:00",
+      "endUTC": "2026-09-29T10:51:05.840618+00:00",
+      "log": "/var/folders/yx/3sqnzqw12sb68q4sd3sb0c980000gn/T/tinycast-acceptance-20260929-u50qlziy/acceptance-full-suite.log"
+    },
+    {
+      "startUTC": "2026-09-29T10:45:29.374854+00:00",
+      "endUTC": "2026-09-29T10:45:54.216724+00:00",
+      "log": "/var/folders/yx/3sqnzqw12sb68q4sd3sb0c980000gn/T/tinycast-acceptance-20260929-u50qlziy/acceptance-debug-build.log"
+    },
+    {
+      "startUTC": "2026-09-29T10:45:54.219195+00:00",
+      "endUTC": "2026-09-29T10:49:21.328642+00:00",
+      "log": "/var/folders/yx/3sqnzqw12sb68q4sd3sb0c980000gn/T/tinycast-acceptance-20260929-u50qlziy/acceptance-release-build.log"
+    }
+  ]
+}

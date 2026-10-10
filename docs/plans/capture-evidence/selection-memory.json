@@ -1,0 +1,24 @@
+{
+  "date": "2026-09-23",
+  "bundle": "com.tinycast.app.dev",
+  "executable": "build/DerivedData/Build/Products/Debug/Tinycast Dev.app/Contents/MacOS/Tinycast Dev",
+  "pid": 84783,
+  "buildTime": "2026-09-23 21:19:35 +0800",
+  "configuration": "Debug, ad-hoc signing",
+  "scope": "Only the current checkout process; other Tinycast instances are excluded",
+  "afterSelection": {
+    "rssBytes": 267943936,
+    "sampling": "One ps sample, not a lifecycle peak"
+  },
+  "afterScreenLock": {
+    "rssBytes": 99926016,
+    "physicalFootprintBytes": 148915400,
+    "processLifetimePhysicalFootprintPeakBytes": 358171872,
+    "vmmapTimestamp": "2026-09-23 21:49:17 +0800",
+    "coreAnimationVirtualMiB": 77.1,
+    "coreAnimationResidentMiB": 75.4,
+    "openCaptureSessionLeases": 1,
+    "sampling": "Separate ps, footprint and vmmap snapshots; not a synchronized peak or five-second recovery measurement"
+  },
+  "limitation": "The running bundle precedes the new interruption observer and preview seam fixes; both need native retesting after unlocking and rebuilding. RSS below 100 MB after locking does not close the failed active-memory acceptance."
+}

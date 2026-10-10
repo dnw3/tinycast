@@ -1,0 +1,111 @@
+{
+  "verifiedAt": "2026-09-24T15:31:52+08:00",
+  "mode": "native horizontal manual scrolling",
+  "appPID": 58328,
+  "bundlePath": "build/DerivedData/Build/Products/Debug/Tinycast Dev.app",
+  "fixture": "Tests/Fixtures/capture/scroll.html#wide",
+  "selectionPixels": [
+    2300,
+    760
+  ],
+  "observedWidths": [
+    2300,
+    2380,
+    2780,
+    3420
+  ],
+  "autoScrollEnabled": false,
+  "manualInput": "Fourteen Arrow Right presses in Arc, issued as 1, 5 and 8 presses. Native tool horizontal wheel calls did not change the table position.",
+  "output": {
+    "file": "scroll-horizontal-manual-native.png",
+    "bytes": 167250,
+    "width": 3420,
+    "height": 760,
+    "sha256": "286a2e4b701cb990a26a88d1cb2ac8c3944f2ce94bc8ba3a3db124ed235238b7"
+  },
+  "verification": {
+    "independentDecode": "ImageIO and Pillow",
+    "visionOCRColumnsByRow": {
+      "1": [
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ],
+      "2": [
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ],
+      "3": [
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ],
+      "4": [
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ],
+      "5": [
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ],
+      "6": [
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ],
+      "7": [
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ]
+    },
+    "columnsContiguous": true,
+    "columnBoundarySpacingPixels": [
+      446
+    ],
+    "columnBoundaryCount": 7,
+    "matchingCaptureHistoryEntries": [
+      "E7136AB7-BE64-4A2A-9FAF-F9525120865F"
+    ],
+    "matchingCaptureHistoryCount": 1,
+    "editorInitialZoomPercent": 78,
+    "editorFitsShortAxis": true,
+    "savedEditorClosedWithoutPrompt": true
+  },
+  "limitations": [
+    "Columns 005 through 011 have complete text; the last column 012 is clipped by the selected right edge.",
+    "Header and scrollbar were outside the selection; physical trackpad gestures were not exercised.",
+    "This proves the Arc fixture only, not the complete native scrolling corpus or resource gate."
+  ]
+}

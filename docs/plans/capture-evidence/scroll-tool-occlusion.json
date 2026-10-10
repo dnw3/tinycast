@@ -1,0 +1,42 @@
+{
+  "observedAt": "2026-09-24T15:14:22+08:00",
+  "method": "LLDB breakpoint at the first CaptureVisibilityPolicy.visible call; no UI action through the debugger",
+  "appPID": 50631,
+  "target": {
+    "pid": 33510,
+    "windowID": 15974,
+    "frame": [
+      0,
+      33,
+      1728,
+      1084
+    ]
+  },
+  "frontmostPID": 33510,
+  "region": [
+    25,
+    155,
+    750,
+    770
+  ],
+  "occluder": {
+    "pid": 18930,
+    "owner": "Codex Computer Use",
+    "windowID": 24113,
+    "frame": [
+      475,
+      902,
+      126,
+      126
+    ],
+    "layer": 1000,
+    "alpha": 1
+  },
+  "finding": "The computer-use pointer indicator is an ordinary opaque window that intersects the bottom 23 points of the selection. Pausing is correct for the existing capture filter. Moving the indicator outside the crop and choosing Continue resumes sampling.",
+  "productChangeRequired": false,
+  "automationWhitelistAdded": false,
+  "limitations": [
+    "This does not cover every possible startup pause.",
+    "Debugger inspection is not a memory benchmark."
+  ]
+}

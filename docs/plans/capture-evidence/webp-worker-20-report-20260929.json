@@ -1,0 +1,373 @@
+{
+  "policyVersion": 3,
+  "scenario": "image",
+  "samples": 9359,
+  "mainPeak": 267583488,
+  "helperPeak": 169951232,
+  "concurrentPeak": 407437312,
+  "peakPassed": true,
+  "coldBaseline": 141213696,
+  "baselineSeconds": 48.63513820897788,
+  "coldPassed": true,
+  "recovery": [
+    {
+      "stage": "cycle-01-closed",
+      "maximumAtFiveSeconds": 205881344,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790659717.630321,
+      "samplesInWindow": 15
+    },
+    {
+      "stage": "cycle-02-closed",
+      "maximumAtFiveSeconds": 211501056,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790659784.127536,
+      "samplesInWindow": 14
+    },
+    {
+      "stage": "cycle-03-closed",
+      "maximumAtFiveSeconds": 213303296,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790659811.168612,
+      "samplesInWindow": 14
+    },
+    {
+      "stage": "cycle-04-closed",
+      "maximumAtFiveSeconds": 208289792,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790659838.27503,
+      "samplesInWindow": 15
+    },
+    {
+      "stage": "cycle-05-closed",
+      "maximumAtFiveSeconds": 208470016,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790659862.88225,
+      "samplesInWindow": 15
+    },
+    {
+      "stage": "cycle-06-closed",
+      "maximumAtFiveSeconds": 205209600,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790659910.444497,
+      "samplesInWindow": 14
+    },
+    {
+      "stage": "cycle-07-closed",
+      "maximumAtFiveSeconds": 209911808,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790659937.002298,
+      "samplesInWindow": 15
+    },
+    {
+      "stage": "cycle-08-closed",
+      "maximumAtFiveSeconds": 210436096,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790659958.906624,
+      "samplesInWindow": 14
+    },
+    {
+      "stage": "cycle-09-closed",
+      "maximumAtFiveSeconds": 211959808,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790659995.022557,
+      "samplesInWindow": 14
+    },
+    {
+      "stage": "cycle-10-closed",
+      "maximumAtFiveSeconds": 212549632,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790660036.84232,
+      "samplesInWindow": 15
+    },
+    {
+      "stage": "cycle-11-closed",
+      "maximumAtFiveSeconds": 213368832,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790660072.404226,
+      "samplesInWindow": 14
+    },
+    {
+      "stage": "cycle-12-closed",
+      "maximumAtFiveSeconds": 213385216,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790660093.720662,
+      "samplesInWindow": 14
+    },
+    {
+      "stage": "cycle-13-closed",
+      "maximumAtFiveSeconds": 213499904,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790660121.402779,
+      "samplesInWindow": 13
+    },
+    {
+      "stage": "cycle-14-closed",
+      "maximumAtFiveSeconds": 214237184,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790660142.066432,
+      "samplesInWindow": 13
+    },
+    {
+      "stage": "cycle-15-closed",
+      "maximumAtFiveSeconds": 214056960,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790660163.166994,
+      "samplesInWindow": 14
+    },
+    {
+      "stage": "cycle-16-closed",
+      "maximumAtFiveSeconds": 213975040,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790660214.205995,
+      "samplesInWindow": 15
+    },
+    {
+      "stage": "cycle-17-closed",
+      "maximumAtFiveSeconds": 214351872,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790660234.496093,
+      "samplesInWindow": 14
+    },
+    {
+      "stage": "cycle-18-closed",
+      "maximumAtFiveSeconds": 213729280,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790660254.849753,
+      "samplesInWindow": 13
+    },
+    {
+      "stage": "cycle-19-closed",
+      "maximumAtFiveSeconds": 218300416,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790660281.450687,
+      "samplesInWindow": 13
+    },
+    {
+      "stage": "cycle-20-closed",
+      "maximumAtFiveSeconds": 214630400,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790660303.747809,
+      "samplesInWindow": 13
+    }
+  ],
+  "cyclesPassed": true,
+  "nativeClosureCount": 20,
+  "warmedGrowth": 3915776,
+  "resourcePassed": true,
+  "latency": {
+    "selection-ready": {
+      "count": 0,
+      "p95Milliseconds": null,
+      "passed": null
+    },
+    "scroll-preview-ready": {
+      "count": 0,
+      "p95Milliseconds": null,
+      "passed": null
+    }
+  },
+  "scope": "20 native cycles: import 4 MP noise PNG, Save WebP lossless original/sRGB, close workspace. Does not cover long image/OCR/pins or recording.",
+  "requestedSamplingIntervalSeconds": 0.02,
+  "actualMedianIntervalSeconds": 0.06763966695871204,
+  "outputCount": 20,
+  "files": [
+    {
+      "file": "webp-worker-cycle-01.webp",
+      "bytes": 12003250,
+      "sha256": "cb8d8f300e101e5c43fb59a3817c89539aeeb2307b3f3b45df4b04e4f5b85a2f",
+      "iccBytes": 3144,
+      "maximumChannelDifference": 0
+    },
+    {
+      "file": "webp-worker-cycle-02.webp",
+      "bytes": 12003250,
+      "sha256": "cb8d8f300e101e5c43fb59a3817c89539aeeb2307b3f3b45df4b04e4f5b85a2f",
+      "iccBytes": 3144,
+      "maximumChannelDifference": 0
+    },
+    {
+      "file": "webp-worker-cycle-03.webp",
+      "bytes": 12003250,
+      "sha256": "cb8d8f300e101e5c43fb59a3817c89539aeeb2307b3f3b45df4b04e4f5b85a2f",
+      "iccBytes": 3144,
+      "maximumChannelDifference": 0
+    },
+    {
+      "file": "webp-worker-cycle-04.webp",
+      "bytes": 12003250,
+      "sha256": "cb8d8f300e101e5c43fb59a3817c89539aeeb2307b3f3b45df4b04e4f5b85a2f",
+      "iccBytes": 3144,
+      "maximumChannelDifference": 0
+    },
+    {
+      "file": "webp-worker-cycle-05.webp",
+      "bytes": 12003250,
+      "sha256": "cb8d8f300e101e5c43fb59a3817c89539aeeb2307b3f3b45df4b04e4f5b85a2f",
+      "iccBytes": 3144,
+      "maximumChannelDifference": 0
+    },
+    {
+      "file": "webp-worker-cycle-06.webp",
+      "bytes": 12003250,
+      "sha256": "cb8d8f300e101e5c43fb59a3817c89539aeeb2307b3f3b45df4b04e4f5b85a2f",
+      "iccBytes": 3144,
+      "maximumChannelDifference": 0
+    },
+    {
+      "file": "webp-worker-cycle-07.webp",
+      "bytes": 12003250,
+      "sha256": "cb8d8f300e101e5c43fb59a3817c89539aeeb2307b3f3b45df4b04e4f5b85a2f",
+      "iccBytes": 3144,
+      "maximumChannelDifference": 0
+    },
+    {
+      "file": "webp-worker-cycle-08.webp",
+      "bytes": 12003250,
+      "sha256": "cb8d8f300e101e5c43fb59a3817c89539aeeb2307b3f3b45df4b04e4f5b85a2f",
+      "iccBytes": 3144,
+      "maximumChannelDifference": 0
+    },
+    {
+      "file": "webp-worker-cycle-09.webp",
+      "bytes": 12003250,
+      "sha256": "cb8d8f300e101e5c43fb59a3817c89539aeeb2307b3f3b45df4b04e4f5b85a2f",
+      "iccBytes": 3144,
+      "maximumChannelDifference": 0
+    },
+    {
+      "file": "webp-worker-cycle-10.webp",
+      "bytes": 12003250,
+      "sha256": "cb8d8f300e101e5c43fb59a3817c89539aeeb2307b3f3b45df4b04e4f5b85a2f",
+      "iccBytes": 3144,
+      "maximumChannelDifference": 0
+    },
+    {
+      "file": "webp-worker-cycle-11.webp",
+      "bytes": 12003250,
+      "sha256": "cb8d8f300e101e5c43fb59a3817c89539aeeb2307b3f3b45df4b04e4f5b85a2f",
+      "iccBytes": 3144,
+      "maximumChannelDifference": 0
+    },
+    {
+      "file": "webp-worker-cycle-12.webp",
+      "bytes": 12003250,
+      "sha256": "cb8d8f300e101e5c43fb59a3817c89539aeeb2307b3f3b45df4b04e4f5b85a2f",
+      "iccBytes": 3144,
+      "maximumChannelDifference": 0
+    },
+    {
+      "file": "webp-worker-cycle-13.webp",
+      "bytes": 12003250,
+      "sha256": "cb8d8f300e101e5c43fb59a3817c89539aeeb2307b3f3b45df4b04e4f5b85a2f",
+      "iccBytes": 3144,
+      "maximumChannelDifference": 0
+    },
+    {
+      "file": "webp-worker-cycle-14.webp",
+      "bytes": 12003250,
+      "sha256": "cb8d8f300e101e5c43fb59a3817c89539aeeb2307b3f3b45df4b04e4f5b85a2f",
+      "iccBytes": 3144,
+      "maximumChannelDifference": 0
+    },
+    {
+      "file": "webp-worker-cycle-15.webp",
+      "bytes": 12003250,
+      "sha256": "cb8d8f300e101e5c43fb59a3817c89539aeeb2307b3f3b45df4b04e4f5b85a2f",
+      "iccBytes": 3144,
+      "maximumChannelDifference": 0
+    },
+    {
+      "file": "webp-worker-cycle-16.webp",
+      "bytes": 12003250,
+      "sha256": "cb8d8f300e101e5c43fb59a3817c89539aeeb2307b3f3b45df4b04e4f5b85a2f",
+      "iccBytes": 3144,
+      "maximumChannelDifference": 0
+    },
+    {
+      "file": "webp-worker-cycle-17.webp",
+      "bytes": 12003250,
+      "sha256": "cb8d8f300e101e5c43fb59a3817c89539aeeb2307b3f3b45df4b04e4f5b85a2f",
+      "iccBytes": 3144,
+      "maximumChannelDifference": 0
+    },
+    {
+      "file": "webp-worker-cycle-18.webp",
+      "bytes": 12003250,
+      "sha256": "cb8d8f300e101e5c43fb59a3817c89539aeeb2307b3f3b45df4b04e4f5b85a2f",
+      "iccBytes": 3144,
+      "maximumChannelDifference": 0
+    },
+    {
+      "file": "webp-worker-cycle-19.webp",
+      "bytes": 12003250,
+      "sha256": "cb8d8f300e101e5c43fb59a3817c89539aeeb2307b3f3b45df4b04e4f5b85a2f",
+      "iccBytes": 3144,
+      "maximumChannelDifference": 0
+    },
+    {
+      "file": "webp-worker-cycle-20.webp",
+      "bytes": 12003250,
+      "sha256": "cb8d8f300e101e5c43fb59a3817c89539aeeb2307b3f3b45df4b04e4f5b85a2f",
+      "iccBytes": 3144,
+      "maximumChannelDifference": 0
+    }
+  ],
+  "webp-worker-20-rss.json": {
+    "path": "webp-worker-20-rss-20260929.json.gz",
+    "sha256": "83fa822df9d51deab77a4b7c58ee47b398b39dddc6fc67e5909f1fb5d0454187"
+  },
+  "webp-worker-20-events.ndjson": {
+    "path": "webp-worker-20-events-20260929.ndjson.gz",
+    "sha256": "1c782febda491986c3769f57c34fcb449c7b5070dd63bf37c0d61b0f15fbce68"
+  },
+  "postMeasurementLiveObjects": {
+    "CaptureSource": 0,
+    "CaptureEditorState": 0,
+    "CaptureWorkspaceState": 0,
+    "CapturePinController": 0
+  },
+  "sourceSHA256": {
+    "Tinycast/Features/Capture/Service/CaptureWebPWorker.swift": "4ba905bd435bbd5607b1e81d2b42ef00980fb448a6246d4a63c037cb74757203",
+    "Tinycast/Features/Capture/Service/CaptureWebPInput.swift": "16af8d5e6029184210e5722213a9d8b63146b83f022cebc52a449556ab0d77c0",
+    "Tinycast/Features/Capture/Service/CaptureWebPEncoder.swift": "b4a39f1641471e699ff70e9e3df253c8ac6b12012908dae37c5ec02ce6067106",
+    "Tinycast/Features/Capture/Service/WebPHelper/CaptureWebPHelper.swift": "b626b2b961818de7ac521542519b7c79d7f18f932d178e801a2e7eb4fbd85fd7",
+    "Tinycast/Features/Capture/UI/CaptureCoordinator+Output.swift": "2525609457a17d38a2bc99a74c548b69b98294eafa91c85c37e232286f1b239a"
+  },
+  "hardware": {
+    "chip": "Apple M1 Pro",
+    "memoryGB": 32,
+    "os": "macOS 27.0 (26A428)",
+    "toolchain": "Xcode 27",
+    "build": "Debug with -O wholemodule, locally signed",
+    "bundle": "com.tinycast.app.dev",
+    "pid": 87359,
+    "screenRecordingOrCameraOrMicrophoneActive": false
+  },
+  "uiRestored": {
+    "format": "PNG",
+    "scale": "Original pixels",
+    "profile": "sRGB",
+    "webPCompression": "Lossless"
+  }
+}

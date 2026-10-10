@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Tinycast Capture · 一期交互设计</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main id="capture-studio" data-theme="dark">
+    <header class="review-header">
+      <div class="review-brand"><span class="brand-mark">t</span><div><strong>Tinycast <span>Capture</span></strong><p>一期交互设计 · 长截图已纳入</p></div></div>
+      <div class="review-actions">
+        <span class="prototype-badge">交互原型</span>
+        <button id="theme-toggle" class="review-button" type="button" aria-label="切换浅色外观">浅色外观</button>
+        <a href="../capture-spec.md">Spec ↗</a><a href="../capture-plan.md">Plan ↗</a>
+      </div>
+    </header>
+    <nav class="review-navigation" aria-label="设计场景">
+      <button data-scene="launcher">01 入口</button>
+      <button data-scene="selection">02 选区</button>
+      <button data-scene="scroll">03 长截图</button>
+      <button data-scene="editor">04 编辑</button>
+      <button data-scene="pin">05 贴图</button>
+      <button data-scene="ocr">06 取字与翻译</button>
+      <button data-scene="history">07 历史</button>
+      <button data-scene="settings">08 设置</button>
+    </nav>
+    <div class="review-context">
+      <div><span class="scenario-dot"></span><span id="scene-caption">滚动内容实时进入同一张长图</span></div>
+      <div class="scenario-controls">
+        <label for="failure-scenario">异常路径</label>
+        <select id="failure-scenario"><option value="none">正常流程</option><option value="stitch">拼接失败</option><option value="target">目标窗口变化</option><option value="permission">未授予屏幕权限</option><option value="longtext">OCR 文本超过翻译上限</option><option value="save">保存失败</option></select>
+        <button class="review-button" id="apply-scenario" type="button">演示</button>
+      </div>
+    </div>
+    <section id="desktop" aria-label="模拟 macOS 桌面">
+      <div class="desktop-menu" aria-hidden="true"><div><svg viewBox="0 0 24 24"><path d="M8 5h8M12 5v14M7 19h10"/></svg><b>Tinycast</b><span>文件</span><span>编辑</span><span>窗口</span></div><div><span>⌁</span><span>100%</span><span>周三 10:24</span></div></div>
+      <div class="wallpaper-shape one"></div><div class="wallpaper-shape two"></div>
+      <div class="source-window" aria-hidden="true">
+        <div class="source-title"><div class="traffic-lights"><i></i><i></i><i></i></div><span>工作笔记 — 发布检查清单</span><span>⌘ K</span></div>
+        <div class="source-layout"><aside><b>工作空间</b><span>⌂　概览</span><span class="selected">▤　工作笔记</span><span>◷　最近查看</span><span>☆　已收藏</span><hr><small>项目</small><span>○　产品发布</span><span>○　设计评审</span></aside><div class="source-document" id="source-document"></div></div>
+      </div>
+      <div id="scene-root"></div>
+      <div id="dialog-root"></div>
+      <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+    </section>
+    <footer class="review-footer">
+      <div><strong id="flow-label">长截图</strong><span id="flow-detail">手动滚动 → 检查接缝 → 统一编辑</span></div>
+      <div id="demo-controls"></div>
+    </footer>
+    <p class="prototype-note">仅演示交互：使用虚构内容，不读取桌面或剪贴板，不保存文件，不请求权限，也不调用 OCR / 翻译服务。原生功能与内存验证见 Plan。</p>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>

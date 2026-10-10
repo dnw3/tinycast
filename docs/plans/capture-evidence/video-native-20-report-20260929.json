@@ -1,0 +1,692 @@
+{
+  "policyVersion": 3,
+  "scenario": "video",
+  "samples": 3447,
+  "mainPeak": 339394560,
+  "helperPeak": 0,
+  "concurrentPeak": 339394560,
+  "peakPassed": true,
+  "coldBaseline": 141541376.0,
+  "baselineSeconds": 11.633094875025563,
+  "coldPassed": true,
+  "recovery": [
+    {
+      "stage": "cycle-01-closed",
+      "maximumAtFiveSeconds": 236552192,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790676816.817081,
+      "samplesInWindow": 3
+    },
+    {
+      "stage": "cycle-02-closed",
+      "maximumAtFiveSeconds": 233390080,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790676898.154613,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-03-closed",
+      "maximumAtFiveSeconds": 232882176,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790676941.103017,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-04-closed",
+      "maximumAtFiveSeconds": 235421696,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790676992.557625,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-05-closed",
+      "maximumAtFiveSeconds": 232325120,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790677030.906368,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-06-closed",
+      "maximumAtFiveSeconds": 231964672,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790677064.955822,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-07-closed",
+      "maximumAtFiveSeconds": 233881600,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790677105.674846,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-08-closed",
+      "maximumAtFiveSeconds": 233603072,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790677140.822083,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-09-closed",
+      "maximumAtFiveSeconds": 238059520,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790677179.85718,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-10-closed",
+      "maximumAtFiveSeconds": 236257280,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790677216.127469,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-11-closed",
+      "maximumAtFiveSeconds": 237125632,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790677256.422862,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-12-closed",
+      "maximumAtFiveSeconds": 237846528,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790677291.123194,
+      "samplesInWindow": 3
+    },
+    {
+      "stage": "cycle-13-closed",
+      "maximumAtFiveSeconds": 237928448,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790677332.877487,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-14-closed",
+      "maximumAtFiveSeconds": 238190592,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790677367.16593,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-15-closed",
+      "maximumAtFiveSeconds": 238043136,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790677412.289608,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-16-closed",
+      "maximumAtFiveSeconds": 238780416,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790677448.803033,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-17-closed",
+      "maximumAtFiveSeconds": 239665152,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790677490.257133,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-18-closed",
+      "maximumAtFiveSeconds": 236552192,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790677529.923639,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-19-closed",
+      "maximumAtFiveSeconds": 238043136,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790677571.639901,
+      "samplesInWindow": 3
+    },
+    {
+      "stage": "cycle-20-closed",
+      "maximumAtFiveSeconds": 233455616,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790677604.923963,
+      "samplesInWindow": 4
+    }
+  ],
+  "cyclesPassed": true,
+  "nativeClosureCount": 20,
+  "nativeClosureEvent": "workspace-closed",
+  "warmedGrowth": 4161536,
+  "resourcePassed": true,
+  "latency": {
+    "selection-ready": {
+      "count": 20,
+      "p95Milliseconds": 466.606208,
+      "passed": true
+    },
+    "scroll-preview-ready": {
+      "count": 0,
+      "p95Milliseconds": null,
+      "passed": null
+    }
+  },
+  "date": "2026-09-29",
+  "status": "Passed twenty native full-screen recording, pause, resume, preview, MP4 save and close cycles.",
+  "files": [
+    {
+      "cycle": 1,
+      "localPath": "/var/folders/yx/3sqnzqw12sb68q4sd3sb0c980000gn/T/tinycast-acceptance-20260929-u50qlziy/video-native-01.mp4",
+      "bytes": 3759742,
+      "sha256": "cac65970cd45c053c3e90f2a86ae698119156d30916ca93cce7d27be349e738e",
+      "probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "h264",
+            "codec_type": "video",
+            "width": 3456,
+            "height": 2234,
+            "r_frame_rate": "30/1",
+            "nb_frames": "359"
+          }
+        ],
+        "format": {
+          "duration": "12.366667"
+        }
+      },
+      "allFramesDecoded": true
+    },
+    {
+      "cycle": 2,
+      "localPath": "/var/folders/yx/3sqnzqw12sb68q4sd3sb0c980000gn/T/tinycast-acceptance-20260929-u50qlziy/video-native-02.mp4",
+      "bytes": 4096853,
+      "sha256": "9709be3686ccd0bae4fad42726e9df10b28c6a207f7c936bcd459e962fa925dc",
+      "probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "h264",
+            "codec_type": "video",
+            "width": 3456,
+            "height": 2234,
+            "r_frame_rate": "30/1",
+            "nb_frames": "426"
+          }
+        ],
+        "format": {
+          "duration": "14.733333"
+        }
+      },
+      "allFramesDecoded": true
+    },
+    {
+      "cycle": 3,
+      "localPath": "/var/folders/yx/3sqnzqw12sb68q4sd3sb0c980000gn/T/tinycast-acceptance-20260929-u50qlziy/video-native-03.mp4",
+      "bytes": 2898382,
+      "sha256": "67d5e46ca682ebb5b3453f18328daacfe631bd63a159b1c94e982a2b93bc7b27",
+      "probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "h264",
+            "codec_type": "video",
+            "width": 3456,
+            "height": 2234,
+            "r_frame_rate": "30/1",
+            "nb_frames": "251"
+          }
+        ],
+        "format": {
+          "duration": "8.658333"
+        }
+      },
+      "allFramesDecoded": true
+    },
+    {
+      "cycle": 4,
+      "localPath": "/var/folders/yx/3sqnzqw12sb68q4sd3sb0c980000gn/T/tinycast-acceptance-20260929-u50qlziy/video-native-04.mp4",
+      "bytes": 4121567,
+      "sha256": "5d91b01da3593cbb6076b1727a1c5b5d21fdce4cda705fa2c201f60c157ac4ca",
+      "probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "h264",
+            "codec_type": "video",
+            "width": 3456,
+            "height": 2234,
+            "r_frame_rate": "30/1",
+            "nb_frames": "434"
+          }
+        ],
+        "format": {
+          "duration": "14.941667"
+        }
+      },
+      "allFramesDecoded": true
+    },
+    {
+      "cycle": 5,
+      "localPath": "/var/folders/yx/3sqnzqw12sb68q4sd3sb0c980000gn/T/tinycast-acceptance-20260929-u50qlziy/video-native-05.mp4",
+      "bytes": 2471255,
+      "sha256": "93b39d98d43414b7922e34a8eb505f4e87bb5668834639689b454f8baed9dc26",
+      "probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "h264",
+            "codec_type": "video",
+            "width": 3456,
+            "height": 2234,
+            "r_frame_rate": "30/1",
+            "nb_frames": "191"
+          }
+        ],
+        "format": {
+          "duration": "6.675000"
+        }
+      },
+      "allFramesDecoded": true
+    },
+    {
+      "cycle": 6,
+      "localPath": "/var/folders/yx/3sqnzqw12sb68q4sd3sb0c980000gn/T/tinycast-acceptance-20260929-u50qlziy/video-native-06.mp4",
+      "bytes": 1996398,
+      "sha256": "045997b44b16cd54d92f3716f0d4b1997a25950f87c17a0d400a048a031c261c",
+      "probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "h264",
+            "codec_type": "video",
+            "width": 3456,
+            "height": 2234,
+            "r_frame_rate": "30/1",
+            "nb_frames": "165"
+          }
+        ],
+        "format": {
+          "duration": "5.700000"
+        }
+      },
+      "allFramesDecoded": true
+    },
+    {
+      "cycle": 7,
+      "localPath": "/var/folders/yx/3sqnzqw12sb68q4sd3sb0c980000gn/T/tinycast-acceptance-20260929-u50qlziy/video-native-07.mp4",
+      "bytes": 2461711,
+      "sha256": "2a221621d78fb33e0fc6fbabbc1f75a031895dec899b47952054b9eddffce3ac",
+      "probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "h264",
+            "codec_type": "video",
+            "width": 3456,
+            "height": 2234,
+            "r_frame_rate": "30/1",
+            "nb_frames": "183"
+          }
+        ],
+        "format": {
+          "duration": "6.275000"
+        }
+      },
+      "allFramesDecoded": true
+    },
+    {
+      "cycle": 8,
+      "localPath": "/var/folders/yx/3sqnzqw12sb68q4sd3sb0c980000gn/T/tinycast-acceptance-20260929-u50qlziy/video-native-08.mp4",
+      "bytes": 2468723,
+      "sha256": "f14854c3ee07f953d31db04772a2833af46594816e4c0997d048d50b8f6df85f",
+      "probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "h264",
+            "codec_type": "video",
+            "width": 3456,
+            "height": 2234,
+            "r_frame_rate": "30/1",
+            "nb_frames": "172"
+          }
+        ],
+        "format": {
+          "duration": "5.958333"
+        }
+      },
+      "allFramesDecoded": true
+    },
+    {
+      "cycle": 9,
+      "localPath": "/var/folders/yx/3sqnzqw12sb68q4sd3sb0c980000gn/T/tinycast-acceptance-20260929-u50qlziy/video-native-09.mp4",
+      "bytes": 2443337,
+      "sha256": "6686ada987d7a8ca7886566d5dfd227ac030489d5c4499812ceb0346f4c15b2d",
+      "probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "h264",
+            "codec_type": "video",
+            "width": 3456,
+            "height": 2234,
+            "r_frame_rate": "30/1",
+            "nb_frames": "222"
+          }
+        ],
+        "format": {
+          "duration": "7.625000"
+        }
+      },
+      "allFramesDecoded": true
+    },
+    {
+      "cycle": 10,
+      "localPath": "/var/folders/yx/3sqnzqw12sb68q4sd3sb0c980000gn/T/tinycast-acceptance-20260929-u50qlziy/video-native-10.mp4",
+      "bytes": 2124873,
+      "sha256": "51f749506c884f3d2a00f982912836398a12f52a078e4ae351ceb8676227f4d2",
+      "probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "h264",
+            "codec_type": "video",
+            "width": 3456,
+            "height": 2234,
+            "r_frame_rate": "30/1",
+            "nb_frames": "170"
+          }
+        ],
+        "format": {
+          "duration": "5.875000"
+        }
+      },
+      "allFramesDecoded": true
+    },
+    {
+      "cycle": 11,
+      "localPath": "/var/folders/yx/3sqnzqw12sb68q4sd3sb0c980000gn/T/tinycast-acceptance-20260929-u50qlziy/video-native-11.mp4",
+      "bytes": 2503683,
+      "sha256": "133544aff66fb4bf258392342b654b999aea94aa6467aaace61379076c3ab597",
+      "probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "h264",
+            "codec_type": "video",
+            "width": 3456,
+            "height": 2234,
+            "r_frame_rate": "30/1",
+            "nb_frames": "226"
+          }
+        ],
+        "format": {
+          "duration": "7.775000"
+        }
+      },
+      "allFramesDecoded": true
+    },
+    {
+      "cycle": 12,
+      "localPath": "/var/folders/yx/3sqnzqw12sb68q4sd3sb0c980000gn/T/tinycast-acceptance-20260929-u50qlziy/video-native-12.mp4",
+      "bytes": 2453090,
+      "sha256": "043595b1fb0ddd2340314bdfc2b9652edf5d3b4744461e42bd86a46b2bb7f8b6",
+      "probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "h264",
+            "codec_type": "video",
+            "width": 3456,
+            "height": 2234,
+            "r_frame_rate": "30/1",
+            "nb_frames": "190"
+          }
+        ],
+        "format": {
+          "duration": "6.541667"
+        }
+      },
+      "allFramesDecoded": true
+    },
+    {
+      "cycle": 13,
+      "localPath": "/var/folders/yx/3sqnzqw12sb68q4sd3sb0c980000gn/T/tinycast-acceptance-20260929-u50qlziy/video-native-13.mp4",
+      "bytes": 2475499,
+      "sha256": "8fbe7349c873c15ceceda188f23043cb1f2227bc664bcfbc790b58d87288926d",
+      "probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "h264",
+            "codec_type": "video",
+            "width": 3456,
+            "height": 2234,
+            "r_frame_rate": "30/1",
+            "nb_frames": "197"
+          }
+        ],
+        "format": {
+          "duration": "6.775000"
+        }
+      },
+      "allFramesDecoded": true
+    },
+    {
+      "cycle": 14,
+      "localPath": "/var/folders/yx/3sqnzqw12sb68q4sd3sb0c980000gn/T/tinycast-acceptance-20260929-u50qlziy/video-native-14.mp4",
+      "bytes": 2517639,
+      "sha256": "09eebc1a9df755f58bee9076200fc7ad59874607471b280dff0166e24af906cc",
+      "probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "h264",
+            "codec_type": "video",
+            "width": 3456,
+            "height": 2234,
+            "r_frame_rate": "30/1",
+            "nb_frames": "181"
+          }
+        ],
+        "format": {
+          "duration": "6.191667"
+        }
+      },
+      "allFramesDecoded": true
+    },
+    {
+      "cycle": 15,
+      "localPath": "/var/folders/yx/3sqnzqw12sb68q4sd3sb0c980000gn/T/tinycast-acceptance-20260929-u50qlziy/video-native-15.mp4",
+      "bytes": 2848511,
+      "sha256": "0d8aa83f73704835422ac0d31b4ab1515a4c777ab57b2e4cbe509f230478fc70",
+      "probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "h264",
+            "codec_type": "video",
+            "width": 3456,
+            "height": 2234,
+            "r_frame_rate": "30/1",
+            "nb_frames": "230"
+          }
+        ],
+        "format": {
+          "duration": "7.950000"
+        }
+      },
+      "allFramesDecoded": true
+    },
+    {
+      "cycle": 16,
+      "localPath": "/var/folders/yx/3sqnzqw12sb68q4sd3sb0c980000gn/T/tinycast-acceptance-20260929-u50qlziy/video-native-16.mp4",
+      "bytes": 2512986,
+      "sha256": "78e7e042b1230edd5a6a09418bd6750769e84fe52bbd0bb420ad8933caf9e5f9",
+      "probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "h264",
+            "codec_type": "video",
+            "width": 3456,
+            "height": 2234,
+            "r_frame_rate": "30/1",
+            "nb_frames": "206"
+          }
+        ],
+        "format": {
+          "duration": "7.141667"
+        }
+      },
+      "allFramesDecoded": true
+    },
+    {
+      "cycle": 17,
+      "localPath": "/var/folders/yx/3sqnzqw12sb68q4sd3sb0c980000gn/T/tinycast-acceptance-20260929-u50qlziy/video-native-17.mp4",
+      "bytes": 2859278,
+      "sha256": "43ec9173b0a72a4b22cc8c3c5988f1fc94136d5a4432cd6d7659f930a55253ca",
+      "probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "h264",
+            "codec_type": "video",
+            "width": 3456,
+            "height": 2234,
+            "r_frame_rate": "30/1",
+            "nb_frames": "271"
+          }
+        ],
+        "format": {
+          "duration": "9.358333"
+        }
+      },
+      "allFramesDecoded": true
+    },
+    {
+      "cycle": 18,
+      "localPath": "/var/folders/yx/3sqnzqw12sb68q4sd3sb0c980000gn/T/tinycast-acceptance-20260929-u50qlziy/video-native-18.mp4",
+      "bytes": 2646904,
+      "sha256": "99a99eaa317ff1b196a3344c6cb4c069a5fb9616c985e8376492c00aa5dd6692",
+      "probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "h264",
+            "codec_type": "video",
+            "width": 3456,
+            "height": 2234,
+            "r_frame_rate": "30/1",
+            "nb_frames": "223"
+          }
+        ],
+        "format": {
+          "duration": "7.691667"
+        }
+      },
+      "allFramesDecoded": true
+    },
+    {
+      "cycle": 19,
+      "localPath": "/var/folders/yx/3sqnzqw12sb68q4sd3sb0c980000gn/T/tinycast-acceptance-20260929-u50qlziy/video-native-19.mp4",
+      "bytes": 2431852,
+      "sha256": "71505e3c525ae776efcef014d962adba17fbddc44824c3b0c065777317e1bc3a",
+      "probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "h264",
+            "codec_type": "video",
+            "width": 3456,
+            "height": 2234,
+            "r_frame_rate": "30/1",
+            "nb_frames": "172"
+          }
+        ],
+        "format": {
+          "duration": "5.975000"
+        }
+      },
+      "allFramesDecoded": true
+    },
+    {
+      "cycle": 20,
+      "localPath": "/var/folders/yx/3sqnzqw12sb68q4sd3sb0c980000gn/T/tinycast-acceptance-20260929-u50qlziy/video-native-20.mp4",
+      "bytes": 2037623,
+      "sha256": "ee66d0a0878ecee53047466d3b5620dd7ea9010cb2d1da04dfec87978d4b5fd4",
+      "probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "h264",
+            "codec_type": "video",
+            "width": 3456,
+            "height": 2234,
+            "r_frame_rate": "30/1",
+            "nb_frames": "159"
+          }
+        ],
+        "format": {
+          "duration": "5.533333"
+        }
+      },
+      "allFramesDecoded": true
+    }
+  ],
+  "privacy": {
+    "camera": false,
+    "microphone": false,
+    "systemAudio": false,
+    "keyboardDisplay": false
+  },
+  "firstCycleScreenshotVideoRoundtrip": true,
+  "sourceSHA256": {
+    "Tinycast/Features/Capture/UI/CaptureCoordinator+Recording.swift": "268e4477a387e3ef2a3c5df265bf7ef6f542b9782df2ecf3e8ba92c3990d7960",
+    "Tinycast/Features/Capture/UI/CaptureCoordinator+Workspace.swift": "fb5e754e7f0f6f5a9d0ee2ac074c8182d4dd4e6f32acaa3ede53aeef4812f97e",
+    "Tinycast/Features/Capture/UI/CaptureCoordinator.swift": "003e0930305f3246ee74643da682be6090a207f4e39789f0f4102d56bdf5b35f",
+    "Tinycast/Features/Capture/Service/CaptureRecordingSession.swift": "18218340250110356616071516c48d3963f165fdda9d5c7514e79bd893447036",
+    "Tinycast/Features/Capture/Service/CaptureScreenService.swift": "47f7a8f734b13a07962bbee957828d418f08a2f1eba2e763bfe815a00e822295",
+    "Scripts/capture-memory.py": "ee087d6b9418df9e38de5cc14339386671d40c71326140660eb8f10ff2b61908"
+  },
+  "rawSamples": "video-native-20-rss-20260929.json.gz",
+  "rawEvents": "video-native-20-events-20260929.ndjson.gz"
+}

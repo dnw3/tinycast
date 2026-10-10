@@ -1,0 +1,21 @@
+{
+  "date": "2026-09-24",
+  "bundle": "com.tinycast.app.dev",
+  "build": "Debug, executable modified 2026-09-24 11:06:54 +08:00",
+  "pid": 96190,
+  "selectionRSSBytes": 251756544,
+  "laterIdleRSSBytes": 147062784,
+  "idleVMMapTimestamp": "2026-09-24 11:12:57 +08:00",
+  "idlePhysicalFootprintMiB": 65.4,
+  "processPeakPhysicalFootprintMiB": 142.7,
+  "idleCoreAnimationResidentKiB": 2688,
+  "idleMallocAllocatedMiB": 32.5,
+  "idleMallocFragmentationMiB": 15.6,
+  "limitations": [
+    "Independent snapshots, not a synchronized lifecycle or peak measurement.",
+    "The selection was cancelled before heap/vmmap inspection; it was not a completed scrolling capture.",
+    "RSS is reported separately from physical footprint; shared mappings are not substituted for ps RSS.",
+    "Other Tinycast instances, browser and profiling tools are excluded.",
+    "The absolute 100 MB RSS gate remains unmet."
+  ]
+}

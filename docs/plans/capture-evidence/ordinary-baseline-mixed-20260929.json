@@ -1,0 +1,71 @@
+{
+  "status": "Interrupted diagnostic run; not a 20-cycle acceptance",
+  "pid": 27715,
+  "reason": [
+    "Baseline mixed hidden launcher (104 MB) with displayed launcher (142 MB); it was not one idle UI state",
+    "Three initiated captures produced four generic workspace-closed events; closure count cannot map one-to-one to UI cycles"
+  ],
+  "rawReport": {
+    "policyVersion": 3,
+    "scenario": "ordinary",
+    "samples": 1420,
+    "mainPeak": 292192256,
+    "helperPeak": 0,
+    "concurrentPeak": 292192256,
+    "peakPassed": true,
+    "coldBaseline": 104235008.0,
+    "baselineSeconds": 38.26945895794779,
+    "coldPassed": true,
+    "recovery": [
+      {
+        "stage": "cycle-01-closed",
+        "maximumAtFiveSeconds": 201867264,
+        "helpersExitedAtFiveSeconds": true,
+        "passed": true,
+        "nativeCloseTimestamp": 1790665090.953434,
+        "samplesInWindow": 4
+      },
+      {
+        "stage": "cycle-02-closed",
+        "maximumAtFiveSeconds": 209879040,
+        "helpersExitedAtFiveSeconds": true,
+        "passed": false,
+        "nativeCloseTimestamp": 1790665146.220139,
+        "samplesInWindow": 4
+      },
+      {
+        "stage": "cycle-03-closed",
+        "maximumAtFiveSeconds": 283148288,
+        "helpersExitedAtFiveSeconds": true,
+        "passed": false,
+        "nativeCloseTimestamp": 1790665191.692979,
+        "samplesInWindow": 4
+      },
+      {
+        "stage": "cycle-04-closed",
+        "maximumAtFiveSeconds": 219774976,
+        "helpersExitedAtFiveSeconds": true,
+        "passed": false,
+        "nativeCloseTimestamp": 1790665273.364242,
+        "samplesInWindow": 4
+      }
+    ],
+    "cyclesPassed": null,
+    "nativeClosureCount": 4,
+    "nativeClosureEvent": "workspace-closed",
+    "resourcePassed": false,
+    "latency": {
+      "selection-ready": {
+        "count": 3,
+        "p95Milliseconds": 742.863875,
+        "passed": null
+      },
+      "scroll-preview-ready": {
+        "count": 0,
+        "p95Milliseconds": null,
+        "passed": null
+      }
+    }
+  },
+  "next": "Fix baseline stage before capture and add a copy-specific close event; preserve all original measurements"
+}

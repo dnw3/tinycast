@@ -1,0 +1,57 @@
+{
+  "srgb-baseline": {
+    "milliseconds": [
+      106.98649999999999,
+      55.313250000000004,
+      49.180375,
+      64.957708,
+      58.283333
+    ],
+    "medianMs": 58.283333,
+    "maxRSSBytes": 73498624
+  },
+  "srgb-banded": {
+    "milliseconds": [
+      111.86999999999999,
+      54.018166,
+      53.843083,
+      55.66875,
+      53.220792
+    ],
+    "medianMs": 54.018166,
+    "maxRSSBytes": 82083840
+  },
+  "srgb-pixels": {
+    "files": 60,
+    "identical": true
+  },
+  "p3-baseline": {
+    "milliseconds": [
+      130.468541,
+      79.240625,
+      125.77729200000002,
+      92.77241699999999,
+      83.347667
+    ],
+    "medianMs": 92.77241699999999,
+    "maxRSSBytes": 75956224
+  },
+  "p3-banded": {
+    "milliseconds": [
+      105.049792,
+      112.807625,
+      91.1535,
+      89.447666,
+      98.8545
+    ],
+    "medianMs": 98.8545,
+    "maxRSSBytes": 90947584
+  },
+  "p3-pixels": {
+    "files": 60,
+    "identical": true
+  },
+  "status": "Rejected; not applied to production",
+  "reason": "An 8 MiB raster band raised RSS and had no consistent latency improvement across sRGB and P3.",
+  "scope": "Standalone synthetic five-iteration experiment per case, separate from native acceptance."
+}

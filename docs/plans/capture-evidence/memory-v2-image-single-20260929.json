@@ -1,0 +1,28 @@
+{
+  "policyVersion": 2,
+  "scenario": "image",
+  "samples": 1395,
+  "mainPeak": 209813504,
+  "helperPeak": 129220608,
+  "concurrentPeak": 329138176,
+  "peakPassed": true,
+  "coldBaseline": 106053632,
+  "baselineSeconds": 46.430397624964826,
+  "coldPassed": true,
+  "recovery": [
+    {
+      "stage": "image-closed",
+      "maximumAtFiveSeconds": 188301312,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": null,
+      "passedRelativeToObservedMarker": true
+    }
+  ],
+  "cyclesPassed": null,
+  "resourcePassed": null,
+  "scope": "One native 1600x30000 history image, three pins, OCR and PNG copy; not 20 cycles.",
+  "closeTiming": "Stage marked after CUA confirmed the final pin closed; exact five seconds from the last native close was not captured. Recheck in the 20-cycle run.",
+  "sourceSHA256": "5e446825b9986dcfc19fd0ab87041a57164c3c949cb8cc4d63eb05cae954be0d",
+  "raw": "memory-v2-image-single-20260929.json.gz",
+  "machine": "M1 Pro 32 GB, macOS 27 (26A428), Debug unoptimized, PID 30700"
+}

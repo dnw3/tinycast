@@ -1,0 +1,61 @@
+{
+  "srgb-before": {
+    "seconds": [
+      0.082526375,
+      0.075093917,
+      0.061166375,
+      0.040251542,
+      0.067930084
+    ],
+    "median": 0.067930084,
+    "maxRSS": 74874880
+  },
+  "srgb-crop": {
+    "seconds": [
+      0.094665208,
+      0.066485625,
+      0.106325292,
+      0.191809209,
+      0.092147625
+    ],
+    "median": 0.094665208,
+    "maxRSS": 73744384
+  },
+  "srgb-pixels": {
+    "files": 60,
+    "identical": true
+  },
+  "p3-before": {
+    "seconds": [
+      0.157060041,
+      0.090578167,
+      0.107171291,
+      0.130073875,
+      0.11445325
+    ],
+    "median": 0.11445325,
+    "maxRSS": 75268096
+  },
+  "p3-crop": {
+    "seconds": [
+      0.111651,
+      0.092614791,
+      0.096536125,
+      0.099442458,
+      0.128537834
+    ],
+    "median": 0.099442458,
+    "maxRSS": 104710144
+  },
+  "p3-pixels": {
+    "files": 60,
+    "identical": true
+  },
+  "date": "2026-09-29",
+  "status": "Rejected; no production ImageSource change",
+  "reason": "P3 maximum RSS increased by about 29.4 MB and sRGB median slowed; pixel identity alone is insufficient.",
+  "scope": "Standalone synthetic five-cycle benchmark per case, not native P95",
+  "benchmarkSource": "/tmp/tinycast-completion-2_njcdaj/source-store-color-benchmark.swift",
+  "variantSource": "/tmp/tinycast-completion-2_njcdaj/CaptureImageSource-cropped.swift",
+  "sourceHash": "719062811837551b43a133d09ed03645f3702e94659890ea2a63b65c133c7bfe"
+}

@@ -1,0 +1,64 @@
+{
+  "date": "2026-09-29",
+  "fixture": {
+    "width": 3456,
+    "height": 2234,
+    "kind": "sRGB CGContext, white and 32 translucent colored strips"
+  },
+  "scope": "Standalone shipped-source store benchmark; not native latency or whole-app RSS acceptance",
+  "batchMaximumBytes": 1048576,
+  "pixelVerification": {
+    "cycles": 5,
+    "identicalRawTileFiles": 60,
+    "semanticallyEqualMetadataFiles": 5
+  },
+  "source": {
+    "file": "Tinycast/Features/Capture/Service/CaptureRasterStore.swift",
+    "sha256": "d452e2a30203cec4a84aad3bf52cb94f645fb8ccfbb013ddc4164f8e781b50c3"
+  },
+  "benchmarkFile": "/tmp/tinycast-completion-2_njcdaj/source-store-benchmark.swift",
+  "before": {
+    "seconds": [
+      0.211012334,
+      0.176716292,
+      0.164606542,
+      0.189603959,
+      0.15302975
+    ],
+    "medianSeconds": 0.176716292,
+    "maximumRSSBytes": 72695808,
+    "log": "/tmp/tinycast-completion-2_njcdaj/store-before.log",
+    "binarySHA256": "c15b4988d92fbbafbec7e3fcb8c33fb945bb7e947cbd0ed85f6191696804ef73"
+  },
+  "after": {
+    "seconds": [
+      0.07480625,
+      0.062155208,
+      0.062374542,
+      0.060718459,
+      0.059771917
+    ],
+    "medianSeconds": 0.062155208,
+    "maximumRSSBytes": 73777152,
+    "log": "/tmp/tinycast-completion-2_njcdaj/store-after.log",
+    "binarySHA256": "1b2f784d628db1ddcfa666818f6db7fd90c43b6d72aac5ce0176752dcce103d2"
+  },
+  "nativeBeforePhases": [
+    "selection-target milliseconds=98.490000",
+    "selection-snapshot milliseconds=86.505750",
+    "selection-raster milliseconds=277.953709",
+    "selection-present milliseconds=114.282541",
+    "selection-ready milliseconds=686.710792"
+  ],
+  "nativeAfterBatchPhases": [
+    "selection-target milliseconds=84.251459",
+    "selection-snapshot milliseconds=81.682167",
+    "selection-raster milliseconds=135.628458",
+    "selection-present milliseconds=142.661667",
+    "selection-ready milliseconds=559.874000"
+  ],
+  "focusedHarnesses": {
+    "capture-raster-test": "passed",
+    "capture-workflow-test": "passed"
+  }
+}

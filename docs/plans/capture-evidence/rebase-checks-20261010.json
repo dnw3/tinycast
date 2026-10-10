@@ -1,0 +1,72 @@
+{
+  "date": "2026-10-10",
+  "scope": "Rebase Capture and Translation onto origin/main; prepare the fork branch for push",
+  "upstreamCommit": "da2c4e44238b166f774bd3d63e37d12b0616af94",
+  "branch": "dnw/capture-workspace",
+  "pushRemote": "dnw3",
+  "repository": "dnw3/tinycast",
+  "toolchain": "Xcode 27.0\nBuild version 27A266a",
+  "source": {
+    "fileCount": 1430,
+    "sha256": "f02504dba4709129161fc71a21c48adbde785427f622778e91fa5aa023dbf8d2",
+    "method": "Sorted tracked Tinycast/, Scripts/, Tests/, Vendor/, project.yml and project.pbxproj; hash path UTF-8 + NUL + binary SHA256 of contents per file"
+  },
+  "checks": {
+    "fullHarnesses": {
+      "passed": true,
+      "count": 101,
+      "harnessSeconds": 281,
+      "parallelism": 4,
+      "command": "./Scripts/run-tests.sh",
+      "logSHA256": "4664972fcc739c05982658a6128ea30edb09c8d915614067b5500cf6c9aae4e5"
+    },
+    "builds": {
+      "debug": {
+        "passed": true,
+        "configuration": "Debug",
+        "codeSigningAllowed": false,
+        "derivedData": "build/RebaseCheck",
+        "swiftWarnings": 0,
+        "toolWarnings": [
+          "Metadata extraction skipped, no AppIntents.framework dependency found"
+        ],
+        "logSHA256": "5614ad1da838a900b7219315dbeb378e72399976a92fcb29fa42ef0d185157ec",
+        "ranOrInstalled": false
+      },
+      "release": {
+        "passed": true,
+        "configuration": "Release",
+        "codeSigningAllowed": false,
+        "derivedData": "build/RebaseCheck",
+        "swiftWarnings": 0,
+        "toolWarnings": [
+          "Metadata extraction skipped, no AppIntents.framework dependency found"
+        ],
+        "logSHA256": "3cd7705bb37fa2e3c8e03b2f2a359808de343d03d851e5cca44770035cdbba0d",
+        "ranOrInstalled": false
+      }
+    },
+    "lint": {
+      "passed": true,
+      "upstreamWarnings": 66,
+      "currentWarnings": 66,
+      "newWarnings": 0,
+      "logSHA256": "3302a603b18fafb0c98b8324702e78a65dd9c405b98b32a7b09518df9ecf2f5d"
+    },
+    "modelImports": true,
+    "diffWhitespace": true,
+    "generatedProjectMatches": true
+  },
+  "integrationFixes": [
+    "Keep upstream AI Chat, Dictation, settings-file and clipboard behavior while adding Capture and Translation.",
+    "Use the upstream alternateTitles and GlassEffectView APIs; remove obsolete Quick Action language bindings.",
+    "Preserve caller cancellation when the Drive loopback listener finishes or fails during task-group shutdown.",
+    "Cover 100 consecutive authorization cancellations; remove shell configuration for upstream-deleted harnesses."
+  ],
+  "priorRunFindings": [
+    "Initial launcher settings harness compile failure was fixed by aligning the AppEntry fixture with alternateTitles.",
+    "One Preview icon pixel comparison failed transiently. Its sources were unchanged from upstream; direct rerun, upstream baseline and subsequent full suite passed.",
+    "The authorization cancellation race reproduced in a diagnostic harness as cancelledCallback: authorization. The same diagnostic passed after the fix with 100 valid callbacks and 100 cancellations."
+  ],
+  "nativeAcceptance": "No new interactive acceptance or resource measurements in this rebase. September 29 evidence and all open native gates remain historical and unchanged."
+}

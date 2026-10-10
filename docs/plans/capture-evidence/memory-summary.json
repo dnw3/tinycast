@@ -1,0 +1,21 @@
+{
+  "pid": 40148,
+  "samples": 60,
+  "helper_samples": 43,
+  "max_combined_rss": 229146624,
+  "max_combined_footprint": 115427272,
+  "first": {
+    "seconds": 0.107,
+    "app_rss": 174473216,
+    "helper_rss": 0,
+    "app_footprint": 85607600,
+    "helper_footprint": 0
+  },
+  "last": {
+    "seconds": 22.567,
+    "app_rss": 170885120,
+    "helper_rss": 49627136,
+    "app_footprint": 84640944,
+    "helper_footprint": 24609560
+  }
+}

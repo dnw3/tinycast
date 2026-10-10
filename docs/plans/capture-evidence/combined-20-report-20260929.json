@@ -1,0 +1,191 @@
+{
+  "policyVersion": 3,
+  "scenario": "image",
+  "samples": 8425,
+  "mainPeak": 237305856,
+  "helperPeak": 139264000,
+  "concurrentPeak": 357351424,
+  "peakPassed": true,
+  "coldBaseline": 141426688.0,
+  "baselineSeconds": 24.01517229201272,
+  "coldPassed": true,
+  "recovery": [
+    {
+      "stage": "cycle-01-closed",
+      "maximumAtFiveSeconds": 205455360,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790661494.805373,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-02-closed",
+      "maximumAtFiveSeconds": 215810048,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790661664.406563,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-03-closed",
+      "maximumAtFiveSeconds": 210419712,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790661791.59022,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-04-closed",
+      "maximumAtFiveSeconds": 218284032,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790662164.345093,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-05-closed",
+      "maximumAtFiveSeconds": 211271680,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790662280.242362,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-06-closed",
+      "maximumAtFiveSeconds": 216432640,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790662365.691851,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-07-closed",
+      "maximumAtFiveSeconds": 213401600,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790662457.932606,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-08-closed",
+      "maximumAtFiveSeconds": 218611712,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790662548.675774,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-09-closed",
+      "maximumAtFiveSeconds": 214089728,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790662634.551794,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-10-closed",
+      "maximumAtFiveSeconds": 208863232,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790662714.257241,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-11-closed",
+      "maximumAtFiveSeconds": 210698240,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790662826.769607,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-12-closed",
+      "maximumAtFiveSeconds": 208912384,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790662906.10059,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-13-closed",
+      "maximumAtFiveSeconds": 216055808,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790662969.621102,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-14-closed",
+      "maximumAtFiveSeconds": 217088000,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790663036.202369,
+      "samplesInWindow": 3
+    },
+    {
+      "stage": "cycle-15-closed",
+      "maximumAtFiveSeconds": 210223104,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790663098.786999,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-16-closed",
+      "maximumAtFiveSeconds": 217300992,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790663170.376369,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-17-closed",
+      "maximumAtFiveSeconds": 217219072,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790663239.635107,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-18-closed",
+      "maximumAtFiveSeconds": 210649088,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790663316.105675,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-19-closed",
+      "maximumAtFiveSeconds": 217710592,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790663382.20049,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-20-closed",
+      "maximumAtFiveSeconds": 215678976,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790663454.065148,
+      "samplesInWindow": 4
+    }
+  ],
+  "cyclesPassed": true,
+  "nativeClosureCount": 20,
+  "nativeClosureEvent": "pins-closed",
+  "warmedGrowth": 3129344,
+  "resourcePassed": true,
+  "latency": {
+    "selection-ready": {
+      "count": 0,
+      "p95Milliseconds": null,
+      "passed": null
+    },
+    "scroll-preview-ready": {
+      "count": 0,
+      "p95Milliseconds": null,
+      "passed": null
+    }
+  }
+}

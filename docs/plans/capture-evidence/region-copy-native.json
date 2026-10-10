@@ -1,0 +1,31 @@
+{
+  "testedAt": "2026-09-24T11:35:00+08:00",
+  "appPID": 96190,
+  "appBuild": "2026-09-24T11:06:54+08:00",
+  "flow": "Capture Screenshot > select region > Return > Preview New from Clipboard > Save",
+  "width": 1350,
+  "height": 590,
+  "pngBytes": 71932,
+  "pngSHA256": "3abc617acec82112d55d9e0d18924d523f8820bc61013bb6e4d7e787db4a1067",
+  "receiver": "com.apple.Preview",
+  "receiverInspector": "1350 x 590 pixels, PNG 71932 bytes, RGB sRGB",
+  "receiverExport": {
+    "file": "region-preview-native.png",
+    "bytes": 88027,
+    "sha256": "1056555f6ee3d2adb46678ed8f62316bf3065f1e75b40d9e579aece82ee5c10e",
+    "decodedRGBABytes": 3186000,
+    "allPixelsMatchOriginal": true
+  },
+  "clipboardMatchingRows": [
+    {
+      "id": "19132D39-3E70-4A4C-A637-11D451393349",
+      "createdAt": "2026-09-24T11:35:40.651693+08:00",
+      "sourceApp": "company.thebrowser.Browser"
+    }
+  ],
+  "clipboardMatchingRowCount": 1,
+  "captureHistoryNewID": "7C69E902-E71C-4CA6-BFE0-D3D0BA93430C",
+  "limitations": [
+    "Region direct copy only; window/fullscreen and scrolling output are separate acceptance cases."
+  ]
+}

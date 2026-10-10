@@ -1,0 +1,41 @@
+{
+  "method": "LLDB breakpoint in CaptureScreenService.targetIsVisible; read-only argument and CGWindowList inspection",
+  "appPID": 96190,
+  "appBuild": "2026-09-24T11:06:54+08:00",
+  "frontmostBundle": "company.thebrowser.Browser",
+  "target": {
+    "pid": 33510,
+    "windowID": 15974,
+    "frame": [
+      0,
+      33,
+      1728,
+      1084
+    ]
+  },
+  "region": [
+    25,
+    680,
+    1680,
+    420
+  ],
+  "cursor": {
+    "windowID": 2,
+    "owner": "Window Server",
+    "frame": [
+      651,
+      666,
+      28,
+      40
+    ],
+    "layer": 2147483630,
+    "alpha": 1
+  },
+  "finding": "The cursor intersects the capture region and the prior layer >= 0 predicate treats it as an occluding window.",
+  "regression": "Old predicate fails the observed cursor geometry; CaptureVisibilityPolicy excludes the system cursor layer and fully transparent windows while retaining actual occlusion, focus and frame checks.",
+  "limitations": [
+    "The fixed native scrolling flow still requires Screen Recording re-registration after the ad-hoc rebuild.",
+    "Debugger inspection is not a memory benchmark."
+  ],
+  "observedDate": "2026-09-24"
+}

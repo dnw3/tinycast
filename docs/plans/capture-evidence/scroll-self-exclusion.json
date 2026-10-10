@@ -1,0 +1,54 @@
+{
+  "verifiedAt": "2026-09-24T15:29:34+08:00",
+  "before": {
+    "appPID": 50631,
+    "metadataOnScreenWindowsOnly": true,
+    "excludedPIDs": [],
+    "targetPID": 33510,
+    "targetWindowID": 15974,
+    "targetFrame": [
+      0,
+      33,
+      1728,
+      1084
+    ],
+    "selectedRegion": [
+      50,
+      143,
+      1150,
+      362
+    ],
+    "frontmostPID": 33510,
+    "ownBorder": {
+      "windowID": 24286,
+      "pid": 50631,
+      "frame": [
+        48,
+        141,
+        1154,
+        366
+      ],
+      "layer": 3,
+      "alpha": 1
+    },
+    "pauseReason": "The app was absent from the on-screen-only application list after its launcher hid, so its new selection border was not excluded."
+  },
+  "fix": {
+    "metadataOnScreenWindowsOnly": false,
+    "targetWindowsMustBeOnScreen": true,
+    "requiresOwnAppInExclusionList": true,
+    "filterAndVisibilityUseSameExcludedApplications": true,
+    "toolSpecificWhitelistAdded": false
+  },
+  "after": {
+    "appPID": 58328,
+    "nativeSelectionSucceeded": true,
+    "horizontalSamplingResumedAfterContinue": true,
+    "automaticHorizontalOutput": "scroll-horizontal-auto-native.json",
+    "strictSignatureVerification": true
+  },
+  "limitations": [
+    "The initial tool-pointer overlap still pauses correctly; Continue moves that indicator outside the selected region.",
+    "The broader target-move, cover and app-switch corpus remains pending."
+  ]
+}

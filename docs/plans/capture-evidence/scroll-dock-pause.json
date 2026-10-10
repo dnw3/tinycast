@@ -1,0 +1,29 @@
+{
+  "observedAt": "2026-09-24T12:53:00+08:00",
+  "method": "LLDB visibility-policy arguments and SCShareableContent metadata inspection",
+  "appPID": 20282,
+  "appBuild": "2026-09-24T11:36:42+08:00",
+  "frontmostPID": 33510,
+  "target": {
+    "pid": 33510,
+    "windowID": 15973,
+    "frame": [0, 33, 1728, 993]
+  },
+  "region": [25, 155, 750, 770],
+  "occluder": {
+    "bundleID": "com.apple.dock",
+    "pid": 3921,
+    "windowID": 94,
+    "frame": [0, 0, 1728, 1117],
+    "layer": 20,
+    "alpha": 1
+  },
+  "screenCaptureKitExcludingDesktopWindowsStillReturnsDock": true,
+  "finding": "The desktop-sized Dock surface triggers the rectangle occlusion check although the selected browser content is visible.",
+  "resolution": "Scrolling capture excludes Tinycast and Dock applications from its SCContentFilter; the visibility policy consumes the same excluded PIDs.",
+  "regression": "The observed Dock case fails under the prior predicate. Excluded Dock passes, but an unexcluded Dock or another application at the same layer still pauses. An excluded target is rejected.",
+  "limitations": [
+    "The final filter change has not yet completed native multi-frame capture and export.",
+    "Debugger inspection is not a memory benchmark."
+  ]
+}

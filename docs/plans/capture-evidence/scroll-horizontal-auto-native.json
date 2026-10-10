@@ -1,0 +1,118 @@
+{
+  "verifiedAt": "2026-09-24T15:28:27+08:00",
+  "mode": "native horizontal automatic scrolling",
+  "appPID": 58328,
+  "bundlePath": "build/DerivedData/Build/Products/Debug/Tinycast Dev.app",
+  "fixture": "Tests/Fixtures/capture/scroll.html#wide",
+  "selectionPixels": [
+    2300,
+    760
+  ],
+  "observedWidths": [
+    2300,
+    3200,
+    3740,
+    3920
+  ],
+  "manualScrollActionsBetweenAutoStartAndFinish": 0,
+  "eventRoute": "cgSessionEventTap",
+  "output": {
+    "file": "scroll-horizontal-auto-native.png",
+    "bytes": 186067,
+    "width": 3920,
+    "height": 760,
+    "sha256": "ee92a195af5af999104b1bd7322ca811f99e2df9443f71b25edab4f38cbf9e6e"
+  },
+  "verification": {
+    "independentDecode": "ImageIO and Pillow",
+    "visionOCRColumnsByRow": {
+      "1": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "2": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "3": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "4": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "5": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "6": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "7": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ]
+    },
+    "columnsContiguous": true,
+    "columnBoundarySpacingPixels": [
+      446
+    ],
+    "columnBoundaryCount": 8,
+    "matchingCaptureHistoryEntries": [
+      "5B93384C-18C5-4643-871E-12F04B59CB50"
+    ],
+    "matchingCaptureHistoryCount": 1,
+    "editorInitialZoomPercent": 78,
+    "editorFitsShortAxis": true,
+    "savedEditorClosedWithoutPrompt": true
+  },
+  "limitations": [
+    "Columns 001 through 008 are fully visible; the last column 009 is clipped by the selected right edge.",
+    "Header and scrollbar were deliberately outside the selection; this is not fixed-region acceptance.",
+    "This proves the Arc fixture only, not the complete native scrolling corpus or resource gate."
+  ]
+}

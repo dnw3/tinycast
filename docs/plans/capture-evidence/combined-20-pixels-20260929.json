@@ -1,0 +1,307 @@
+{
+  "independentDecoder": "Pillow",
+  "reference": "webp-native-source.png",
+  "referenceSHA256": "18297d689e39f364c5e1e5e7cfd00b80996580b46f5ed4341c5b55f3f10f5d18",
+  "cycles": [
+    {
+      "cycle": 1,
+      "filename": "combined-cycle-01.png",
+      "bytes": 645896,
+      "sha256": "18297d689e39f364c5e1e5e7cfd00b80996580b46f5ed4341c5b55f3f10f5d18",
+      "dimensions": [
+        1600,
+        30000
+      ],
+      "pixelDifference": 0,
+      "ocrRows": 90,
+      "ocrExactIgnoringWhitespace": true,
+      "pinCount": 3,
+      "saveAndCopy": true
+    },
+    {
+      "cycle": 2,
+      "filename": "combined-cycle-02.png",
+      "bytes": 645896,
+      "sha256": "18297d689e39f364c5e1e5e7cfd00b80996580b46f5ed4341c5b55f3f10f5d18",
+      "dimensions": [
+        1600,
+        30000
+      ],
+      "pixelDifference": 0,
+      "ocrRows": 90,
+      "ocrExactIgnoringWhitespace": true,
+      "pinCount": 3,
+      "saveAndCopy": true
+    },
+    {
+      "cycle": 3,
+      "filename": "combined-cycle-03.png",
+      "bytes": 645896,
+      "sha256": "18297d689e39f364c5e1e5e7cfd00b80996580b46f5ed4341c5b55f3f10f5d18",
+      "dimensions": [
+        1600,
+        30000
+      ],
+      "pixelDifference": 0,
+      "ocrRows": 90,
+      "ocrExactIgnoringWhitespace": true,
+      "pinCount": 3,
+      "saveAndCopy": true
+    },
+    {
+      "cycle": 4,
+      "filename": "combined-cycle-04.png",
+      "bytes": 645896,
+      "sha256": "18297d689e39f364c5e1e5e7cfd00b80996580b46f5ed4341c5b55f3f10f5d18",
+      "dimensions": [
+        1600,
+        30000
+      ],
+      "pixelDifference": 0,
+      "ocrRows": 90,
+      "ocrExactIgnoringWhitespace": true,
+      "pinCount": 3,
+      "saveAndCopy": true
+    },
+    {
+      "cycle": 5,
+      "filename": "combined-cycle-05.png",
+      "bytes": 645896,
+      "sha256": "18297d689e39f364c5e1e5e7cfd00b80996580b46f5ed4341c5b55f3f10f5d18",
+      "dimensions": [
+        1600,
+        30000
+      ],
+      "pixelDifference": 0,
+      "ocrRows": 90,
+      "ocrExactIgnoringWhitespace": true,
+      "pinCount": 3,
+      "saveAndCopy": true
+    },
+    {
+      "cycle": 6,
+      "filename": "combined-cycle-06.png",
+      "bytes": 645896,
+      "sha256": "18297d689e39f364c5e1e5e7cfd00b80996580b46f5ed4341c5b55f3f10f5d18",
+      "dimensions": [
+        1600,
+        30000
+      ],
+      "pixelDifference": 0,
+      "ocrRows": 90,
+      "ocrExactIgnoringWhitespace": true,
+      "pinCount": 3,
+      "saveAndCopy": true
+    },
+    {
+      "cycle": 7,
+      "filename": "combined-cycle-07.png",
+      "bytes": 645896,
+      "sha256": "18297d689e39f364c5e1e5e7cfd00b80996580b46f5ed4341c5b55f3f10f5d18",
+      "dimensions": [
+        1600,
+        30000
+      ],
+      "pixelDifference": 0,
+      "ocrRows": 90,
+      "ocrExactIgnoringWhitespace": true,
+      "pinCount": 3,
+      "saveAndCopy": true
+    },
+    {
+      "cycle": 8,
+      "filename": "combined-cycle-08.png",
+      "bytes": 645896,
+      "sha256": "18297d689e39f364c5e1e5e7cfd00b80996580b46f5ed4341c5b55f3f10f5d18",
+      "dimensions": [
+        1600,
+        30000
+      ],
+      "pixelDifference": 0,
+      "ocrRows": 90,
+      "ocrExactIgnoringWhitespace": true,
+      "pinCount": 3,
+      "saveAndCopy": true
+    },
+    {
+      "cycle": 9,
+      "filename": "combined-cycle-09.png",
+      "bytes": 645896,
+      "sha256": "18297d689e39f364c5e1e5e7cfd00b80996580b46f5ed4341c5b55f3f10f5d18",
+      "dimensions": [
+        1600,
+        30000
+      ],
+      "pixelDifference": 0,
+      "ocrRows": 90,
+      "ocrExactIgnoringWhitespace": true,
+      "pinCount": 3,
+      "saveAndCopy": true
+    },
+    {
+      "cycle": 10,
+      "filename": "combined-cycle-10.png",
+      "bytes": 645896,
+      "sha256": "18297d689e39f364c5e1e5e7cfd00b80996580b46f5ed4341c5b55f3f10f5d18",
+      "dimensions": [
+        1600,
+        30000
+      ],
+      "pixelDifference": 0,
+      "ocrRows": 90,
+      "ocrExactIgnoringWhitespace": true,
+      "pinCount": 3,
+      "saveAndCopy": true
+    },
+    {
+      "cycle": 11,
+      "filename": "combined-cycle-11.png",
+      "bytes": 645896,
+      "sha256": "18297d689e39f364c5e1e5e7cfd00b80996580b46f5ed4341c5b55f3f10f5d18",
+      "dimensions": [
+        1600,
+        30000
+      ],
+      "pixelDifference": 0,
+      "ocrRows": 90,
+      "ocrExactIgnoringWhitespace": true,
+      "pinCount": 3,
+      "saveAndCopy": true
+    },
+    {
+      "cycle": 12,
+      "filename": "combined-cycle-12.png",
+      "bytes": 645896,
+      "sha256": "18297d689e39f364c5e1e5e7cfd00b80996580b46f5ed4341c5b55f3f10f5d18",
+      "dimensions": [
+        1600,
+        30000
+      ],
+      "pixelDifference": 0,
+      "ocrRows": 90,
+      "ocrExactIgnoringWhitespace": true,
+      "pinCount": 3,
+      "saveAndCopy": true
+    },
+    {
+      "cycle": 13,
+      "filename": "combined-cycle-13.png",
+      "bytes": 645896,
+      "sha256": "18297d689e39f364c5e1e5e7cfd00b80996580b46f5ed4341c5b55f3f10f5d18",
+      "dimensions": [
+        1600,
+        30000
+      ],
+      "pixelDifference": 0,
+      "ocrRows": 90,
+      "ocrExactIgnoringWhitespace": true,
+      "pinCount": 3,
+      "saveAndCopy": true
+    },
+    {
+      "cycle": 14,
+      "filename": "combined-cycle-14.png",
+      "bytes": 645896,
+      "sha256": "18297d689e39f364c5e1e5e7cfd00b80996580b46f5ed4341c5b55f3f10f5d18",
+      "dimensions": [
+        1600,
+        30000
+      ],
+      "pixelDifference": 0,
+      "ocrRows": 90,
+      "ocrExactIgnoringWhitespace": true,
+      "pinCount": 3,
+      "saveAndCopy": true
+    },
+    {
+      "cycle": 15,
+      "filename": "combined-cycle-15.png",
+      "bytes": 645896,
+      "sha256": "18297d689e39f364c5e1e5e7cfd00b80996580b46f5ed4341c5b55f3f10f5d18",
+      "dimensions": [
+        1600,
+        30000
+      ],
+      "pixelDifference": 0,
+      "ocrRows": 90,
+      "ocrExactIgnoringWhitespace": true,
+      "pinCount": 3,
+      "saveAndCopy": true
+    },
+    {
+      "cycle": 16,
+      "filename": "combined-cycle-16.png",
+      "bytes": 645896,
+      "sha256": "18297d689e39f364c5e1e5e7cfd00b80996580b46f5ed4341c5b55f3f10f5d18",
+      "dimensions": [
+        1600,
+        30000
+      ],
+      "pixelDifference": 0,
+      "ocrRows": 90,
+      "ocrExactIgnoringWhitespace": true,
+      "pinCount": 3,
+      "saveAndCopy": true
+    },
+    {
+      "cycle": 17,
+      "filename": "combined-cycle-17.png",
+      "bytes": 645896,
+      "sha256": "18297d689e39f364c5e1e5e7cfd00b80996580b46f5ed4341c5b55f3f10f5d18",
+      "dimensions": [
+        1600,
+        30000
+      ],
+      "pixelDifference": 0,
+      "ocrRows": 90,
+      "ocrExactIgnoringWhitespace": true,
+      "pinCount": 3,
+      "saveAndCopy": true
+    },
+    {
+      "cycle": 18,
+      "filename": "combined-cycle-18.png",
+      "bytes": 645896,
+      "sha256": "18297d689e39f364c5e1e5e7cfd00b80996580b46f5ed4341c5b55f3f10f5d18",
+      "dimensions": [
+        1600,
+        30000
+      ],
+      "pixelDifference": 0,
+      "ocrRows": 90,
+      "ocrExactIgnoringWhitespace": true,
+      "pinCount": 3,
+      "saveAndCopy": true
+    },
+    {
+      "cycle": 19,
+      "filename": "combined-cycle-19.png",
+      "bytes": 645896,
+      "sha256": "18297d689e39f364c5e1e5e7cfd00b80996580b46f5ed4341c5b55f3f10f5d18",
+      "dimensions": [
+        1600,
+        30000
+      ],
+      "pixelDifference": 0,
+      "ocrRows": 90,
+      "ocrExactIgnoringWhitespace": true,
+      "pinCount": 3,
+      "saveAndCopy": true
+    },
+    {
+      "cycle": 20,
+      "filename": "combined-cycle-20.png",
+      "bytes": 645896,
+      "sha256": "18297d689e39f364c5e1e5e7cfd00b80996580b46f5ed4341c5b55f3f10f5d18",
+      "dimensions": [
+        1600,
+        30000
+      ],
+      "pixelDifference": 0,
+      "ocrRows": 90,
+      "ocrExactIgnoringWhitespace": true,
+      "pinCount": 3,
+      "saveAndCopy": true
+    }
+  ]
+}

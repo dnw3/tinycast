@@ -1,0 +1,75 @@
+{
+  "verifiedAt": "2026-09-24T15:25:03+08:00",
+  "mode": "native vertical automatic scrolling",
+  "appPID": 50631,
+  "bundlePath": "build/DerivedData/Build/Products/Debug/Tinycast Dev.app",
+  "fixture": "Tests/Fixtures/capture/scroll.html#vertical",
+  "selectionPixels": [
+    1500,
+    1540
+  ],
+  "observedHeights": [
+    1540,
+    2260,
+    3520,
+    3880
+  ],
+  "manualScrollActionsBetweenAutoStartAndFinish": 0,
+  "eventRoute": "cgSessionEventTap",
+  "output": {
+    "file": "scroll-auto-native.png",
+    "bytes": 534019,
+    "width": 1500,
+    "height": 3880,
+    "sha256": "73140d6d18a3a37e0793a6eb499889403620e668c6f910190da112822252a13e"
+  },
+  "verification": {
+    "independentDecode": "ImageIO and Pillow",
+    "visionOCRRows": [
+      63,
+      64,
+      65,
+      66,
+      67,
+      68,
+      69,
+      70,
+      71,
+      72,
+      73,
+      74,
+      75,
+      76,
+      77,
+      78,
+      79,
+      80,
+      81,
+      82,
+      83,
+      84,
+      85,
+      86,
+      87,
+      88,
+      89
+    ],
+    "rowsContiguous": true,
+    "missingRows": [],
+    "duplicateRows": [],
+    "rowBoundarySpacingPixels": [
+      142
+    ],
+    "rowBoundaryCount": 27,
+    "seamsPreserveRowSpacing": true,
+    "matchingCaptureHistoryEntries": [
+      "DE5D9E2E-815D-4BC4-845D-309E3011D828"
+    ],
+    "matchingCaptureHistoryCount": 1
+  },
+  "limitations": [
+    "This result covers one Arc vertical fixture; the final partial row 090 is outside the fully visible numbered-row range.",
+    "Horizontal samples subsequently passed in their own records; the broader native corpus remains pending.",
+    "The inspected process is not a memory benchmark; the absolute RSS gate remains unmet."
+  ]
+}

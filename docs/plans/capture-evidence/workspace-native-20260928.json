@@ -1,0 +1,2558 @@
+{
+  "date": "2026-09-28",
+  "app": "build/DerivedData/Build/Products/Debug/Tinycast Dev.app",
+  "bundle": "com.tinycast.app.dev",
+  "os": "macOS 27.0 26A428",
+  "xcode": "27.0 27A266a",
+  "buildLog": "/tmp/tinycast-completion-2_njcdaj/save-focus-build.log",
+  "checks": [
+    {
+      "mode": "vertical-manual",
+      "initialPixels": [
+        1590,
+        1190
+      ],
+      "outputPixels": [
+        1590,
+        2598
+      ],
+      "file": "/tmp/tinycast-completion-2_njcdaj/vertical-manual.png",
+      "bytes": 342529,
+      "sha256": "6968952ce5efd046e57c7609486506a03160d41660d2838f611c562ed7746ca0",
+      "decodedBy": "ImageIO and Vision",
+      "headersAndScrollbars": "outside selected region",
+      "history": "one entry per successful output action",
+      "contiguousRows": [
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34
+      ],
+      "manualInput": "browser wheel"
+    },
+    {
+      "mode": "vertical-auto",
+      "initialPixels": [
+        1590,
+        1190
+      ],
+      "outputPixels": [
+        1590,
+        2630
+      ],
+      "file": "/tmp/tinycast-completion-2_njcdaj/vertical-auto-history.png",
+      "bytes": 333080,
+      "sha256": "822ed5ef7b7aaf4226e70facd94fce497bdd505a05dfddd42fa546ec1c7da096",
+      "decodedBy": "ImageIO and Vision",
+      "headersAndScrollbars": "outside selected region",
+      "history": "one entry per successful output action",
+      "contiguousRows": [
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23
+      ],
+      "manualInput": null,
+      "nativeSave": {
+        "path": "/tmp/tinycast-completion-2_njcdaj/vertical-auto-native.png",
+        "sameBytesAsHistory": true
+      },
+      "clipboardReceiver": "Preview: New from Clipboard; 1590 x 2630 sRGB, 333080 bytes",
+      "avifSave": {
+        "path": "/tmp/tinycast-completion-2_njcdaj/vertical-auto-half.avif",
+        "scale": 0.5,
+        "pixels": [
+          795,
+          1315
+        ],
+        "profile": "sRGB",
+        "keyboard": "Return completed save"
+      }
+    },
+    {
+      "mode": "horizontal-manual",
+      "initialPixels": [
+        1780,
+        600
+      ],
+      "outputPixels": [
+        2580,
+        600
+      ],
+      "file": "/tmp/tinycast-completion-2_njcdaj/horizontal-manual.png",
+      "bytes": 141681,
+      "sha256": "2235dad668903b27b529a1eab851932f60ea5732e3d1fa5e1e0fba2c0192dfc7",
+      "decodedBy": "ImageIO and Vision",
+      "headersAndScrollbars": "outside selected region",
+      "history": "one entry per successful output action",
+      "columnsByRow": {
+        "1": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "2": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "3": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "4": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "5": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "6": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "manualInput": "page arrow keys"
+    },
+    {
+      "mode": "horizontal-auto",
+      "initialPixels": [
+        1780,
+        600
+      ],
+      "outputPixels": [
+        2860,
+        600
+      ],
+      "file": "/tmp/tinycast-completion-2_njcdaj/horizontal-auto.png",
+      "bytes": 138311,
+      "sha256": "e238e214384ed32d28086a648316060b8dadacd80318409898d2682dd95d08b3",
+      "decodedBy": "ImageIO and Vision",
+      "headersAndScrollbars": "outside selected region",
+      "history": "one entry per successful output action",
+      "columnsByRow": {
+        "1": [
+          3,
+          4,
+          5,
+          6,
+          7,
+          8
+        ],
+        "2": [
+          3,
+          4,
+          5,
+          6,
+          7,
+          8
+        ],
+        "3": [
+          3,
+          4,
+          5,
+          6,
+          7,
+          8
+        ],
+        "4": [
+          3,
+          4,
+          5,
+          6,
+          7,
+          8
+        ],
+        "5": [
+          3,
+          4,
+          5,
+          6,
+          7,
+          8
+        ],
+        "6": [
+          3,
+          4,
+          5,
+          6,
+          7,
+          8
+        ]
+      },
+      "manualInput": null,
+      "nativeSave": {
+        "path": "/tmp/tinycast-completion-2_njcdaj/horizontal-auto-native.png",
+        "sameBytesAsHistory": true
+      }
+    }
+  ],
+  "scope": "New unified workspace. Region and result switching preserved; does not validate complete acceptance matrix.",
+  "remaining": [
+    "absolute RSS gate failed; proposed budget change requires user decision",
+    "broader PDF/native-list and image/text corpora",
+    "mixed 1x/2x displays, physical 5K and supported macOS 26",
+    "full interruptions, IME, VoiceOver, scenario loops and P95",
+    "camera/microphone consent, physical keyboard capture, live upload configuration and WebP decision"
+  ],
+  "exportPreferenceRestored": "PNG, original pixels, sRGB",
+  "imageAdjustments": {
+    "pixelsCompared": 1548000,
+    "allRGBInvertedExactly": true,
+    "alphaUnchanged": true,
+    "nativeUndo": "one slider drag 0 -> 0.507692; single Undo restored 0 and retained inversion",
+    "escape": "closed adjustment controls without closing document",
+    "file": "/tmp/tinycast-completion-2_njcdaj/inverted-horizontal.png",
+    "sha256": "92b74b8e53c8c5ecf09cf806d64b48a77c517dd9fc9f93dfda157e4d5bb75527"
+  },
+  "suggestedCovers": {
+    "fixture": "Tests/Fixtures/capture/privacy.html",
+    "detected": [
+      "Email: qa@example.test",
+      "Phone: +1 (415) 555-0100",
+      "Test card: 4111 1111 1111 1111"
+    ],
+    "applied": 2,
+    "excluded": "Test card",
+    "undo": "one Undo restored both original lines; Redo reapplied two covers",
+    "artifact": "/tmp/tinycast-completion-2_njcdaj/personal-covers.png",
+    "pixels": [
+      1800,
+      820
+    ],
+    "sha256": "c93f7fbd505afd8a4e051b6727f789bde3eabdf02731904cb8cb90f5aee1b869",
+    "independentOCR": "email and phone absent; test card and ordinary sentence present",
+    "warmNativeOCR": "result visible during 2.31-second CUA call",
+    "coldVision": "one slow initial pass; sample waited in AppleNeuralEngine model compilation; completed before worker deadline",
+    "remaining": "faces and people detection not implemented"
+  },
+  "delayedCapture": {
+    "fixture": "Tests/Fixtures/capture/delay.html",
+    "region": {
+      "file": "/tmp/tinycast-completion-2_njcdaj/delayed-region.png",
+      "pixels": [
+        1500,
+        730
+      ],
+      "sha256": "a9b115e4cc02be2d3e5c1b4bc92554384ab39390a4a2991af968139a8adef7fb",
+      "initialClock": "23:05:24",
+      "freshClock": "23:05:56",
+      "delayOption": 3
+    },
+    "window": {
+      "file": "/tmp/tinycast-completion-2_njcdaj/delayed-window.png",
+      "pixels": [
+        3456,
+        2168
+      ],
+      "sha256": "2be7a0e80e3fc1a878c47f8edb2f45fc47e6437c7af0db935afbc62f5ac344ac",
+      "clock": "23:10:47",
+      "scopeAfterDeadline": "Window",
+      "delayOption": 3
+    },
+    "cancellation": {
+      "delayOption": 10,
+      "nativeCancel": "button closed countdown immediately",
+      "history": "23 entries and mtimes identical after original deadline",
+      "clipboard": "Edit Clipboard Image still displayed 1500x730, 23:05:56; no copy action was run"
+    },
+    "remaining": [
+      "sleep/lock interruption is wired but not exercised natively",
+      "separate screen delay and window-close-during-countdown matrix"
+    ]
+  },
+  "elementSelection": {
+    "buildLog": "/tmp/tinycast-completion-2_njcdaj/element-event-build.log",
+    "target": "Arc delayed capture fixture heading",
+    "pixels": [
+      894,
+      94
+    ],
+    "file": "/tmp/tinycast-completion-2_njcdaj/selected-element.png",
+    "sha256": "f3d9d1e625602a310174377199908c08358b9aa98dae2fb70308a48595eb0f85",
+    "bytes": 26131,
+    "verifiedText": "Delayed Capture Fixture",
+    "decodedBy": "ImageIO and Vision",
+    "fix": "Event coordinates converted from the capture view to screen; do not use global mouseLocation for an earlier event",
+    "remaining": [
+      "Escape and drag fallback native regression",
+      "other application AX trees"
+    ]
+  },
+  "recording": {
+    "buildLog": "/tmp/tinycast-completion-2_njcdaj/recording-second-build.log",
+    "nativeFlow": [
+      "Record Screen",
+      "select 1500x700",
+      "audio off and microphone off",
+      "Start Recording",
+      "Pause Recording",
+      "Resume Recording",
+      "Stop Recording",
+      "Save Video",
+      "trim 2.5..20.5 seconds at 2x",
+      "Save Video"
+    ],
+    "outputs": [
+      {
+        "audioTracks": 0,
+        "duration": 22.52,
+        "file": "/tmp/tinycast-completion-2_njcdaj/recording-region-native.mp4",
+        "fps": 28.18675422668457,
+        "frames": [
+          {
+            "actual": 0.075,
+            "requested": 0.2,
+            "text": [
+              "Delayed Capture Fixture",
+              "23:37:12",
+              "A delayed capture must show a newer clock.",
+              "Cancel must leave the clipboard and history unchanged."
+            ]
+          },
+          {
+            "actual": 10.121666666666666,
+            "requested": 10.134,
+            "text": [
+              "Delayed Capture Fixture",
+              "23:37:22",
+              "A delayed capture must show a newer clock.",
+              "Cancel must leave the clipboard and history unchanged."
+            ]
+          },
+          {
+            "actual": 14.633333333333333,
+            "requested": 14.638,
+            "text": [
+              "Delayed Capture Fixture",
+              "23:37:59",
+              "A delayed capture must show a newer clock.",
+              "Cancel must leave the clipboard and history unchanged."
+            ]
+          },
+          {
+            "actual": 22.208333333333332,
+            "requested": 22.22,
+            "text": [
+              "Delayed Capture Fixture",
+              "23:38:07",
+              "A delayed capture must show a newer clock.",
+              "Cancel must leave the clipboard and history unchanged."
+            ]
+          }
+        ],
+        "height": 700,
+        "width": 1500,
+        "bytes": 866273,
+        "sha256": "36a4c4f9a296e7a5c0d0b7fb03f2b6954540c968f65930005780e3a83a5e44ee"
+      },
+      {
+        "audioTracks": 0,
+        "duration": 9,
+        "file": "/tmp/tinycast-completion-2_njcdaj/recording-trim-speed-native.mp4",
+        "fps": 56.77120590209961,
+        "frames": [
+          {
+            "actual": 0.19,
+            "requested": 0.2,
+            "text": [
+              "Delayed Capture Fixture",
+              "23:37:15",
+              "A delayed capture must show a newer clock.",
+              "Cancel must leave the clipboard and history unchanged."
+            ]
+          },
+          {
+            "actual": 4.035,
+            "requested": 4.05,
+            "text": [
+              "Delayed Capture Fixture",
+              "23:37:22",
+              "A delayed capture must show a newer clock.",
+              "Cancel must leave the clipboard and history unchanged."
+            ]
+          },
+          {
+            "actual": 5.841666666666667,
+            "requested": 5.8500000000000005,
+            "text": [
+              "Delayed Capture Fixture",
+              "23:37:59",
+              "A delayed capture must show a newer clock.",
+              "Cancel must leave the clipboard and history unchanged."
+            ]
+          },
+          {
+            "actual": 8.691666666666666,
+            "requested": 8.7,
+            "text": [
+              "Delayed Capture Fixture",
+              "23:38:05",
+              "A delayed capture must show a newer clock.",
+              "Cancel must leave the clipboard and history unchanged."
+            ]
+          }
+        ],
+        "height": 700,
+        "width": 1500,
+        "bytes": 728421,
+        "sha256": "4d871a848e264300ab7491f8924360fd3f1a6957f82293409512e5bb5397bce2"
+      }
+    ],
+    "sourceSegments": [
+      {
+        "name": "367DC144-7350-4CD8-969F-2C2FBBC300BA.mp4",
+        "bytes": 479569,
+        "modified": 1790609845.9203641
+      },
+      {
+        "name": "60AF07D7-4794-42CB-B9ED-57C301C47125.mp4",
+        "bytes": 387507,
+        "modified": 1790609888.1094728
+      },
+      {
+        "name": "recording.mp4",
+        "bytes": 866273,
+        "modified": 1790609888.199569
+      }
+    ],
+    "verified": [
+      "real dynamic page captured",
+      "pause interval excluded",
+      "both segments visible across seam",
+      "default no audio tracks",
+      "trim/speed output is exactly 9 seconds",
+      "controls not in the sampled output frames"
+    ],
+    "pending": [
+      "window move and minimize",
+      "screen scope",
+      "countdown cancellation",
+      "audio devices and synchronization",
+      "resource matrix",
+      "camera and key overlays",
+      "GIF and media history"
+    ],
+    "window": {
+      "audioTracks": 0,
+      "duration": 30.605,
+      "file": "/tmp/tinycast-completion-2_njcdaj/recording-window-native.mp4",
+      "fps": 1.022611141204834,
+      "frames": [
+        {
+          "actual": 0,
+          "requested": 0.2,
+          "text": [
+            "i http://127.0.0.1:8770/delay.htm1",
+            "Delayed Capture Fixture",
+            "23:47:40",
+            "A delayed capture must show a newer clock.",
+            "Cancel must leave the clipboard and history unchanged.",
+            "•",
+            "TOT"
+          ]
+        },
+        {
+          "actual": 13.328333333333333,
+          "requested": 13.77225,
+          "text": [
+            "i http://127.0.0.1:8770/delay.htm1",
+            "Delayed Capture Fixture",
+            "23:47:54",
+            "A delayed capture must show a newer clock.",
+            "Cancel must leave the clipboard and history unchanged.",
+            "•",
+            "TOT"
+          ]
+        },
+        {
+          "actual": 19.336666666666666,
+          "requested": 19.893250000000002,
+          "text": [
+            "i http://127.0.0.1:8770/delay.html",
+            "Delayed Capture Fixture",
+            "23:48:00",
+            "A delayed capture must show a newer clock.",
+            "Cancel must leave the clipboard and history unchanged.",
+            "•",
+            "TOT"
+          ]
+        },
+        {
+          "actual": 29.336666666666666,
+          "requested": 30.305,
+          "text": [
+            "i http://127.0.0.1:8770/delay.html",
+            "Delayed Capture Fixture",
+            "23:48:10",
+            "A delayed capture must show a newer clock.",
+            "Cancel must leave the clipboard and history unchanged.",
+            "•",
+            "TOT"
+          ]
+        }
+      ],
+      "height": 2168,
+      "width": 3456,
+      "sha256": "f5cb24208d7885521b8e8cb4acd431b0473aa380a20da9cd07a49def054e0d10",
+      "bytes": 114768,
+      "history": [
+        {
+          "entry": {
+            "bytes": 121862,
+            "size": {
+              "width": 3456,
+              "height": 2168
+            },
+            "videoDuration": 30.605,
+            "date": 812303315.93136,
+            "editable": false,
+            "draft": false,
+            "id": "614D9ED7-2C0C-4A48-8DDE-CE062413AFB5"
+          },
+          "sha256": "f5cb24208d7885521b8e8cb4acd431b0473aa380a20da9cd07a49def054e0d10"
+        }
+      ],
+      "nativeReopen": "Capture History → 3456 × 2168 Video 0:31 → Return → Play; dynamic fixture clock advanced",
+      "initialDelaySeconds": 10
+    },
+    "gif": {
+      "bytes": 18862,
+      "distinctDecodedFrames": 4,
+      "duration": 3.0000000000000013,
+      "file": "/tmp/tinycast-completion-2_njcdaj/recording-three-seconds-native.gif",
+      "frames": 30,
+      "sha256": "SHA256 digest: cc4bb513fb2ad4df03c205a2d80b0b5acbf368ab18531289396d8197e69f5779",
+      "sizes": [
+        "640x401"
+      ],
+      "type": "com.compuserve.gif",
+      "failedOverwriteSHA256": "cc4bb513fb2ad4df03c205a2d80b0b5acbf368ab18531289396d8197e69f5779",
+      "failedOverwrite": "30.605-second GIF rejected; editor stays open; existing file hash unchanged"
+    },
+    "countdownCancel": {
+      "delaySeconds": 10,
+      "ui": "Cancel Delayed Capture returned to Record preparation with Start in 10s and Cancelled",
+      "postDeadlineCheck": "More than 60 seconds later still in preparation; no recording controls or new video; Close Capture succeeds"
+    },
+    "timeline": {
+      "audioTracks": 0,
+      "duration": 6,
+      "file": "/tmp/tinycast-completion-2_njcdaj/recording-cut-hold-1280-corrected-native.mp4",
+      "fps": 15,
+      "frames": [
+        {
+          "actual": 0.2,
+          "requested": 0.2,
+          "text": [
+            "i http://127.B.0.1:8778/delay.html",
+            "Delayed Capture Fixture",
+            "23:47:40",
+            "A delayed capture must show a newer clock.",
+            "Cancel must leave the clipboard and history unchanged.",
+            "8 0"
+          ]
+        },
+        {
+          "actual": 2.6666666666666665,
+          "requested": 2.7,
+          "text": [
+            "i http://127.B.0.1:8778/delay.html",
+            "Delayed Capture Fixture",
+            "23:47:43",
+            "A delayed capture must show a newer clock.",
+            "Cancel must leave the clipboard and history unchanged."
+          ]
+        },
+        {
+          "actual": 3.8666666666666667,
+          "requested": 3.9000000000000004,
+          "text": [
+            "i http://127.B.0.1:8778/delay.html",
+            "Delayed Capture Fixture",
+            "23:47:44",
+            "A delayed capture must show a newer clock.",
+            "Cancel must leave the clipboard and history unchanged."
+          ]
+        },
+        {
+          "actual": 5.4,
+          "requested": 5.7,
+          "text": [
+            "i http://127.B.0.1:8778/delay.html",
+            "Delayed Capture Fixture",
+            "23:47:46",
+            "A delayed capture must show a newer clock.",
+            "Cancel must leave the clipboard and history unchanged.",
+            "E G"
+          ]
+        }
+      ],
+      "height": 802,
+      "width": 1280,
+      "sha256": "df9081742d7c70b8d6423d4a0a79303741f82b0851fbff9c018c77036441a4c0",
+      "edit": {
+        "start": 0,
+        "end": 6,
+        "cuts": [
+          [
+            1,
+            2
+          ]
+        ],
+        "holds": [
+          {
+            "position": 3,
+            "duration": 1
+          }
+        ],
+        "speed": 1
+      },
+      "undoRedo": "Native Undo removed hold and changed duration 6 to 5; Redo restored hold and duration 6"
+    },
+    "fixedRegression": {
+      "before": 5.466666666666667,
+      "after": 6,
+      "reason": "Explicit AVAssetExportSession time range retains the final variable-rate frame until the requested end"
+    },
+    "resultSwitch": "Native Screen recording -> Trim End 5 -> Back to Screenshot -> Copy -> returned to Recording with Trim End still 5 -> Save -> Close",
+    "screen": {
+      "audioTracks": 0,
+      "duration": 5,
+      "file": "/tmp/tinycast-completion-2_njcdaj/recording-screen-native.mp4",
+      "fps": 30,
+      "frames": [
+        {
+          "actual": 0.2,
+          "requested": 0.2,
+          "text": [
+            "i http://127.0.0.1:8770/delay.html",
+            "Delayed Capture Fixture",
+            "00:36:09",
+            "A delayed capture must show a newer clock.",
+            "Cancel must leave the clipboard and history unchanged."
+          ]
+        },
+        {
+          "actual": 2.2333333333333334,
+          "requested": 2.25,
+          "text": [
+            "i http://127.0.0.1:8770/delay.html",
+            "Delayed Capture Fixture",
+            "00:36:11",
+            "A delayed capture must show a newer clock.",
+            "Cancel must leave the clipboard and history unchanged.",
+            "•",
+            "(23)"
+          ]
+        },
+        {
+          "actual": 3.2333333333333334,
+          "requested": 3.25,
+          "text": [
+            "i http://127.0.0.1:8770/delay.htm1",
+            "Delayed Capture Fixture",
+            "00:36:12",
+            "A delayed capture must show a newer clock.",
+            "Cancel must leave the clipboard and history unchanged."
+          ]
+        },
+        {
+          "actual": 4.7,
+          "requested": 4.7,
+          "text": [
+            "i http://127.0.0.1:8770/delay.html",
+            "Delayed Capture Fixture",
+            "00:36:13",
+            "A delayed capture must show a newer clock.",
+            "Cancel must leave the clipboard and history unchanged.",
+            "(2)"
+          ]
+        }
+      ],
+      "height": 2234,
+      "width": 3456,
+      "sha256": "cfc5f984089fd0aa641148ae67bbd58564efcb3213980f28e2c41b4c1241d7c0"
+    }
+  },
+  "screenCopy": {
+    "file": "/tmp/tinycast-completion-2_njcdaj/screen-copy-native.png",
+    "entry": "/Users/bytedance/Library/Application Support/com.tinycast.app.dev/captures/history/7F3D7618-D373-436B-97DD-77E05313176B/entry.json",
+    "size": {
+      "height": 2234,
+      "width": 3456
+    },
+    "bytes": 130815,
+    "sha256": "fb51c94a253c9669eb2c594ab3fdbd9356cee7a74c1b726219fad46b653f5c82",
+    "receiver": "Preview New from Clipboard, inspector 3456 x 2234, PNG 130815 bytes, sRGB"
+  },
+  "ocrFragmentRegression": {
+    "before": "Native source text still included lata. after the complete sentence",
+    "rawBoxes": "/tmp/tinycast-completion-2_njcdaj/ocr-fragments-before.jsonl",
+    "cause": "Clipped Vision rectangle extended about 5.45 pixels beyond the complete line, exceeding the previous 2 pixel containment tolerance",
+    "test": "capture-ocr-test passed 43 seconds including measured rectangles in both orders and adjacent/repeated negative cases",
+    "nativeAfter": {
+      "sourceText": "Cover Review Fixture\nTest card: 4111 1111 1111 1111\nKeep this ordinary sentence visible.\nAll values on this page are synthetic test data.",
+      "bytes": 137,
+      "fragmentCount": 0,
+      "coverLeak": false,
+      "build": "ocr-native-fix-build.log"
+    }
+  },
+  "stickyManual": {
+    "file": "/tmp/tinycast-completion-2_njcdaj/sticky-manual-native.png",
+    "entry": "/Users/bytedance/Library/Application Support/com.tinycast.app.dev/captures/history/D5A24566-7783-436E-BC04-FC2F462073C5/entry.json",
+    "size": {
+      "height": 2482,
+      "width": 1796
+    },
+    "bytes": 345757,
+    "sha256": "cf75ce049fa58891cd416b2f03e4d487c5f7475a03c4cb92e7daa899b8b6a1aa",
+    "initialSize": {
+      "width": 1796,
+      "height": 1398
+    },
+    "rows": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17
+    ],
+    "headerCount": 1,
+    "footerCount": 1,
+    "mode": "vertical manual",
+    "occlusionRecovery": "Computer-use indicator correctly paused sampling; moving pointer outside and keyboard Continue resumed successfully",
+    "independentOCR": "/tmp/tinycast-completion-2_njcdaj/sticky-manual-native-ocr.json",
+    "visual": "All full rows 1-17 readable and continuous; terminal partially visible row 18 preserved beneath footer"
+  },
+  "imageEffects": {
+    "file": "/tmp/tinycast-completion-2_njcdaj/image-effects-native.png",
+    "entry": "/Users/bytedance/Library/Application Support/com.tinycast.app.dev/captures/history/34C4B513-2046-4D6A-A511-F404CE1A0ECD/entry.json",
+    "size": {
+      "height": 820,
+      "width": 1800
+    },
+    "bytes": 72102,
+    "sha256": "7a18f231bb6c31a0526f3e5b3641dcd3ba330a4602ad27334e016e0494c97d3f",
+    "nativePickColor": "Covered pixel sampled as #000000; custom hex #2468AC applied to a filled rectangle",
+    "nativeUndoRedo": "Spotlight removed/restored with one Undo/Redo",
+    "pixels": {
+      "headerWhite": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "dimmedWhite": [
+        115,
+        115,
+        115,
+        255
+      ],
+      "covered": [
+        0,
+        0,
+        0,
+        255
+      ],
+      "customColorAfterSpotlight": [
+        16,
+        47,
+        78,
+        255
+      ]
+    },
+    "blurredText": "Visible smoothing confirmed; independent OCR can still recognize the test card. Blur is not a privacy guarantee.",
+    "knownFixedDisplayIssue": "Spotlight originally dimmed empty canvas below the image; clipped to output bounds and verified in the rebuilt native editor.",
+    "harness": "Full-band and preview-tile byte comparisons, overlap-union spotlight, custom color serialization, covered pixel protection passed",
+    "interactionPolish": {
+      "escapePickColor": "Editor stays open; Pick Color deselects and instruction disappears.",
+      "toolSwitch": "Selected Rectangle to Blur immediately replaces rectangle properties with Light/Medium/Strong; Strong selected successfully.",
+      "cleanup": "Temporary rectangle undone; editor closed without preservation prompt.",
+      "buildLog": "/tmp/tinycast-completion-2_njcdaj/image-tools-polish-build.log"
+    }
+  },
+  "mediaHistory": {
+    "date": "2026-09-29",
+    "buildLog": "/tmp/tinycast-completion-2_njcdaj/gif-playback-build.log",
+    "gif": {
+      "bytes": 85254,
+      "distinctDecodedFrames": 30,
+      "duration": 3.0000000000000013,
+      "file": "/tmp/tinycast-completion-2_njcdaj/history-roundtrip.gif",
+      "frames": 30,
+      "sha256": "SHA256 digest: b58424bc8079b4d664de6761b4254d7fb8ce25a2bd9704816b88ba57fb49ec94",
+      "sizes": [
+        "640x413"
+      ],
+      "type": "com.compuserve.gif"
+    },
+    "historyID": "AC74FA21-1845-49E4-A83C-B2A3B3B8544F",
+    "nativePlayback": "Custom bounded frame playback observed clock 00:36:09 then 00:36:10. The first QLPreviewView implementation only showed frame one and was replaced for GIFs.",
+    "finderPaste": "Copy from history, close palette, Finder Cmd-V into /tmp/tinycast-completion-2_njcdaj/finder-paste/animation.gif; output SHA-256 equals the export and history GIF.",
+    "leaseRelease": "One animation.gif session while playing; none in the post-close sample, 64 seconds later. Not a five-second performance acceptance.",
+    "rssLiveBytes": 177111040,
+    "rssAfterCloseBytes": 171556864,
+    "tests": "83/83 full suite passed in 74 seconds before bounded GIF playback addition; final focused video harness passed in 31 seconds.",
+    "remaining": "Image/video Quick Preview and copy-file native paths, sustained playback resource budget, full suite after playback change."
+  },
+  "surroundingErase": {
+    "file": "/tmp/tinycast-completion-2_njcdaj/erase-native.png",
+    "bytes": 72000,
+    "sha256": "898c81e4e543342756600229120d11f50a158074cf807f7e4f231aeec5b1fc0a",
+    "changedPixels": 65728,
+    "changedBounds": [
+      1130,
+      328,
+      1546,
+      486
+    ],
+    "allChangedPixelsRGBA": [
+      115,
+      115,
+      115,
+      255
+    ],
+    "unchangedOutside": true,
+    "undoRedo": "Native single Undo restored blue rectangle; Redo removed it; Save succeeded.",
+    "harness": "capture-workflow-test passed in 41s; mixed foreground perimeter, cross-tile output, PNG bands, preview equality, undo/redo, whole-crop rejection",
+    "scope": "Opaque dominant surrounding color; uniform backgrounds. Not content-aware reconstruction or gradient inpainting."
+  },
+  "historyDrag": {
+    "implementation": "NSItemProvider file representation, copied session lease, cancellation through Progress; original history retained",
+    "harness": "capture-video-test passed in 22s; GIF bytes identical in consumer callback",
+    "native": "pending Finder drag acceptance"
+  },
+  "peopleCovers": {
+    "face": {
+      "file": "/tmp/tinycast-completion-2_njcdaj/faces-native.png",
+      "entry": "/Users/bytedance/Library/Application Support/com.tinycast.app.dev/captures/history/4783737F-0E67-458E-83A9-F5B652839CA3/entry.json",
+      "size": {
+        "height": 1024,
+        "width": 819
+      },
+      "bytes": 801120,
+      "sha256": "2dffc7061fdf6548ed1eb95fe50ca490445d1a65fb59854ee8f782fee2264121"
+    },
+    "person": {
+      "file": "/tmp/tinycast-completion-2_njcdaj/people-native.png",
+      "entry": "/Users/bytedance/Library/Application Support/com.tinycast.app.dev/captures/history/165B95D7-3080-4283-BAC2-5801A5629E16/entry.json",
+      "size": {
+        "height": 1024,
+        "width": 819
+      },
+      "bytes": 117943,
+      "sha256": "2dba70e8b9b4206c5478fd083dd208aa85f39f100be376e71d4e737a95679cb4"
+    },
+    "faceDecoded": {
+      "faceCenterRGBA": [
+        0,
+        0,
+        0,
+        255
+      ],
+      "faces": 0,
+      "height": 1024,
+      "people": 1,
+      "width": 819
+    },
+    "personDecoded": {
+      "faceCenterRGBA": [
+        0,
+        0,
+        0,
+        255
+      ],
+      "faces": 0,
+      "height": 1024,
+      "people": 0,
+      "width": 819
+    },
+    "interaction": "Native Find Faces returned Face 1/1. Excluding disabled Cover; applying produced an opaque face cover. One Undo restored face; Redo and Copy produced PNG. Find People on that final PNG returned Person 1/1; Cover and Copy produced PNG with zero faces and zero people detected.",
+    "tests": "capture-ocr-test 53s includes NASA positive fixture, overview/tile deduplication, coordinates and redaction; native quality corpus remains incomplete",
+    "memory": {
+      "first": {
+        "time": 1790617963.0653079,
+        "pid": 66858,
+        "mainRSS": 207585280,
+        "helperRSS": 0,
+        "helpers": [],
+        "totalRSS": 207585280
+      },
+      "closedAt": 1790618023.172044,
+      "closePlus5": {
+        "time": 1790618028.1881988,
+        "pid": 66858,
+        "mainRSS": 203538432,
+        "helperRSS": 0,
+        "helpers": [],
+        "totalRSS": 203538432
+      },
+      "peakMain": 223215616,
+      "peakHelper": 25542656,
+      "peakSum": 241434624,
+      "last": {
+        "time": 1790618052.8707998,
+        "pid": 66858,
+        "mainRSS": 203538432,
+        "helperRSS": 0,
+        "helpers": [],
+        "totalRSS": 203538432
+      }
+    }
+  },
+  "emojiAndAlignment": {
+    "file": "/tmp/tinycast-completion-2_njcdaj/emoji-alignment-native.png",
+    "size": [
+      819,
+      1024
+    ],
+    "bytes": 152736,
+    "sha256": "e57462fa7f5891c166a5c171b8450811996d91c47cb93564a2388a73b2fe4c02",
+    "emojiPixelBounds": [
+      [
+        190,
+        164,
+        317,
+        291
+      ],
+      [
+        487,
+        164,
+        614,
+        291
+      ]
+    ],
+    "verticalAlignmentExact": true,
+    "nativeActions": [
+      "search rocket and insert verified",
+      "insert smile",
+      "resize 64 to 126 px",
+      "single Undo returns 64 px",
+      "Redo and reselect displays 126 px",
+      "second emoji dragged 204 screen pixels and snapped by remaining 6 pixels",
+      "Copy completes and closes"
+    ],
+    "tests": "emoji-workflow-test.log: pass 45s",
+    "build": "emoji-undo-build.log: success, existing AppIntents warning only"
+  },
+  "fixedSidebarAutomatic": {
+    "date": "2026-09-29",
+    "fixture": "Tests/Fixtures/capture/sidebar.html",
+    "mode": "horizontal automatic with pause/resume",
+    "initialPixels": [
+      1794,
+      695
+    ],
+    "outputPixels": [
+      3054,
+      695
+    ],
+    "artifact": "/tmp/tinycast-completion-2_njcdaj/fixed-sidebar-native.png",
+    "sha256": "c583bea8833710bc63ba6da63107753e71f683942e5f3bef9302b65cb9a23bd3",
+    "historyID": "207DBCD6-FD98-4D72-AEC0-92B51699EE03",
+    "display": {
+      "name": "HP Z27k G3",
+      "scale": 2,
+      "appKitFrame": [
+        -1920,
+        37,
+        1920,
+        1080
+      ]
+    },
+    "checks": [
+      "Independent ImageIO decode: 3054 x 695",
+      "Fixed labels 0 through 4 appear exactly once",
+      "Visual inspection: complete columns 1 through 7 are continuous; column 8 is clipped at the final edge",
+      "Pause retained 2334 x 695; continued to 3054 x 695; Return and Copy finished"
+    ],
+    "limitations": [
+      "Selected first five complete rows to avoid an existing computer-use cursor overlay below the region",
+      "Both displays are 2x; does not verify mixed DPI or 5K"
+    ]
+  },
+  "latestHarnesses": {
+    "passed": 85,
+    "total": 85,
+    "seconds": 173,
+    "jobs": 4,
+    "log": "/tmp/tinycast-completion-2_njcdaj/toolbar-suite.log",
+    "buildLog": "/tmp/tinycast-completion-2_njcdaj/toolbar-build.log",
+    "lintLog": "/tmp/tinycast-completion-2_njcdaj/toolbar-lint.log",
+    "warnings": "Existing AppIntents metadata tool warning only; no new Swift or Capture lint warnings"
+  },
+  "pdfAutomatic": {
+    "date": "2026-09-29",
+    "source": "/tmp/tinycast-completion-2_njcdaj/native-scroll.pdf",
+    "application": "Preview",
+    "mode": "vertical automatic; pause/resume",
+    "initialPixels": [
+      1480,
+      1690
+    ],
+    "outputPixels": [
+      1480,
+      3850
+    ],
+    "artifact": "/tmp/tinycast-completion-2_njcdaj/pdf-scroll-native.png",
+    "sha256": "bbed1b9838615f000827cbdddb142dce251a713be137397f2d0143f9e776f0b0",
+    "historyID": "179BEDCF-09A4-475E-B71B-D74222B037EE",
+    "checks": [
+      "Independent ImageIO decode succeeded",
+      "Vision returned rows 026 through 050 consecutively, each once",
+      "Paused content retained; Copy published the final PNG"
+    ],
+    "limitations": [
+      "The next page title is partly visible, but next-page body rows are not captured; cross-page body continuity remains unverified"
+    ]
+  },
+  "reflection": {
+    "date": "2026-09-29",
+    "source": "/tmp/tinycast-completion-2_njcdaj/pdf-scroll-native.png",
+    "artifact": "/tmp/tinycast-completion-2_njcdaj/reflected-pdf-native.png",
+    "sha256": "7f6959b3665795ad846ebabca869d58f33662c1085a26efb1639afa9b1350d01",
+    "historyID": "3AB2C708-23FD-4175-9D1B-9877D591A500",
+    "pixels": [
+      1480,
+      3850
+    ],
+    "checks": [
+      "Native horizontal flip; one Undo removed the operation, Redo restored it",
+      "Independent decoded comparison of 5698000 pixels: exactly horizontal reflection, zero different channels"
+    ],
+    "harness": "/tmp/tinycast-completion-2_njcdaj/reflection-test-fixed.log",
+    "scope": "Native horizontal; vertical, strips, cropped covers/pixelation, source archive and undo covered by shipped-source harness"
+  },
+  "nativeListAutomatic": {
+    "date": "2026-09-29",
+    "application": "com.apple.finder",
+    "inputViewport": [
+      300,
+      694
+    ],
+    "output": [
+      300,
+      1054
+    ],
+    "file": "/tmp/tinycast-completion-2_njcdaj/native-list-scroll.png",
+    "bytes": 155757,
+    "sha256": "79f05fdf3599069c9f2a1587f41c2d096ac47842c27531c39d4a5bdc4dae9285",
+    "historyID": "78FA86A7-FE7A-4B76-98E7-48AC83CBC4DC",
+    "independentDecode": "ImageIO and Vision: ROW 001 through ROW 026, every row once in order",
+    "stopReason": "Computer-use software cursor window obscured the ROI; app paused, then Finish and Copy preserved the current result. No visibility bypass.",
+    "scope": "Narrow name-column strip chosen to avoid existing cursor windows; full-width list and manual list not verified."
+  },
+  "magnifier": {
+    "date": "2026-09-29",
+    "file": "/tmp/tinycast-completion-2_njcdaj/magnifier-native.png",
+    "size": [
+      300,
+      1054
+    ],
+    "bytes": 159556,
+    "sha256": "0c74a85acc900811c2f2105abae530b80ecf31c808c8a5efe21cfd74824de45d",
+    "historyID": "26AD0C41-3F23-4895-B31D-D6B668C82538",
+    "nativeActions": [
+      "G creates 2x lens",
+      "V moves lens",
+      "one Undo restores original placement",
+      "Redo restores move",
+      "choose 4x",
+      "resize lens",
+      "Copy and close"
+    ],
+    "pixels": {
+      "changedPixels": 29311,
+      "bounds": [
+        24,
+        401,
+        253,
+        610
+      ]
+    },
+    "independentInspection": "Decoded PNG visibly magnifies ROW 013; pixels outside the reported bounds match source exactly.",
+    "harness": "Capture transform passes privacy cover, vector sampling, crop, overlapping lenses, tiles and PNG bands. At circle antialias edge only, maximum 1 LSB difference; interior is exact.",
+    "log": "/tmp/tinycast-completion-2_njcdaj/transform-preview-test.log"
+  },
+  "imageLayers": {
+    "date": "2026-09-29",
+    "file": "/tmp/tinycast-completion-2_njcdaj/image-layers-final-native.png",
+    "size": [
+      300,
+      1054
+    ],
+    "bytes": 272218,
+    "sha256": "68982cf309e36180d7792bd680c287ce062b258638b8bc082c6e9c4d6fcc1e22",
+    "historyID": "3F087DB8-F08E-487F-ACE4-96A41EA4BA0E",
+    "editableHistoryID": "9962E67E-5D0C-4593-B91F-B6789C61EE73",
+    "nativeActions": [
+      "Add NASA portrait from file",
+      "move, undo once, redo",
+      "set opacity 0.65 and rotation 25 degrees",
+      "proportional resize",
+      "Command-V adds second independent image",
+      "undo and redo paste",
+      "Save Editable Draft",
+      "Copy",
+      "reopen editable history and select first layer: 65 percent / 25 degrees retained",
+      "rebuild with seam fix, reopen same draft and Copy again"
+    ],
+    "documentReadback": {
+      "layers": 2,
+      "first": {
+        "opacity": 0.65,
+        "rotation": 25,
+        "frame": [
+          [
+            60,
+            74.47252747252747
+          ],
+          [
+            153.3765843618675,
+            191.76754870152905
+          ]
+        ]
+      },
+      "second": {
+        "opacity": 1,
+        "rotation": 0,
+        "frame": [
+          [
+            60,
+            210.8
+          ],
+          [
+            180,
+            632.4
+          ]
+        ]
+      }
+    },
+    "regression": "Original rotated source-tile clip antialias produced internal differences. Hard internal clips fixed it. Harness compares all pixels; only outside rotated border within 2 pixels allows at most 2 LSB differences. Covers, alpha, flip, archive and undo pass.",
+    "harnessLog": "/tmp/tinycast-completion-2_njcdaj/image-layer-seam-test.log",
+    "remaining": [
+      "wider corpus",
+      "append capture",
+      "cross-display capture composition"
+    ]
+  },
+  "composition": {
+    "vertical": {
+      "size": [
+        819,
+        2078
+      ],
+      "bytes": 1132504,
+      "sha256": "c2e70a64c69d7181f35c5f334b24d00c05772a48c27bfefe51a97767ebb63fad"
+    },
+    "horizontal": {
+      "size": [
+        1119,
+        1054
+      ],
+      "bytes": 1138437,
+      "sha256": "a6234d6fca6dd09c524e5495a0e13f22b369f9809fa8fe5646e89f198a6757aa"
+    },
+    "basePixelsExact": 316200,
+    "addedJPEGDecodedPixelsExact": 838656,
+    "paddingFullyTransparent": true,
+    "nativeUndoRedo": "819×2078 -> 300×1054 -> 819×2078",
+    "verticalPath": "/tmp/tinycast-completion-2_njcdaj/composition-vertical-native.png",
+    "horizontalPath": "/tmp/tinycast-completion-2_njcdaj/composition-horizontal-native.png",
+    "editableHistoryID": "74931808-A6AD-44F2-8D7E-0A58865C0973",
+    "nativeActions": [
+      "vertical combine, undo and redo, save PNG",
+      "horizontal combine, save editable draft, copy PNG",
+      "reopen editable draft with independent layers",
+      "move second image, Send Image Backward and Bring Image Forward visibly change overlap",
+      "Fit Canvas to Images: 1119 x 1054 -> 864 x 1054; Undo/Redo; Copy"
+    ],
+    "fittedPath": "/tmp/tinycast-completion-2_njcdaj/composition-fit-native.png",
+    "fittedSHA256": "cbbad7f67160ca8158056b1d86e95d8058537cb93e48ab542d0ed1ed41a65ee6",
+    "harnessLog": "/tmp/tinycast-completion-2_njcdaj/composition-test.log",
+    "limits": [
+      "32 image layers",
+      "64 million source pixels",
+      "64 million canvas pixels, 30000 pixels per side"
+    ],
+    "remaining": [
+      "cross-display capture composition",
+      "append capture native scope matrix"
+    ]
+  },
+  "backgroundRemoval": {
+    "path": "/tmp/tinycast-completion-2_njcdaj/foreground-native.png",
+    "size": [
+      819,
+      1024
+    ],
+    "bytes": 638619,
+    "sha256": "2cdd4e0725509da5466f0b29e6c36d5621e08e112f2344d272d57ff2cac923ff",
+    "historyID": "B3BB8123-1B2C-400D-894C-7DB04FCEFB68",
+    "editableHistoryID": "E160E690-5080-49DB-B47A-7D6918E9AA39",
+    "restoredPath": "/tmp/tinycast-completion-2_njcdaj/foreground-restored-native.png",
+    "restoredSHA256": "9247f428509b10c7480585ced6a2389d9148946baf3602f7e81c8898d066fcfe",
+    "nativeActions": [
+      "Remove Background on NASA public portrait",
+      "Restore Background",
+      "Undo twice restores original unedited document",
+      "Redo removal",
+      "Save Editable Draft and Copy",
+      "reopen draft, select layer, Restore Background and Copy"
+    ],
+    "independentPixels": {
+      "pixels": 838656,
+      "alpha": {
+        "transparent": 273127,
+        "opaque": 536513,
+        "softEdge": 29016
+      },
+      "restoredAllChannelsExact": true,
+      "opaqueSubjectColorsExact": true,
+      "transparentRGBZero": true,
+      "faceCenterAlpha": 255
+    },
+    "implementation": "On-device GenerateForegroundInstanceMaskRequest, at most 1024 px input; separate mask asset, source remains immutable; cropped and covered final image is used when converting whole document to a layer. Individual selected images can be masked without flattening other layers.",
+    "harnesses": [
+      "/tmp/tinycast-completion-2_njcdaj/foreground-transform-alpha-test.log",
+      "/tmp/tinycast-completion-2_njcdaj/foreground-ocr-test.log"
+    ],
+    "harnessNotes": "Preview data is premultiplied while PNG stores straight alpha; regression comparisons normalize the representation. Both axes, alpha-zero RGB, covers, mask/source-missing history fallback, archive, restore and undo pass.",
+    "remaining": [
+      "broader subject and hair-edge quality corpus",
+      "peak total RSS and cancellation matrix",
+      "native mixed-scale images"
+    ]
+  },
+  "appendCapture": {
+    "file": "/tmp/tinycast-completion-2_njcdaj/append-capture-native.png",
+    "size": [
+      819,
+      1353
+    ],
+    "basePixelsExact": 838656,
+    "capturePixelsExact": 127652,
+    "capturedSize": [
+      388,
+      329
+    ],
+    "paddingTransparent": true,
+    "sha256": "c8a04a38658653dd012f0a9b767ac7423a55a4ced049a7b3ac943c520c70a28d",
+    "history": "D002FC11-A048-4CB6-9392-E7917A0AB9F3",
+    "draft": "F1C60C5C-6AE2-468E-80B6-272B98856EBD",
+    "nativeUndoRedo": [
+      "819x1353",
+      "819x1024",
+      "819x1353"
+    ],
+    "nativeCancel": "original editor restored with Undo disabled and no new history",
+    "remaining": [
+      "switch display while appending"
+    ],
+    "nativeOCR": [
+      "delay.html",
+      "make-pdf.swift",
+      "nasa-portrait.jpg",
+      "privacy.html",
+      "README.md",
+      "scroll.html",
+      "sidebar.html",
+      "sticky.html"
+    ],
+    "rightWindow": {
+      "size": [
+        2616,
+        802
+      ],
+      "baseSize": [
+        1000,
+        500
+      ],
+      "capturedWindowSize": [
+        1616,
+        802
+      ],
+      "sourcePixelsExact": 1796032,
+      "transparentPaddingPixels": 302000,
+      "sha256": "308b763f2a75a9228340bc3ef09e6b69d50f1fed2c20b5017850eff78444b12a",
+      "nativeUndoRedo": [
+        [
+          2616,
+          802
+        ],
+        [
+          1000,
+          500
+        ],
+        [
+          2616,
+          802
+        ]
+      ],
+      "draftID": "F1C49DE3-A6A3-4CBE-A23A-ACB178ABA618",
+      "flattenedID": "E89CA9AE-A3A1-4CD1-A7C7-F882A0AFC044",
+      "artifact": "/tmp/tinycast-completion-2_njcdaj/append-right-window-native.png",
+      "draftReopen": "Native 2616x802 editor reopened; selecting first image exposes opacity 100%, rotation 0 and image-layer actions",
+      "nativeCancel": "Screen scope selected then cancelled before capture; original 1000x500 editor restored without Undo"
+    },
+    "screen": {
+      "size": [
+        3456,
+        3036
+      ],
+      "baseSize": [
+        2616,
+        802
+      ],
+      "capturedScreenSize": [
+        3456,
+        2234
+      ],
+      "sourcePixelsExact": 9516736,
+      "transparentPaddingPixels": 975680,
+      "sha256": "80f6b32a8f86129e39bfd4b48a1843925a9adb9ef42bed6f80256757a42f9ce7",
+      "nativeUndoRedo": [
+        [
+          3456,
+          3036
+        ],
+        [
+          2616,
+          802
+        ],
+        [
+          3456,
+          3036
+        ]
+      ],
+      "draftID": "666319D3-6674-4E69-B075-0F2C94292069",
+      "flattenedID": "B32A891E-5BBF-474F-824C-D0154249DF8E",
+      "artifact": "/tmp/tinycast-completion-2_njcdaj/append-screen-native.png"
+    }
+  },
+  "presentation": {
+    "file": "/tmp/tinycast-completion-2_njcdaj/presentation-native.png",
+    "size": [
+      1029,
+      1595
+    ],
+    "bytes": 953213,
+    "sha256": "fab70e9a325f47b85af82cd3ac3260b4110423a6ee40b79a8e63477836ebf557",
+    "history": "0847F3EB-C622-4E43-A433-7084802F75B3",
+    "draft": "1256288D-5001-4641-AC1B-37E31FA7DD83",
+    "style": {
+      "color": {
+        "green": 88,
+        "blue": 155,
+        "red": 55
+      },
+      "shadow": 20,
+      "radius": 16,
+      "background": "gradient",
+      "secondary": {
+        "green": 84,
+        "blue": 168,
+        "red": 146
+      },
+      "padding": 105,
+      "windowFrame": true
+    },
+    "sourceSubjectPixelsExact": 838656,
+    "appendedCaptureInteriorExact": 121444,
+    "gradientSamples": [
+      {
+        "xy": [
+          0,
+          0
+        ],
+        "rgba": [
+          55,
+          88,
+          155,
+          255
+        ]
+      },
+      {
+        "xy": [
+          1028,
+          0
+        ],
+        "rgba": [
+          82,
+          87,
+          159,
+          255
+        ]
+      },
+      {
+        "xy": [
+          0,
+          1594
+        ],
+        "rgba": [
+          119,
+          85,
+          164,
+          255
+        ]
+      },
+      {
+        "xy": [
+          1028,
+          1594
+        ],
+        "rgba": [
+          146,
+          84,
+          168,
+          255
+        ]
+      },
+      {
+        "xy": [
+          500,
+          20
+        ],
+        "rgba": [
+          69,
+          87,
+          157,
+          255
+        ]
+      },
+      {
+        "xy": [
+          20,
+          900
+        ],
+        "rgba": [
+          92,
+          86,
+          160,
+          255
+        ]
+      },
+      {
+        "xy": [
+          1000,
+          800
+        ],
+        "rgba": [
+          113,
+          85,
+          163,
+          255
+        ]
+      }
+    ],
+    "originalImageLayers": 2,
+    "nativeUndoRedoPadding": [
+      48,
+      105,
+      48,
+      105
+    ],
+    "removeStylingRestoresIdenticalPNG": true,
+    "nativeCanvasCentered": true,
+    "nativeReopenIndependentLayers": true,
+    "harnesses": [
+      "/tmp/tinycast-completion-2_njcdaj/presentation-gradient-test.log",
+      "/tmp/tinycast-completion-2_njcdaj/presentation-ocr-test.log"
+    ],
+    "remaining": [
+      "all controls native matrix",
+      "extreme-size image peak RSS"
+    ]
+  },
+  "inlineTranslation": {
+    "file": "/tmp/tinycast-completion-2_njcdaj/inline-translation-native.png",
+    "size": [
+      1800,
+      820
+    ],
+    "bytes": 47508,
+    "sha256": "b9eefa5390f8c481ec76d91840724ee3e42ec4632c01f4539ee59da2568ff5a1",
+    "history": "9F714EAD-EC9B-45AF-AB5E-27D65FE788CF",
+    "draft": "712E0D9C-747C-4AB6-9F90-86E733E01268",
+    "paragraphs": 4,
+    "editedTitle": "遮盖审核测试",
+    "unchangedOutsideParagraphs": true,
+    "changedPixels": 81321,
+    "unchangedCoverPixels": 56461,
+    "originalToggleAllPixelsExact": 1476000,
+    "restoredSHA256": "c93f7fbd505afd8a4e051b6727f789bde3eabdf02731904cb8cb90f5aee1b869",
+    "ocr": {
+      "height": 820,
+      "text": [
+        {
+          "height": 67.33097839355474,
+          "text": "遮盖审核测试",
+          "x": 41.68037409228913,
+          "y": 171.3345107621985
+        },
+        {
+          "height": 41.78343963623047,
+          "text": "测试卡：411171117171 1771",
+          "x": 41.86047047215652,
+          "y": 540.5732479865557
+        },
+        {
+          "height": 56.446353912353494,
+          "text": "保持这个普通句子可见。",
+          "x": 43.79539176466767,
+          "y": 646.6148788733102
+        },
+        {
+          "height": 59.93875885009766,
+          "text": "此页面上的所有值都是合成测试数据。",
+          "x": 41.46654253106317,
+          "y": 747.3368620130932
+        }
+      ],
+      "width": 1800
+    },
+    "ocrLimitation": "OCR misread some test-card digits; document retains the exact original digits. Chinese title and both prose paragraphs match.",
+    "harnesses": [
+      "/tmp/tinycast-completion-2_njcdaj/inline-translation-provider-final-test.log",
+      "/tmp/tinycast-completion-2_njcdaj/inline-translation-pixels-test.log",
+      "/tmp/tinycast-completion-2_njcdaj/inline-translation-ocr-test.log"
+    ],
+    "nativeActions": [
+      "recognize four paragraphs from final covered PNG",
+      "translate using existing AI configuration",
+      "edit title",
+      "Undo/Redo",
+      "save draft",
+      "reopen draft",
+      "copy translation",
+      "show original and copy"
+    ],
+    "remaining": [
+      "native Apple language-pack path",
+      "mixed-language and narrow-column quality corpus",
+      "native exclusion and cancellation",
+      "peak RSS"
+    ],
+    "paragraphExclusion": {
+      "file": "inline-translation-excluded-native.png",
+      "excludedTitlePixelsRestored": 83660,
+      "changedPixels": 35274,
+      "otherPixelsEqualTranslatedOutput": true,
+      "sha256": "0dde10d60327a551525c786fa33676e9c0471d3c5b52201424c0c4af83a2bc83",
+      "appleNative": "Missing language pack shown; existing translation retained; no permissions or system settings changed."
+    },
+    "fullSuite": "84/84 passed, 158s, four jobs; inline-translation-full-suite.log"
+  },
+  "videoEffects": {
+    "video-effects-native": {
+      "audioTracks": 0,
+      "duration": 6,
+      "file": "/tmp/tinycast-completion-2_njcdaj/video-effects-native.mp4",
+      "fps": 30,
+      "frames": [
+        {
+          "actual": 0.2,
+          "requested": 0.2,
+          "text": [
+            "i http://127.B.0.1:8778/delay.html",
+            "Delayed Capture Fixture",
+            "23:47:40",
+            "A delayed capture must show a newer clock.",
+            "Cancel must leave the clipboard and history unchanged."
+          ]
+        },
+        {
+          "actual": 2.7,
+          "requested": 2.7,
+          "text": [
+            "i http://127.B.0.1:8778/delay.html",
+            "Delayed Capture Fixture",
+            "A delayed capture must show a newer clock.",
+            "Cancel must leave the clipboard and history unchanged.",
+            "CAPTURE QA",
+            "9 g"
+          ]
+        },
+        {
+          "actual": 3.9,
+          "requested": 3.9000000000000004,
+          "text": [
+            "i http://127.B.0.1:8778/delay.html",
+            "Delayed Capture Fixture",
+            "A delayed capture must show a newer clock.",
+            "Cancel must leave the clipboard and history unchanged.",
+            "CAPTURE QA"
+          ]
+        },
+        {
+          "actual": 5.7,
+          "requested": 5.7,
+          "text": [
+            "i http://127.B.0.1:8778/delay.html",
+            "Delayed Capture Fixture",
+            "23:47:46",
+            "A delayed capture must show a newer clock.",
+            "Cancel must leave the clipboard and history unchanged.",
+            "E G"
+          ]
+        }
+      ],
+      "height": 802,
+      "width": 1280,
+      "bytes": 209057,
+      "sha256": "b9d65b8f888022dfc0460b3e8de09f71bb440d24f4875f5f84534437f5d49aa9"
+    },
+    "video-zoom-native": {
+      "audioTracks": 0,
+      "duration": 6,
+      "file": "/tmp/tinycast-completion-2_njcdaj/video-zoom-native.mp4",
+      "fps": 30,
+      "frames": [
+        {
+          "actual": 0.2,
+          "requested": 0.2,
+          "text": [
+            "i http://127.B.0.1:8778/delay.html",
+            "Delayed Capture Fixture",
+            "23:47:40",
+            "A delayed capture must show a newer clock.",
+            "Cancel must leave the clipboard and history unchanged."
+          ]
+        },
+        {
+          "actual": 2.7,
+          "requested": 2.7,
+          "text": [
+            "i http://127.B.@.1:B778/delay.html",
+            "Delayed Capture Fixture",
+            "A delayed capture must show a newer clock.",
+            "Cancel must leave the clipboard and history unchanged."
+          ]
+        },
+        {
+          "actual": 3.9,
+          "requested": 3.9000000000000004,
+          "text": [
+            "i http://127.B.@.1:B778/delay.html",
+            "Delayed Capture Fixture",
+            "A delayed capture must show a newer clock.",
+            "Cancel must leave the clipboard and history unchanged."
+          ]
+        },
+        {
+          "actual": 5.7,
+          "requested": 5.7,
+          "text": [
+            "i http://127.B.0.1:8778/delay.html",
+            "Delayed Capture Fixture",
+            "23:47:46",
+            "A delayed capture must show a newer clock.",
+            "Cancel must leave the clipboard and history unchanged.",
+            "E G"
+          ]
+        }
+      ],
+      "height": 802,
+      "width": 1280,
+      "bytes": 359430,
+      "sha256": "9969a39e31d7d4e4c00ad61ca5bf10e8246567cfd4babf330aaac6224e77efcd"
+    },
+    "draft": {
+      "history": "64BA7F12-2D33-4D41-A9E9-9AE179E2379F",
+      "edit": {
+        "volume": 1,
+        "speed": 1,
+        "cuts": [],
+        "end": 6,
+        "start": 0,
+        "holds": [],
+        "effects": [
+          {
+            "color": {
+              "red": 0,
+              "green": 0,
+              "blue": 0
+            },
+            "id": "1865EC30-ECC6-4C07-BF71-3A43E8AF2C3C",
+            "text": "Text",
+            "end": 6,
+            "kind": "cover",
+            "rect": [
+              [
+                0.04,
+                0.2
+              ],
+              [
+                0.2,
+                0.08
+              ]
+            ],
+            "start": 0
+          }
+        ],
+        "trackVolumes": {}
+      },
+      "bytes": 116696,
+      "sha256": "44282e509f165328aaed45ab338ebfe5834caf866b5e0013f79bc8ed00f08ccd",
+      "reopened": "Cover 0–6s; remove restored 23:47:40; single Undo restored cover; original retained privately",
+      "timelineDrag": "Trim Start 0→0.628; one Undo restored 0 and no further undo steps"
+    },
+    "independentCoverPixelChecks": [
+      {
+        "frame": "video-effects-frame-2.png",
+        "pixels": 13888,
+        "maximumRGB": 0
+      },
+      {
+        "frame": "video-effects-frame-3.png",
+        "pixels": 13888,
+        "maximumRGB": 0
+      },
+      {
+        "frame": "video-zoom-frame-2.png",
+        "pixels": 59381,
+        "maximumRGB": 0
+      },
+      {
+        "frame": "video-zoom-frame-3.png",
+        "pixels": 59381,
+        "maximumRGB": 0
+      }
+    ],
+    "validation": "capture-video-test passed in 33s: frame-timed cover/zoom/text, GIF consistency, precise seek, draft originals/output separation, bitrate variants and mid-export cancellation"
+  },
+  "nativeFileCopyAndShare": {
+    "date": "2026-09-29",
+    "PNG": {
+      "size": [
+        1800,
+        820
+      ],
+      "bytes": 54963,
+      "sha256": "0dde10d60327a551525c786fa33676e9c0471d3c5b52201424c0c4af83a2bc83",
+      "comparison": "byte-identical to paragraph-exclusion PNG; existing covers preserved"
+    },
+    "MP4": {
+      "size": [
+        1280,
+        802
+      ],
+      "duration": 6,
+      "fps": 30,
+      "bytes": 116526,
+      "sha256": "3e5c583c9e130b05e56efc77c620f3775918d1c73d665817d10dcf20ffd85a30",
+      "comparison": "Finder paste equals transfer; independently decoded at 0.2/2.7/3.9/5.7s, covered clock absent"
+    },
+    "share": "Native share popover opened for PNG and MP4, cancelled without sending; editor preserved; second share succeeded after cancelling first",
+    "stillPending": [
+      "history share anchoring",
+      "Finder drag",
+      "video quick preview"
+    ]
+  },
+  "independentRecording": {
+    "date": "2026-09-29",
+    "pipeline": "SCStream sample buffers; separate H.264/AAC writers; passthrough mux",
+    "nativeSystemAudio": {
+      "audioPeak": 0.032360758632421494,
+      "audioPulses": [
+        0.7,
+        1.7,
+        2.7,
+        3.7,
+        4.7,
+        5.7,
+        6.7,
+        7.7,
+        8.58,
+        9.5,
+        10.5,
+        11.5,
+        12.5,
+        13.5,
+        14.5,
+        15.5,
+        16.5,
+        17.5,
+        18.5,
+        19.5,
+        20.5
+      ],
+      "audioTracks": 1,
+      "duration": 20.833333333333332,
+      "file": "/tmp/tinycast-completion-2_njcdaj/system-audio-paused-native.mp4",
+      "frames": 309,
+      "ocr": [],
+      "size": [
+        1420,
+        1300
+      ],
+      "visualFlashes": [
+        0.8,
+        1.8,
+        2.8,
+        3.7333333333333334,
+        4.733333333333333,
+        5.733333333333333,
+        6.8,
+        7.8,
+        8.6,
+        9.6,
+        10.6,
+        11.533333333333333,
+        12.533333333333333,
+        13.6,
+        14.6,
+        15.6,
+        16.6,
+        17.533333333333335,
+        18.533333333333335,
+        19.6,
+        20.6
+      ],
+      "visualMinusAudioSeconds": [
+        0.10000000000000009,
+        0.10000000000000009,
+        0.09999999999999964,
+        0.033333333333333215,
+        0.033333333333333215,
+        0.033333333333333215,
+        0.09999999999999964,
+        0.09999999999999964,
+        0.019999999999999574,
+        0.09999999999999964,
+        0.09999999999999964,
+        0.033333333333333215,
+        0.033333333333333215,
+        0.09999999999999964,
+        0.09999999999999964,
+        0.09999999999999964,
+        0.10000000000000142,
+        0.03333333333333499,
+        0.03333333333333499,
+        0.10000000000000142,
+        0.10000000000000142
+      ]
+    },
+    "nativeFrames": {
+      "audioTracks": 1,
+      "duration": 20.833333333333332,
+      "file": "/tmp/tinycast-completion-2_njcdaj/system-audio-paused-native.mp4",
+      "fps": 14.805194854736328,
+      "frames": [
+        {
+          "actual": 0.2,
+          "requested": 0.2,
+          "text": [
+            "Recording Audio QA",
+            "440 Hz pulse once per second. No microphone.",
+            "Stop Test Tone",
+            "0342",
+            "Pause must remove the gap from picture and sound."
+          ]
+        },
+        {
+          "actual": 9.333333333333334,
+          "requested": 9.375,
+          "text": [
+            "Recording Audio QA",
+            "440 Hz pulse once per second. No microphone.",
+            "Stop Test Tone",
+            "0361",
+            "Pause must remove the gap from picture and sound."
+          ]
+        },
+        {
+          "actual": 13.533333333333333,
+          "requested": 13.541666666666666,
+          "text": [
+            "Recording Audio QA",
+            "440 Hz pulse once per second. No microphone.",
+            "Stop Test Tone",
+            "0365",
+            "Pause must remove the gap from picture and sound."
+          ]
+        },
+        {
+          "actual": 20.466666666666665,
+          "requested": 20.53333333333333,
+          "text": [
+            "Recording Audio QA",
+            "440 Hz pulse once per second. No microphone.",
+            "Stop Test Tone",
+            "0372",
+            "Pause must remove the gap from picture and sound."
+          ]
+        }
+      ],
+      "height": 1300,
+      "width": 1420
+    },
+    "nativeMuted": {
+      "audioPeak": 0,
+      "audioPulses": [],
+      "audioTracks": 1,
+      "duration": 20.833333333333332,
+      "file": "/tmp/tinycast-completion-2_njcdaj/system-audio-muted-native.mp4",
+      "frames": 309,
+      "ocr": [],
+      "size": [
+        1420,
+        1300
+      ],
+      "visualFlashes": [
+        0.8,
+        1.8,
+        2.8,
+        3.7333333333333334,
+        4.733333333333333,
+        5.733333333333333,
+        6.8,
+        7.8,
+        8.6,
+        9.6,
+        10.6,
+        11.533333333333333,
+        12.533333333333333,
+        13.6,
+        14.6,
+        15.6,
+        16.6,
+        17.533333333333335,
+        18.533333333333335,
+        19.6,
+        20.6
+      ],
+      "visualMinusAudioSeconds": []
+    },
+    "files": {
+      "system-audio-paused-native.mp4": "24f0ba3cec7425c641874181a12c01ad0b9f0c274c7a3f49588b7f2ce2fd1de8",
+      "system-audio-muted-native.mp4": "09eb46657ea98d1b2a5020eab89155eaf963d193cabc9fa20fbe7041abd4d697",
+      "recording-copy-native/video.mp4": "24f0ba3cec7425c641874181a12c01ad0b9f0c274c7a3f49588b7f2ce2fd1de8"
+    },
+    "completion": "Copy File selected before Start; Finder Cmd-V produced identical MP4",
+    "permissions": "Screen Recording already granted; microphone and camera remained off",
+    "syncAssessment": "21 audio pulses and visual flashes; visual delay 20–100 ms at requested 15 fps, without accumulating drift across pause. Browser flash scheduling is not a calibrated AV latency source.",
+    "preview": "AVPlayerView autoplay and accessible playback, timeline, volume controls observed; Escape closes. AX slider setValue was not reliable, so exact scrub acceptance remains open.",
+    "testToneStopped": true,
+    "remaining": [
+      "real microphone and simultaneous physical inputs",
+      "30/60 fps AV latency corpus",
+      "recording limits and system interruption matrix",
+      "latest cancellation patch native regression"
+    ]
+  },
+  "crossDisplays": {
+    "implementation": "Display menu offers Select Across Displays and Capture All Displays; sequential immutable screen snapshots, shared global drag rectangle, largest selected native scale, image-layer composition with transparent physical gaps; streamed PNG output and source leases. No cross-display video.",
+    "layoutHarness": {
+      "result": "pass",
+      "seconds": 58,
+      "coverage": [
+        "negative origin",
+        "mixed 1x/2x geometry",
+        "exact seam and gap pixels",
+        "cropped-source draft archive",
+        "single-display scale",
+        "empty screen and pixel budget rejection"
+      ]
+    },
+    "nativeAll": {
+      "size": [
+        7296,
+        2234
+      ],
+      "physicalDisplays": [
+        [
+          3840,
+          2160
+        ],
+        [
+          3456,
+          2234
+        ]
+      ],
+      "captureScale": 2,
+      "exactSourcePixels": 16015104,
+      "transparentGapPixels": 284160,
+      "allSourceRowsExact": true,
+      "sha256": "6444e40a23a0c7f66bd508d150b337cca14811366d16fbfa5909e44018cb04df"
+    },
+    "nativeRegion": {
+      "size": [
+        1000,
+        500
+      ],
+      "dragPhysicalCoordinates": {
+        "from": [
+          400,
+          500
+        ],
+        "to": [
+          -600,
+          1000
+        ]
+      },
+      "sourceSession": "8B20B491-7B62-4F9D-8169-6F9BA022C790",
+      "leftExternalPixelsExact": 300000,
+      "rightInternalPixelsExact": 200000,
+      "sha256": "b4872d43e4d61d40cbaf5033b88b4b49abee654ab6fa0b2a875b21822d134613",
+      "draft": {
+        "id": "6F1EC360-36A2-4DA8-BFF5-FBCDFADE61AA",
+        "previousBytes": 64291145,
+        "croppedBytes": 2230718,
+        "storedRasterSizes": [
+          [
+            400,
+            500
+          ],
+          [
+            600,
+            500
+          ]
+        ],
+        "publishedPNGByteIdentical": true,
+        "reopenedExportByteIdentical": true
+      }
+    },
+    "build": "Debug succeeded; existing AppIntents metadata warning only",
+    "remaining": [
+      "native mixed 1x/2x and 5K hardware",
+      "display disconnect during prepare/selection",
+      "capture resource budget"
+    ]
+  },
+  "recordingLayers": {
+    "implementation": [
+      "optional circular camera content composed into encoded frames",
+      "corner/size/mirror controls",
+      "Off/Shortcuts Only/All Keys modes",
+      "secure-input and repeat suppression",
+      "owned static-screen frame pump",
+      "stop camera and keyboard observer on pause, cancellation and failure",
+      "separate microphone and system audio encoders"
+    ],
+    "syntheticHarness": {
+      "result": "pass",
+      "seconds": 39,
+      "coverage": [
+        "camera pixels within circle",
+        "key content in encoded static-screen frames",
+        "caption expiration",
+        "secure-input key policy",
+        "clear layers and freshness",
+        "bounded encoding cancellation",
+        "audio enabled with no samples"
+      ]
+    },
+    "nativeKeyboardAttempt": {
+      "file": "/tmp/tinycast-completion-2_njcdaj/keyboard-shortcuts-native.mp4",
+      "sha256": "e7389dfb1b3a04ff02d482d323cdf1fb5573e1efb20ade0b5f99c586d26a1818",
+      "decodedFrames": 1130,
+      "duration": 79.34,
+      "requestedFPS": 15,
+      "endAction": "Save File; native panel saved output",
+      "keyboard": "Shortcuts Only selected; Arc Command-F opened Find, but no caption detected in either top/bottom expected output ROI. Native key acceptance is not passed; cause not established."
+    },
+    "permissions": "Camera and Microphone remain off; explicit user approval pending. Screen Recording and Accessibility were already approved; neither reset.",
+    "fullSuite": {
+      "passed": 84,
+      "seconds": 92
+    },
+    "remaining": [
+      "native camera and microphone authorization/acceptance",
+      "native key caption delivery",
+      "device stop indicators across pause/cancellation",
+      "broader audio-video sync corpus"
+    ],
+    "nativeKeyboardDiagnostic": {
+      "file": "/tmp/tinycast-completion-2_njcdaj/keyboard-event-diagnostic.mp4",
+      "sha256": "3ac03ce68b5f8b3498298c2cf2ce886484f84241de247e533a2dcc3786087068",
+      "duration": 18.858,
+      "size": [
+        1420,
+        1300
+      ],
+      "keyEvents": 0,
+      "keyCaptions": 0,
+      "log": "2026-09-29 07:06:37.079, process 61420, com.tinycast.app.dev Capture",
+      "input": "CUA sent Command-F and Escape to Arc; Find opened. No global NSEvent events reached recorder.",
+      "conclusion": "Native keyboard acceptance pending physical keyboard input. Tool delivery path is a hypothesis, not a verified root cause."
+    }
+  },
+  "uploads": {
+    "implemented": [
+      "S3/R2/MinIO SigV4 PUT",
+      "imgbb multipart image upload",
+      "Google Drive Desktop OAuth PKCE + loopback callback + refresh + private resumable-session upload",
+      "editor/video/history Upload and Copy Link"
+    ],
+    "security": [
+      "bundle-scoped Keychain",
+      "explicit final-rendered-file delivery",
+      "ephemeral URLSession with no cache/cookies/credential storage",
+      "reject redirects",
+      "64 KiB response cap",
+      "cancellation",
+      "no public ACL or Drive sharing changes",
+      "no upload destination or credentials in backups"
+    ],
+    "focusedHarness": {
+      "passed": true,
+      "seconds": 3,
+      "coverage": [
+        "AWS published signature vector",
+        "UTF8 paths",
+        "multipart exact file payload",
+        "HTTP failure",
+        "response size cap",
+        "transport cancellation",
+        "RFC 7636 PKCE vector",
+        "callback duplicate/wrong state rejection",
+        "actual 127.0.0.1 random-port callback exchange",
+        "listener cancellation",
+        "Drive session origin allowlist",
+        "mock token refresh and private final-file upload"
+      ]
+    },
+    "nativeSettings": {
+      "s3AndImgbb": "Secure fields observed; empty destination cannot save; cancel leaves no saved destination",
+      "drive": "Google Drive fields and private-scope explanation shown; Connect disabled with no client ID; Cancel leaves destination unset. No browser sign-in started."
+    },
+    "liveNetwork": "No real provider account connected or file uploaded. Live upload and readback remain pending.",
+    "fullSuiteBeforeDrive": {
+      "passed": 85,
+      "seconds": 94,
+      "log": "/tmp/tinycast-completion-2_njcdaj/upload-full-suite.log"
+    },
+    "fullSuite": {
+      "passed": 85,
+      "seconds": 108,
+      "log": "/tmp/tinycast-completion-2_njcdaj/drive-completion-suite.log"
+    }
+  },
+  "completionThumbnail": {
+    "default": "off, native Settings verified",
+    "implementation": "one nonactivating bounded history thumbnail; click reopens, drag final file, hover postpones eight-second dismiss; new capture/disable closes panel",
+    "native": "1000x500 test history copied; Capture Complete panel rendered 400x280 physical on 2x display; click reopened 1000x500 editor",
+    "remaining": [
+      "native drag-to-Finder byte verification",
+      "hover/dismiss timing and focus verification"
+    ],
+    "automaticDismiss": {
+      "visibleMillisecondsAfterCopy": 1401,
+      "absentMillisecondsAfterCopy": 14990,
+      "nativeDismissButton": "Clicked; Capture Complete disappeared",
+      "scope": "Confirms auto-dismiss and explicit close, not an exact eight-second boundary or hover behavior",
+      "settingRestored": "off"
+    }
+  },
+  "imageEditorAppearance": {
+    "date": "2026-09-29",
+    "nativeAppPID": 67656,
+    "imagePixels": [
+      1000,
+      500
+    ],
+    "displayScale": 2,
+    "variants": [
+      {
+        "appearance": "Dark",
+        "interfaceSize": "Default",
+        "windowPhysicalPixels": [
+          2000,
+          1504
+        ],
+        "visibleToolsAndOutput": true,
+        "accessibleLabels": true
+      },
+      {
+        "appearance": "Dark",
+        "interfaceSize": "Large",
+        "windowPhysicalPixels": [
+          2200,
+          1648
+        ],
+        "visibleToolsAndOutput": true,
+        "accessibleLabels": true
+      },
+      {
+        "appearance": "Dark",
+        "interfaceSize": "Larger",
+        "windowPhysicalPixels": [
+          2400,
+          1792
+        ],
+        "visibleToolsAndOutput": true,
+        "accessibleLabels": true
+      },
+      {
+        "appearance": "Light",
+        "interfaceSize": "Default",
+        "windowPhysicalPixels": [
+          2000,
+          1504
+        ],
+        "visibleToolsAndOutput": true,
+        "accessibleLabels": true
+      },
+      {
+        "appearance": "Light",
+        "interfaceSize": "Large",
+        "windowPhysicalPixels": [
+          2200,
+          1648
+        ],
+        "visibleToolsAndOutput": true,
+        "accessibleLabels": true
+      },
+      {
+        "appearance": "Light",
+        "interfaceSize": "Larger",
+        "windowPhysicalPixels": [
+          2400,
+          1792
+        ],
+        "visibleToolsAndOutput": true,
+        "accessibleLabels": true
+      }
+    ],
+    "restored": {
+      "appearance": "System",
+      "interfaceSize": "Default"
+    },
+    "remaining": [
+      "inline workspace matrix",
+      "recording UI matrix",
+      "VoiceOver navigation"
+    ]
+  },
+  "threePinsAndOCR": {
+    "date": "2026-09-29",
+    "nativeAppPID": 67656,
+    "sourcePixels": [
+      1000,
+      500
+    ],
+    "concurrentPins": 3,
+    "ocrReturned": true,
+    "ocrAccuracy": "not an accuracy corpus pass",
+    "closed": [
+      "OCR text panel",
+      "image editor",
+      "all three pins"
+    ],
+    "heapBefore": "/tmp/tinycast-completion-2_njcdaj/pins-ocr-heap.txt",
+    "heapAfter": "/tmp/tinycast-completion-2_njcdaj/pins-closed-heap.txt",
+    "retainedInstancesAfterClose": {
+      "CapturePinController": 0,
+      "CaptureEditorState": 0,
+      "CaptureWorkspaceState": 0,
+      "CaptureSource": 0
+    },
+    "helperReaped": true,
+    "memoryDiagnostic": {
+      "samples": "/tmp/tinycast-completion-2_njcdaj/pins-ocr-memory.json",
+      "mainPeakBytes": 270041088,
+      "helperPeakBytes": 75169792,
+      "concurrentPeakBytes": 345128960,
+      "finalMainBytes": 251314176,
+      "qualification": "heap enumeration occurred during sampling; perturbed diagnostic only, not clean performance acceptance",
+      "absolute100MBBudgetPassed": false
+    }
+  },
+  "ordinaryCaptureCycles": {
+    "date": "2026-09-29",
+    "pid": 74664,
+    "loops": 20,
+    "method": "native palette Capture Screenshot, drag fixed 1000x500 physical region, Copy success and overlay closure each cycle; 200ms ps sampler, no debugger/heap/build/test during sample",
+    "coldRSS": 110657536,
+    "mainPeakRSS": 268468224,
+    "helperPeakRSS": 0,
+    "concurrentPeakRSS": 268468224,
+    "fifthSecondAfterLastClose": {
+      "at": 1790639453.745392,
+      "seconds": 604.9757907920284,
+      "stage": "capture-cycles",
+      "pid": 74664,
+      "mainRSS": 196231168,
+      "helperRSS": 0,
+      "totalRSS": 196231168
+    },
+    "last": {
+      "at": 1790639485.6701372,
+      "seconds": 636.9005161250243,
+      "stage": "capture-cycles",
+      "pid": 74664,
+      "mainRSS": 194641920,
+      "helperRSS": 0,
+      "totalRSS": 194641920
+    },
+    "outputs": "/tmp/tinycast-completion-2_njcdaj/capture-cycles-outputs.json",
+    "samples": "/tmp/tinycast-completion-2_njcdaj/capture-cycles-memory.json",
+    "absoluteBudgetPassed": false,
+    "latencyP95": "not measured; CUA action/AX latency includes automation overhead",
+    "scopeLimit": "ordinary screenshot only; does not close long-image/OCR/recording loops"
+  },
+  "longImageOCR": {
+    "date": "2026-09-29",
+    "size": [
+      1600,
+      30000
+    ],
+    "fontPixels": [
+      14,
+      16,
+      20
+    ],
+    "inputSHA256": "d13b1cff9785e700fdb8a9c0ba228d28ac87b357b5b545df7e2470fa7780e3a5",
+    "nativeOutputSHA256": "18297d689e39f364c5e1e5e7cfd00b80996580b46f5ed4341c5b55f3f10f5d18",
+    "nativeOutputRGBAEqual": true,
+    "pixelsCompared": 48000000,
+    "before": {
+      "lines": 91,
+      "expectedLines": 90,
+      "extra": "DEDIATE NE ON",
+      "fit": "2% whole image"
+    },
+    "after": {
+      "lines": 90,
+      "englishNumberedLines": 30,
+      "chineseNumberedLines": 30,
+      "retainedRepeatedLines": 30,
+      "extra": [],
+      "everyLineMatchesIgnoringWhitespace": true,
+      "fit": "61% width, native editor readable at first open",
+      "resultSHA256": "94e8e1ba42405586265b98ccf22366911a973ae5d75552ddaa9767719c50a6b9"
+    },
+    "artifacts": "/tmp/tinycast-completion-2_njcdaj/long-text-native",
+    "performanceBoundary": "Native regression ran while harnesses compiled; not an import latency or memory benchmark",
+    "scopeLimit": "One synthetic long sample at 14/16/20 px; broader 12 px corpus remains"
+  },
+  "pngFilterRegression": {
+    "fixtures": 20,
+    "colorTypes": [
+      0,
+      2,
+      4,
+      6
+    ],
+    "filterTypes": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "includesNonOpaqueAlpha": true,
+    "assertion": "Every decoded RGBA component matches deterministic generator formula",
+    "harness": "capture-raster-test passed, 1.0s run / 78.7s compile in 10-job suite",
+    "benchmark": "Debug decode plus per-row Swift CRC, 48.879s before / 23.962s after, same checksum; not native latency"
+  },
+  "captureCommandAliases": {
+    "date": "2026-09-29",
+    "nativeQueries": {
+      "截图": [
+        "Capture History",
+        "Capture Screenshot",
+        "Capture & Translate",
+        "Capture Text",
+        "Capture Scrolling Screenshot",
+        "Capture Full Screen",
+        "Pin Clipboard Image"
+      ],
+      "长图": [
+        "Capture Scrolling Screenshot"
+      ],
+      "取字": [
+        "Capture Text"
+      ],
+      "贴图": [
+        "Pin Clipboard Image",
+        "Edit Clipboard Image"
+      ],
+      "录屏": [
+        "Record Screen"
+      ],
+      "截图历史": [
+        "Capture History"
+      ],
+      "编辑图片": [
+        "Edit Clipboard Image"
+      ]
+    },
+    "scope": "Native search results verified; learned usage can reorder generic query results"
+  },
+  "recordingWindowLifecycle": {
+    "date": "2026-09-29",
+    "before": {
+      "artifact": "/tmp/tinycast-completion-2_njcdaj/window-minimized-before.mp4",
+      "sha256": "a7e17741befcf5c6496ab3f91c8934fcc811ffb4154153885eead5722332502c",
+      "size": [
+        1840,
+        872
+      ],
+      "duration": 42.06,
+      "failure": "Minimizing Finder left recording clock running"
+    },
+    "firstFix": {
+      "artifact": "/tmp/tinycast-completion-2_njcdaj/window-suspension-intermediate.mp4",
+      "sha256": "d61eaab628ab873baf1c37ae022762479c12b87a4f6c9e437e9ae16f3049da93",
+      "duration": 7.408,
+      "result": "Minimize pauses on SCK suspension; saved segment preserved",
+      "remainingBug": "Resume while still minimized entered Recording then failed with empty video; superseded by finalFix below"
+    },
+    "finalFix": {
+      "artifact": "/tmp/tinycast-completion-2_njcdaj/window-lifecycle-final.mp4",
+      "history": "587765A1-A2AF-415F-8D28-9AB064A5C87F",
+      "bytes": 664209,
+      "sha256": "a8b957d978ba82a062c888ee95d758b145761038c10b7c3cc1405b23c6ea4d27",
+      "size": [
+        1840,
+        872
+      ],
+      "duration": 23.03,
+      "audioTracks": 0,
+      "nativeSteps": [
+        "Minimize original Finder window pauses at six seconds",
+        "Resume while minimized remains paused with restore-source message",
+        "Restore same window through Finder Window menu; explicit Resume continues",
+        "Switch list/icon/list content while recording",
+        "Close target window pauses; Stop preserves completed segments"
+      ],
+      "decodedAtFourTimes": true,
+      "decodeLog": "/tmp/tinycast-completion-2_njcdaj/window-lifecycle-final.json",
+      "firstFrameStartupDeadlineSeconds": 5,
+      "scope": "Native minimized/restored/closed-window flow passed on macOS 27; does not cover move, occlusion, lock, disconnect or performance"
+    }
+  },
+  "recordingFullScreenCurrent": {
+    "date": "2026-09-29",
+    "artifact": "/tmp/tinycast-completion-2_njcdaj/recording-screen-current.mp4",
+    "history": "7D2129BB-BF3B-40F1-8E89-C45EEDD58EBB",
+    "bytes": 15587005,
+    "sha256": "ccf385f0f2ca0a0b8e7beef16586e78ce4899fe1755140b47952c0a505fa9e37",
+    "size": [
+      3456,
+      2234
+    ],
+    "duration": 17.525,
+    "audioTracks": 0,
+    "decodedAtFourTimes": true,
+    "decodeLog": "/tmp/tinycast-completion-2_njcdaj/recording-screen-current.json",
+    "stop": "Repeated Record Screen palette command; not global hotkey or menu-bar Stop",
+    "devices": "Camera, microphone, system audio and key display off",
+    "performance": "Not measured; harness compilation overlapped"
+  },
+  "nativeListManualAttempt": {
+    "date": "2026-09-29",
+    "viewport": [
+      1430,
+      690
+    ],
+    "targetWindowID": 34629,
+    "targetPID": 3924,
+    "obstructionPID": 99317,
+    "obstructionProcess": "Codex Computer Use.app/Contents/MacOS/SkyComputerUseService",
+    "obstructionWindowIDs": [
+      34583,
+      34635
+    ],
+    "layers": [
+      1000,
+      102
+    ],
+    "result": "Paused before a second frame; manual wheel moved Finder from row 001 to 004, Continue remained obscured. Cancel restored the original 1430x690 screenshot. No manual/full-width pass claimed."
+  },
+  "toolbarCustomization": {
+    "date": "2026-09-29",
+    "default": "Select, Arrow, Rectangle, Ellipse, Text, Pen, Number, Cover, Pixelate, Crop; More Tools; Undo/Redo",
+    "native": [
+      "Right-click Ruler and Keep in Toolbar; native primary row gains Ruler",
+      "Customize Toolbar toggles Scan QR Codes into primary row",
+      "More Tools closed; Ruler and QR remain directly available",
+      "Quit through Tinycast launcher action, exact checkout process exited; relaunch into new PID 6391",
+      "Reopened 1000x500 history image retains Ruler and Scan QR Codes",
+      "Click Ruler selects the tool and shows its properties",
+      "New 700x340 inline screenshot shares both saved toolbar entries",
+      "Select toggle disabled; Reset Toolbar restores default primary row in inline workspace"
+    ],
+    "preference": "Bundle-scoped captureToolbarItems; excludes backup; defaults restored after QA",
+    "uiTests": "Native session only; no synthetic tests that mirror the view layout were added"
+  },
+  "releaseCompile": {
+    "configuration": "Release",
+    "codeSigningAllowed": false,
+    "result": "BUILD SUCCEEDED",
+    "log": "/tmp/tinycast-completion-2_njcdaj/capture-release-validation.log",
+    "warnings": [
+      "Existing ClipboardView.swift:284 Content/Placeholder isolation warnings",
+      "Existing AppIntents metadata extraction skipped"
+    ],
+    "scope": "Compile verification only; not launched, packaged, notarized or installed"
+  }
+}

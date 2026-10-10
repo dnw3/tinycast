@@ -1,0 +1,166 @@
+{
+  "policyVersion": 3,
+  "scenario": "ordinary",
+  "samples": 817,
+  "mainPeak": 288112640,
+  "helperPeak": 0,
+  "concurrentPeak": 288112640,
+  "peakPassed": true,
+  "coldBaseline": 141869056.0,
+  "baselineSeconds": 29.417046417016536,
+  "coldPassed": true,
+  "recovery": [
+    {
+      "stage": "cycle-01-closed",
+      "maximumAtFiveSeconds": 179240960,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790674718.24866,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-02-closed",
+      "maximumAtFiveSeconds": 183746560,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790674739.711987,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-03-closed",
+      "maximumAtFiveSeconds": 174620672,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790674768.999767,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-04-closed",
+      "maximumAtFiveSeconds": 179011584,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790674796.738325,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-05-closed",
+      "maximumAtFiveSeconds": 181141504,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790674818.016992,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-06-closed",
+      "maximumAtFiveSeconds": 184893440,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790674840.799942,
+      "samplesInWindow": 4
+    }
+  ],
+  "cyclesPassed": null,
+  "nativeClosureCount": 6,
+  "nativeClosureEvent": "copy-closed",
+  "resourcePassed": null,
+  "latency": {
+    "selection-ready": {
+      "count": 6,
+      "p95Milliseconds": 521.347834,
+      "passed": null
+    },
+    "scroll-preview-ready": {
+      "count": 0,
+      "p95Milliseconds": null,
+      "passed": null
+    }
+  },
+  "date": "2026-09-29",
+  "status": "Stopped after six complete native Save/Copy cycles: two selection latencies exceeded 500 ms, which would fail the planned twenty-sample P95. Resource peak and observed recovery were within budget; no twenty-cycle verdict.",
+  "sourceSHA256": {
+    "Tinycast/Features/Capture/Service/CaptureRasterStore.swift": "d452e2a30203cec4a84aad3bf52cb94f645fb8ccfbb013ddc4164f8e781b50c3",
+    "Tinycast/Features/Capture/UI/CaptureCanvas.swift": "1b6badd6024438b3e2703271185f8d41698142fa62f752f4a0fde6fbad7c8633",
+    "Tinycast/Features/Capture/UI/CaptureSelectionView.swift": "d0905a898cf3e3813d8ecb1e5c9e268cb259551692ec86e472d9a8dcb0b70a36",
+    "Tinycast/Features/Capture/UI/CaptureCoordinator+Workspace.swift": "47a0097936866a2f26b6d02dae3f9efe78c5cff4770e3ef521c726ca8024677d",
+    "Tinycast/Features/Capture/UI/CaptureCoordinator+Output.swift": "3a861f5746cdbd53f96a29cb2af6d3a3098e0d400071aa26b45d81f8e46f1f69",
+    "Tinycast/Features/Capture/UI/CaptureCoordinator.swift": "45f8219fbdde342725a5344709aa5c0282504c29668ae054ca44b00e1d0a5a1a",
+    "Tinycast/Features/Capture/UI/CaptureOverlayController.swift": "543e2d253204234934612530f39612d846e0bc2b69c67a4f366f87078ed08dc9",
+    "Scripts/capture-memory.py": "ee087d6b9418df9e38de5cc14339386671d40c71326140660eb8f10ff2b61908"
+  },
+  "rawSamples": "ordinary-six-latency-rss-20260929.json.gz",
+  "rawEvents": "ordinary-six-latency-events-20260929.ndjson.gz",
+  "files": [
+    {
+      "cycle": 1,
+      "localPath": "/var/folders/yx/3sqnzqw12sb68q4sd3sb0c980000gn/T/tinycast-acceptance-20260929-u50qlziy/ordinary-01.png",
+      "dimensions": [
+        3456,
+        2234
+      ],
+      "mode": "RGBA",
+      "bytes": 769118,
+      "sha256": "aede38d9d320d621fd552631c12a85551a80e362e6110c4675b60683121c7166",
+      "decoded": true
+    },
+    {
+      "cycle": 2,
+      "localPath": "/var/folders/yx/3sqnzqw12sb68q4sd3sb0c980000gn/T/tinycast-acceptance-20260929-u50qlziy/ordinary-02.png",
+      "dimensions": [
+        3456,
+        2234
+      ],
+      "mode": "RGBA",
+      "bytes": 773010,
+      "sha256": "60a7feafc2e164fb004fc8b5536d4eb303ab4d3f1a6daf8608314b79f60f32aa",
+      "decoded": true
+    },
+    {
+      "cycle": 3,
+      "localPath": "/var/folders/yx/3sqnzqw12sb68q4sd3sb0c980000gn/T/tinycast-acceptance-20260929-u50qlziy/ordinary-03.png",
+      "dimensions": [
+        3456,
+        2234
+      ],
+      "mode": "RGBA",
+      "bytes": 773088,
+      "sha256": "a812b6541307a50f76de5325bbb099b50d00e22ba661c9442d65c8b713566201",
+      "decoded": true
+    },
+    {
+      "cycle": 4,
+      "localPath": "/var/folders/yx/3sqnzqw12sb68q4sd3sb0c980000gn/T/tinycast-acceptance-20260929-u50qlziy/ordinary-04.png",
+      "dimensions": [
+        3456,
+        2234
+      ],
+      "mode": "RGBA",
+      "bytes": 777195,
+      "sha256": "cb745793deb5d6228fe06f070d5825819f2cc8ffd75b52ee6e4d0e3b4ecca8c6",
+      "decoded": true
+    },
+    {
+      "cycle": 5,
+      "localPath": "/var/folders/yx/3sqnzqw12sb68q4sd3sb0c980000gn/T/tinycast-acceptance-20260929-u50qlziy/ordinary-05.png",
+      "dimensions": [
+        3456,
+        2234
+      ],
+      "mode": "RGBA",
+      "bytes": 777248,
+      "sha256": "ef7588495687ecfa369dff89055f712f0cae2d15f7569c1243fc5f3d5b48a9ab",
+      "decoded": true
+    },
+    {
+      "cycle": 6,
+      "localPath": "/var/folders/yx/3sqnzqw12sb68q4sd3sb0c980000gn/T/tinycast-acceptance-20260929-u50qlziy/ordinary-06.png",
+      "dimensions": [
+        3456,
+        2234
+      ],
+      "mode": "RGBA",
+      "bytes": 776471,
+      "sha256": "50d320a453d5c864bc11286a6b295216cb32a9c00514abc679886fb17a95f495",
+      "decoded": true
+    }
+  ]
+}

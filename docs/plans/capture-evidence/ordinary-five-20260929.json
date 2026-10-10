@@ -1,0 +1,100 @@
+{
+  "policyVersion": 3,
+  "scenario": "ordinary",
+  "samples": 752,
+  "mainPeak": 309985280,
+  "helperPeak": 0,
+  "concurrentPeak": 309985280,
+  "peakPassed": false,
+  "coldBaseline": 142458880,
+  "baselineSeconds": 24.602732624975033,
+  "coldPassed": true,
+  "recovery": [
+    {
+      "stage": "cycle-01-closed",
+      "maximumAtFiveSeconds": 203669504,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790665834.401609,
+      "samplesInWindow": 3
+    },
+    {
+      "stage": "cycle-02-closed",
+      "maximumAtFiveSeconds": 206946304,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790665860.055894,
+      "samplesInWindow": 3
+    },
+    {
+      "stage": "cycle-03-closed",
+      "maximumAtFiveSeconds": 208371712,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790665889.60043,
+      "samplesInWindow": 3
+    },
+    {
+      "stage": "cycle-04-closed",
+      "maximumAtFiveSeconds": 209043456,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790665918.805772,
+      "samplesInWindow": 3
+    },
+    {
+      "stage": "cycle-05-closed",
+      "maximumAtFiveSeconds": 209158144,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790665945.397377,
+      "samplesInWindow": 4
+    }
+  ],
+  "cyclesPassed": null,
+  "nativeClosureCount": 5,
+  "nativeClosureEvent": "copy-closed",
+  "resourcePassed": false,
+  "latency": {
+    "selection-ready": {
+      "count": 5,
+      "p95Milliseconds": 676.384625,
+      "passed": null
+    },
+    "scroll-preview-ready": {
+      "count": 0,
+      "p95Milliseconds": null,
+      "passed": null
+    }
+  },
+  "status": "Stopped after five native cycles to diagnose the peak failure; not twenty-cycle acceptance",
+  "buildLog": "/tmp/tinycast-completion-2_njcdaj/capture-focus-profile-build.log",
+  "source": "Optimized Debug, 3456 x 2234 full screen, PNG Original sRGB Save then Copy",
+  "savedFiles": [
+    {
+      "file": "ordinary-clean-01.png",
+      "bytes": 1497837,
+      "sha256": "6cec3bf945a7e9d1298ca970cc3ee371e505277a6c79fa5047ddbb5fb718d993"
+    },
+    {
+      "file": "ordinary-clean-02.png",
+      "bytes": 1477820,
+      "sha256": "be95a0858f2b0b89f5b0750e938d604f36c496c545bc213230d0b7996eb71cf2"
+    },
+    {
+      "file": "ordinary-clean-03.png",
+      "bytes": 1480933,
+      "sha256": "cd2367c03ed976a4edc65a8778807f68f2fe61269b0fb911d4d84806baf9b672"
+    },
+    {
+      "file": "ordinary-clean-04.png",
+      "bytes": 1481330,
+      "sha256": "a3f2693d3493f15a2d8a46266d33a6f96ba36e0e6b832d4ef3fa6e6d6a299a3c"
+    },
+    {
+      "file": "ordinary-clean-05.png",
+      "bytes": 1482451,
+      "sha256": "f9442eb0bb752c94012d75f5c9e8eb4eded5c00dd6b8353f8440fe2af34b93bc"
+    }
+  ]
+}

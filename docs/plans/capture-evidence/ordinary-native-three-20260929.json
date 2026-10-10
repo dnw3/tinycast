@@ -1,0 +1,95 @@
+{
+  "policyVersion": 3,
+  "scenario": "ordinary",
+  "samples": 419,
+  "mainPeak": 347635712,
+  "helperPeak": 0,
+  "concurrentPeak": 347635712,
+  "peakPassed": false,
+  "coldBaseline": 137003008.0,
+  "baselineSeconds": 10.484281291952357,
+  "coldPassed": true,
+  "recovery": [
+    {
+      "stage": "cycle-01-closed",
+      "maximumAtFiveSeconds": 196247552,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790668472.152912,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-02-closed",
+      "maximumAtFiveSeconds": 196460544,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790668499.337526,
+      "samplesInWindow": 4
+    },
+    {
+      "stage": "cycle-03-closed",
+      "maximumAtFiveSeconds": 194871296,
+      "helpersExitedAtFiveSeconds": true,
+      "passed": true,
+      "nativeCloseTimestamp": 1790668528.167016,
+      "samplesInWindow": 4
+    }
+  ],
+  "cyclesPassed": null,
+  "nativeClosureCount": 3,
+  "nativeClosureEvent": "copy-closed",
+  "resourcePassed": false,
+  "latency": {
+    "selection-ready": {
+      "count": 3,
+      "p95Milliseconds": 537.140083,
+      "passed": null
+    },
+    "scroll-preview-ready": {
+      "count": 0,
+      "p95Milliseconds": null,
+      "passed": null
+    }
+  },
+  "date": "2026-09-29",
+  "status": "Stopped after three real cycles to investigate a peak failure; not twenty-cycle acceptance.",
+  "buildLog": "/tmp/tinycast-completion-2_njcdaj/capture-single-dev-profile-build.log",
+  "sourceSHA256": {
+    "Tinycast/Features/Capture/UI/CaptureCanvas.swift": "4698a69fb4881e35efea4a74f238b8069ea37afa7c70d02765aabf2372ebe598",
+    "Tinycast/Features/Capture/UI/CaptureSelectionView.swift": "be22c15978929d5b66609cabc15e5c304fc2efde735784d5569a23f835f751af"
+  },
+  "rawSamples": "ordinary-native-three-rss-20260929.json.gz",
+  "rawEvents": "ordinary-native-three-events-20260929.ndjson.gz",
+  "files": [
+    {
+      "localPath": "/tmp/tinycast-completion-2_njcdaj/ordinary-native-01.png",
+      "size": [
+        3456,
+        2234
+      ],
+      "mode": "RGBA",
+      "bytes": 856837,
+      "sha256": "0368ebe958e6afa7de30b0e41e2e7617c3108896d30126008ab7f81be932cfd2"
+    },
+    {
+      "localPath": "/tmp/tinycast-completion-2_njcdaj/ordinary-native-02.png",
+      "size": [
+        3456,
+        2234
+      ],
+      "mode": "RGBA",
+      "bytes": 854950,
+      "sha256": "0da6b6072358ff4f78de9dd6a08a476a3c4322eb4c4ee0d641b03f32d502023b"
+    },
+    {
+      "localPath": "/tmp/tinycast-completion-2_njcdaj/ordinary-native-03.png",
+      "size": [
+        3456,
+        2234
+      ],
+      "mode": "RGBA",
+      "bytes": 856348,
+      "sha256": "45ab1240a4f816fa46621b22105f0461ecc44aa06b999bc9224eb481a7501b15"
+    }
+  ]
+}

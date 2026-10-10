@@ -1,0 +1,62 @@
+{
+  "date": "2026-09-28",
+  "scope": "Synthetic image import and preview, one run per configuration; no native capture or P95 claim",
+  "fixture": {
+    "width": 3456,
+    "height": 2234,
+    "colorSpace": "sRGB",
+    "source": "CGContext white background and 32 colored strips"
+  },
+  "debug_before": {
+    "storeSeconds": 0.52363,
+    "previewSeconds": 3.966584917,
+    "maxRSSBytes": 82444288,
+    "peakFootprintBytes": 71484040
+  },
+  "debug_after_accelerate": {
+    "storeSeconds": 0.202774542,
+    "previewSeconds": 0.149024125,
+    "maxRSSBytes": 82427904,
+    "peakFootprintBytes": 71467656
+  },
+  "optimized_before": {
+    "storeSeconds": 0.196779375,
+    "previewSeconds": 0.159331875,
+    "maxRSSBytes": 82132992,
+    "peakFootprintBytes": 71369328
+  },
+  "appSnapshots": [
+    {
+      "pid": 88752,
+      "build": "Debug",
+      "scene": "after launch, before UI automation",
+      "rssBytes": 106430464
+    },
+    {
+      "pid": 89710,
+      "build": "Debug -O wholemodule",
+      "scene": "after launch, before UI automation",
+      "rssBytes": 102694912
+    }
+  ],
+  "gate": "FAIL: app RSS already exceeds 100000000 bytes; standalone renderer is not the whole-app memory gate",
+  "logs": "/tmp/tinycast-completion-2_njcdaj/",
+  "reproduction": "Tests/capture-raster-performance.swift source mode; compile with -Onone for Debug timings",
+  "debug_frozen_preview": {
+    "storeSeconds": 0.218628,
+    "documentPreviewSeconds": 0.158144334,
+    "frozenPreviewSeconds": 0.009945625,
+    "maxRSSBytes": 84148224,
+    "peakFootprintBytes": 73220744
+  },
+  "native_vertical_auto": {
+    "size": [
+      1590,
+      2630
+    ],
+    "appRSSPeakBytes": 207863808,
+    "sampleCount": 10,
+    "intervalSeconds": 1,
+    "scope": "10 seconds during native automatic scrolling; not the whole-session peak; helper was not running"
+  }
+}
