@@ -2,6 +2,12 @@
 
 **A tiny, fully native macOS launcher. One hotkey, everything you reach for all day.**
 
+This fork maintains Capture and Translation on
+[`dnw/capture-workspace`](https://github.com/dnw3/tinycast/tree/dnw/capture-workspace).
+See the [fork maintenance guide](docs/fork-maintenance.md) for local changes, upstream synchronization
+and verification. The install and release links below serve upstream builds; use
+[Building from source](#building-from-source) to run this branch.
+
 <p align="center">
   <a href="https://github.com/abue-ammar/tinycast/releases/latest">
     <img alt="Latest release"
@@ -74,8 +80,9 @@ Tinycast is **free, and it stays that way**. If you enjoy it, consider buying a 
 - **Backup and import** — export your settings to a file, or import your setup from Raycast.
 
 The working tree also contains a native **Capture** implementation: region/window/full-screen capture,
-scrolling screenshots, annotations, pins, OCR and Translation integration. It is pending screen-permission,
-scrolling and memory acceptance; see the [delivery checklist](docs/plans/capture-acceptance.md).
+scrolling screenshots, annotations, pins, OCR and Translation integration. Native acceptance is ongoing;
+see the [delivery status](docs/plans/capture-delivery-status.md) and
+[checklist](docs/plans/capture-acceptance.md).
 
 ## Install
 
