@@ -9,8 +9,8 @@ feature is enabled in Settings.
 
 - **Every Spotlight query is capped at 1,000 candidates before execution, and 200 rows after filtering.**
   `MDQuerySetMaxCount` is the reason the
-  feature uses `MDQuery`; `NSMetadataQuery` has no source-result cap and can break the 100 MB budget on
-  a broad filename.
+  feature uses `MDQuery`; `NSMetadataQuery` has no source-result cap and can retain an unbounded result
+  set for a broad filename.
 - **Everything under `Model/` stays Foundation-only and pure**, `FileSearchIgnoreList`'s `import Darwin`
   and the `UniformTypeIdentifiers` of `FileSearchFilter` and `FileSearchPreviewKind` included — value
   types with no environment of their own. `file-search-test` compiles the shipped files together with

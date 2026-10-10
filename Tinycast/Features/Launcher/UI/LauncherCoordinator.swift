@@ -174,8 +174,11 @@ final class LauncherCoordinator {
             core.quickActionCoordinator.run(.fixGrammar)
         case .rewrite:
             core.quickActionCoordinator.run(.rewrite)
+        case .captureScreenshot, .captureFullscreen, .captureScrollingScreenshot, .captureRecording, .captureText,
+            .captureAndTranslate, .editClipboardImage, .pinClipboardImage, .captureHistory:
+            core.captureCoordinator.open(id)
         case .translate:
-            core.quickActionCoordinator.run(.translate)
+            core.translationCoordinator.open()
         case .summarize:
             core.quickActionCoordinator.run(.summarize)
         case .calculatorHistory:

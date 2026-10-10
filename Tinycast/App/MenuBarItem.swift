@@ -23,6 +23,9 @@ struct MenuBarMenu: View {
                 AppCore.shared.paletteCoordinator.showPalette(mode: .clipboard)
             }
         }
+        if AppCore.shared.captureCoordinator.recording != nil {
+            Button("Stop Recording") { AppCore.shared.captureCoordinator.finishRecording() }
+        }
         Divider()
         Button("Check for Updates...") { AppCore.shared.updateCoordinator.checkForUpdates() }
         Button("Support \(appName)...") { AppCore.shared.supportCoordinator.showSupport() }

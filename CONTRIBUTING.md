@@ -7,7 +7,9 @@ Check existing [issues](https://github.com/abue-ammar/tinycast/issues) and
 
 ## Non-negotiables
 
-- **RAM.** Under 100 MB, always. No feature is worth going over.
+- **RAM.** Follow the measured scenario budgets in [standards.md](docs/standards.md#performance-and-memory).
+  Capture includes helper memory, five-second recovery and repeated-operation growth; its approved
+  limits and evidence are recorded in the [Capture spec](docs/plans/capture-spec.md#内存和性能-gate).
 - **No leaks.** Leak-test before you submit. Zero leaks, no retain cycles, memory back to baseline
   after the palette closes.
 - **Design.** New UI must look like it shipped with the app — spacing, type, radii and motion from the

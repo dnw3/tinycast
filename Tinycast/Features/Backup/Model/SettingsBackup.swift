@@ -20,6 +20,9 @@ struct SettingsBackup: Codable {
     struct SettingsData: Codable {
         // Adding a field here means adding it to SettingsBackupCoverage too, or the harness fails.
         // Carried, unlike the consent flags: recording your own copies grants no permission class.
+        var captureFormat: String?
+        var captureDirection: String?
+        var captureCloseAfterCopy: Bool?
         var clipboardEnabled: Bool?
         var clipboardRetentionDays: Int?
         var clipboardDefaultAction: String?
@@ -132,6 +135,9 @@ extension SettingsBackup {
         let s = core.settings
         var backup = SettingsBackup()
         backup.settings = SettingsData(
+            captureFormat: core.captureCoordinator.settings.preferences.format,
+            captureDirection: core.captureCoordinator.settings.preferences.axis.rawValue,
+            captureCloseAfterCopy: core.captureCoordinator.settings.preferences.closeAfterCopy,
             clipboardEnabled: s.clipboardEnabled,
             clipboardRetentionDays: s.clipboardRetention.rawValue,
             clipboardDefaultAction: s.clipboardDefaultAction.rawValue,
@@ -301,6 +307,18 @@ extension SettingsBackup {
     private func applySettings(_ s: SettingsData, to core: AppCore) -> Int {
         let settings = core.settings
         var count = 0
+        if let format = s.captureFormat, ["png", "jpeg", "heic", "avif"].contains(format) {
+            core.captureCoordinator.settings.preferences.format = format
+            count += 1
+        }
+        if let direction = s.captureDirection, let axis = CaptureDocument.Axis(rawValue: direction) {
+            core.captureCoordinator.settings.preferences.axis = axis
+            count += 1
+        }
+        if let closes = s.captureCloseAfterCopy {
+            core.captureCoordinator.settings.preferences.closeAfterCopy = closes
+            count += 1
+        }
         if let flag = s.clipboardEnabled {
             settings.clipboardEnabled = flag
             count += 1

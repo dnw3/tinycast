@@ -77,8 +77,8 @@ nothing about MCP. `AIChatCoordinator.send` is the one place the two meet.
   `@slug` can never name two servers or nothing at all. An unknown handle is not an address: the text
   is sent exactly as it was typed.
 - **Servers start with chat and stop after ten idle minutes**, and at `prepareForTermination()`.
-  A stdio server is a resident process of someone else's making, and the 100 MB budget is the reason
-  this is not "start at launch".
+  A stdio server is a resident process of someone else's making; starting it only when needed avoids
+  adding its memory to every cold launch.
 - **Who runs the loop is the route's own answer, and it is the only thing that differs.**
   `AIModelCapabilities.tools` is true for `.api`, for Codex and for the Claude command, and false
   for Apple Intelligence, Grok, OpenCode and Cursor — the three CLIs whose configurations merge

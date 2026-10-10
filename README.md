@@ -1,7 +1,6 @@
 # Tinycast
 
-**A tiny, fully native macOS launcher. One hotkey, everything you reach for all day, under 100 MB of
-RAM.**
+**A tiny, fully native macOS launcher. One hotkey, everything you reach for all day.**
 
 <p align="center">
   <a href="https://github.com/abue-ammar/tinycast/releases/latest">
@@ -19,7 +18,7 @@ RAM.**
          src="https://img.shields.io/badge/Discord-Join-5865F2?style=flat&logo=discord&logoColor=white"></a>
 </p>
 
-SwiftUI and AppKit, **zero third-party dependencies**, no Electron and no telemetry. It also **runs
+SwiftUI and AppKit, with only vendored libwebp for WebP export, no Electron and no telemetry. It also **runs
 real Raycast extensions**, rendered as native SwiftUI. Free, open source, and staying that way.
 
 For anything private, email [iabueammar@gmail.com](mailto:iabueammar@gmail.com).
@@ -69,9 +68,14 @@ Tinycast is **free, and it stays that way**. If you enjoy it, consider buying a 
 - **AI chat** — use your own key or an installed AI account: ask Quick AI from the palette, or keep
   longer conversations in the AI Chat window, with a searchable, pinnable history. Off out of the box,
   like every AI feature.
-- **Quick Actions** — fix grammar, rewrite, translate or summarize the selected text in any app.
+- **Translation** — translate selected or typed text, detect its language, and copy or apply the result.
+- **Quick Actions** — fix grammar, rewrite or summarize the selected text in any app.
 - **Raycast extensions** — run the ones you already have natively, rendered as SwiftUI.
 - **Backup and import** — export your settings to a file, or import your setup from Raycast.
+
+The working tree also contains a native **Capture** implementation: region/window/full-screen capture,
+scrolling screenshots, annotations, pins, OCR and Translation integration. It is pending screen-permission,
+scrolling and memory acceptance; see the [delivery checklist](docs/plans/capture-acceptance.md).
 
 ## Install
 

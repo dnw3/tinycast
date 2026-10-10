@@ -3,7 +3,7 @@ import ImageIO
 import PDFKit
 import Vision
 
-nonisolated enum ClipboardTextExtractor {
+nonisolated enum TextRecognitionExtractor {
     static let maximumTextBytes = 32_000
     private static let maximumFileBytes = 32_000_000
     private static let maximumPages = 64
@@ -14,6 +14,89 @@ nonisolated enum ClipboardTextExtractor {
     private static let stripOverlap = 256
 
     enum Failure: Error { case unreadable }
+
+    static func capture(at url: URL) async throws -> TextRecognitionResult {
+        let size = try url.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
+        guard (1...1_048_576).contains(size) else { throw Failure.unreadable }
+        let handle = try FileHandle(forReadingFrom: url)
+        defer { try? handle.close() }
+        let data = try handle.read(upToCount: 1_048_577) ?? Data()
+        guard data.count <= 1_048_576 else { throw Failure.unreadable }
+        let request = try JSONDecoder().decode(TextRecognitionResult.Request.self, from: data)
+        guard request.tiles.count <= 1024 else { throw Failure.unreadable }
+        var result = TextRecognitionResult(
+            requestID: request.requestID, revision: request.revision, boxes: [], truncated: false)
+        for tile in request.tiles {
+            try Task.checkCancellation()
+            guard !tile.filename.contains("/"), tile.filename.hasSuffix(".png"),
+                tile.rect.origin.x.isFinite, tile.rect.origin.y.isFinite,
+                tile.rect.minX >= -320, tile.rect.minY >= -320,
+                tile.rect.maxX <= 30_000, tile.rect.maxY <= 30_000,
+                tile.rect.width > 0, tile.rect.height > 0,
+                let source = CGImageSourceCreateWithURL(
+                    url.deletingLastPathComponent().appendingPathComponent(tile.filename) as CFURL, nil),
+                let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
+                let width = properties[kCGImagePropertyPixelWidth] as? Int,
+                let height = properties[kCGImagePropertyPixelHeight] as? Int,
+                (1...1024).contains(width), (1...1024).contains(height),
+                request.content != .text
+                    ? abs(CGFloat(width) * tile.rect.height - CGFloat(height) * tile.rect.width)
+                        <= max(tile.rect.width, tile.rect.height)
+                    : CGFloat(width) == tile.rect.width && CGFloat(height) == tile.rect.height,
+                let image = CGImageSourceCreateImageAtIndex(source, 0, nil)
+            else { throw Failure.unreadable }
+            let boxes = try await captureBoxes(image, content: request.content, size: tile.rect.size)
+            let readingRange = tile.readingRange(among: request.tiles)
+            for box in boxes {
+                let rect = box.rect.offsetBy(dx: tile.rect.minX, dy: tile.rect.minY)
+                guard request.content != .text || readingRange.contains(rect.midY) else { continue }
+                result.append(.init(text: box.text, rect: rect), mergingTextFragments: request.content == .text)
+                if result.truncated {
+                    result.orderForReading()
+                    return result
+                }
+            }
+        }
+        result.orderForReading()
+        return result
+    }
+
+    private static func captureBoxes(
+        _ image: CGImage, content: TextRecognitionResult.Content, size: CGSize
+    ) async throws -> [TextRecognitionResult.Box] {
+        switch content {
+        case .text:
+            var recognition = RecognizeTextRequest()
+            recognition.recognitionLevel = .accurate
+            recognition.minimumTextHeightFraction = 0
+            recognition.automaticallyDetectsLanguage = true
+            let observations = try await recognition.perform(on: image)
+            return observations.compactMap { observation in
+                guard let text = observation.topCandidates(1).first?.string else { return nil }
+                return .init(text: text, rect: observation.boundingBox.toImageCoordinates(size, origin: .upperLeft))
+            }
+        case .qr:
+            var recognition = DetectBarcodesRequest()
+            recognition.symbologies = [.qr, .microQR]
+            let observations = try await recognition.perform(on: image)
+            return observations.compactMap { observation in
+                guard let text = observation.payloadString else { return nil }
+                return .init(text: text, rect: observation.boundingBox.toImageCoordinates(size, origin: .upperLeft))
+            }
+        case .faces:
+            let observations = try await DetectFaceRectanglesRequest().perform(on: image)
+            return observations.map {
+                .init(text: "Face", rect: $0.boundingBox.toImageCoordinates(size, origin: .upperLeft))
+            }
+        case .people:
+            var recognition = DetectHumanRectanglesRequest()
+            recognition.upperBodyOnly = false
+            let observations = try await recognition.perform(on: image)
+            return observations.map {
+                .init(text: "Person", rect: $0.boundingBox.toImageCoordinates(size, origin: .upperLeft))
+            }
+        }
+    }
 
     static func extract(at url: URL, isPDF: Bool) async throws -> String {
         try Task.checkCancellation()

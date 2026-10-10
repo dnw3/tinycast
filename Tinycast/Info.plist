@@ -66,9 +66,9 @@
 	<key>NSAppleEventsUsageDescription</key>
 	<string>Tinycast uses automation to perform system actions you explicitly run.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>Tinycast shows a camera preview so you can check yourself, and take a photo to the clipboard.</string>
+	<string>Tinycast uses the camera for previews, photos, or a camera overlay when you enable it before recording.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Tinycast records audio only while you use Dictation, to transcribe it on your Mac.</string>
+	<string>Tinycast records audio while you use Dictation, or when you enable the microphone for a screen recording.</string>
 	<key>NSCalendarsFullAccessUsageDescription</key>
 	<string>Tinycast reads today's and tomorrow's events so you can join a meeting from the palette.</string>
 	<key>NSRemindersFullAccessUsageDescription</key>

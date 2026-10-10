@@ -181,8 +181,13 @@ Use `@Observable` for UI state rather than `ObservableObject` or `@Published`:
 
 Budgets, not aspirations:
 
-- **Resident memory under 100 MB, always.** No feature is worth going over. Memory returns to baseline
-  after the palette closes.
+- **Memory has measured scenario budgets.** Cold idle RSS stays below 160 MB. Capture uses a 300 MB
+  ordinary-image, 512 MB long-image/OCR/pins, and 600 MB recording/video peak budget, including its
+  helpers. Five seconds after closing, ordinary Capture must be below both 250 MB and cold +100 MB;
+  image/video work must be below both 300 MB and cold +160 MB;
+  warmed repeated operations may grow by at most 10 MB. These are decimal MB. The user approved
+  replacing the former universal 100 MB limit on 2026-09-29; measurement rules and required scenarios
+  are in [Capture's resource gate](plans/capture-spec.md#内存和性能-gate).
 - Launch is the thing the app protects most. Work added to `AppCore.start()` or to an initialiser is the
   most expensive place to put it; defer it into a `Task` or do it on first use.
 - The palette must feel instant. Anything on the summon path is resolved once per show, never per render.

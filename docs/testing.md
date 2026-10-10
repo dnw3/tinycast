@@ -89,6 +89,15 @@ If a change touches anything in the right column, the harness on the left is man
 
 | Harness | Guards |
 | --- | --- |
+| `capture-workflow-test` | Capture geometry, cursor/occlusion and filter exclusions, session revisions, RGB registration, numbered text rows, vertical/horizontal strip pixels, PNG/JPEG/HEIC crop/cover output, copy limits and history recovery |
+| `capture-editor-test` | Native TextKit composition, Unicode, multiline, commit keys, private-pasteboard copy and undo |
+| `capture-session-test` | Lock/sleep/session/display interruption routing on private centers and queued-event cancellation after observer release |
+| `capture-ocr-test` | Real Vision OCR on composited overlapping tiles, redaction, coordinate deduplication, bounded output, immediate process exits and helper cancellation/deadline reaping |
+| `capture-video-test` | Actual MP4/GIF encoding and decoded frames, pause segment joins, trim/cut/freeze/speed time mapping, audio volume and hold silence, variable-rate trailing frames, cancellation and media history leases |
+| `capture-webp-test` | Official libwebp lossless/lossy output, independently decoded RGBA and alpha, sRGB/P3 ICC, size limits, full 4 MP pixels, repeated encodes, bounded helper inputs, cancellation/deadline reaping and existing-file preservation |
+| `capture-raster-test` | Capture size limits, tile seams and backward reads, full PNG pixel round trips, alpha, cancellation, atomic output and corrupt-file rejection |
+| `capture-transform-test` | Display composition, image layers, translation overlays, presentation, foreground masks, reframing and magnifier pixels |
+| `capture-upload-test` | AWS signing, private upload requests, response limits, PKCE, loopback callbacks and 100 consecutive authorization cancellations |
 | `fuzz-test` | `Launcher/Model/LauncherMatch.swift`, `LauncherOrder.swift`, `LauncherSuggestions.swift`, `EntryNaming.swift`, `ScriptRomanization.swift`, `SearchRelevance.swift`, `LauncherRankingStore.swift` — **a new ranking complaint is a new case in its `denseIndex`** |
 | `file-search-test` | `FileSearch/Model/`, plus the shared `FuzzyMatch` scorer |
 | `file-search-session-test` | serialized query execution, debounce coalescing and cancellation |
@@ -145,6 +154,7 @@ If a change touches anything in the right column, the harness on the left is man
 | `icon-cache-test` | `Platform/Images/IconCache.swift` — row sizing at 1×/2×, warm reuse, stamp and style invalidation, bitmap release, fitted geometry across all 256 alpha values, and that a row icon draws identically to the 96px one |
 | `entry-icon-test` | `EntryIcon` — that each case draws, caches and prints apart from the others, and that a moved `FileIconStamp` retires the bitmap decoded before it |
 | `text-diff-test` | `QuickActions/Model/TextDiffEngine.swift` — exact chunks, coalescing, Unicode, ties, token-cap boundaries and fast paths |
+| `translation-test` | Translation policies, 50 language samples, settings, stale results, safe target matching, provider isolation, cancellation, truncated streams, window modes, placement, input debounce and native TextKit composition |
 | `settings-backup-test` | `Settings/AppSettingsKey.swift`, `Backup/Model/SettingsBackupCoverage.swift` |
 | `settings-file-test` | `Settings/Model/` and `Settings/Service/` — key paths, value tokens, the printer and parser, and the repository's import, replace, save, reload and symlink handling on a scratch folder |
 | `window-file-test` | `WindowManagement/Model/WindowManagementFileFormat.swift` — command shortcuts, custom sizes, layouts and rooms as settings.json spells them, hand edits and bad records |
@@ -335,7 +345,7 @@ Measured at the end of the 2026 refactor, on `main`. Useful as orders of magnitu
 | | Value |
 | --- | --- |
 | Release binary | 3,655,736 B (from 3,471,592 B at the start of the refactor) |
-| Resident memory | 40–80 MB in normal use; the hard ceiling is 100 MB |
+| Resident memory | Historical normal-use estimate: 40–80 MB; current Capture gates use the [scenario budgets](plans/capture-spec.md#内存和性能-gate) |
 | `SettingsPaneScanner` warm scan | 0.014 ms (16.5 ms cold), 52 panes |
 | Largest view / owner | `RootPaletteView` 662 lines, `AppCore` 284 lines |
 | Comment density | 1,653 of 27,289 source lines (6.1%) |
@@ -346,8 +356,8 @@ Measured at the end of the 2026 refactor, on `main`. Useful as orders of magnitu
 | Rendered Notes editor, 100,000 characters | 30 ms install and full restyle; 7.5, 5.9 and 3.3 ms per character typed at the end, middle and start (5.2, 3.1 and 0.6 ms with rendering off); 0.6 ms per caret move |
 | `count items of trash` | 5,000 ms against a cold Finder on an *empty* Trash, 110 ms warm — why AppleScript is detached |
 
-Launch time, allocation counts and RSS have never been captured as numbers. The signposts are in place,
-so any of them can be taken from `main` whenever a change makes it worth knowing.
+The original refactor did not capture launch time, allocation counts or RSS as measurements.
+Current Capture measurements and their limits are recorded in the [delivery status](plans/capture-delivery-status.md).
 
 ## Manual regression sweep
 
@@ -779,3 +789,35 @@ tccutil reset Accessibility com.tinycast.app.dev 2>/dev/null || true
 - Quit and relaunch: everything created above persisted
 - Nothing was written outside `com.tinycast.app.dev/`. Channel isolation is not negotiable — a Dev build
   writing into the stable app's directory is a defect even though the data is disposable
+
+## Capture raster benchmark
+
+The Capture benchmarks are indexed by `run-tests.sh --index` but do not run in the deterministic suite.
+They use generated pixels and a private pasteboard; they never capture the desktop or change the user's clipboard.
+Measure export and independent full-image decoding in separate processes, because the decoder intentionally
+allocates a complete bitmap to compare every pixel. These numbers are not the app's resident-memory acceptance.
+
+```sh
+capture_evidence=$(mktemp -d /tmp/tinycast-capture.XXXXXX)
+swiftc -swift-version 6 -O Tinycast/Features/Capture/Model/*.swift \
+    Tinycast/Features/Capture/Service/*.swift Tinycast/Platform/Compression/Zlib.swift \
+    Tinycast/Platform/TextRecognition/TextRecognitionResult.swift Tinycast/Platform/ScreenTarget.swift \
+    Tests/CaptureFixture.swift Tests/capture-raster-performance.swift \
+    -o "$capture_evidence/raster-bench"
+/usr/bin/time -l "$capture_evidence/raster-bench" 1600 30000 "$capture_evidence/long"
+"$capture_evidence/raster-bench" 1600 30000 "$capture_evidence/long" verify
+/usr/bin/time -l "$capture_evidence/raster-bench" 1600 30000 "$capture_evidence/noise" noise-file
+"$capture_evidence/raster-bench" 1600 30000 "$capture_evidence/noise" verify-noise
+```
+
+The optional `noise` mode includes a private PNG pasteboard round trip; `pasteboard` measures only the
+write of an already exported PNG. Those probes intentionally test an unbounded candidate API and can
+exceed the app budget. `capture-imageio-performance.swift` provides the rejected full-image ImageIO baseline.
+See [the G0 record](plans/capture-g0.md) for results, exact scope and the remaining native acceptance gates.
+
+The `source` mode accepts the same dimensions and a new output directory. It generates a CGImage,
+times storing it, rendering the document preview and rendering the initial frozen preview separately.
+Compile with `-Onone` to investigate Debug latency, and `-O` for optimized measurements. These are
+synthetic, single-run stage timings; the `Capture Prepare` signpost measures the native entrance,
+including ScreenCaptureKit and workspace setup. Neither stage timings nor a helper's RSS prove the
+whole application's P95, peak memory or five-second recovery requirements.

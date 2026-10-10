@@ -13,7 +13,8 @@ enum Signposts {
     }
 
     static func interval<T>(
-        _ name: StaticString, around work: () async throws -> T
+        _ name: StaticString, isolation: isolated (any Actor)? = #isolation,
+        around work: () async throws -> T
     ) async rethrows
         -> T
     {

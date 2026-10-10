@@ -33,6 +33,16 @@ Or from the command line:
 xcodebuild -project Tinycast.xcodeproj -scheme Tinycast -configuration Debug build
 ```
 
+The Codex Run action calls `./Scripts/build-and-run.sh`: it rebuilds and launches only **Tinycast Dev**
+from `build/DerivedData`. It stops only the executable at that checkout's exact path before building,
+so the running image and its signed bundle cannot diverge during a TCC check. Other worktrees' Dev
+instances stay running. `--build-only` refuses to overwrite the bundle while that app is running;
+quit it first, or build into a separate DerivedData directory. Use
+`--debug`, `--logs`, `--telemetry`, and `--verify` for the corresponding development loop.
+`--profile` uses optimized Swift compilation while retaining the same Dev bundle identifier, signing
+and preferences. Use it for runtime performance measurements; a subsequent normal run restores the
+unoptimized Debug build. Record which mode was measured and verify the normal Debug build separately.
+
 `xcodebuild` uses whatever `xcode-select` points at; if that's the Command Line Tools rather than
 Xcode, prefix with `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer` (the SwiftUI
 `@State`/`@FocusState` macros need Xcode's macOS platform).
@@ -41,7 +51,12 @@ Xcode, prefix with `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer` (t
 project settings in `project.yml`, run `xcodegen generate` and commit the result. There is no
 `Package.swift`, and `Bundle.module` must never be used.
 
-The app target builds and embeds `ClipboardTextHelper` under `Contents/Helpers`, signing it on copy.
+Capture WebP export builds the vendored official C sources as a static `CaptureWebP` target.
+The source version, archive checksum and license are recorded in [Vendor/README.md](../Vendor/README.md);
+no package-manager download is part of the build. Standalone Capture harnesses build the same sources
+with `Scripts/build-capture-webp.sh`.
+
+The app target builds and embeds `TextRecognitionHelper` under `Contents/Helpers`, signing it on copy.
 Build the app scheme to include it; copying only the main executable omits OCR support. The helper's
 executable name stays fixed even when release builds override the app's product name for a channel.
 
@@ -54,7 +69,7 @@ download on demand; none are app resources.
 Debug builds are a separate channel: **`Tinycast Dev.app`**, bundle id `com.tinycast.app.dev`. Every
 persisted thing is keyed by bundle id — `~/Library/Preferences/<id>.plist` (settings and hotkey
 bindings), `~/Library/Application Support/<id>/` (the onboarding marker, Notes, snippets, quicklinks,
-clipboard history, calculator history, launch ranking and frequent emoji; Notes and snippets unless
+clipboard history, Capture history/drafts, calculator history, launch ranking and frequent emoji; Notes and snippets unless
 a folder is chosen),
 `~/Library/Caches/<id>/` (exchange rates, the update check, staged downloads), the opt-in
 `~/.config/tinycast-dev/settings.json` (`tinycast` on stable), the `SMAppService`

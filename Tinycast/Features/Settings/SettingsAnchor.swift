@@ -8,6 +8,14 @@ struct SettingsAnchor: Hashable, Sendable {
 
 // Named `<pane><Section>` throughout, so the constant for a section is always guessable from it.
 extension SettingsAnchor {
+    static let captureCapture = Self(tab: .capture, title: "Capture")
+    static let captureOutput = Self(tab: .capture, title: "Output")
+    static let captureScrolling = Self(tab: .capture, title: "Scrolling Screenshots")
+    static let captureHistory = Self(tab: .capture, title: "History")
+    static let captureCommands = Self(tab: .capture, title: "Commands")
+    static let capturePermissions = Self(tab: .capture, title: "Permissions")
+    static let captureUploads = Self(tab: .capture, title: "Uploads")
+
     static let generalGlobalShortcuts = Self(tab: .general, title: "Global Shortcuts")
     static let generalSearch = Self(tab: .general, title: "Search")
     static let generalHyperKey = Self(tab: .general, title: "Hyper Key")
@@ -47,7 +55,10 @@ extension SettingsAnchor {
     static let quickActionsQuickActions = Self(tab: .quickActions, title: "Quick Actions")
     static let quickActionsActions = Self(tab: .quickActions, title: "Actions")
     static let quickActionsModel = Self(tab: .quickActions, title: "Model")
-    static let quickActionsTranslate = Self(tab: .quickActions, title: "Translate")
+    static let translationTranslation = Self(tab: .translation, title: "Translation")
+    static let translationLanguages = Self(tab: .translation, title: "Languages")
+    static let translationEngine = Self(tab: .translation, title: "Engine")
+    static let translationCommands = Self(tab: .translation, title: "Commands")
 
     static let dictationDictation = Self(tab: .dictation, title: "Dictation")
     static let dictationCommands = Self(tab: .dictation, title: "Commands")

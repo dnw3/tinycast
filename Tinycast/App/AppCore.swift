@@ -18,6 +18,7 @@ final class AppCore {
         fileURL: AppPaths.applicationSupport().appendingPathComponent("room-parking.json"))
     let roomSession = RoomSession()
     let clipboardStore = ClipboardStore()
+    private var foregroundRecognitionCount = 0
     @ObservationIgnored private var clipboardTextIndexer: ClipboardTextIndexer?
     let clipboardManager: ClipboardManager
     let snippetsStore: SnippetsStore
@@ -74,6 +75,8 @@ final class AppCore {
     let mcpOAuth = MCPOAuthManager()
     @ObservationIgnored private(set) lazy var mcp = MCPServerManager(oauth: mcpOAuth)
     let quickActionSettings = QuickActionSettingsStore()
+    let translationSettings = TranslationSettingsStore()
+    let translation = TranslationState()
     let customQuickActions = CustomQuickActionStore()
     let chatGPTSubscription = ChatGPTSubscriptionManager()
     let installedAI = InstalledAIManager()
@@ -223,6 +226,9 @@ final class AppCore {
         injector: textInjector, appIndex: appIndex, hotKeys: hotKeys, favorites: favorites,
         visibility: visibility, ranking: launcherRanking, aliases: aliases,
         paletteCoordinator: paletteCoordinator, core: self)
+    @ObservationIgnored private(set) lazy var captureCoordinator = CaptureCoordinator(core: self)
+    @ObservationIgnored private(set) lazy var translationCoordinator = TranslationCoordinator(
+        state: translation, store: translationSettings, core: self)
     @ObservationIgnored private(set) lazy var mcpCoordinator = MCPCoordinator(
         settings: settings, store: mcpSettings, manager: mcp, core: self)
     /// Its own window and lifecycle, like Settings; Quick AI is the palette's half of the feature.
@@ -304,6 +310,8 @@ final class AppCore {
             // Before `hotKeys.start` even when off: the prune reads it.
             customQuickActions.load()
             quickActionCoordinator.applyEnabled()
+            translationCoordinator.applyEnabled()
+            captureCoordinator.applyEnabled()
             customCommands.onChange = { [weak self] _ in
                 self?.customCommandCoordinator.applyCustomCommandsPresence()
             }
@@ -463,6 +471,7 @@ final class AppCore {
         if updateCoordinator.focusExisting() { return }
         if supportCoordinator.focusExisting() { return }
         if customCommandCoordinator.focusOutputWindow() { return }
+        if captureCoordinator.focusExisting() { return }
         paletteCoordinator.showPalette(mode: .launcher, restoreAnyMode: true)
     }
 
@@ -524,6 +533,7 @@ final class AppCore {
 
     /// Idempotent: both switches are tracked, and either one flipping re-runs the whole decision.
     func applyClipboardTextSearch() {
+        guard foregroundRecognitionCount == 0 else { return }
         guard settings.clipboardEnabled, settings.clipboardTextSearchEnabled else {
             clipboardStore.onItemsChanged = nil
             clipboardStore.onSearchResultsChanged = nil
@@ -548,9 +558,21 @@ final class AppCore {
         indexer.start()
     }
 
+    func pauseClipboardRecognition() async {
+        foregroundRecognitionCount += 1
+        clipboardTextIndexer?.stop()
+        await clipboardTextIndexer?.waitUntilStopped()
+    }
+
+    func resumeClipboardRecognition() {
+        foregroundRecognitionCount = max(0, foregroundRecognitionCount - 1)
+        if foregroundRecognitionCount == 0 { applyClipboardTextSearch() }
+    }
+
     func prepareForTermination() {
         if settings.dictationEnabled { dictationCoordinator.prepareForTermination() }
         settingsFile?.flush()
+        captureCoordinator.stop()
         clipboardTextIndexer?.stop()
         // Caps Lock first: its remap is the one teardown that outlives the process.
         hyperKeyTap.prepareForTermination()
@@ -561,6 +583,7 @@ final class AppCore {
         snippetListener.stop()
         snippetsStore.stop()
         aiChats.reset()
+        translationCoordinator.cancel()
         chatGPTSubscription.stop()
         mcpOAuth.stop()
         mcp.stop()
@@ -588,7 +611,7 @@ final class AppCore {
     @discardableResult
     func applyInstalledAILifecycle() -> Task<Void, Never> {
         let enabledKinds =
-            settings.aiEnabled || settings.quickActionsEnabled
+            settings.aiEnabled || settings.quickActionsEnabled || translationCoordinator.requiresAI
             ? aiSettings.enabledInstalledProviders : []
         var tasks: [Task<Void, Never>] = []
         if enabledKinds.contains(.codex) {
@@ -601,6 +624,15 @@ final class AppCore {
         }
         tasks.append(installedAI.ensure(enabledKinds: enabledKinds))
         return Task { for task in tasks { await task.value } }
+    }
+
+    func translationProvider() throws -> any AIProvider {
+        guard let selection = translationSettings.model else {
+            throw AIProviderError.unavailable("Choose a model in Settings → Translation.")
+        }
+        return try AIProviderFactory.make(
+            selection: selection, settings: aiSettings, subscription: chatGPTSubscription,
+            installedAI: installedAI, guardrails: .permissiveContentTransformations)
     }
 
     /// Permissive guardrails: the text transformed is the reader's own, which `.default` refuses.
@@ -692,6 +724,9 @@ final class AppCore {
             { _ = $0.quickActionsEnabled },
             reproject: { $0.quickActionCoordinator.applyEnabled() })
         track({ _ = $0.calendarEnabled }, reproject: { $0.calendarCoordinator.applyEnabled() })
+        track(
+            { _ = $0.translationEnabled },
+            reproject: { $0.translationCoordinator.applyEnabled() })
         track(
             {
                 _ = $0.calendarShowInLauncher
@@ -826,7 +861,7 @@ final class AppCore {
         let file = SettingsFileRepository(
             fileURL: AppPaths.settingsFile(),
             bindings: SettingsFileSchema.bindings(
-                settings: settings, ai: aiSettings, quickActions: quickActionSettings,
+                settings: settings, ai: aiSettings,
                 shortcuts: shortcuts, launcher: launcher,
                 windowManagement: WindowManagementSettingsFile(
                     sizes: customWindowSizes, layouts: windowLayouts, rooms: rooms, aliases: aliases,

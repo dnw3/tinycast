@@ -4,8 +4,6 @@ struct QuickActionSettings: Equatable, Sendable {
     /// Only what the reader chose: an absent action takes its default, so a default may move later.
     var previewChoices: [BuiltInQuickAction: Bool] = [:]
 
-    /// BCP-47, e.g. `es-419`. Empty means the Mac's own language.
-    var targetLanguage: String = ""
     private(set) var instructionOverrides: [BuiltInQuickAction: String] = [:]
 
     func previewsResult(_ action: QuickAction) -> Bool {
@@ -34,7 +32,6 @@ struct QuickActionSettings: Equatable, Sendable {
     }
 
     mutating func setInstructionOverride(_ instructions: String?, for action: BuiltInQuickAction) {
-        guard !action.usesTranslationFramework else { return }
         instructionOverrides[action] = instructions
     }
 
@@ -54,8 +51,7 @@ struct QuickActionSettings: Equatable, Sendable {
         set {
             instructionOverrides = Dictionary(
                 uniqueKeysWithValues: newValue.compactMap { key, value in
-                    guard let action = BuiltInQuickAction(rawValue: key),
-                        !action.usesTranslationFramework
+                    guard let action = BuiltInQuickAction(rawValue: key)
                     else { return nil }
                     return (action, value)
                 })

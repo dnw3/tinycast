@@ -78,7 +78,7 @@ Accessibility once on their next update, then it's stable again.
 
 ## Hardened runtime
 
-**Release only**, on both targets: `ENABLE_HARDENED_RUNTIME: YES`, which notarization requires. Debug
+**Release only**, on the app and both helper targets: `ENABLE_HARDENED_RUNTIME: YES`, which notarization requires. Debug
 must stay without it — hardened runtime turns on library validation, and Xcode's
 `Tinycast Dev.debug.dylib` is refused at launch because a self-signed identity carries no Team ID for
 the loader to match. The flag is not part of the designated requirement, so turning it on costs no
@@ -108,7 +108,8 @@ on, and `node`, `ray` and shell commands are separate processes it never reaches
 hardened-runtime entitlement.
 
 `./Scripts/verify-signature.sh <path-to-.app>` asserts all of this — the runtime flag on the app *and*
-on `Contents/Helpers/ClipboardTextHelper`, an intact nested seal, no `get-task-allow`, and an
+on `Contents/Helpers/TextRecognitionHelper`, `Contents/Helpers/CaptureWebPHelper` and the Dictation helper,
+an intact nested seal, no `get-task-allow`, and an
 entitlement for every usage string `Info.plist` declares. Both release jobs run it before packaging:
 a nested binary missing the runtime flag is the most common notarization rejection, and a usage string
 missing its entitlement ships a permission that can never be granted.

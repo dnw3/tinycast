@@ -110,7 +110,7 @@ enum SettingsSearchCatalog {
     static let entries: [SettingsSearchEntry] =
         general + applications + systemSettings + systemActions + commands + quicklinks
         + appleShortcuts + fallbacks + clipboard + snippets + fileSearch + windowManagement
-        + navigation + notes + calendar + emoji + ai + quickActions + dictation + extensions + permissions
+        + navigation + notes + calendar + emoji + capture + translation + ai + quickActions + dictation + extensions + permissions
         + backup + about
 
     private static let general: [SettingsSearchEntry] = [
@@ -311,7 +311,7 @@ enum SettingsSearchCatalog {
     private static let quickActions: [SettingsSearchEntry] = [
         .init(
             pane: .quickActions,
-            keywords: ["selected text", "rewrite", "translate", "summarize"]),
+            keywords: ["selected text", "rewrite", "summarize"]),
         .init(
             .quickActionsQuickActions, "Enable Quick Actions",
             keywords: ["selected text", "accessibility"]),
@@ -323,10 +323,29 @@ enum SettingsSearchCatalog {
             keywords: ["new", "custom", "prompt", "instructions", "alias"]),
         .init(
             .quickActionsModel, "Model",
-            keywords: ["llm", "ai", "default"]),
-        .init(
-            .quickActionsTranslate, "Translate to",
-            keywords: ["language", "locale"])
+            keywords: ["llm", "ai", "default"])
+    ]
+
+    private static let capture: [SettingsSearchEntry] = [
+        .init(pane: .capture, keywords: ["screenshot", "scroll", "OCR", "截图", "长截图", "取字"]),
+        .init(.captureCapture, "Enable Capture", keywords: ["image", "capture"]),
+        .init(.captureOutput, "Output format", keywords: ["PNG", "JPEG", "HEIC", "copy"]),
+        .init(.captureScrolling, "Direction", keywords: ["horizontal", "vertical", "scroll"]),
+        .init(.captureHistory, "Keep editable originals", keywords: ["privacy", "redaction", "draft"]),
+        .init(group: .captureUploads, "Upload destination", keywords: ["S3", "R2", "MinIO", "imgbb", "Google Drive", "link"]),
+        .init(group: .capturePermissions, "Screen Recording", keywords: ["accessibility", "permission"]),
+        .init(group: .captureCommands, "Capture commands", keywords: ["shortcut", "alias"])
+    ]
+
+    private static let translation: [SettingsSearchEntry] = [
+        .init(pane: .translation, keywords: ["translate", "language", "selected text", "手输", "翻译"]),
+        .init(.translationTranslation, "Enable Translation", keywords: ["hotkey", "input"]),
+        .init(.translationLanguages, "Primary language", keywords: ["automatic", "detect", "Chinese"]),
+        .init(.translationLanguages, "Secondary language", keywords: ["English", "direction"]),
+        .init(.translationEngine, "Default engine", keywords: ["Apple", "AI", "offline"]),
+        .init(.translationEngine, "Translation model", keywords: ["llm", "provider", "quality"]),
+        .init(.translationEngine, "Reasoning effort", keywords: ["model", "thinking"]),
+        .init(group: .translationCommands, "Translation commands", keywords: ["shortcut", "alias"])
     ]
 
     private static let dictation: [SettingsSearchEntry] = [

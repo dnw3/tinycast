@@ -5,6 +5,15 @@ enum CommandID: String, CaseIterable, Sendable {
     /// The palette's chat keeps the id it shipped with, so its hotkeys and fallback still reach it.
     case quickAI = "command:ai-chat"
     case aiChat = "command:ai-chat-window"
+    case captureScreenshot = "command:capture-screenshot"
+    case captureFullscreen = "command:capture-fullscreen"
+    case captureScrollingScreenshot = "command:capture-scrolling-screenshot"
+    case captureRecording = "command:capture-recording"
+    case captureText = "command:capture-text"
+    case captureAndTranslate = "command:capture-and-translate"
+    case editClipboardImage = "command:edit-clipboard-image"
+    case pinClipboardImage = "command:pin-clipboard-image"
+    case captureHistory = "command:capture-history"
     case fixGrammar = "command:fix-grammar"
     case rewrite = "command:rewrite"
     case translate = "command:translate"
@@ -50,10 +59,19 @@ enum CommandID: String, CaseIterable, Sendable {
     var name: String {
         switch self {
         case .quickAI: return "Quick AI"
+        case .captureScreenshot: return "Capture Screenshot"
+        case .captureFullscreen: return "Capture Full Screen"
+        case .captureScrollingScreenshot: return "Capture Scrolling Screenshot"
+        case .captureRecording: return "Record Screen"
+        case .captureText: return "Capture Text"
+        case .captureAndTranslate: return "Capture & Translate"
+        case .editClipboardImage: return "Edit Clipboard Image"
+        case .pinClipboardImage: return "Pin Clipboard Image"
+        case .captureHistory: return "Capture History"
         case .aiChat: return "AI Chat"
         case .fixGrammar: return BuiltInQuickAction.fixGrammar.title
         case .rewrite: return BuiltInQuickAction.rewrite.title
-        case .translate: return BuiltInQuickAction.translate.title
+        case .translate: return "Translate"
         case .summarize: return BuiltInQuickAction.summarize.title
         case .calculatorHistory: return "Calculator History"
         case .clipboardHistory: return "Clipboard History"
@@ -95,13 +113,37 @@ enum CommandID: String, CaseIterable, Sendable {
         }
     }
 
+    var alternateTitles: [String] {
+        switch self {
+        case .captureScreenshot: ["截图", "区域截图", "截屏", "Screenshot"]
+        case .captureFullscreen: ["全屏截图", "屏幕截图", "Full Screen Capture"]
+        case .captureScrollingScreenshot: ["长截图", "滚动截图", "长图", "Scroll Capture"]
+        case .captureRecording: ["录屏", "屏幕录制", "Screen Recording"]
+        case .captureText: ["截图取字", "取字", "OCR"]
+        case .captureAndTranslate: ["截图翻译", "屏幕翻译"]
+        case .editClipboardImage: ["编辑剪贴板图片", "编辑图片"]
+        case .pinClipboardImage: ["贴图", "固定截图"]
+        case .captureHistory: ["截图历史", "截屏历史"]
+        default: []
+        }
+    }
+
     var sfSymbol: String {
         switch self {
         case .quickAI: return "sparkles"
         case .aiChat: return "bubble.left.and.bubble.right"
+        case .captureScreenshot: return "viewfinder"
+        case .captureFullscreen: return "rectangle.dashed"
+        case .captureScrollingScreenshot: return "rectangle.portrait.and.arrow.forward"
+        case .captureRecording: return "record.circle"
+        case .captureText: return "text.viewfinder"
+        case .captureAndTranslate: return "translate"
+        case .editClipboardImage: return "pencil"
+        case .pinClipboardImage: return "pin"
+        case .captureHistory: return "photo.on.rectangle"
         case .fixGrammar: return BuiltInQuickAction.fixGrammar.symbol
         case .rewrite: return BuiltInQuickAction.rewrite.symbol
-        case .translate: return BuiltInQuickAction.translate.symbol
+        case .translate: return "translate"
         case .summarize: return BuiltInQuickAction.summarize.symbol
         case .calculatorHistory: return "plus.forwardslash.minus"
         case .clipboardHistory: return "doc.on.clipboard"
@@ -148,7 +190,6 @@ enum CommandID: String, CaseIterable, Sendable {
         switch action {
         case .fixGrammar: self = .fixGrammar
         case .rewrite: self = .rewrite
-        case .translate: self = .translate
         case .summarize: self = .summarize
         }
     }
@@ -157,7 +198,6 @@ enum CommandID: String, CaseIterable, Sendable {
         switch self {
         case .fixGrammar: return .fixGrammar
         case .rewrite: return .rewrite
-        case .translate: return .translate
         case .summarize: return .summarize
         default: return nil
         }

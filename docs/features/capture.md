@@ -1,0 +1,455 @@
+# Capture
+
+## Invariants
+
+- `AppCore` owns one `CaptureCoordinator`; views call the coordinator through their environment.
+  Commands, settings and clipboard image actions share that owner. Startup never starts capture or requests permission.
+- Screen capture uses macOS 26+ ScreenCaptureKit. Tinycast's windows are excluded. Permission is requested
+  only after a capture command; granting it does not automatically retry an earlier capture.
+- Model contains Foundation value types only. Documents, annotations, geometry, registration decisions,
+  revisions and undo contain no decoded images or environment access.
+- RGBA tiles use sRGB, straight alpha and top-to-bottom rows. Tiles are at most 1024 × 1024; dimensions
+  are at most 30,000 per side and 64,000,000 pixels, including after decoding a stored manifest.
+- Published source rasters are immutable; a workspace may add new window rasters. `CaptureSource` keeps the directory alive while an editor,
+  pin, renderer or screenshot text session uses it. Closing the last owner removes the temporary source.
+- Long screenshots append disk-backed strips. Registration and output never build a full growing bitmap.
+  The canvas retains at most four viewport tiles plus a bounded preview; undo retains source references and edits, not pixels.
+- Copy, Save, Pin and OCR use a fixed document revision. Late OCR and selection events cannot overwrite
+  a newer session. Cover is rendered as opaque black, and OCR reads the composited image, never hidden source pixels.
+- PNG is streamed through system zlib, into a temporary sibling file, then atomically replaced. A failed
+  or cancelled export preserves the prior destination. ImageIO exports are limited to four million output
+  pixels; original-size sRGB PNG stays streamed. The save panel offers PNG/JPEG/HEIC and AVIF when the
+  system can encode it, original/1×/half/quarter sizes, lossy quality, and sRGB/Display P3 output profiles.
+  Source tiles remain canonical sRGB; choosing Display P3 converts those pixels, without recovering gamut
+  that the original import discarded. WebP uses the approved, vendored official libwebp, with lossless
+  or lossy output, alpha and ICC. It shares the 4 MP non-streaming export cap and adds the format's
+  16,383-pixel side limit. Validation stays in the save panel; it never silently reduces dimensions.
+- Clipboard delivery observes `ClipboardManager`'s mutation handshake, enable switch and source exclusions.
+  It records the final PNG once. It does not enable clipboard history or index original unredacted images.
+- History is flattened by default. Editable originals and explicit drafts contain pre-redaction pixels;
+  retaining originals is an explicit setting excluded from backup import. Missing or corrupt draft tiles
+  fall back to the flattened result, not a partially recovered original.
+- A screenshot text session uses the existing Translation window. It survives focus loss, clears the
+  old delivery target and offers no Insert/Replace action. Selection-based Translation keeps its own behavior.
+- Work is cancellable and owned. File/render work uses `CaptureWork` off the main actor; Vision runs in
+  the shared `TextRecognitionHelper`. WebP save uses a short-lived `CaptureWebPHelper`; its bounded input
+  contains only final RGBA, ICC and encoding options. Cancellation/deadlines reap it before input cleanup,
+  and the app alone atomically publishes the output. No new singleton or actor is introduced. The sole dependency
+  exception is official libwebp for WebP export, approved by the user on 2026-09-29.
+
+## Entry points and interaction
+
+The commands are Capture Screenshot, Capture Full Screen, Capture Scrolling Screenshot,
+Record Screen, Capture Text, Capture & Translate, Edit Clipboard Image, Pin Clipboard Image and Capture History.
+They use the existing command alias and hotkey configuration in the Capture settings pane.
+
+A normal region stays on the desktop after mouse-up. Its icon toolbar edits the shared document in place;
+Return or Command-C copies directly. Region, Window and Screen share this workspace, and Space switches
+window selection. The separate editor is an explicit Expand Editor action with the same undo state.
+The inline host attaches the shared AppKit canvas directly at a fixed scale; only the separate editor
+uses `NSScrollView`. Overlay windows use sRGB to match the canonical SDR source and avoid unnecessary
+wide-color backing surfaces. Export profile choices remain independent of the overlay's color space.
+Unedited ordinary images close without confirmation;
+new edits or an unsaved scrolling result offer Save Draft, Discard and Cancel. Saved history opens as
+already saved and becomes dirty only after another edit.
+
+The inline and window editors share select, arrow, rectangle, ellipse, text, pen, number, solid cover,
+pixelate and crop tools. More Tools adds line, curved arrow, highlighter, pixel ruler, spotlight, blur, erase, magnifier,
+Emoji, image import, color picking, suggested covers and QR scanning.
+Right-click a tool to keep it in the toolbar or move it to More Tools. Customize Toolbar in the tool
+library offers the same choices and Reset Toolbar; Select remains fixed. Both editor hosts use the
+same bundle-scoped local preference, while shortcuts continue to reach tools hidden in More Tools.
+Text uses the same CoreText font in editing and export, with system, serif and monospaced choices;
+font size, rotation and shape fill remain contextual properties. Properties appear only for the active tool or selected annotation. Copy, Save,
+Pin, Extract Text and Translate have direct icon actions with accessible names. Save temporarily hides
+the overlay and restores it after completion or cancellation. Text results dismiss the overlay before
+opening Translation, so the screen-level capture window cannot cover the result.
+Tooltips show each tool's letter shortcut. Tool groups wrap when the host is narrow; selection and
+resize cursors describe the current gesture. No permanent inspector is required.
+
+QR scanning uses the existing recognition helper with a typed request content kind. It scans the
+composited overview and overlapping full-resolution tiles, maps results back into document coordinates,
+and deduplicates overlapping detections. Results remain beside the image; Copy and HTTP(S) Open Link
+are explicit user actions. A document revision change clears old code results. Hidden source pixels
+are never passed to QR recognition.
+
+Selection Options includes a 3/5/10-second delayed recapture. It closes the current capture through
+the normal preservation policy, restores the source application and shows a cancellable countdown.
+At the deadline it takes a fresh frame and restores the selected region, screen or window identity;
+it does not reuse the earlier frozen pixels. Cancellation writes no output. Sleep, lock and display
+changes cancel the countdown. A disappeared window remains a selection error rather than capturing
+a different window under the pointer.
+
+Moving or resizing the capture region reprojects annotations through screen coordinates and creates one
+undo step. Region and annotation changes share a bounded undo stack. Independent window capture keeps
+its own source reference, so undo can recover the earlier screenshot instead of attaching old marks to
+new window content. No decoded images are stored in undo.
+
+The editor's native text view has its own undo and input-method composition. Editing uses the
+annotation's ink and hides the prior text until commit. Selection supports
+movement, resizing and style changes. Normal images fit the window, vertical images fit its width and
+horizontal images fit its height; Entire Image and 100% remain explicit choices. Command-C/S/Z/W and
+Escape are handled after text input. Controls use `InterfaceMetrics`; pixels and annotation geometry do not scale with preferences.
+
+Pins retain a document snapshot and a bounded 720-pixel preview. There may be three. They float across
+Spaces without closing on blur, support drag/scroll/magnify and expose Copy, Edit, Opacity, Save and Close.
+Native multi-Space, keyboard and VoiceOver behavior remains in the acceptance checklist.
+
+## Scrolling capture
+
+The scrolling icon enters preparation using the current region; returning to Screenshot keeps edits
+and undo. Screen/window captures first require a region inside the scrolling content; the previous
+selection is hidden so the first drag creates the new region. Start Scrolling
+is explicit and refreshes the ScreenCaptureKit filter to exclude the Dock. The frozen screenshot stays
+in memory as document metadata plus its disk source; annotations are not baked into scrolling frames.
+The result window provides Back to Screenshot / Scrolling Result, preserving each image and undo stack.
+Closing checks both unsaved results. Canceling an empty run restores the retained screenshot.
+
+`ScrollCaptureSession` serializes stable-frame sampling, RGB registration, strip writes and incremental
+preview updates. It requires two stable samples, matches against the last accepted frame and rejects
+ambiguous displacement. Duplicate and reverse frames do not grow the result. Along-axis fixed headers
+stay in the first strip; the previous fixed footer is removed before a new strip and footer are appended.
+Independent per-lane checks reject inconsistent cross-axis content, including sampled fixed sidebars.
+Uncertain content pauses with the last valid result and a Select Again path; it is never force-stitched.
+This conservative detection still needs the real browser/PDF/native-list corpus before AC-04 can pass.
+
+Manual is the default and needs no Accessibility grant. Auto Scroll is an explicit choice for each
+session, checks Accessibility and revalidates the original PID/window/frame/visible region immediately
+before posting a scroll event at the selected region's center through the session event stream.
+Target changes, lock, display changes and lost permission pause capture.
+`CaptureVisibilityPolicy` ignores fully transparent windows and the system cursor layer; moving the
+pointer into the selected region must not count as another window covering the content. Scrolling
+capture also excludes the system Dock from its ScreenCaptureKit filter. The visibility policy uses
+that same set of excluded application PIDs, so a desktop-sized Dock surface cannot pause capture or
+enter the output. Application exclusions come from the full shareable-content list, because an
+on-screen-only list can omit Tinycast while its launcher is hidden. Missing self-identity fails closed;
+only on-screen windows remain eligible capture targets. Ordinary screenshots retain their original filter. Visible
+application windows above the target still pause capture, including windows from the same target app.
+Starting a scrolling session activates the selected window's application, which can differ from the app
+that was active before the command. History actions capture a fresh focus-return target.
+Visibility failures distinguish inactive, moved, outside and obscured targets. A bounded Capture log
+records the failed check and window/PID metadata, without screen contents or window titles.
+The control bar is placed outside the region, otherwise selection fails with a request to leave space.
+Return/Escape/Space work when controls have key focus; a configured capture hotkey finishes independently
+of page focus. No progress percentage or claim of reaching the bottom is inferred from duplicate frames.
+
+`CaptureSessionObserver` is owned while selecting, scrolling or recording. Display/system sleep, session switch-out,
+display changes and the distributed `com.apple.screenIsLocked` notification pause scrolling, cancel pending
+selection work and close the selection overlay. Unlock does not restart capture. The distributed lock name
+is not an AppKit notification constant, so actual lock delivery remains a native acceptance item. Private
+notification-center tests verify routing and that a released observer cannot deliver a queued interruption.
+
+## Suggested covers
+
+More Tools → Suggest Covers can propose entire OCR lines containing email addresses, supported phone
+numbers, US-style social-security numbers or Luhn-valid card-number patterns; Find All Text proposes
+all recognized lines. Detection runs locally in the existing bounded helper and uses the composited
+image, never an unredacted source. The result is a review list, not a guarantee that every private detail
+was found. Names, addresses, faces and people are not detected by this text policy.
+Candidates are outlined on the canvas and can be included or skipped. Previous/Next brings the current
+candidate into the editor viewport. Cover Areas creates ordinary opaque cover annotations in one undo
+step; dismissing the review changes no image pixels. Any document edit invalidates the remaining
+suggestions, and stale recognition results cannot replace a newer revision. Final PNG, history,
+clipboard and subsequent recognition use the same applied covers.
+
+## Element selection
+
+Selection Options → Select Element uses read-only Accessibility queries against the target process.
+The candidate outline follows the element; click commits it, dragging chooses an ordinary region, and
+Escape leaves element selection. Event-local coordinates are converted to screen coordinates before
+the AX lookup. Queries are debounced and coalesced off-main; stale results cannot replace a later selection.
+
+## Image adjustments
+
+More Tools → Adjust Image reveals brightness, contrast, saturation, sharpness and inversion. The default
+screenshot toolbar stays compact. Adjustments affect the source image; annotations retain their chosen
+colors and covers are rendered last. Escape closes adjustments before closing the capture.
+The document stores validated numeric parameters, with one undo entry per slider gesture. Originals stay
+immutable. Accelerate applies the same bounded render path to canvas tiles, preview, PNG bands, other
+exports, history, pins and recognition inputs. Sharpening reads a one-pixel halo so tile and band edges
+match a single full render; alpha remains unchanged.
+
+## Magnifier and image layers
+
+Magnifier (G) samples the final composited image at 2×/4×/8×; it includes existing covers and vector
+annotations. Other magnifiers are excluded from its source to prevent recursive sampling. Cover and
+erase remain on top. The viewport and overview use the same raster effect as streamed export.
+
+Add Image and Command-V place a separate image layer on the current canvas. Text input consumes paste
+before the canvas does. Select moves and proportionally resizes the image; contextual controls adjust
+opacity, rotation and stacking order. A drag or slider gesture is one undo entry. Annotation covers
+remain above all image layers, and adjustments/pixelation/blur read the composed pixels.
+
+Image layers have independent source rectangles and transforms; they never enter the contiguous
+scrolling strip array. A document accepts up to 32 layers with a combined 64 million source pixels.
+Rendering reads bounded source tiles with interpolation halos and hard internal clips, avoiding
+antialias seams between rotated tiles. Only the exterior image edge is antialiased. Draft archival,
+reopening, reflection and capture-region reprojection preserve the layers. Missing layer sources cause
+the entire draft to fall back to its flattened final image. Combine with Image appends a file below or
+to the right at its original pixel size and expands the canvas, preserving transparent padding. The first
+combination turns the final cropped and covered result into one image layer; a single Undo restores the
+previous editable document. Further combinations retain individual layers. Fit Canvas to Images moves
+all image layers and annotations together and trims unused space. Append Capture temporarily returns to the same region/window/screen selector and adds the new source below or to the right. Cancelling restores the existing editor.
+
+Remove Background runs Vision foreground-instance segmentation locally in the bounded recognition helper,
+using an input at most 1024 pixels per side. A mask asset is kept separately from the immutable image.
+Selecting an image processes only that layer; processing an entire document first renders its final
+cropped and covered pixels into a layer. Restore Background toggles the mask without recomputation,
+including after reopening an editable draft. Masks follow layer scaling, rotation and reflection;
+solid covers remain above them. Missing mask assets fall back to the complete flattened final image.
+
+Horizontal/vertical Flip in Adjust Image reflects strips, crops, annotations and image layers without
+replacing immutable source rasters. Each flip is one document undo step.
+
+## Recording and video
+
+Record Screen and the Record mode share the existing region/window/screen selection. Switching modes
+does not start recording. System audio and microphone start off; enabling the microphone requests
+permission only on Start. Preparation offers a 0/3/5/10 second delay, 15/30/60 fps, cursor and mouse-click
+visibility, and an end action: open preview, Save File or Copy File. Region recording captures a fixed rectangle; Window binds a desktop-independent window ID.
+Recording uses SDR H.264 in MP4 with even output dimensions, capped at a 3840-pixel long edge.
+
+`CaptureRecordingSession` owns ScreenCaptureKit streams and a leased session directory. Screen, system
+audio and microphone samples have separate bounded queues and encoders; final MP4 muxing preserves
+independent named audio tracks and their offset from the first video frame. Separate encoders prevent
+real-time multi-track interleaving from blocking the screen queue. Pause finalizes the current segment;
+resume starts another and waits up to five seconds for a valid screen frame before reporting Recording.
+A failed start stops the stream and cancels its encoders. Stop joins completed segments by audio identity, retaining silence when an input
+is absent from one segment. Static screens retain their last frame until Stop. A failed export retains
+completed source segments for retry. A floating control and the menu bar expose Stop; Escape does not discard
+an active recording. Hidden/closed windows and existing lock/sleep/display observers request a pause.
+ScreenCaptureKit blank/suspended/stopped frame states also pause; idle frames retain the valid static screen.
+Recording pauses at two hours, 2 GB or 64 completed segments; users can stop and save the result.
+
+Camera and key display are opt-in per recording. The camera has corner, size and mirror controls; its
+circular content is composed into encoded video frames, independent of the excluded Tinycast windows.
+The keyboard defaults to Off, with Shortcuts Only and All Keys choices. Secure input and repeats suppress
+captions; no keystrokes are persisted separately. Camera and keyboard listeners stop on Pause, failure
+and cancellation. A bounded frame pump keeps these layers moving over a static screen. Camera and
+microphone request their own permissions on Start. Accessibility authorizes the keyboard observer.
+Encoder finalization has a 15-second deadline; cancellation explicitly stops the reader and writer.
+
+`CaptureVideoState` keeps the immutable MP4 and a separate trim/speed/volume/cut/hold edit. Cut and Freeze
+opens an optional inspector; intervals use original recording time. Edits outside the trimmed range
+remain available when that range expands. Cuts cannot overlap, and at least 0.1 seconds must remain.
+Video edits have a separate bounded undo history; one slider gesture makes one undo step.
+The native player and MP4 export use the same composition. Holds repeat a real source frame and insert
+silence instead of stretching an audio sample. Export offers original or bounded long-edge resolution
+and 15/30/60 fps, with progress and cancellation. Its explicit time range retains the final frame's
+full display duration for variable-rate screen recordings. Export writes to a temporary file, then atomically
+replaces the chosen destination. Saved MP4s enter Capture History with a thumbnail and duration; reopening
+copies the movie into a new source lease. History deletion cannot invalidate an open player.
+
+GIF export samples that same trim/cut/hold/speed timeline off-main, with a selected 320/480/640/960-pixel long edge
+and 5/10/15 fps. It has no audio, shows progress and supports cancellation. Limits are 30 seconds,
+450 frames and 64 million total frame pixels. GIF saves enter history with their animation duration;
+Quick Preview decodes one frame at a time. Video Quick Preview uses AVPlayerView for native playback
+controls. Closing either preview releases its source lease.
+
+The video timeline has bounded thumbnails and trim/playhead handles. Timed cover, text and zoom effects
+use source coordinates and the original recording clock; preview, MP4 and GIF share the same edit.
+Save Editable Draft retains an explicit private original and edit sidecar, alongside the rendered final
+video. Copy, sharing, drag and Quick Preview always use the final file.
+
+## Storage and output
+
+`Application Support/<bundle>/captures/sessions/<UUID>` holds active sources; `history/<UUID>` contains
+`image.png` or `video.mp4`, `thumbnail.png` and bounded `entry.json`. An editable entry additionally has `document.json`
+and a `source` tile tree. Session directories are leased by live owners. History opening copies a validated
+source into a fresh session, so deleting a historical entry cannot invalidate an active editor or pin.
+Editable archives physically crop each partial source piece before saving its manifest. A live region
+may reference a full frozen display for reversible resizing, but its archived source contains only that
+piece's selected pixels. No unreferenced display or earlier window rasters enter the archive.
+Automatic cleanup runs after output, with defaults of seven days and 512 MB; drafts require explicit deletion.
+Each live source holds an exclusive file lock. Creating a new session reclaims session directories older
+than one day only when their lease is unlocked, including after a crash. Live sources in another process
+are skipped; explicit saved drafts remain outside this cleanup.
+
+Imports stream ordinary noninterlaced 8-bit PNGs. Unsupported PNG profiles/layouts, JPEG, HEIC and TIFF
+use the bounded ImageIO path, applying orientation and converting to the raster color contract. Inputs
+requiring more than 48 MB decoded memory through that path are rejected. PNG file input itself is bounded
+at 300 MB. Clipboard image providers may allocate data before Tinycast can inspect their size; this remains
+a resource acceptance limitation.
+
+Copy first encodes PNG. `CaptureCopyPolicy` allows at most 8 MB encoded data; larger results retain the
+editor and offer Save at original resolution. The whole-app RSS check was removed from this action
+because the existing Dev baseline exceeded it and disabled even ordinary small-image copies. On 2026-09-29
+the user replaced the universal 100 MB gate with scenario budgets; the encoded-size cap is a separate protection.
+
+Save panels participate in the existing `ActivationPolicy` window lifetime, including inline and pin-only
+save paths. App reopen focuses a visible pending panel. Its coordinator reference ends when the panel
+returns, and its accessory view is detached when the operation finishes. The inline workspace resumes
+immediately after the picker returns and keeps its actions busy until encoding and history finish.
+Reopening the app focuses this workspace instead of placing a new launcher in front of it.
+History-editor Copy has been decoded by Preview at 906 × 561 with one matching clipboard-history entry
+and one new capture-history entry. Direct region copy through Return has also been decoded and re-exported
+by Preview at 1350 × 590, with one matching clipboard-history entry. Repeat-operation memory recovery remains pending.
+
+## Text recognition
+
+`CaptureTextInput` renders 1024-pixel tiles with 128-pixel overlap at original resolution, then sends the
+helper a bounded request with document ID/revision. The helper validates tile dimensions and returns
+text boxes in document coordinates, with at most 32 KB text and 1,000 boxes. Overlap deduplication uses
+both text and geometry, combining overlapping line fragments while retaining the same text at distinct
+positions. QR payloads use exact content deduplication. Truncation is explicit.
+
+Foreground capture recognition pauses and awaits background clipboard recognition, then restores it
+according to current settings. The helper's output pipe is bounded; cancellation and deadline expiry kill
+and reap the child. The exit notification is awaited even when the caller is cancelled, so a killed child is reaped before
+the call returns. Clipboard search preserves its existing extraction policy. Screenshot recognition
+uses accurate Vision recognition and a 90-second deadline; it does not turn on a background index.
+
+## Verification and delivery status
+
+The implementation is connected to native UI. It is **not yet a completed phase-one delivery**.
+`capture-raster-test` guards storage/output pixels; `capture-workflow-test` covers geometry, session IDs,
+registration, cursor/occlusion checks, rendered numbered text, actual vertical/horizontal strip pixels,
+PNG/JPEG/HEIC crop/cover output, repository restoration
+and corrupt draft fallback; `capture-ocr-test` exercises real Vision tiles, redaction, duplicate text, bounds
+and child reaping. `capture-editor-test` exercises actual AppKit text composition, Unicode, multiline,
+commit keys, private-pasteboard copy and undo without writing to the general pasteboard.
+`capture-session-test` guards interruption routing and observer lifetime without posting system notifications.
+Clipboard, backup and Translation retain their focused harnesses.
+
+Native image import, annotation tools, crop, keyboard undo/redo, saved PNG, OCR and a live AI translation
+have run against generated fixtures. Text movement/color changes and draft saving/reopening also ran.
+The user approved Screen Recording and Accessibility for this Dev build. The exact checkout app and OCR
+helper now use the fixed local signing identity. Both permission getters stayed true across two builds
+with different CDHashes after re-registering the Dev-only grants. Real SCK selection, cancellation and
+direct region copy run. Vertical manual scrolling exported a 1500 × 3276 PNG from a 1500 × 1540 region.
+Independent decoding, Vision's contiguous rows 002–024, uniform 142-pixel row boundaries across seams
+and one matching history entry passed. The fixture anchor hides row 001 before selection.
+The session-event routing change now produces a 1500 × 3880 automatic vertical PNG with continuous
+rows 063–089 and the same 142-pixel spacing. Horizontal automatic and manual captures produce
+3920 × 760 and 3420 × 760 PNGs, with continuous column labels across all seven rows and 446-pixel
+column spacing. Each has exactly one matching history entry. Horizontal results fit height on opening;
+saved editors close without another prompt. Manual horizontal input used page arrow keys, not a
+physical trackpad. Headers and scrollbars stayed outside the selection.
+One initial pause was a real intersection with the computer tool's pointer indicator. Another came
+from missing self-identity in the on-screen-only application list; full metadata enumeration fixes it
+and native horizontal output passed. No tool-specific visibility exception was added. The residual
+system prompt has been dismissed. Other real corpora, fixed regions, mixed displays, complete
+interruption/accessibility/appearance coverage and the performance matrix remain pending.
+Cursor and excluded-Dock visibility regressions pass; ordinary intersecting windows still pause capture.
+Memory now uses 300/512/600 MB scenario peaks, five-second recovery and bounded cycle growth.
+Old 100 MB failures remain historical evidence. See [current acceptance](../plans/capture-acceptance.md),
+[Spec](../plans/capture-spec.md), [Plan](../plans/capture-plan.md) and [G0 evidence](../plans/capture-g0.md).
+
+## Spotlight, blur and color sampling
+
+More Tools holds Spotlight, Blur and Pick Color. Spotlight regions form an illuminated union; only
+the image bounds are dimmed. Blur offers three strengths and uses bounded vImage neighborhoods, so
+preview tiles and PNG bands agree. Blur is a visual effect and does not guarantee text removal.
+Pixelation and solid covers render last. Color sampling reads the composited result, including all
+covers, and supplies an editable RGB hex color to annotation styles without writing the pasteboard.
+
+## Media history and file delivery
+
+Saved GIFs retain animation in history, with actual frame duration, dimensions and a bounded thumbnail.
+Return opens GIF playback; images and movies also offer Quick Preview. GIF playback decodes sequentially off-main
+and queues at most one pending frame; closing cancels playback and releases the copied source lease.
+Video preview distinguishes loading, ready and failure, offers Retry Preview, and releases its player item when hidden.
+
+Copy on movie/GIF history entries delivers a file; image entries expose Copy File separately from Copy Image.
+The file is copied into the channel's `captures/transfers/<entry-id>/` directory before changing the pasteboard.
+History cleanup, preview closure and quitting the app do not remove it. Repeated copies reuse the immutable file.
+The next file copy reclaims transfer directories older than 24 hours, excluding current pasteboard file URLs.
+The existing Clipboard mutation handshake avoids recording this as another capture.
+
+### Erase and suggested people covers
+
+Erase samples a bounded perimeter outside the drawn area and commits its dominant opaque color. The sampled color is
+stored in the annotation so preview, export and undo use the same result. It is intended for uniform backgrounds; an
+area with no surrounding pixels fails without changing the document. Cover and Erase are composited again after image
+effects so later effects cannot reveal the underlying pixels. Canvas sampling participates in the editor Cancel action.
+
+Find Faces and Find People reuse the recognition helper and the existing review panel. The helper receives the final
+composite, never a retained unredacted original, and returns bounded candidate rectangles. Full-image previews cover
+objects crossing tile boundaries; overlapping original-resolution tiles retain small details. Candidates stay editable
+until the user applies the covers. Detection is a suggestion and does not guarantee every face or person is found.
+
+### Emoji and alignment
+
+Emoji (J) uses the existing AppCore-owned emoji index, search and skin-tone setting. Its one-row picker updates the
+selected sticker or the next insertion; canvas dragging resizes it, with one undo step. Size changes remain within the
+image bounds. CoreText preserves color glyphs through preview, streaming PNG, history and clipboard output.
+Annotation movement aligns edges and centers within six screen points. Option bypasses alignment; guides never export.
+
+
+追加截图通过编辑器 More → Append Capture，沿用范围选择与显示器切换。原编辑状态暂存于协调器，
+Escape 原样返回，显式确认后才组合并产生一个撤销步骤。取消或源图变更会清理未提交的临时栅格。
+
+
+美化作为 `CaptureDocument.Edit.presentation` 参数保存；原图、图层、标注和裁剪保持内容坐标，
+`outputBounds` 可因外框而扩展到负原点。预览、条带 PNG、OCR 与贴图共用 presentation renderer；
+文字识别 helper 的坐标下限有界支持外框。透明/纯色/渐变/网格、窗框、圆角、阴影由同一渲染器输出，
+渐变按全图像素坐标计算，避免分块接缝。Remove Styling 能回到未美化文档，尺寸预算仍为 6400 万像素、单边 30000。
+
+
+图片内翻译保存在 `CaptureDocument.Edit.translation`；原文/译文切换不改写原始栅格。段落保持独立编号、
+文本与内容坐标；批量翻译复用 Translation 的 Apple/AI 服务和配置。AI 没有工具或联网搜索能力，
+响应严格检查编号和完整性。译文发生在标注之前，遮盖最后绘制；无法完整排入原段落的文字明确报错，
+用户可修改后应用或继续使用文本面板。最多 32 段、输入总计 12 KB，输出有界；来源和文档 revision
+变化会丢弃迟到结果，关闭/取消沿用协调器任务和来源租约。
+
+### Video timeline and output
+
+The editor keeps trim/cut/hold times and timed zoom, cover and text rectangles in original recording coordinates. A selected effect edits against the original frame; leaving its controls restores the composited preview. Preview, MP4 and GIF share `CaptureVideoTimeline` and the effect renderer. Covers render after text and move with zoom. Precise scrubbing uses zero seek tolerance. Audio-track volumes multiply the master volume; MP4 mixes the chosen levels and inserts silence during holds.
+
+`CaptureVideoEncoder` streams AVAssetReader output into macOS 26 writer receivers with bounded buffering and explicit H.264 bitrate targets. Compact, Balanced and High change compression, independently of resolution and frame rate. Cancellation removes incomplete output; replacement of the user's file remains atomic.
+
+Save Editable Draft retains `original.mp4` and `video-edit.json` only on that explicit action. Its `video.mp4` and thumbnail contain the edited result. History copy, drag, sharing and Quick Preview always use that result; reopening the editor leases both files and validates the edit against the original duration. Drafts do not expire automatically. Share and Copy File prepare a final output and use the existing transfer lifetime; they never send an editable source archive to a sharing service.
+
+## Cross-display images
+
+Selection Options → Display offers Select Across Displays and Capture All Displays. Normal captures
+retain their existing single-display behavior. Cross-display capture freezes each connected display
+sequentially into immutable tiles, then tracks one rectangle in global AppKit points across overlays.
+The output uses the largest selected native scale, preserves transparent gaps in the physical layout,
+and opens in the existing image editor. Each source is cropped with outward pixel rounding and positioned
+without changing its scale; lower-density screens are resampled. At most 64 million source and output
+pixels are accepted, with a 30,000-pixel output edge. PNG export remains streamed. Display changes cancel
+the selection. Scrolling and video continue to use one display.
+
+Native two-screen 2× output (7296 × 2234) matches 16,015,104 source pixels exactly, with 284,160 transparent
+gap pixels. A drag from the internal screen onto the negative-origin external screen produces 1000 × 500;
+all 500,000 pixels match the respective source crops. Mixed 1×/2× geometry and draft archive pixels pass
+the harness; physical mixed-density/5K hardware and the total app memory budget remain open.
+
+## Optional delivery destinations
+
+Uploads are configured in Capture settings and run only through Upload and Copy Link in the image/video
+editor or history actions. The saved destination and its bundle-scoped Keychain credentials are excluded
+from backups. S3-compatible storage uses SigV4 PUT and keeps bucket permissions unchanged; an optional
+public URL base changes only the copied link. imgbb accepts PNG/GIF up to 32 MB and is explicitly labeled public.
+
+Google Drive uses this fork's Desktop OAuth client, PKCE S256 and a random loopback-only HTTP listener.
+The five-minute authorization session validates state, rejects duplicate callback fields, does not reflect
+codes in its response and closes on cancellation. Only drive.file is requested. The refresh token and
+optional client secret stay in Keychain; each explicit upload obtains an access token and creates a private
+file in My Drive. Upload responses cannot redirect credentials to another origin. No automatic public sharing
+or background uploads are performed. Actual provider sign-in and downloaded-file acceptance remain pending.
+
+Transfers use a private ephemeral URLSession with no URL cache, cookies or credential storage, reject
+redirects and cap responses at 64 KiB. PNG/GIF/MP4 uploads use the final rendered file, never the editable
+source. Local history is committed first and survives remote errors or cancellation. S3 and Drive stream
+files up to 2 GB from disk; imgbb's temporary multipart file contains no API key. Cloud links are copied
+only after a successful validated response; the app does not open them automatically.
+
+Completion thumbnails are optional and off by default. Successful Copy/Save can show one small nonactivating
+panel at the current screen's corner. Click reopens the saved capture; drag exports its final file.
+The panel decodes only the bounded history thumbnail, dismisses after eight unhovered seconds, and closes
+before a new capture or when the feature is disabled. This desktop visibility choice stays local to the Mac.
+
+
+### Long-image import and text seams
+
+Capture commands carry Chinese search names through the launcher's existing alternate-name index
+(including 截图, 长截图, 录屏, 取字, 贴图 and 截图历史); display titles stay unchanged.
+Imported images at least twice as tall or wide as their other dimension initially fit the short axis,
+matching scrolling documents. Fit Window remains available explicitly.
+
+Text recognition assigns overlapping vertical tiles half of each shared band. The tile containing a
+line's center retains that line; its neighbor's clipped top or bottom fragment is discarded before
+text merging. Horizontal fragments still merge by their text and geometry, and repeated lines at
+different document positions remain distinct. This does not alter clipboard search-index extraction.

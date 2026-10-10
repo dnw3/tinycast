@@ -10,7 +10,7 @@ struct PasteboardTests {
     static var passes = 0
     static let cap = ClipboardManager.maxCapturedFiles
 
-    static func main() {
+    static func main() async throws {
         finderCopyReadsAsAFileNotItsName()
         everyFileFlavourIsRead()
         multipleFilesReadNewestLast()
@@ -22,6 +22,7 @@ struct PasteboardTests {
         aModernFileURLSuppressesTheLegacyFallback()
         fileEntriesWriteBackAsFiles()
         aVanishedFileWritesNothing()
+        try await captureRecordingRespectsSettings()
 
         print("\(passes)/\(passes + failures) passed")
         if failures > 0 { exit(1) }
@@ -306,6 +307,42 @@ struct PasteboardTests {
         }
     }
 
+    static func captureRecordingRespectsSettings() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(
+            "capture-pasteboard-\(UUID())")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        do {
+            let store = ClipboardStore(directory: directory.appendingPathComponent("capture"))
+            let settings = AppSettings()
+            let manager = ClipboardManager(store: store, settings: settings)
+            let image = NSBitmapImageRep(
+                bitmapDataPlanes: nil, pixelsWide: 12, pixelsHigh: 12, bitsPerSample: 8, samplesPerPixel: 4,
+                hasAlpha: true, isPlanar: false, colorSpaceName: .deviceRGB, bytesPerRow: 48, bitsPerPixel: 32
+            )!
+            memset(image.bitmapData!, 255, 576)
+            let data = image.representation(using: .png, properties: [:])!
+            manager.recordCapture(data, sourceBundleID: "fixture")
+            expect(store.items.isEmpty, "stopped capture never records")
+            manager.start()
+            defer { manager.stop() }
+            settings.clipboardEnabled = false
+            manager.recordCapture(data, sourceBundleID: "fixture")
+            expect(store.items.isEmpty, "disabled history never records a Capture result")
+            settings.clipboardEnabled = true
+            settings.clipboardDisabledApps = ["fixture"]
+            manager.recordCapture(data, sourceBundleID: "fixture")
+            expect(store.items.isEmpty, "excluded source never records a Capture result")
+            settings.clipboardDisabledApps = []
+            manager.recordCapture(data, sourceBundleID: "fixture")
+            manager.stop()
+            for _ in 0..<200 where store.items.isEmpty { try await Task.sleep(for: .milliseconds(10)) }
+            expect(
+                store.items.count == 1 && store.items[0].kind == .image, "only the final image enters history"
+            )
+        }
+    }
+
     // MARK: - Harness
 
     static func board() -> NSPasteboard { NSPasteboard.withUniqueName() }
@@ -336,6 +373,7 @@ struct PasteboardTests {
 
 @MainActor
 final class AppSettings {
+    var clipboardEnabled = true
     var clipboardDisabledApps: Set<String> = []
 }
 

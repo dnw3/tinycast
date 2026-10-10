@@ -47,8 +47,8 @@
   it extracts fresh in the helper and puts the text on the pasteboard — the `item_text` table
   itself is still never copied from. What an entry *is* still comes from the content that was
   captured.
-- **No recognition ever runs in the app process.** `ClipboardTextWorker` spawns one bundled
-  `ClipboardTextHelper` per item and reaps it, which is the whole reason Vision's and PDFKit's
+- **No recognition ever runs in the app process.** `TextRecognitionWorker` spawns one bundled
+  `TextRecognitionHelper` per item and reaps it, which is the whole reason Vision's and PDFKit's
   allocations do not accumulate in Tinycast. The helper is handed a path and answers with text.
 
 ## Poll-based capture
@@ -157,9 +157,9 @@ wakes that wait — and an empty queue exits rather than polling.
 Turning either switch off cancels the run in flight; the indexer is kept and reschedules itself once
 that run winds down, which is why `applyClipboardTextSearch` can be called again at any time.
 
-Recognition runs in a bundled `ClipboardTextHelper`, one item at a time, and Vision's and PDFKit's
+Recognition runs in a bundled `TextRecognitionHelper`, one item at a time, and Vision's and PDFKit's
 state leaves with it. The parent accepts at most 32 KB from the helper's output pipe, propagates
-cancellation, and terminates and reaps a helper that runs past 60 seconds. `ClipboardTextWorker`
+cancellation, and terminates and reaps a helper that runs past 60 seconds. `TextRecognitionWorker`
 does its blocking read and wait on its own `DispatchQueue`, never the cooperative pool. No helper
 exists while text search is off or the queue is empty — a Copy Text trigger is the exception: the
 helper is bundled either way, so an explicit extraction spawns one with the search switch off.
@@ -213,7 +213,7 @@ in Finder) — and it is never a PDF, which stays a background-indexing capabili
 The action closes the palette and shows a "Reading text…" progress pill, then stats the file off
 the main actor, since a stat on an unmounted volume can stall: a vanished referenced file raises the
 HUD every action on that row uses, and a pruned blob says "That image is no longer available." —
-the palette is already down, so a HUD is the only thing that can speak. `ClipboardTextWorker` then
+the palette is already down, so a HUD is the only thing that can speak. `TextRecognitionWorker` then
 spawns the bundled helper: no Vision runs in the app process, nothing reads the `item_text` table,
 and nothing depends on the text-search switch, whose helper is bundled either way. The extracted
 text is written with `Paster.copyPlainText`, **unmarked**, so the copy enters history like Copy
@@ -404,7 +404,7 @@ tree mounted, so `onDisappear` never fires on hide — which is exactly why `hid
 purge caches by hand. `PaletteState.isVisible` is therefore the second half of the player's
 `.task(id:)` key, alongside the URL, so one mechanism covers both teardown triggers with no
 `onChange` racing it. Teardown calls `replaceCurrentItem(with: nil)` and not merely `pause()`: a
-paused `AVPlayer` still holds its asset reader and decoder open, which is how a 100 MB budget goes.
+paused `AVPlayer` still holds its asset reader and decoder open, retaining their memory after hiding.
 Nothing ever autoplays — arrow-keying a list of twenty videos must not start twenty decodes. The
 player view is `KeyboardFocusRefusing`, so clicking its transport leaves the caret in the search
 field; see [palette.md](palette.md#the-keyboard-belongs-to-the-search-field).
@@ -486,3 +486,12 @@ any other Tinycast paste.
 `pasteInPlace` writes the pasteboard at once and posts ⌘V 50ms later, and the target reads the
 pasteboard only when it handles that ⌘V. A press inside that gap would swap the pasteboard first:
 one entry pasted twice, another skipped. A queue would replay a held shortcut as a burst.
+
+## Capture image actions
+
+Image entries and local image files expose Edit Image, Pin Image, Extract Text and Translate Text through
+`CaptureCoordinator`. Clipboard keeps its own storage schema; these actions do not turn a flat image into
+an editable Capture original. `recordCapture` accepts only the final PNG, once, and respects clipboard
+enablement and excluded source bundles. Capture uses the existing internal pasteboard marker and mutation
+handshake so the poller does not record its own output again. Foreground OCR pauses the background indexer,
+awaits any existing helper, and restores indexing only if it remains enabled.

@@ -26,6 +26,8 @@ open with an `## Invariants` section; read it before changing anything in that a
 [launcher](features/launcher.md) ·
 [AI providers and chat](features/ai.md) ·
 [quick actions](features/quick-actions.md) ·
+[translation](features/translation.md) ·
+[capture infrastructure](features/capture.md) ·
 [clipboard](features/clipboard.md) ·
 [calculator](features/calculator.md) ·
 [calendar](features/calendar.md) ·
@@ -51,6 +53,15 @@ open with an `## Invariants` section; read it before changing anything in that a
 [Raycast extensions](features/extensions.md) ·
 [updates](features/updates.md) ·
 [support](features/support.md)
+
+## Plans and interaction designs
+
+Plans describe intended work, not shipped behavior. Feature documentation remains the source for
+implemented invariants.
+
+- Capture phase one, including scrolling screenshots: [Spec](plans/capture-spec.md),
+  [implementation plan](plans/capture-plan.md), [interaction design](plans/capture-interaction.md),
+  [interactive prototype](plans/capture-prototype/index.html).
 
 ## Contributing
 

@@ -65,6 +65,24 @@ enum Theme {
     }
 
     enum Size {
+        static let captureEditor = CGSize(width: 1000, height: 720)
+        static let captureEditorMinimum = CGSize(width: 760, height: 480)
+        static let captureWorkspaceBar = CGSize(width: 680, height: 232)
+        static let captureWorkspaceOutputs = CGSize(width: 60, height: 312)
+        static let captureScrollBar = CGSize(width: 680, height: 120)
+        static let captureScrollPreview: CGFloat = 48
+        static let captureCountdown = CGSize(width: 240, height: 48)
+        static let captureRecordingBar = CGSize(width: 380, height: 88)
+        static let captureTextEditor = CGSize(width: 320, height: 140)
+        static let captureTool: CGFloat = 30
+        static let capturePropertyField: CGFloat = 60
+        static let captureAdjustmentWidth: CGFloat = 150
+        static let captureVideoTimeline: CGFloat = 52
+        static let captureGlyph: CGFloat = 16
+        static let captureHandle: CGFloat = 8
+        static let capturePinMaximum: CGFloat = 600
+        static let capturePinMinimum: CGFloat = 80
+        static let captureCompletionThumbnail = CGSize(width: 200, height: 140)
         static let panelWidth: CGFloat = 750
         static let panelHeight: CGFloat = 475
         /// Opening size on a first run and the floor: below it the title bar's own parts collide.
@@ -291,6 +309,12 @@ enum Theme {
         static let quickActionPanelBody: CGFloat = 320
         /// Keeps a two-word grammar fix from collapsing the panel to a slot.
         static let quickActionPanelMinBody: CGFloat = 44
+        static let translationPanel = CGSize(width: 640, height: 540)
+        static let translationInputHeight: CGFloat = 130
+        static let translationMiniPanel = CGSize(width: 420, height: 260)
+        static let translationMiniInputHeight: CGFloat = 76
+        static let translationMiniResultHeight: CGFloat = 220
+        static let translationScreenMargin: CGFloat = 8
         /// Transient volume HUD shown after any volume or mute command.
         static let hudWidth: CGFloat = 200
         static let hudHeight: CGFloat = 100

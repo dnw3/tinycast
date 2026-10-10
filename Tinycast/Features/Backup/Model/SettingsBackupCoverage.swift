@@ -68,6 +68,9 @@ enum SettingsBackupCoverage {
 
     /// The `SettingsData` fields no `AppSettings` key stands behind, and what they read instead.
     static let externallySourced: [String: String] = [
+        "captureFormat": "The non-authorizing format in CaptureSettingsStore preferences.",
+        "captureDirection": "The default direction in CaptureSettingsStore preferences.",
+        "captureCloseAfterCopy": "The close behavior in CaptureSettingsStore preferences.",
         "launchAtLogin": "Read from LaunchAtLogin, which owns the login item, not UserDefaults."
     ]
 
@@ -86,6 +89,13 @@ enum SettingsBackupCoverage {
             "Dictation preferences stay local until backup supports them.",
         AppSettingsKey.dictationIdleRelease.rawValue:
             "Dictation memory use stays a device-local preference.",
+        AppSettingsKey.capturePreferences.rawValue:
+            "Only format, direction and close behavior are exported; retention and enablement stay local.",
+        AppSettingsKey.captureKeepsOriginals.rawValue: "An import must not enable storage of unredacted originals.",
+        AppSettingsKey.captureLastRegions.rawValue: "Screen geometry belongs to the current Mac.",
+        AppSettingsKey.captureUploadDestination.rawValue: "Upload destinations stay with their local Keychain credentials.",
+        AppSettingsKey.captureCompletionThumbnail.rawValue: "Showing captured content on the desktop is a local display choice.",
+        AppSettingsKey.captureToolbarItems.rawValue: "The Capture toolbar layout is a local display preference.",
         AppSettingsKey.clipboardTextSearchEnabled.rawValue:
             "Background OCR is an opt-in processing choice on this Mac; a backup must not enable it.",
         AppSettingsKey.snippetsEnabled.rawValue:
@@ -169,13 +179,17 @@ enum SettingsBackupCoverage {
             + "decision each Mac makes about its own text.",
         AppSettingsKey.quickActionInstructions.rawValue:
             "Custom model instructions change transformed results and must not move unseen.",
-        AppSettingsKey.quickActionLanguage.rawValue:
-            "Follows the language the person at this Mac reads, not the one who wrote the backup.",
         AppSettingsKey.snippetsFolder.rawValue:
             "Names a folder on this Mac; the one a backup lands on may not have it.",
         AppSettingsKey.notesFolder.rawValue:
             "Names a folder on this Mac; the one a backup lands on may not have it.",
         AppSettingsKey.settingsFileEnabled.rawValue:
-            "Lets a file on this Mac change its settings; an import must not hand that to another."
+            "Lets a file on this Mac change its settings; an import must not hand that to another.",
+        AppSettingsKey.translationEnabled.rawValue:
+            "Selection access and replacement are configured independently on each Mac.",
+        AppSettingsKey.translationPreferences.rawValue:
+            "Includes the choice to send translation text to an AI provider; imports cannot choose it.",
+        AppSettingsKey.translationModel.rawValue:
+            "Names the destination for translation text and must be chosen on this Mac."
     ]
 }

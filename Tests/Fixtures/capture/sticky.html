@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Tinycast Sticky Capture QA</title>
+<style>
+body { margin: 36px; background: #edf0f4; color: #162437; font: 20px system-ui; }
+#viewport { width: 900px; height: 700px; overflow: auto; background: white; border: 2px solid #475d7d; }
+header, footer { position: sticky; color: white; background: #233e67; box-sizing: border-box; z-index: 1; }
+header { top: 0; height: 72px; padding: 18px 24px; }
+footer { bottom: 0; height: 40px; padding: 5px 24px; background: #395f48; }
+.row { display: flex; gap: 24px; align-items: center; height: 64px; padding: 0 24px; border-bottom: 1px solid #ccd4df; }
+.row:nth-child(even) { background: #f6f8fb; }
+b { width: 72px; color: #2c5189; }
+code { margin-left: auto; color: #51677a; }
+</style>
+<p>Select the viewport, including both fixed bars. Scroll inside it.</p>
+<div id="viewport" tabindex="0"><header>FIXED HEADER · Include exactly once</header><main id="rows"></main><footer>FIXED FOOTER · Include exactly once</footer></div>
+<script>
+const rows = document.getElementById('rows');
+for (let i = 1; i <= 500; i++) {
+  const row = document.createElement('div');
+  row.className = 'row';
+  row.innerHTML = `<b>${String(i).padStart(3, '0')}</b><span>Sticky capture row ${i} · 中文正文 ${i}</span><code>${(i * 7919 % 65521).toString().padStart(5, '0')}</code>`;
+  rows.append(row);
+}
+</script>
+</html>

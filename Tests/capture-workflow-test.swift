@@ -1,0 +1,822 @@
+import CoreGraphics
+import Foundation
+import ImageIO
+
+@main
+struct CaptureWorkflowTests {
+    static func main() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("capture-workflow-\(UUID())")
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        geometry()
+        selectionConstraints()
+        alignment()
+        redactionCandidates()
+        try selection(in: root)
+        visibility()
+        stitching()
+        try CaptureScrollFixture.verify(in: root)
+        try leases(in: root)
+        try strips(in: root)
+        try output(in: root)
+        try alphaRoundTrip(in: root)
+        try annotationStyles(in: root)
+        try emoji(in: root)
+        try imageEffects(in: root)
+        try erase(in: root)
+        try imageAdjustments(in: root)
+        try previewSeams(in: root)
+        print(
+            "Capture geometry, stitch confidence, revision undo, import, cropped redaction and history passed"
+        )
+    }
+
+    static func erase(in root: URL) throws {
+        let size = try CapturePixelSize(width: 1080, height: 100), raster = UUID().uuidString
+        let area = CGRect(x: 990, y: 20, width: 70, height: 60)
+        try CaptureRasterStore.write(size: size, to: root.appendingPathComponent(raster)) { y, row in
+            for x in 0..<size.width {
+                let secret = area.contains(CGPoint(x: x, y: y))
+                for channel in 0..<3 { row[x * 4 + channel] = secret ? UInt8((x + y) % 128) : 238 }
+                row[x * 4 + 3] = 255
+            }
+        }
+        var document = CaptureDocument(id: UUID(), createdAt: Date(), size: size,
+            pieces: [.init(raster: raster, source: CGRect(x: 0, y: 0, width: size.width, height: size.height), origin: .zero)])
+        document.edit.annotations = [.init(id: UUID(), tool: .cover,
+            points: [.init(x: 980, y: 14), .init(x: 1010, y: 19)])]
+        let color = try CaptureEraseService.color(document: document, directory: root, around: area)
+        precondition(color.hex == "#EEEEEE", "Nearby foreground must not dominate a uniform background")
+        var undo = CaptureUndoHistory(), edit = document.edit
+        edit.annotations.append(.init(id: UUID(), tool: .erase,
+            points: [area.origin, .init(x: area.maxX, y: area.maxY)], color: color))
+        edit.annotations.append(.init(id: UUID(), tool: .pixelate,
+            points: [area.origin, .init(x: area.maxX, y: area.maxY)]))
+        undo.commit(edit, to: &document)
+        let erased = document.edit
+        undo.undo(&document)
+        precondition(document.edit.annotations.count == 1)
+        undo.redo(&document)
+        precondition(document.edit == erased)
+        let output = root.appendingPathComponent("erased.png")
+        try CaptureRenderer.png(document: document, directory: root, to: output)
+        let reader = try CapturePNGReader(url: output)
+        var bytes = Data(count: size.byteCount)
+        try bytes.withUnsafeMutableBytes { buffer in
+            for y in 0..<size.height {
+                let row = UnsafeMutableRawBufferPointer(rebasing: buffer[(y * size.rowBytes)..<((y + 1) * size.rowBytes)])
+                try reader.read(row: y, into: row)
+                if (20..<80).contains(y) {
+                    for x in 990..<1060 { precondition(Array(row[(x * 4)..<(x * 4 + 4)]) == [238, 238, 238, 255]) }
+                }
+            }
+        }
+        let preview = try CaptureRenderer.preview(document: document, directory: root, maximum: size.width)
+        precondition(preview.dataProvider!.data! as Data == bytes, "Erase must match across tile and PNG band boundaries")
+        document.edit.crop = area
+        do {
+            _ = try CaptureEraseService.color(document: document, directory: root, around: area)
+            preconditionFailure("A whole-image erase must not sample the content being removed")
+        } catch CaptureEraseService.Failure.noSurroundingPixels {}
+    }
+
+    static func imageEffects(in root: URL) throws {
+        let size = try CapturePixelSize(width: 1051, height: 83), raster = UUID().uuidString
+        try CaptureRasterStore.write(size: size, to: root.appendingPathComponent(raster)) { y, row in
+            for x in 0..<size.width {
+                let value: UInt8 = ((x / 2 + y / 2) % 2 == 0) ? 255 : 0
+                for channel in 0..<3 { row[x * 4 + channel] = value }
+                row[x * 4 + 3] = 255
+            }
+        }
+        var document = CaptureDocument(id: UUID(), createdAt: Date(), size: size,
+            pieces: [.init(raster: raster, source: CGRect(x: 0, y: 0, width: size.width, height: size.height), origin: .zero)])
+        let blur = CaptureAnnotation(id: UUID(), tool: .blur,
+            points: [.init(x: 10, y: 10), .init(x: 1040, y: 73)], width: 8)
+        document.edit.annotations = [blur]
+        let output = root.appendingPathComponent("effects.png")
+        try CaptureRenderer.png(document: document, directory: root, to: output)
+        let reader = try CapturePNGReader(url: output)
+        var pixels = Data(count: size.byteCount)
+        try pixels.withUnsafeMutableBytes { bytes in
+            for y in 0..<size.height {
+                let row = (y * size.rowBytes)..<((y + 1) * size.rowBytes)
+                try reader.read(row: y, into: UnsafeMutableRawBufferPointer(rebasing: bytes[row]))
+            }
+        }
+        func value(_ x: Int, _ y: Int) -> UInt8 { pixels[(y * size.width + x) * 4] }
+        precondition(value(4, 4) == 255 && value(6, 4) == 0)
+        for y in 11..<72 {
+            for x in 11..<1039 { precondition((100...155).contains(value(x, y))) }
+        }
+        let whole = try CaptureRenderer.image(document: document, directory: root, rect: document.bounds)
+        precondition(whole.dataProvider!.data! as Data == pixels, "Blur must not introduce PNG band seams")
+        let preview = try CaptureRenderer.preview(document: document, directory: root, maximum: size.width)
+        precondition(preview.dataProvider!.data! as Data == pixels, "Blur must not introduce preview tile seams")
+        document.edit.annotations = [
+            .init(id: UUID(), tool: .spotlight, points: [.init(x: 20, y: 10), .init(x: 80, y: 60)]),
+            .init(id: UUID(), tool: .spotlight, points: [.init(x: 50, y: 20), .init(x: 120, y: 70)])
+        ]
+        for point in [CGPoint(x: 24, y: 24), CGPoint(x: 60, y: 24), CGPoint(x: 100, y: 24)] {
+            let color = try CaptureRenderer.color(document: document, directory: root, at: point)
+            precondition(color.hex == "#FFFFFF", "Overlapping spotlights form one illuminated union")
+        }
+        let dimmed = try CaptureRenderer.color(document: document, directory: root, at: .init(x: 4, y: 4))
+        precondition((112...116).contains(dimmed.red) && dimmed.red == dimmed.green)
+        let custom = CaptureColor(hex: " #2468aC ")!
+        precondition(custom.hex == "#2468AC" && CaptureColor(hex: "#12345") == nil && CaptureColor(hex: "GGGGGG") == nil)
+        document.edit.annotations = [.init(id: UUID(), tool: .rectangle,
+            points: [.init(x: 10, y: 10), .init(x: 40, y: 40)], filled: true, color: custom)]
+        let sampled = try CaptureRenderer.color(document: document, directory: root, at: .init(x: 20, y: 20))
+        precondition(sampled == custom)
+        let encoded = try JSONEncoder().encode(document)
+        let decoded = try JSONDecoder().decode(CaptureDocument.self, from: encoded)
+        precondition(decoded.edit == document.edit)
+        document.edit.annotations = [
+            .init(id: UUID(), tool: .cover, points: [.init(x: 10, y: 10), .init(x: 40, y: 40)]), blur
+        ]
+        let hidden = try CaptureRenderer.color(document: document, directory: root, at: .init(x: 20, y: 20))
+        precondition(hidden.hex == "#000000", "Blur and eyedropper must never bypass a cover")
+    }
+
+    static func selectionConstraints() {
+        let bounds = CGRect(x: -1920, y: 37, width: 1920, height: 1080)
+        for aspect in CaptureSelectionConstraint.Aspect.allCases {
+            for point in [CGPoint(x: -2000, y: -300), CGPoint(x: 120, y: 2000), CGPoint(x: -250, y: 190)] {
+                let rect = CaptureSelectionConstraint.selection(from: CGPoint(x: -1800, y: 900), to: point,
+                    ratio: aspect.ratio, in: bounds)!
+                precondition(bounds.contains(rect))
+                if let ratio = aspect.ratio { precondition(abs(rect.width / rect.height - ratio) < 0.0001) }
+                for handle in CaptureSelectionGeometry.Handle.allCases {
+                    let resized = CaptureSelectionConstraint.resized(CGRect(x: -1600, y: 200, width: 640, height: 360),
+                        handle: handle, to: point, ratio: aspect.ratio, in: bounds)
+                    precondition(bounds.contains(resized))
+                    if let ratio = aspect.ratio { precondition(abs(resized.width / resized.height - ratio) < 0.0001) }
+                }
+            }
+        }
+        let rect = CGRect(x: -500, y: 900, width: 300, height: 200)
+        let sized = CaptureSelectionConstraint.sized(rect, pixels: CGSize(width: 800, height: 600), scale: 2, in: bounds)!
+        precondition(sized.size == CGSize(width: 400, height: 300) && sized.maxY == rect.maxY)
+        precondition(CaptureSelectionConstraint.sized(
+            rect, pixels: CGSize(width: CGFloat.infinity, height: 600), scale: 2, in: bounds) == nil)
+        precondition(CaptureSelectionConstraint.sized(
+            rect, pixels: CGSize(width: 8000, height: 600), scale: 2, in: bounds) == nil)
+        precondition(CaptureSelectionConstraint.snapped(CGPoint(x: -1916, y: 1000), edges: [bounds], tolerance: 6)
+            == CGPoint(x: -1920, y: 1000))
+        precondition(CaptureSavedRegion(displayID: 1, screenSize: CGSize(width: 100, height: 100),
+            rect: CGRect(x: 0, y: 0, width: 101, height: 50)).isValid == false)
+    }
+
+    static func alignment() {
+        let bounds = CGRect(x: 0, y: 0, width: 800, height: 600)
+        let rectangle = CGRect(x: 50, y: 50, width: 100, height: 80)
+        let centered = CaptureAnnotationPlacement.moved(rectangle, by: CGSize(width: 296, height: 207),
+            in: bounds, aligning: [bounds], tolerance: 6)
+        precondition(centered.offset == CGSize(width: 300, height: 210))
+        precondition(centered.verticalGuide == 400 && centered.horizontalGuide == 300)
+        let free = CaptureAnnotationPlacement.moved(rectangle, by: CGSize(width: 296, height: 207),
+            in: bounds, aligning: [], tolerance: 6)
+        precondition(free.offset == CGSize(width: 296, height: 207) && free.verticalGuide == nil)
+        let neighbor = CGRect(x: 255, y: 170, width: 100, height: 100)
+        let aligned = CaptureAnnotationPlacement.moved(rectangle, by: CGSize(width: 200, height: 118),
+            in: bounds, aligning: [neighbor], tolerance: 6)
+        precondition(aligned.offset == CGSize(width: 205, height: 120))
+        let outside = CaptureAnnotationPlacement.moved(rectangle, by: CGSize(width: -100, height: 800),
+            in: bounds, aligning: [CGRect(x: -100, y: 602, width: 95, height: 20)], tolerance: 6)
+        precondition(outside.offset == CGSize(width: -50, height: 470))
+        precondition(outside.verticalGuide == nil && outside.horizontalGuide == nil)
+        let far = CaptureAnnotationPlacement.moved(rectangle, by: CGSize(width: 90, height: 70),
+            in: bounds, aligning: [bounds], tolerance: 6)
+        precondition(far.offset == CGSize(width: 90, height: 70))
+    }
+
+    static func redactionCandidates() {
+        let bounds = CGRect(x: 10, y: 10, width: 800, height: 600)
+        let items: [(text: String, rect: CGRect)] = [
+            ("Write to qa@example.test", CGRect(x: 10, y: 10, width: 300, height: 20)),
+            ("Phone +1 (415) 555-0100", CGRect(x: 10, y: 40, width: 300, height: 20)),
+            ("手机 13800138000", CGRect(x: 10, y: 70, width: 300, height: 20)),
+            ("Card 4111 1111 1111 1111", CGRect(x: 10, y: 100, width: 300, height: 20)),
+            ("An ordinary paragraph", CGRect(x: 10, y: 130, width: 300, height: 20)),
+            ("qa@example.test", CGRect(x: 10, y: 200, width: 300, height: 20)),
+            ("Hidden qa@example.test", CGRect(x: 900, y: 10, width: 300, height: 20)),
+            ("Invalid qa@example.test", CGRect(x: CGFloat.nan, y: 10, width: 300, height: 20))
+        ]
+        let personal = CaptureRedactionPolicy.personalInfo.candidates(in: items, bounds: bounds)
+        precondition(personal.count == 5 && personal.allSatisfy { bounds.contains($0.rect) && $0.included })
+        precondition(personal[0].rect == CGRect(x: 10, y: 10, width: 303, height: 23))
+        precondition(CaptureRedactionPolicy.allText.candidates(in: items, bounds: bounds).count == 6)
+        let plain = CaptureRedactionPolicy.personalInfo.candidates(
+            in: [("Version 2.3.0 · Release Notes", CGRect(x: 10, y: 10, width: 300, height: 20))], bounds: bounds)
+        precondition(plain.isEmpty)
+        let face = CaptureRedactionPolicy.faces.candidates(
+            in: [("Face", CGRect(x: 5, y: 12, width: 100, height: 120))], bounds: bounds)
+        precondition(face.count == 1 && face[0].rect == CGRect(x: 10, y: 10, width: 105, height: 132))
+        precondition(CaptureRedactionPolicy.faces.content == .faces && CaptureRedactionPolicy.people.content == .people)
+    }
+
+    static func geometry() {
+        let screen = CGRect(x: -1920, y: 37, width: 1920, height: 1080)
+        let selection = CGRect(x: -1800, y: 100, width: 600, height: 400)
+        precondition(
+            CaptureGeometry.pixels(selection, screen: screen, scale: 2)
+                == CGRect(x: 240, y: 1234, width: 1200, height: 800))
+        precondition(CaptureGeometry.pixels(selection, screen: screen, scale: .nan) == nil)
+        var state = CaptureSessionState(id: UUID())
+        let id = state.id
+        state.advance(to: .selecting)
+        precondition(!state.accepts(id: id, revision: 0))
+        state.advance(to: .closed)
+        precondition(!state.accepts(id: id, revision: state.revision))
+        precondition(!CaptureCopyPolicy.accepts(encodedBytes: 0))
+        precondition(CaptureCopyPolicy.accepts(encodedBytes: 1))
+        precondition(CaptureCopyPolicy.accepts(encodedBytes: CaptureCopyPolicy.maximumEncodedBytes))
+        precondition(!CaptureCopyPolicy.accepts(encodedBytes: CaptureCopyPolicy.maximumEncodedBytes + 1))
+        precondition(!CaptureCopyPolicy.accepts(encodedBytes: Int.max))
+        let region = CGRect(x: 20, y: 160, width: 1200, height: 700)
+        let controls = CaptureControlPlacement.frame(
+            region: region, size: CGSize(width: 680, height: 120),
+            screens: [CGRect(x: 0, y: 0, width: 1440, height: 900)], gap: 8)!
+        precondition(!controls.intersects(region))
+        precondition(
+            CaptureControlPlacement.frame(
+                region: CGRect(x: 0, y: 0, width: 1440, height: 900), size: CGSize(width: 680, height: 120),
+                screens: [CGRect(x: 0, y: 0, width: 1440, height: 900)], gap: 8) == nil)
+        for screen in [CGRect(x: 0, y: 0, width: 1728, height: 1117), screen] {
+            for x in [screen.minX, screen.midX, screen.maxX - 2] {
+                for y in [screen.minY, screen.midY, screen.maxY - 2] {
+                    let tiny = CGRect(x: x, y: y, width: 2, height: 2)
+                    let placement = CaptureControlPlacement.workspace(
+                        region: tiny, tools: CGSize(width: 680, height: 168),
+                        outputs: CGSize(width: 60, height: 312), screen: screen, gap: 8)
+                    precondition(screen.contains(placement.tools) && screen.contains(placement.outputs))
+                    precondition(!placement.tools.intersects(placement.outputs))
+                }
+            }
+            let full = CaptureControlPlacement.workspace(
+                region: screen, tools: CGSize(width: 680, height: 168),
+                outputs: CGSize(width: 60, height: 312), screen: screen, gap: 8)
+            precondition(screen.contains(full.tools) && screen.contains(full.outputs))
+            precondition(!full.tools.intersects(full.outputs))
+        }
+        let corner = CaptureControlPlacement.workspace(
+            region: CGRect(x: 1670, y: 30, width: 40, height: 50),
+            tools: CGSize(width: 680, height: 46), outputs: CGSize(width: 60, height: 236),
+            screen: CGRect(x: 0, y: 0, width: 1728, height: 1117), gap: 8)
+        precondition(corner.outputs.minY == corner.tools.maxY + 8)
+    }
+
+    static func frame(offset: Int, fixed: Int = 0, lanes: Int = 8) -> ScrollStitchPolicy.Frame {
+        var rgb: [UInt8] = []
+        for y in 0..<300 {
+            for x in 0..<lanes {
+                let line = y < fixed ? y : y + offset
+                var hash = UInt32(line * 7949 + x * 3571 + 127)
+                hash = (hash ^ (hash >> 16)) &* 0x45d9f3b
+                for channel in 0..<3 { rgb.append(UInt8(truncatingIfNeeded: hash >> (channel * 8))) }
+            }
+        }
+        return .init(length: 300, lanes: lanes, rgb: rgb)
+    }
+
+    static func selection(in root: URL) throws {
+        let bounds = CGRect(x: -500, y: 40, width: 1000, height: 800)
+        let region = CGRect(x: -400, y: 100, width: 200, height: 300)
+        precondition(
+            CaptureSelectionGeometry.moved(region, by: .init(width: -900, height: 900), in: bounds)
+                == CGRect(x: -500, y: 540, width: 200, height: 300))
+        for handle in CaptureSelectionGeometry.Handle.allCases {
+            let resized = CaptureSelectionGeometry.resized(
+                region, handle: handle, to: CGPoint(x: -999, y: 9999), in: bounds)
+            precondition(bounds.contains(resized) && resized.width >= 2 && resized.height >= 2)
+        }
+        let repository = CaptureRepository(root: root.appendingPathComponent("selection"))
+        let directory = try repository.create(id: UUID())
+        let raster = UUID().uuidString
+        let size = try CapturePixelSize(width: 127, height: 211)
+        try CaptureRasterStore.write(
+            size: size, to: directory.appendingPathComponent(raster), fillRow: CaptureFixture.fill)
+        let first = CGRect(x: 10, y: 20, width: 80, height: 100)
+        var document = CaptureDocument(
+            id: UUID(), createdAt: Date(), size: try CapturePixelSize(width: 80, height: 100),
+            pieces: [.init(raster: raster, source: first, origin: .zero)])
+        document.edit.annotations = [
+            .init(id: UUID(), tool: .arrow, points: [.init(x: 20, y: 30), .init(x: 50, y: 60)])
+        ]
+        let original = document
+        let screen = CGRect(x: 0, y: 0, width: 63.5, height: 105.5)
+        let pixels = CGRect(x: 20, y: 40, width: 60, height: 80)
+        let frame = CaptureSelectionGeometry.frame(pixels: pixels, in: screen, scale: 2)
+        precondition(CaptureGeometry.pixels(frame, screen: screen, scale: 2) == pixels)
+        let replacement = try CaptureSelectionGeometry.reframe(
+            document, raster: raster, pixels: pixels,
+            oldFrame: CaptureSelectionGeometry.frame(pixels: first, in: screen, scale: 2),
+            newFrame: frame, oldScale: 2, scale: 2)
+        precondition(replacement.edit.annotations[0].points[0] == CGPoint(x: 10, y: 10))
+        var undo = CaptureUndoHistory()
+        undo.commit(replacement, to: &document)
+        undo.undo(&document)
+        precondition(document.pieces == original.pieces && document.edit == original.edit)
+        precondition(document.size == original.size && document.id == original.id)
+        undo.redo(&document)
+        precondition(document.pieces == replacement.pieces && document.edit == replacement.edit)
+        let png = root.appendingPathComponent("selection.png")
+        try CaptureRenderer.png(document: document, directory: directory, to: png)
+        try repository.commit(
+            document: document, directory: directory, png: png, editable: true, draft: true)
+        let entry = try repository.entries().first!
+        let (restored, restoredDirectory) = try repository.open(entry, id: UUID())
+        precondition(restored.edit == document.edit && restored.pieces[0].source == restored.bounds)
+        let metadata = try CaptureRasterStore.validate(
+            at: restoredDirectory.appendingPathComponent(restored.pieces[0].raster))
+        precondition(metadata.size == document.size, "Draft retained pixels outside the selected region")
+        let before = try CaptureCompositeReader(document: document, directory: directory)
+            .read(rect: document.bounds)
+        let after = try CaptureCompositeReader(document: restored, directory: restoredDirectory)
+            .read(rect: restored.bounds)
+        precondition(before == after, "Archiving changed the selected source pixels")
+    }
+
+    static func visibility() {
+        typealias Window = CaptureVisibilityPolicy.Window
+        let target = Window(
+            id: 15974, pid: 33510, frame: CGRect(x: 0, y: 33, width: 1728, height: 1084), layer: 0)
+        let region = CGRect(x: 25, y: 680, width: 1680, height: 420)
+        let cursorLayer = Int(CGWindowLevelForKey(.cursorWindow))
+        let cursor = Window(
+            id: 2, pid: 179, frame: CGRect(x: 651, y: 666, width: 28, height: 40), layer: cursorLayer)
+        let controls = Window(id: 23223, pid: 96190, frame: region, layer: 3)
+        let occluder = Window(id: 25, pid: 42, frame: region, layer: 3)
+        var transparent = occluder
+        transparent.alpha = 0
+        func visible(_ windows: [Window], frontmostPID: Int32? = 33510) -> Bool {
+            CaptureVisibilityPolicy.assess(
+                windowID: target.id, pid: target.pid, frame: target.frame, region: region,
+                excludedPIDs: [96190], frontmostPID: frontmostPID,
+                cursorLayer: cursorLayer, windows: windows).status == .visible
+        }
+        precondition(visible([target]))
+        precondition(visible([cursor, controls, target]), "A cursor inside the region must not pause capture")
+        precondition(visible([transparent, target]))
+        precondition(!visible([occluder, target]))
+        let sibling = Window(id: 26, pid: target.pid, frame: region, layer: 0)
+        precondition(!visible([sibling, target]))
+        let outside = Window(id: 27, pid: 42, frame: CGRect(x: -900, y: 0, width: 800, height: 600), layer: 3)
+        precondition(visible([outside, target]))
+        precondition(visible([target, occluder]))
+        precondition(!visible([target], frontmostPID: 42))
+        precondition(!visible([target], frontmostPID: nil))
+        precondition(!visible([cursor, controls]))
+        let moved = Window(id: target.id, pid: target.pid, frame: target.frame.offsetBy(dx: 1, dy: 0), layer: 0)
+        precondition(!visible([moved]))
+        let hidden = Window(id: target.id, pid: target.pid, frame: target.frame, layer: 0, alpha: 0)
+        precondition(!visible([hidden]))
+        func assessment(_ windows: [Window], frontmostPID: Int32? = 33510) -> CaptureVisibilityPolicy.Assessment {
+            CaptureVisibilityPolicy.assess(
+                windowID: target.id, pid: target.pid, frame: target.frame, region: region,
+                excludedPIDs: [96190], frontmostPID: frontmostPID, cursorLayer: cursorLayer, windows: windows)
+        }
+        precondition(assessment([target], frontmostPID: 42).status == .inactive)
+        precondition(assessment([moved]).status == .moved)
+        precondition(assessment([hidden]).status == .missing)
+        let obstruction = assessment([occluder, target])
+        precondition(obstruction.status == .obscured && obstruction.obstructingWindow?.id == occluder.id)
+        let dock = Window(
+            id: 94, pid: 3921, frame: CGRect(x: 0, y: 0, width: 1728, height: 1117),
+            layer: Int(CGWindowLevelForKey(.dockWindow)))
+        func visibleWithDock(_ window: Window, excludedPIDs: Set<Int32>) -> Bool {
+            CaptureVisibilityPolicy.assess(
+                windowID: target.id, pid: target.pid, frame: target.frame, region: region,
+                excludedPIDs: excludedPIDs, frontmostPID: target.pid, cursorLayer: cursorLayer,
+                windows: [window, target]).status == .visible
+        }
+        precondition(visibleWithDock(dock, excludedPIDs: [96190, dock.pid]))
+        precondition(!visibleWithDock(dock, excludedPIDs: [96190]), "Only excluded content may be ignored")
+        let floating = Window(id: 96, pid: 42, frame: dock.frame, layer: dock.layer)
+        precondition(!visibleWithDock(floating, excludedPIDs: [96190, dock.pid]))
+        precondition(!visibleWithDock(dock, excludedPIDs: [96190, dock.pid, target.pid]))
+    }
+
+    static func stitching() {
+        let first = frame(offset: 0), second = frame(offset: 60)
+        precondition(ScrollStitchPolicy.match(previous: first, current: first) == .duplicate)
+        precondition(
+            ScrollStitchPolicy.match(previous: first, current: second)
+                == .append(offset: 60, fixedLeading: 0, fixedTrailing: 0))
+        precondition(ScrollStitchPolicy.match(previous: second, current: first) == .reverse)
+        precondition(ScrollStitchPolicy.match(previous: first, current: frame(offset: 260)) == .uncertain)
+        precondition(
+            ScrollStitchPolicy.match(
+                previous: frame(offset: 0, fixed: 24), current: frame(offset: 80, fixed: 24))
+                == .append(offset: 80, fixedLeading: 24, fixedTrailing: 0))
+        let wide = frame(offset: 0, lanes: 32), moved = frame(offset: 60, lanes: 32)
+        var sidebar = moved.rgb
+        for line in 0..<wide.length {
+            for channel in 0..<3 { sidebar[line * 96 + channel] = wide.rgb[line * 96 + channel] }
+        }
+        precondition(
+            ScrollStitchPolicy.match(
+                previous: wide, current: .init(length: 300, lanes: 32, rgb: sidebar)) == .uncertain)
+    }
+
+    static func strips(in root: URL) throws {
+        for axis in CaptureDocument.Axis.allCases {
+            let repository = CaptureRepository(root: root.appendingPathComponent(axis.rawValue))
+            let directory = try repository.create(id: UUID())
+            let vertical = axis == .vertical
+            let size = try CapturePixelSize(width: vertical ? 41 : 120, height: vertical ? 120 : 41)
+            var document = CaptureDocument(id: UUID(), createdAt: Date(), size: size, pieces: [], axis: axis)
+            for offset in [0, 30, 60] {
+                let frame = directory.appendingPathComponent("frame-\(offset)")
+                try CaptureRasterStore.write(size: size, to: frame) { y, output in
+                    for x in 0..<size.width {
+                        let line = vertical ? y : x
+                        let value = line < 10 ? 240 : line >= 110 ? 250 : line + offset
+                        for channel in 0..<3 { output[x * 4 + channel] = UInt8(value) }
+                        output[x * 4 + 3] = 255
+                    }
+                }
+                let raster = UUID().uuidString
+                let plan = try CaptureScrollAppend.plan(
+                    document: document, frame: size, raster: raster, offset: offset == 0 ? nil : 30,
+                    trailing: offset == 0 ? 0 : 10)
+                try ScrollFrameReader.strip(
+                    from: frame, rect: plan.source, to: directory.appendingPathComponent(raster))
+                document = plan.document
+            }
+            precondition((vertical ? document.size.height : document.size.width) == 180)
+            let pixels = try CaptureCompositeReader(document: document, directory: directory).read(
+                rect: document.bounds)
+            for y in 0..<document.size.height {
+                for x in 0..<document.size.width {
+                    let line = vertical ? y : x
+                    precondition(
+                        pixels[(y * document.size.width + x) * 4]
+                            == UInt8(line < 10 ? 240 : line >= 170 ? 250 : line))
+                }
+            }
+            var gap = document
+            gap.pieces[1].origin = .zero
+            do {
+                _ = try gap.validated(); preconditionFailure("overlapping strips accepted")
+            } catch CaptureRasterError.invalidTile {}
+        }
+    }
+
+    static func leases(in root: URL) throws {
+        let repository = CaptureRepository(root: root.appendingPathComponent("leases"))
+        let live = try repository.create(id: UUID())
+        var source: CaptureSource? = try CaptureSource(directory: live)
+        let abandoned = try repository.create(id: UUID())
+        try withExtendedLifetime(source) {
+            try repository.reclaimAbandonedSessions(before: Date().addingTimeInterval(1))
+            precondition(FileManager.default.fileExists(atPath: live.path))
+            precondition(!FileManager.default.fileExists(atPath: abandoned.path))
+        }
+        source = nil
+        precondition(!FileManager.default.fileExists(atPath: live.path))
+    }
+
+    static func output(in root: URL) throws {
+        let repository = CaptureRepository(root: root)
+        let id = UUID(), raster = UUID().uuidString
+        let directory = try repository.create(id: id)
+        let size = try CapturePixelSize(width: 127, height: 211)
+        let source = directory.appendingPathComponent(raster)
+        try CaptureRasterStore.write(size: size, to: source, fillRow: CaptureFixture.fill)
+        var document = CaptureDocument(
+            id: id, createdAt: Date(), size: size,
+            pieces: [
+                .init(
+                    raster: raster, source: CGRect(x: 0, y: 0, width: size.width, height: size.height),
+                    origin: .zero)
+            ])
+        let output = root.appendingPathComponent("image.png")
+        try CaptureRenderer.png(document: document, directory: directory, to: output)
+        try CaptureFixture.verifyPNG(at: output, size: size)
+        let imported = root.appendingPathComponent("imported")
+        let importedSize = try CaptureImageSource.load(output, at: imported)
+        precondition(importedSize == size)
+        let roundTrip = root.appendingPathComponent("roundtrip.png")
+        try CapturePNGWriter.write(raster: imported, to: roundTrip)
+        try CaptureFixture.verifyPNG(at: roundTrip, size: size)
+        let cgImage = CGImageSourceCreateImageAtIndex(
+            CGImageSourceCreateWithURL(output as CFURL, nil)!, 0, nil)!
+        let captured = root.appendingPathComponent("captured")
+        _ = try CaptureImageSource.store(cgImage, at: captured)
+        try CapturePNGWriter.write(raster: captured, to: roundTrip)
+        try CaptureFixture.verifyPNG(at: roundTrip, size: size)
+        var undo = CaptureUndoHistory(), edit = document.edit
+        edit.annotations = [
+            .init(id: UUID(), tool: .cover, points: [CGPoint(x: 5, y: 9), CGPoint(x: 40, y: 70)])
+        ]
+        edit.crop = CGRect(x: 5, y: 9, width: 60, height: 80)
+        undo.commit(edit, to: &document)
+        precondition(document.revision == 1 && document.needsPreservation)
+        undo.undo(&document)
+        precondition(document.edit.isEmpty && document.revision == 2)
+        undo.redo(&document)
+        precondition(document.edit == edit && document.revision == 3)
+        try CaptureRenderer.png(document: document, directory: directory, to: output)
+        let image = CGImageSourceCreateImageAtIndex(
+            CGImageSourceCreateWithURL(output as CFURL, nil)!, 0, nil)!
+        precondition(image.width == 60 && image.height == 80)
+        let pixels = image.dataProvider!.data! as Data
+        precondition(pixels[0] == 0 && pixels[1] == 0 && pixels[2] == 0 && pixels[3] == 255)
+        try lossyExports(document: document, directory: directory, in: root)
+        try repository.commit(
+            document: document, directory: directory, png: output, editable: false, draft: false)
+        let entries = try repository.entries()
+        precondition(entries.count == 1 && !entries[0].editable)
+        let (reopened, _) = try repository.open(entries[0], id: UUID())
+        precondition(reopened.edit.isEmpty && reopened.size.width == 60)
+        try repository.commit(
+            document: document, directory: directory, png: output, editable: true, draft: true)
+        let draft = try repository.entries().first { $0.draft }!
+        let (editable, _) = try repository.open(draft, id: UUID())
+        precondition(editable.edit == edit)
+        let savedSource = repository.history.appendingPathComponent("\(draft.id)/source/\(raster)/0-0.rgba")
+        try FileManager.default.removeItem(at: savedSource)
+        let (safeFallback, fallbackDirectory) = try repository.open(draft, id: UUID())
+        precondition(safeFallback.edit.isEmpty && safeFallback.size.width == 60)
+        let safePixels = try CaptureCompositeReader(document: safeFallback, directory: fallbackDirectory)
+            .read(rect: safeFallback.bounds)
+        precondition(safePixels[0] == 0 && safePixels[3] == 255)
+        try repository.prune(now: Date().addingTimeInterval(864_000), days: 7, maximumBytes: 512 * 1_048_576)
+        let remaining = try repository.entries()
+        precondition(remaining.count == 1)
+    }
+
+    static func lossyExports(document: CaptureDocument, directory: URL, in root: URL) throws {
+        for format in CaptureRenderer.exportFormats where format != .png {
+            let output = root.appendingPathComponent("cropped.\(format.rawValue)")
+            let options = CaptureExportOptions(format: format)
+            try CaptureRenderer.export(document: document, directory: directory, to: output, options: options)
+            let source = CGImageSourceCreateWithURL(output as CFURL, nil)!
+            precondition(CGImageSourceGetType(source)! as String == format.identifier)
+            let image = CGImageSourceCreateImageAtIndex(source, 0, nil)!
+            precondition(image.width == 60 && image.height == 80)
+            let context = CGContext(
+                data: nil, width: 60, height: 80, bitsPerComponent: 8, bytesPerRow: 240,
+                space: CGColorSpace(name: CGColorSpace.sRGB)!,
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+            context.draw(image, in: CGRect(x: 0, y: 0, width: 60, height: 80))
+            let decoded = context.data!.assumingMemoryBound(to: UInt8.self)
+            for y in 8..<48 {
+                for x in 8..<24 {
+                    let offset = (y * 60 + x) * 4
+                    precondition((0..<3).allSatisfy { decoded[offset + $0] <= 8 })
+                    precondition(decoded[offset + 3] == 255)
+                }
+            }
+            let saved = try Data(contentsOf: output)
+            let oversized = CaptureDocument(
+                id: UUID(), createdAt: Date(), size: try CapturePixelSize(width: 2001, height: 2000),
+                pieces: [])
+            do {
+                try CaptureRenderer.export(
+                    document: oversized, directory: directory, to: output, options: options)
+                preconditionFailure("oversized lossy export accepted")
+            } catch CaptureExportOptions.Failure.encodingBudget {}
+            let preserved = try Data(contentsOf: output)
+            precondition(preserved == saved)
+        }
+        var retina = document
+        retina.captureScale = 2
+        let original = try CaptureExportOptions().dimensions(for: retina)
+        precondition(original.width == 60 && original.height == 80)
+        for scale in CaptureExportOptions.Scale.allCases {
+            let options = CaptureExportOptions(scale: scale, profile: .displayP3)
+            let size = try options.dimensions(for: retina)
+            let output = root.appendingPathComponent("scaled-\(scale.rawValue).png")
+            try CaptureRenderer.export(document: retina, directory: directory, to: output, options: options)
+            let source = CGImageSourceCreateWithURL(output as CFURL, nil)!
+            let image = CGImageSourceCreateImageAtIndex(source, 0, nil)!
+            precondition(image.width == size.width && image.height == size.height)
+            precondition(image.colorSpace?.name == CGColorSpace.displayP3)
+            let divisor = scale == .quarter ? 4 : scale == .original ? 1 : 2
+            precondition(size.width == 60 / divisor && size.height == 80 / divisor)
+        }
+        let withoutScale = try CaptureExportOptions(scale: .oneX).dimensions(for: document)
+        precondition(withoutScale == original)
+    }
+
+    static func alphaRoundTrip(in root: URL) throws {
+        let size = try CapturePixelSize(width: 3, height: 1), raster = UUID().uuidString
+        let pixels: [UInt8] = [255, 128, 64, 128, 19, 27, 51, 255, 255, 255, 255, 0]
+        try CaptureRasterStore.write(size: size, to: root.appendingPathComponent(raster)) { _, buffer in
+            pixels.withUnsafeBytes { buffer.copyMemory(from: $0) }
+        }
+        let document = CaptureDocument(
+            id: UUID(), createdAt: Date(), size: size,
+            pieces: [.init(raster: raster, source: CGRect(x: 0, y: 0, width: 3, height: 1), origin: .zero)])
+        let output = root.appendingPathComponent("alpha-roundtrip.png")
+        try CaptureRenderer.png(document: document, directory: root, to: output)
+        let reader = try CapturePNGReader(url: output)
+        var decoded = [UInt8](repeating: 0, count: size.rowBytes)
+        try decoded.withUnsafeMutableBytes { try reader.read(row: 0, into: $0) }
+        precondition(decoded[3] == 128 && decoded[7] == 255 && decoded[11] == 0)
+        precondition((0..<3).allSatisfy { abs(Int(decoded[$0]) - Int(pixels[$0])) <= 1 })
+        precondition(Array(decoded[4..<8]) == Array(pixels[4..<8]))
+        precondition(Array(decoded[8..<12]) == [0, 0, 0, 0])
+        var invalid = [UInt8](repeating: 0, count: 3)
+        do {
+            try invalid.withUnsafeMutableBytes { try CapturePixelAlpha.unpremultiply($0) }
+            preconditionFailure("An incomplete RGBA pixel was accepted")
+        } catch CaptureRasterError.invalidRow {}
+    }
+
+    static func annotationStyles(in root: URL) throws {
+        let size = try CapturePixelSize(width: 128, height: 128), raster = UUID().uuidString
+        try CaptureRasterStore.write(size: size, to: root.appendingPathComponent(raster)) { _, buffer in
+            buffer.initializeMemory(as: UInt8.self, repeating: 255)
+        }
+        var document = CaptureDocument(
+            id: UUID(), createdAt: Date(), size: size,
+            pieces: [.init(raster: raster, source: CGRect(x: 0, y: 0, width: 128, height: 128), origin: .zero)])
+        var rectangle = CaptureAnnotation(id: UUID(), tool: .rectangle,
+            points: [.init(x: 20, y: 20), .init(x: 60, y: 40)], rotation: 90, filled: true)
+        precondition(abs(rectangle.bounds.width - 20) < 0.001 && abs(rectangle.bounds.height - 40) < 0.001)
+        document.edit.annotations = [rectangle]
+        let output = root.appendingPathComponent("styled.png")
+        func pixel(_ x: Int, _ y: Int) throws -> [UInt8] {
+            try CaptureRenderer.png(document: document, directory: root, to: output)
+            let reader = try CapturePNGReader(url: output)
+            var row = [UInt8](repeating: 0, count: size.rowBytes)
+            for index in 0...y {
+                try row.withUnsafeMutableBytes { try reader.read(row: index, into: $0) }
+            }
+            return Array(row[(x * 4)..<(x * 4 + 4)])
+        }
+        let inside = try pixel(40, 15), outside = try pixel(25, 30)
+        precondition(inside[0] > 230 && inside[1] < 70 && inside[3] == 255)
+        precondition(outside == [255, 255, 255, 255])
+        document.edit.annotations = [.init(id: UUID(), tool: .curvedArrow,
+            points: [.init(x: 10, y: 20), .init(x: 110, y: 20)])]
+        let bent = try pixel(60, 32), straight = try pixel(60, 20)
+        precondition(bent[0] > 230 && bent[1] < 80 && straight == [255, 255, 255, 255])
+        document.edit.annotations = [.init(id: UUID(), tool: .highlighter,
+            points: [.init(x: 10, y: 80), .init(x: 100, y: 80)])]
+        let highlighted = try pixel(50, 80)
+        precondition(highlighted[0] > 240 && (170...220).contains(highlighted[1]) && highlighted[3] == 255)
+        let encoded = try JSONEncoder().encode(rectangle)
+        let decoded = try JSONDecoder().decode(CaptureAnnotation.self, from: encoded)
+        precondition(decoded == rectangle)
+        rectangle.rotation = .nan
+        precondition(!rectangle.isValid)
+        rectangle.rotation = 0; rectangle.fontSize = -1
+        precondition(!rectangle.isValid)
+    }
+
+    static func emoji(in root: URL) throws {
+        let size = try CapturePixelSize(width: 1080, height: 200), raster = UUID().uuidString
+        try CaptureRasterStore.write(size: size, to: root.appendingPathComponent(raster)) { _, buffer in
+            buffer.initializeMemory(as: UInt8.self, repeating: 255)
+        }
+        var document = CaptureDocument(id: UUID(), createdAt: Date(), size: size,
+            pieces: [.init(raster: raster, source: CGRect(x: 0, y: 0, width: 1080, height: 200), origin: .zero)])
+        var emoji = CaptureAnnotation(id: UUID(), tool: .emoji, points: [.init(x: 1040, y: 150)], text: "🙂")
+        emoji.sizeEmoji(64, in: document.bounds)
+        precondition(emoji.isValid && document.bounds.contains(emoji.bounds))
+        precondition(emoji.bounds == CGRect(x: 984, y: 104, width: 96, height: 96))
+        document.edit.annotations = [emoji]
+        let image = try CaptureRenderer.image(document: document, directory: root, rect: document.bounds)
+        let pixels = image.dataProvider!.data! as Data
+        var yellow = 0, colors = Set<UInt32>()
+        for offset in stride(from: 0, to: pixels.count, by: 4) {
+            let red = pixels[offset], green = pixels[offset + 1], blue = pixels[offset + 2]
+            if red > 180 && green > 100 && blue < 80 { yellow += 1 }
+            if red != green || green != blue { colors.insert(UInt32(red) << 16 | UInt32(green) << 8 | UInt32(blue)) }
+        }
+        precondition(yellow > 300 && colors.count > 50, "Emoji must retain Apple Color Emoji pixels")
+        let preview = try CaptureRenderer.preview(document: document, directory: root, maximum: size.width)
+        precondition(preview.dataProvider!.data! as Data == pixels, "Emoji must match across preview tiles")
+        let output = root.appendingPathComponent("emoji.png")
+        try CaptureRenderer.png(document: document, directory: root, to: output)
+        let reader = try CapturePNGReader(url: output)
+        var row = [UInt8](repeating: 0, count: size.rowBytes)
+        for y in 0..<size.height {
+            try row.withUnsafeMutableBytes { try reader.read(row: y, into: $0) }
+            precondition(row.elementsEqual(pixels[(y * size.rowBytes)..<((y + 1) * size.rowBytes)]))
+        }
+        emoji.sizeEmoji(768, in: CGRect(x: 29_970, y: 29_970, width: 30, height: 30))
+        precondition(emoji.isValid && emoji.fontSize == 20 && emoji.bounds.maxX == 30_000)
+        let decoded = try JSONDecoder().decode(CaptureDocument.self, from: JSONEncoder().encode(document))
+        precondition(decoded == document)
+    }
+
+    static func imageAdjustments(in root: URL) throws {
+        let size = try CapturePixelSize(width: 1031, height: 67), raster = UUID().uuidString
+        try CaptureRasterStore.write(size: size, to: root.appendingPathComponent(raster)) { y, buffer in
+            for x in 0..<size.width {
+                buffer[x * 4] = UInt8((x * 13 + y * 7) % 256)
+                buffer[x * 4 + 1] = UInt8((x * 9 + y * 11) % 256)
+                buffer[x * 4 + 2] = UInt8((x * 3 + y * 17) % 256)
+                buffer[x * 4 + 3] = 255
+            }
+        }
+        var document = CaptureDocument(id: UUID(), createdAt: Date(), size: size,
+            pieces: [.init(raster: raster, source: CGRect(x: 0, y: 0, width: size.width, height: size.height), origin: .zero)])
+        let reader = try CaptureCompositeReader(document: document, directory: root)
+        let rect = CGRect(x: 7, y: 9, width: 5, height: 4)
+        let original = try reader.read(rect: rect)
+        let inverted = try CaptureImageProcessing.pixels(reader: reader, rect: rect, bounds: document.bounds,
+            adjustments: .init(inverted: true))
+        let monochrome = try CaptureImageProcessing.pixels(reader: reader, rect: rect, bounds: document.bounds,
+            adjustments: .init(saturation: 0))
+        let flat = try CaptureImageProcessing.pixels(reader: reader, rect: rect, bounds: document.bounds,
+            adjustments: .init(contrast: 0))
+        for offset in stride(from: 0, to: original.count, by: 4) {
+            let luma = Double(original[offset]) * 0.2126 + Double(original[offset + 1]) * 0.7152
+                + Double(original[offset + 2]) * 0.0722
+            for channel in 0..<3 {
+                precondition(inverted[offset + channel] == 255 - original[offset + channel])
+                precondition(abs(Double(monochrome[offset + channel]) - luma) <= 1)
+                precondition(flat[offset + channel] == 128)
+            }
+            precondition(inverted[offset + 3] == 255 && monochrome[offset + 3] == 255 && flat[offset + 3] == 255)
+        }
+        let adjustments = CaptureImageAdjustments(brightness: 0.1, contrast: 0.8, saturation: 1.3, sharpness: 0.7, inverted: true)
+        document.edit.adjustments = adjustments
+        let full = try CaptureRenderer.image(document: document, directory: root, rect: document.bounds)
+        let fullPixels = full.dataProvider!.data! as Data
+        let preview = try CaptureRenderer.preview(document: document, directory: root, maximum: size.width)
+        let previewPixels = preview.dataProvider!.data! as Data
+        precondition(fullPixels == previewPixels, "adjustments must not create seams at preview tile boundaries")
+        let output = root.appendingPathComponent("adjustments.png")
+        try CaptureRenderer.png(document: document, directory: root, to: output)
+        let png = try CapturePNGReader(url: output)
+        var row = [UInt8](repeating: 0, count: size.rowBytes)
+        for y in 0..<size.height {
+            try row.withUnsafeMutableBytes { try png.read(row: y, into: $0) }
+            precondition(row.elementsEqual(fullPixels[(y * size.rowBytes)..<((y + 1) * size.rowBytes)]),
+                "streaming export must equal preview, including sharpness at each band edge")
+        }
+        document.edit.annotations = [.init(id: UUID(), tool: .cover, points: [.init(x: 0, y: 0), .init(x: 30, y: 30)])]
+        let covered = try CaptureRenderer.image(document: document, directory: root,
+            rect: CGRect(x: 0, y: 0, width: 1, height: 1))
+        precondition(Array(covered.dataProvider!.data! as Data) == [0, 0, 0, 255])
+        let encoded = try JSONEncoder().encode(document)
+        let restored = try JSONDecoder().decode(CaptureDocument.self, from: encoded).validated()
+        precondition(restored == document)
+        document.edit.adjustments?.brightness = .nan
+        do {
+            _ = try document.validated()
+            preconditionFailure("invalid adjustment accepted")
+        } catch CaptureRasterError.invalidTile {}
+        document.edit = .init()
+        var undo = CaptureUndoHistory()
+        undo.begin(document)
+        for step in 1...20 {
+            undo.commit(.init(adjustments: .init(brightness: Double(step) / 100)), to: &document)
+        }
+        undo.end(document)
+        precondition(undo.canUndo && document.needsPreservation)
+        undo.undo(&document)
+        precondition(document.edit.isEmpty && !undo.canUndo)
+        undo.redo(&document)
+        precondition(document.edit.adjustments?.brightness == 0.2)
+        undo.begin(document)
+        let previous = document.edit
+        undo.commit(.init(adjustments: .init(brightness: 0.7)), to: &document)
+        undo.commit(previous, to: &document)
+        undo.end(document)
+        undo.undo(&document)
+        precondition(document.edit.isEmpty && !undo.canUndo, "a drag ending at its initial value must not add undo")
+        let alphaSize = try CapturePixelSize(width: 3, height: 1), alphaRaster = UUID().uuidString
+        try CaptureRasterStore.write(size: alphaSize, to: root.appendingPathComponent(alphaRaster)) { _, buffer in
+            let rgba: [UInt8] = [20, 40, 60, 0, 80, 100, 120, 127, 140, 160, 180, 255]
+            rgba.withUnsafeBytes { buffer.copyMemory(from: $0) }
+        }
+        let alphaDocument = CaptureDocument(id: UUID(), createdAt: Date(), size: alphaSize,
+            pieces: [.init(raster: alphaRaster, source: CGRect(x: 0, y: 0, width: 3, height: 1), origin: .zero)])
+        let alphaReader = try CaptureCompositeReader(document: alphaDocument, directory: root)
+        let alpha = try CaptureImageProcessing.pixels(reader: alphaReader, rect: alphaDocument.bounds,
+            bounds: alphaDocument.bounds, adjustments: adjustments)
+        precondition(alpha[3] == 0 && alpha[7] == 127 && alpha[11] == 255)
+    }
+
+    static func previewSeams(in root: URL) throws {
+        let size = try CapturePixelSize(width: 1537, height: 1103)
+        let raster = UUID().uuidString
+        try CaptureRasterStore.write(size: size, to: root.appendingPathComponent(raster)) { _, buffer in
+            for offset in stride(from: 0, to: buffer.count, by: 4) {
+                buffer[offset] = 33
+                buffer[offset + 1] = 97
+                buffer[offset + 2] = 201
+                buffer[offset + 3] = 255
+            }
+        }
+        var document = CaptureDocument(
+            id: UUID(), createdAt: Date(), size: size,
+            pieces: [.init(raster: raster, source: CGRect(x: 0, y: 0, width: 1537, height: 1103), origin: .zero)])
+        document.edit.crop = CGRect(x: 17, y: 23, width: 1499, height: 1079)
+        let preview = try CaptureRenderer.preview(document: document, directory: root)
+        let pixels = preview.dataProvider!.data! as Data
+        for offset in stride(from: 0, to: pixels.count, by: 4) {
+            precondition(pixels[offset + 3] == 255, "preview left a translucent tile seam")
+            precondition(pixels[offset] == 33 && pixels[offset + 1] == 97 && pixels[offset + 2] == 201)
+        }
+    }
+}

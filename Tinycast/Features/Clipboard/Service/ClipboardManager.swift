@@ -126,6 +126,12 @@ final class ClipboardManager {
         return !roots.contains { path.hasPrefix($0) }
     }
 
+    func recordCapture(_ png: Data, sourceBundleID: String?) {
+        guard isCapturing, settings.clipboardEnabled else { return }
+        if let sourceBundleID, settings.clipboardDisabledApps.contains(sourceBundleID) { return }
+        store.addImage(png, sourceBundleID: sourceBundleID)
+    }
+
     private func poll() {
         let pb = NSPasteboard.general
         guard pb.changeCount != lastChangeCount else { return }

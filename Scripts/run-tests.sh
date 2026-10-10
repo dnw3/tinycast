@@ -19,6 +19,9 @@ if [ "${1:-}" = "--exec" ]; then
     shift
     name=$1 opt=$2
     shift 2
+    if [[ "$name" == capture-* ]]; then
+        set -- "$@" -I Vendor/CaptureWebP -L "$BIN/webp" -lCaptureWebP
+    fi
     : > "$BIN/$name.running"
     trap 'rm -f "$BIN/$name.running" "$BIN/$name.time"' EXIT
     fail() {
@@ -59,6 +62,19 @@ rm -f "$BIN"/*.failed "$BIN"/*.running
 failed=()
 ran=0
 only="${1:-}"
+case "$only" in
+    ""|capture-*) bash Scripts/build-capture-webp.sh "$BIN/webp" || exit 1 ;;
+esac
+case "$only" in
+    ""|capture-webp-test)
+        WEBP_SOURCE=Tinycast/Features/Capture
+        swiftc -swift-version 6 -O -I Vendor/CaptureWebP -L "$BIN/webp" -lCaptureWebP \
+            "$WEBP_SOURCE/Service/WebPHelper/CaptureWebPHelper.swift" \
+            "$WEBP_SOURCE/Service/CaptureWebPEncoder.swift" "$WEBP_SOURCE/Service/CaptureWebPInput.swift" \
+            "$WEBP_SOURCE/Service/CapturePixelAlpha.swift" "$WEBP_SOURCE/Model/CapturePixelSize.swift" \
+            "$WEBP_SOURCE/Model/CaptureRasterError.swift" -o "$BIN/CaptureWebPHelper" || exit 1
+        ;;
+esac
 
 # `--index` merges each harness's compile command into .compile instead of running anything.
 # xcodebuild never compiles the harnesses, so without this nothing in Tests/ resolves in an editor.
@@ -98,6 +114,9 @@ run() {
         printf '{"directory":"%s","command":"swiftc -swift-version 6 -sdk %s' \
             "$PWD" "$(xcrun --show-sdk-path --sdk macosx)" >> "$DB"
         printf ' %s' "${sources[@]}" >> "$DB"
+        if [[ "$name" == capture-* ]]; then
+            printf ' -I %s/Vendor/CaptureWebP -L %s/webp -lCaptureWebP' "$PWD" "$BIN" >> "$DB"
+        fi
         # Claim every file under `Tests/`: the harness and any helper compiled beside it. A shipped
         # source stays unclaimed, because it would get this short command instead of the app's full
         # one and `.compile` is last-wins — but the app never compiles anything in `Tests/`.
@@ -167,6 +186,36 @@ run apple-shortcut-test    Tinycast/Features/AppleShortcuts/Model/*.swift
 run calc-test              Tinycast/Features/Calculator/Model/*.swift
 run index calc-performance Tinycast/Features/Calculator/Model/*.swift
 run calendar-test          Tinycast/Features/Calendar/Model/*.swift
+CAPTURE=Tinycast/Features/Capture
+run -O capture-webp-test $CAPTURE/Model/*.swift $CAPTURE/Service/*.swift Tinycast/Platform/TextRecognition/TextRecognitionResult.swift \
+                           Tinycast/Platform/ScreenTarget.swift Tinycast/Platform/Compression/Zlib.swift Tests/CaptureFixture.swift
+run capture-upload-test $CAPTURE/Model/CaptureUploadDestination.swift $CAPTURE/Service/CaptureUpload*.swift $CAPTURE/Service/CaptureDrive*.swift
+run -O capture-raster-test $CAPTURE/Model/*.swift $CAPTURE/Service/*.swift Tinycast/Platform/TextRecognition/TextRecognitionResult.swift \
+                           Tinycast/Platform/ScreenTarget.swift Tinycast/Platform/Compression/Zlib.swift Tests/CaptureFixture.swift
+run index capture-raster-performance $CAPTURE/Model/*.swift $CAPTURE/Service/*.swift Tinycast/Platform/TextRecognition/TextRecognitionResult.swift \
+                           Tinycast/Platform/ScreenTarget.swift Tinycast/Platform/Compression/Zlib.swift Tests/CaptureFixture.swift
+run index capture-export-performance $CAPTURE/Model/*.swift $CAPTURE/Service/*.swift Tinycast/Platform/TextRecognition/TextRecognitionResult.swift \
+                           Tinycast/Platform/ScreenTarget.swift Tinycast/Platform/Compression/Zlib.swift
+run -O capture-workflow-test $CAPTURE/Model/*.swift $CAPTURE/Service/*.swift \
+                           Tinycast/Platform/TextRecognition/TextRecognitionResult.swift \
+                           Tinycast/Platform/ScreenTarget.swift Tinycast/Platform/Compression/Zlib.swift \
+                           Tests/CaptureFixture.swift Tests/CaptureScrollFixture.swift
+run -O capture-transform-test $CAPTURE/Model/*.swift $CAPTURE/Service/*.swift \
+                           Tinycast/Platform/TextRecognition/TextRecognitionResult.swift \
+                           Tinycast/Platform/ScreenTarget.swift Tinycast/Platform/Compression/Zlib.swift
+run index capture-imageio-performance $CAPTURE/Model/*.swift
+run capture-editor-test $CAPTURE/UI/CaptureTextEditor.swift
+run capture-session-test $CAPTURE/UI/CaptureSessionObserver.swift Tinycast/Platform/NotificationToken.swift
+run capture-video-test $CAPTURE/Model/*.swift $CAPTURE/Service/*.swift $CAPTURE/UI/CaptureVideoState.swift \
+                           Tests/CaptureRecordingFixture.swift \
+                           Tinycast/Platform/TextRecognition/TextRecognitionResult.swift \
+                           Tinycast/Platform/ScreenTarget.swift Tinycast/Platform/Compression/Zlib.swift
+run -O capture-ocr-test $CAPTURE/Model/*.swift $CAPTURE/Service/*.swift \
+                           Tinycast/Platform/TextRecognition/TextRecognitionResult.swift \
+                           Tinycast/Platform/TextRecognition/TextRecognitionExtractor.swift \
+                           Tinycast/Platform/TextRecognition/TextRecognitionWorker.swift \
+                           Tinycast/Platform/TextRecognition/ForegroundExtractor.swift \
+                           Tinycast/Platform/ScreenTarget.swift Tinycast/Platform/Compression/Zlib.swift
 run clipboard-test         Tinycast/Features/Clipboard/Model/ClipboardStore.swift \
                            Tinycast/Features/Clipboard/Model/ClipboardFilter.swift \
                            Tinycast/Features/Clipboard/Model/ClipboardFileKind.swift \
@@ -178,9 +227,10 @@ Q=Tinycast/Features/Quicklinks/Model/QuicklinkDestination.swift
 run clipboard-search-test  Tinycast/Features/Clipboard/Model/*.swift $Q
 run paste-sequence-test    Tinycast/Features/Clipboard/Model/*.swift $Q
 run clipboard-text-test    Tinycast/Features/Clipboard/Model/*.swift $Q \
-                           Tinycast/Features/Clipboard/Service/ClipboardTextExtractor.swift \
+                           Tinycast/Platform/TextRecognition/TextRecognitionExtractor.swift \
                            Tinycast/Features/Clipboard/Service/ClipboardTextIndexer.swift \
-                           Tinycast/Features/Clipboard/Service/ClipboardTextWorker.swift \
+                           Tinycast/Platform/TextRecognition/TextRecognitionWorker.swift \
+                           Tinycast/Platform/TextRecognition/TextRecognitionResult.swift \
                            Tinycast/Platform/ProcessExit.swift
 run pasteboard-test        Tinycast/Platform/PasteboardFiles.swift \
                            Tinycast/Features/Clipboard/Model/ClipboardStore.swift \
@@ -707,6 +757,16 @@ run quick-action-test      Tinycast/Features/Settings/AppSettingsKey.swift \
                            Tinycast/Features/QuickActions/Model/QuickActionPrompt.swift \
                            Tinycast/Features/QuickActions/Model/QuickActionSettings.swift \
                            Tinycast/Features/QuickActions/Settings/QuickActionSettingsStore.swift
+run translation-test       Tinycast/Features/Settings/AppSettingsKey.swift \
+                           Tinycast/Features/AI/Model/*.swift \
+                           Tinycast/Features/AI/Service/AIProvider.swift \
+                           Tinycast/Features/Translation/Model/*.swift \
+                           Tinycast/Features/Translation/Service/TranslationLanguageService.swift \
+                           Tinycast/Features/Translation/Service/AITranslationService.swift \
+                           Tinycast/Features/Translation/Service/TranslationInputSession.swift \
+                           Tinycast/Features/Translation/Settings/TranslationSettingsStore.swift \
+                           Tinycast/Features/Translation/UI/TranslationState.swift \
+                           Tinycast/Features/Translation/UI/TranslationTextView.swift
 run apple-intelligence-test Tinycast/Features/Settings/AppSettingsKey.swift \
                            Tinycast/Features/AI/Model/*.swift \
                            Tinycast/Features/AI/Service/AIProvider.swift \

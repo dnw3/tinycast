@@ -111,11 +111,16 @@ fine too; deciding something with one is what the rule forbids. `showNotice`, `c
 
 New long-lived state belongs on `AppCore`, wired in `start()`. Do not create a competing singleton: this is a singleton, not a container.
 
-Clipboard text recognition runs outside the process. `AppCore` owns the indexer;
-the stateless `ClipboardTextWorker` runs one bundled `ClipboardTextHelper` per item, from
-`Contents/Helpers`, and reaps it before returning. Vision's and PDFKit's allocations therefore belong
-to a process that exits, and the helper — which has no database, clipboard or settings access — is
-handed an input path and answers with bounded text down a pipe.
+Clipboard search and Capture share `Platform/TextRecognition`. `AppCore` owns the background indexer
+and pauses it while foreground screenshot recognition is active. `TextRecognitionWorker` launches one
+bundled `TextRecognitionHelper` from `Contents/Helpers`, bounds its output and reaps it before returning.
+The helper has no database, clipboard or settings access. Search returns bounded text; screenshot OCR
+returns revision-tagged text boxes from composited tiles. Vision and PDFKit remain outside the app process.
+
+Capture WebP export runs one bundled `CaptureWebPHelper` per save. The app stages bounded final RGBA and ICC;
+the helper only encodes those pixels, has no UI or permissions, and exits before the app atomically publishes
+the file. Cancellation and deadlines reap the child before removing its inputs. It is not a resident service;
+performance checks include its RSS together with the app at each sample. PNG copy and history stay in the app.
 
 Dictation similarly runs its model adapters in a bundled helper, with bounded in-memory audio and
 text over pipes. The coordinator keeps microphone capture, UI and insertion in Tinycast; the model
@@ -153,6 +158,12 @@ driven imperatively from AppKit. Extension menu extras are dynamic `NSStatusItem
 - **The main menu** — shaped by `TinycastApp`'s `.commands`, which rebinds ⌘Q to Close Window: the AI
   Chat window when it is key, otherwise Settings. It is only ever on screen while a titled window is
   open, so it is those windows' menu bar. It must stay declarative.
+- **Translation** — a floating, non-activating `TranslationPanel`, managed by
+  `TranslationPanelController` and `TranslationCoordinator`. It contains an editable TextKit 2 source
+  and a SwiftUI result in a compact or expanded frame. Unpinned windows close on focus loss; pinning
+  retains the query across applications, and delivery protects its focus transition. `AppCore` owns its state and
+  settings. Translation borrows the AI provider layer and the validated text-delivery queue.
+  See [features/translation.md](features/translation.md).
 - **Dialogs** — borderless `DialogPanel`s driven by `DialogController`, the app's only presenter for
   confirmations, failure reports and value prompts. Presentation is `async`, so nothing blocks the main
   actor, and the presenter refuses a second dialog while one is up — that, not a flag, is what stops a
@@ -261,3 +272,20 @@ Applications, System Settings, System Actions, Commands — are thin wrappers ov
 `SettingsTab` and `SettingsSection` both identify by the case itself, never by an index. A selectable
 `List` flattens section and row IDs into one namespace, so overlapping `Int` IDs make SwiftUI drop
 whole sidebar groups; `Tests/settings-history-test.swift` pins the two namespaces apart.
+
+## Capture
+
+`AppCore` owns `CaptureCoordinator`, its settings, one editor, one selection/scrolling session and up to
+three pins. Commands and clipboard image actions reach the same coordinator. Capture controls use
+independent AppKit windows; only Screenshot History is a palette screen. No background capture starts
+with the application. Capture views receive their coordinator directly through `@Environment`.
+
+The pure model contains document edits, geometry, revision gates, registration decisions and undo.
+Services use immutable file-backed RGBA tiles, bounded previews and streamed PNG output. `CaptureSource`
+leases keep tiles alive across editor, pin, output and Translation lifetimes. Final images and opted-in
+editable drafts live under the channel's Application Support root. Clipboard receives final images only.
+
+The native paths are implemented, with remaining hardware, lifecycle and resource acceptance open.
+Capture uses the [scenario budgets](plans/capture-spec.md#内存和性能-gate) adopted on 2026-09-29;
+simultaneous main-process and helper RSS count together, including five-second recovery and cycle growth.
+Contracts and status are in [capture.md](features/capture.md) and the [Capture plan](plans/capture-plan.md).

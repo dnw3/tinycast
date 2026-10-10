@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Tinycast Fixed Sidebar QA</title>
+<style>
+body { margin: 36px; background: #edf0f4; color: #162437; font: 20px system-ui; }
+#viewport { width: 900px; height: 500px; overflow-x: auto; border: 2px solid #475d7d; background: white; }
+#table { display: flex; width: max-content; }
+.column { width: 180px; flex-shrink: 0; }
+.column:first-child { position: sticky; left: 0; z-index: 1; color: white; background: #233e67; }
+.cell { height: 70px; padding: 12px 16px; box-sizing: border-box; border-right: 1px solid #ccd4df; border-bottom: 1px solid #ccd4df; }
+.column:nth-child(2n) { background: #edf5e9; }
+.small { display: block; font-size: 14px; }
+</style>
+<p>Select the whole table. Capture horizontally; the blue fixed sidebar must appear once.</p>
+<div id="viewport" tabindex="0"><div id="table"></div></div>
+<script>
+const table = document.getElementById('table');
+for (let column = 0; column <= 80; column++) {
+  const node = document.createElement('div');
+  node.className = 'column';
+  for (let row = 0; row < 7; row++) {
+    const cell = document.createElement('div');
+    cell.className = 'cell';
+    cell.innerHTML = column === 0 ? `FIXED ${row}<span class="small">Keep exactly once</span>`
+      : `C${String(column).padStart(3, '0')} R${row}<span class="small">中文 ${(column * 7919 + row * 31) % 65521}</span>`;
+    node.append(cell);
+  }
+  table.append(node);
+}
+</script>
+</html>

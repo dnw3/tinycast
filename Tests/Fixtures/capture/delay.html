@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Tinycast Delayed Capture QA</title>
+<style>
+body { margin: 40px; background: #edf1f5; color: #182838; font: 24px system-ui; }
+main { width: 700px; padding: 32px; border: 3px solid #234567; background: white; }
+h1 { font-size: 40px; }
+#clock { font: 44px ui-monospace, monospace; }
+</style>
+<main>
+  <h1>Delayed Capture Fixture</h1>
+  <p id="clock" aria-live="off"></p>
+  <p>A delayed capture must show a newer clock.</p>
+  <p>Cancel must leave the clipboard and history unchanged.</p>
+</main>
+<script>
+const clock = document.getElementById('clock');
+function tick() { clock.textContent = new Date().toLocaleTimeString('en-GB', { hour12: false }); }
+tick(); setInterval(tick, 1000);
+</script>
+</html>

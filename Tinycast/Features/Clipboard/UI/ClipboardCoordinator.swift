@@ -227,7 +227,7 @@ final class ClipboardCoordinator {
                         ? reportUnavailable(item)
                         : core.showMessage("That image is no longer available.", tone: .danger)
                 }
-                let text = try await ClipboardTextWorker.extract(item)
+                let text = try await TextRecognitionWorker.extract(at: URL(fileURLWithPath: path), isPDF: false)
                 guard !text.isEmpty else { return core.showMessage("No text found", tone: .neutral) }
                 guard NSPasteboard.general.changeCount == changeCount else {
                     return core.showMessage("Clipboard changed, text not copied", tone: .neutral)

@@ -1,0 +1,14 @@
+<!doctype html>
+<meta charset="utf-8"><title>Tinycast Recording Audio QA</title>
+<style>body{font:24px system-ui;background:#eaf2f8;color:#102a43;margin:40px}main{border:4px solid #244766;padding:32px;width:640px}button{font:inherit;padding:12px}#clock{font:64px monospace}#pulse{height:70px;background:#244766;margin-top:20px}</style>
+<main><h1>Recording Audio QA</h1><p>440 Hz pulse once per second. No microphone.</p><button id="start">Start Test Tone</button><p id="clock">READY</p><div id="pulse"></div><p>Pause must remove the gap from picture and sound.</p></main>
+<script>
+let audio, timer, beat=0;
+document.querySelector('#start').onclick=async()=>{
+ if(timer){clearInterval(timer);timer=null;await audio.close();document.querySelector('#start').textContent='Start Test Tone';return;}
+ audio=new AudioContext();await audio.resume();
+ document.querySelector('#start').textContent='Stop Test Tone';
+ const pulse=()=>{beat++;document.querySelector('#clock').textContent=String(beat).padStart(4,'0');const osc=audio.createOscillator(),gain=audio.createGain();osc.frequency.value=440;gain.gain.value=.03;osc.connect(gain);gain.connect(audio.destination);osc.start();osc.stop(audio.currentTime+.12);document.querySelector('#pulse').style.background='#29b765';setTimeout(()=>document.querySelector('#pulse').style.background='#244766',120);};
+ pulse();timer=setInterval(pulse,1000);
+};
+</script>

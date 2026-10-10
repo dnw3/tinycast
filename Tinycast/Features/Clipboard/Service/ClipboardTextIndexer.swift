@@ -8,6 +8,7 @@ final class ClipboardTextIndexer {
     private let extract: @Sendable (ClipboardItem) async throws -> String
     private let retryDelay: TimeInterval
     private let delay: Duration
+    private let idleDelay: Duration
     private var task: Task<Void, Never>?
     private var isEnabled = false
     private var waitingForRetry = false
@@ -17,11 +18,18 @@ final class ClipboardTextIndexer {
 
     init(
         store: ClipboardStore, delay: Duration = .milliseconds(250), retryDelay: TimeInterval = 30,
+        idleDelay: Duration = .seconds(2),
         canRun: @escaping () -> Bool,
-        extract: @escaping @Sendable (ClipboardItem) async throws -> String = ClipboardTextWorker.extract
+        extract: @escaping @Sendable (ClipboardItem) async throws -> String = { item in
+            guard let path = item.imagePath ?? item.filePath else { return "" }
+            let kind = item.kind == .image ? ClipboardFileKind.image : ClipboardFileKind.of(path: path)
+            guard kind == .image || kind == .pdf else { return "" }
+            return try await TextRecognitionWorker.extract(at: URL(fileURLWithPath: path), isPDF: kind == .pdf)
+        }
     ) {
         self.store = store
         self.delay = delay
+        self.idleDelay = idleDelay
         self.retryDelay = retryDelay
         self.canRun = canRun
         self.extract = extract
@@ -76,7 +84,7 @@ final class ClipboardTextIndexer {
                     continue
                 }
                 guard self.canRun() else {
-                    do { try await Task.sleep(for: .seconds(Self.idleWindow)) } catch { return }
+                    do { try await Task.sleep(for: self.idleDelay) } catch { return }
                     continue
                 }
                 let generation = self.store.extractionGeneration

@@ -187,6 +187,16 @@ enum ClipboardActionsMenu {
             ) {
                 core.clipboardCoordinator.pasteKeepingWindowOpen(item)
             })
+        if core.captureCoordinator.settings.preferences.enabled,
+            let path = item.imagePath ?? item.filePath,
+            item.kind == .image || ClipboardFileKind.of(path: path) == .image {
+            for (title, command) in [("Edit Image", CommandID.editClipboardImage), ("Pin Image", .pinClipboardImage),
+                                     ("Extract Text", .captureText), ("Translate Text", .captureAndTranslate)] {
+                items.append(PopoverMenuItem(title: title, systemImage: command.sfSymbol) {
+                    core.captureCoordinator.openImage(URL(fileURLWithPath: path), command: command)
+                })
+            }
+        }
         if item.isPinned {
             items.append(
                 PopoverMenuItem(
