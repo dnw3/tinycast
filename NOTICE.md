@@ -3,6 +3,13 @@
 Tinycast is licensed under the GNU Affero General Public License v3 — see [LICENSE](LICENSE). It
 also redistributes the third-party material recorded below, under the terms stated for each.
 
+## libwebp 1.6.0
+
+Capture's WebP export statically links official libwebp and its sharpyuv/mux components, copyright
+Google Inc. and the WebP project contributors, under the BSD-style license in `Vendor/libwebp/COPYING`.
+The unmodified license and additional patent grant are included in the app resources as `COPYING`
+and `PATENTS`. Source, version, checksum and integration details are recorded in `Vendor/README.md`.
+
 ## Dictation model resources
 
 Tinycast's dictation code uses Apple's frameworks only. No speech model is bundled with the app.

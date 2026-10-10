@@ -1,0 +1,5 @@
+module CaptureWebP [system] {
+    header "../libwebp/src/webp/encode.h"
+    header "../libwebp/src/webp/mux.h"
+    export *
+}
