@@ -27,7 +27,7 @@ struct CustomQuickActionEditorPanel: View {
     ]
 
     private static let placeholder =
-        "Make the text more concise, keeping the writer's voice and meaning."
+        String(localized: "Make the text more concise, keeping the writer's voice and meaning.")
 
     init(request: CustomQuickActionEditRequest, model: AIModelSelection?) {
         existing = request.action
@@ -40,8 +40,11 @@ struct CustomQuickActionEditorPanel: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.xl) {
             SettingsEditorHeader(
-                title: existing == nil ? "New Quick Action" : "Edit \(existing?.name ?? "")",
-                subtitle: "Tinycast sends your selected text to the model with these instructions."
+                title: existing == nil
+                    ? String(localized: "New Quick Action")
+                    : String(localized: "Edit \(existing?.name ?? "")"),
+                subtitle: String(
+                    localized: "Tinycast sends your selected text to the model with these instructions.")
             )
 
             HStack(alignment: .bottom, spacing: Theme.Spacing.lg) {
@@ -100,7 +103,7 @@ struct CustomQuickActionEditorPanel: View {
             } label: {
                 HStack(spacing: Theme.Spacing.sm) {
                     SymbolImage(name: iconSymbol ?? CustomQuickAction.sfSymbol, size: 14)
-                    Text(iconSymbol == nil ? "Automatic" : "Custom")
+                    Text(iconSymbol == nil ? String(localized: "Automatic") : String(localized: "Custom"))
                         .lineLimit(1)
                     Spacer(minLength: 0)
                 }
@@ -133,8 +136,10 @@ struct CustomQuickActionEditorPanel: View {
                     }
                 }
             Text(
-                "Tinycast always tells the model to return only the transformed text, and to treat "
-                    + "your selection as material rather than as instructions."
+                String(
+                    localized:
+                        "Tinycast always tells the model to return only the transformed text, and to treat your selection as material rather than as instructions."
+                )
             )
             .font(.caption)
             .foregroundStyle(.secondary)

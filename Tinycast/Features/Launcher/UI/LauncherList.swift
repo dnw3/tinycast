@@ -41,9 +41,9 @@ struct LauncherList: View {
 
         var sectionTitle: String {
             switch self {
-            case .calc: return "Calculator"
-            case .meeting: return "Meeting"
-            case .color: return "Color"
+            case .calc: return String(localized: "Calculator")
+            case .meeting: return String(localized: "Meeting")
+            case .color: return String(localized: "Color")
             }
         }
 
@@ -99,7 +99,7 @@ struct LauncherList: View {
         var grouped: [AppEntry.Kind: [AppEntry]] = [:]
         for app in rest { grouped[app.kind, default: []].append(app) }
         if !favorites.isEmpty {
-            rows.append(.header("Favorites"))
+            rows.append(.header(String(localized: "Favorites")))
             rows.append(
                 contentsOf: favorites.enumerated().map {
                     .app($1, slot: FavoriteSlots.digit(at: $0))
@@ -110,11 +110,11 @@ struct LauncherList: View {
             rows.append(contentsOf: meetings.map { .app($0, slot: nil) })
         }
         if !suggestions.isEmpty {
-            rows.append(.header("Suggestions"))
+            rows.append(.header(String(localized: "Suggestions")))
             rows.append(contentsOf: suggestions.map { .app($0, slot: nil) })
         }
         if !matches.isEmpty {
-            rows.append(.header("Results"))
+            rows.append(.header(String(localized: "Results")))
             rows.append(contentsOf: matches.map { .app($0, slot: nil) })
         }
         // Publication order, so rows match the flat index.
@@ -140,7 +140,7 @@ struct LauncherList: View {
         let rows = rows
         return Group {
             if results.isEmpty && card == nil && fallbacks == nil {
-                EmptyResults(text: "No apps found")
+                EmptyResults(text: String(localized: "No apps found"))
             } else {
                 ScrollViewReader { proxy in
                     ScrollView {
@@ -153,7 +153,7 @@ struct LauncherList: View {
                                     SectionHeader(
                                         title: title, isFirst: row.id == rows.first?.id,
                                         configure: fallbacks?.onConfigure,
-                                        configureHelp: "Configure Fallbacks…")
+                                        configureHelp: String(localized: "Configure Fallbacks…"))
                                 case .card(let card):
                                     LeadCardView(card: card, selected: cardSelected)
                                         .contentShape(Rectangle())

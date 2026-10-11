@@ -15,7 +15,7 @@ struct CalcExpressionParser {
     var usedCurrency = false
     var usedCurrencyRate = false
     var currencyCodes: [String] = []
-    var issue: String?
+    var issue: CalcFailure?
 
     private static let unaryBindingPower = 25
     private static let compositeBindingPower = 40
@@ -168,11 +168,11 @@ struct CalcExpressionParser {
         case (.unit(let lhs), .unit(let rhs)):
             guard lhs.isCompatible(with: rhs) else {
                 return fail(
-                    "Cannot \(op == .add ? "add" : "subtract") \(lhs.category.displayName) and \(rhs.category.displayName)."
+                    .incompatibleOperation(operation: op == .add ? "add" : "subtract", first: lhs.category.displayName, second: rhs.category.displayName)
                 )
             }
             if lhs.category == .temperature, lhs.symbol != rhs.symbol {
-                return fail("Cannot combine temperatures with different units.")
+                return fail(.differentTemperatureUnits)
             }
             // Composite ("5 feet 3 inches") answers in its leading unit; `+`/`-` in the last.
             if implicit {
@@ -198,11 +198,11 @@ struct CalcExpressionParser {
                 amount: converted + direction * right.amount, kind: .currency(rhs))
         case (.unit(let lhs), .currency):
             return fail(
-                "Cannot \(op == .add ? "add" : "subtract") \(lhs.category.displayName) and Currency."
+                .incompatibleOperation(operation: op == .add ? "add" : "subtract", first: lhs.category.displayName, second: "Currency")
             )
         case (.currency, .unit(let rhs)):
             return fail(
-                "Cannot \(op == .add ? "add" : "subtract") Currency and \(rhs.category.displayName)."
+                .incompatibleOperation(operation: op == .add ? "add" : "subtract", first: "Currency", second: rhs.category.displayName)
             )
         // A bare number takes the unit beside it; adjacency stays silent, being a half-typed unit.
         case (.unit, .scalar), (.currency, .scalar):
@@ -231,7 +231,7 @@ struct CalcExpressionParser {
         case (.unit, .unit), (.unit, .currency), (.currency, .unit):
             return combine(left, right, dividing: false)
         default:
-            return fail("Multiplication of these unit values is not supported.")
+            return fail(.unsupportedMultiplication)
         }
     }
 
@@ -257,7 +257,7 @@ struct CalcExpressionParser {
                 return combine(left, right, dividing: true)
             }
             guard lhs.category != .temperature else {
-                return fail("Division of temperature values is not supported.")
+                return fail(.unsupportedTemperatureDivision)
             }
             let numerator = left.amount * lhs.factor
             let denominator = right.amount * rhs.factor
@@ -306,7 +306,7 @@ struct CalcExpressionParser {
         guard let combined = CalcUnitExpression.combine(lhs, rhs, dividing: dividing),
             let dimension = combined.dimension
         else {
-            return fail("Multiplication of these unit values is not supported.")
+            return fail(.unsupportedMultiplication)
         }
         if lhs.currency != nil || rhs.currency != nil { usedCurrencyRate = true }
         let base =
@@ -493,7 +493,7 @@ struct CalcExpressionParser {
     }
 
     private mutating func failComparison() -> Double? {
-        issue = "Cannot compare values with different dimensions."
+        issue = .differentDimensions
         return nil
     }
 
@@ -584,7 +584,7 @@ struct CalcExpressionParser {
             if let to = CalcUnits.byName[targetName] ?? compoundTarget(targetName) {
                 guard from.isCompatible(with: to) else {
                     return fail(
-                        "Cannot convert \(from.category.displayName) to \(to.category.displayName).")
+                        .incompatibleConversion(first: from.category.displayName, second: to.category.displayName))
                 }
                 guard let output = convertedMeasurement(value.effective, from: from, to: to), output.isFinite
                 else { return nil }
@@ -592,7 +592,7 @@ struct CalcExpressionParser {
             }
             if CalcCurrency.byName[targetName] != nil {
                 return fail(
-                    "Cannot convert \(from.category.displayName) to \(CalcCurrency.categoryName).")
+                    .incompatibleConversion(first: from.category.displayName, second: CalcCurrency.categoryName))
             }
             return nil
         case .currency(let from):
@@ -603,7 +603,7 @@ struct CalcExpressionParser {
             }
             if let to = CalcUnits.byName[targetName] {
                 return fail(
-                    "Cannot convert \(CalcCurrency.categoryName) to \(to.category.displayName).")
+                    .incompatibleConversion(first: CalcCurrency.categoryName, second: to.category.displayName))
             }
             return nil
         }
@@ -639,15 +639,15 @@ struct CalcExpressionParser {
         recordCurrency(from.code)
         recordCurrency(to.code)
         guard let rates else {
-            issue = "Exchange rates unavailable — check your connection."
+            issue = .ratesUnavailable
             return nil
         }
         guard rates.rate(for: from.code) != nil else {
-            issue = "No exchange rate for \(from.code)."
+            issue = .missingRate(from.code)
             return nil
         }
         guard rates.rate(for: to.code) != nil else {
-            issue = "No exchange rate for \(to.code)."
+            issue = .missingRate(to.code)
             return nil
         }
         return rates.convert(amount, from: from.code, to: to.code)
@@ -680,7 +680,7 @@ struct CalcExpressionParser {
         return false
     }
 
-    private mutating func fail(_ message: String) -> CalcValue? {
+    private mutating func fail(_ message: CalcFailure) -> CalcValue? {
         issue = message
         return nil
     }

@@ -37,6 +37,30 @@
   and the app alone atomically publishes the output. No new singleton or actor is introduced. The sole dependency
   exception is official libwebp for WebP export, approved by the user on 2026-09-29.
 
+## Selection presentation
+
+The frozen desktop retains the original ScreenCaptureKit image, rather than a 900px library thumbnail.
+A single screenshot is capped at 64MP, and multi-display selection shares that aggregate limit.
+These images belong only to the selection workspace and are released on closure; the canvas tile budget stays unchanged.
+A fixed image layer displays the original screenshot separately from the interactive selection view.
+Panels disable window and layer animations, then lay out and draw before presentation. The idle desktop
+keeps its original brightness; only a dragged or completed region dims the area outside the selection.
+Display previews preserve window shadows and use local display intent and the target screen color space;
+source tiles and exports retain canonical sRGB pixels. Panels are reused by display ID; closing drops
+content views, first responders and image references, and removed displays are evicted on the next presentation.
+Source tile preparation is owned separately by the coordinator and begins after presentation. Selection
+can start immediately; its latest region/window/display choice waits until source files are ready before
+creating an editor. Scope changes discard queued choices, closure cancels work, and completion validates
+workspace identity. Failed preparation closes the current overlay and reports the error. Source leases
+keep unfinished writes alive without exposing incomplete files to editing, OCR or output. Pointer tracking sets the initial crosshair immediately,
+uses arrows over controls and outside a completed selection, and restores the arrow when closing.
+Before selection, Close/Cancel shares the bottom toolbar surface. After selection, screenshot output actions
+use a side column exactly one button plus the shared padding wide. Scrolling, recording and target selection
+keep Close/Cancel in their bottom toolbar. Toolbar placement prefers space outside both the selection and
+the annotation bar, including narrow regions.
+Before and while dragging a new region, a pointer loupe shows original pixels, sRGB HEX and top-left pixel coordinates.
+It hides over controls and after completing selection and never writes the clipboard.
+
 ## Entry points and interaction
 
 The commands are Capture Screenshot, Capture Full Screen, Capture Scrolling Screenshot,
@@ -47,25 +71,62 @@ A normal region stays on the desktop after mouse-up. Its icon toolbar edits the 
 Return or Command-C copies directly. Region, Window and Screen share this workspace, and Space switches
 window selection. The separate editor is an explicit Expand Editor action with the same undo state.
 The inline host attaches the shared AppKit canvas directly at a fixed scale; only the separate editor
-uses `NSScrollView`. Overlay windows use sRGB to match the canonical SDR source and avoid unnecessary
-wide-color backing surfaces. Export profile choices remain independent of the overlay's color space.
+uses `NSScrollView`. Overlay windows use their target display color space for local screenshot presentation.
+Export profile choices remain independent of the overlay's color space.
 Unedited ordinary images close without confirmation;
 new edits or an unsaved scrolling result offer Save Draft, Discard and Cancel. Saved history opens as
 already saved and becomes dirty only after another edit.
 
-The inline and window editors share select, arrow, rectangle, ellipse, text, pen, number, solid cover,
-pixelate and crop tools. More Tools adds line, curved arrow, highlighter, pixel ruler, spotlight, blur, erase, magnifier,
-Emoji, image import, color picking, suggested covers and QR scanning.
-Right-click a tool to keep it in the toolbar or move it to More Tools. Customize Toolbar in the tool
-library offers the same choices and Reset Toolbar; Select remains fixed. Both editor hosts use the
-same bundle-scoped local preference, while shortcuts continue to reach tools hidden in More Tools.
-Text uses the same CoreText font in editing and export, with system, serif and monospaced choices;
-font size, rotation and shape fill remain contextual properties. Properties appear only for the active tool or selected annotation. Copy, Save,
-Pin, Extract Text and Translate have direct icon actions with accessible names. Save temporarily hides
-the overlay and restores it after completion or cancellation. Text results dismiss the overlay before
-opening Translation, so the screen-level capture window cannot cover the result.
-Tooltips show each tool's letter shortcut. Tool groups wrap when the host is narrow; selection and
-resize cursors describe the current gesture. No permanent inspector is required.
+Capture toolbar actions and menus share square hit areas and centered, bounded glyphs. Native menu
+indicators are hidden so split menus cannot widen or shift a toolbar cell; primary actions remain direct.
+System symbols retain their font proportions; Arrow, Expand and Close use a smaller optical size without
+shrinking their hit areas. Ordered visibility persists in the existing local toolbar preference; old unordered
+configurations retain their choices. Desktop annotations stay in one row and excess items remain in All Tools;
+excess side actions enter More Actions. Capacity follows the display rather than the selected region, with
+space reserved for navigation, undo/redo and Close/Cancel. The separate editor also limits annotations to its width.
+The inline and window editors share all annotation tools. The default toolbar keeps Select, Arrow,
+Rectangle, Text and Cover; All Tools groups the remaining annotation and image/recognition actions.
+It opens a menu rather than adding another row. Right-click a tool to keep it in the toolbar or move it
+to All Tools. Customize Toolbar opens an owned panel with live ordered previews, separate annotation/action lists,
+Chinese/English/shortcut search, visibility checkboxes, native row drag sorting and Reset. Search temporarily disables sorting;
+context menus and VoiceOver actions provide Move Up/Down without persistent arrow buttons.
+Capture settings provides the same entry without starting a screenshot. Select remains first
+and cannot be hidden or moved. The All Tools menu groups both visible and hidden tools into submenus; choosing one executes it
+without changing the layout. Its ellipsis icon stays stable when a hidden annotation tool is active.
+Customize Toolbar separates Annotation Toolbar and Action Toolbar. Copy, Save As, Scroll Capture,
+Record Screen, Pin, Extract Text, Translate, Share and Upload can be kept in the action bar or left in
+All Tools. New defaults keep Copy, Save As, Scroll Capture, Pin, Extract Text and Translate visible.
+Scroll Capture and Record Screen only operate on a live desktop selection; imported images and the
+expanded editor keep them unavailable. Scroll Capture starts sampling the existing region directly. The original overlay remains visible
+until the live controls are ready; selecting a window capture requires adjusting a live region first.
+The local layout uses a keyed configuration; old annotation-only sets retain every choice and gain the
+initial action defaults. Explicitly hidden actions survive reopening, including when all actions are hidden.
+Existing persisted layouts are preserved, and shortcuts still reach hidden tools.
+After selection, Capture Area and Mode share one menu. Before selection, scope and mode buttons remain direct.
+Inline Style offers color, stroke, font, size, fill, blur and magnification choices without a persistent
+property row. Precise properties, custom colors and the emoji picker remain in the expanded editor;
+Adjust Image and Beautify open that editor. Both hosts share the same document and undo state.
+Copy, Save, Pin, Extract Text and Translate have direct icon actions with accessible names.
+Command-S/Quick Save writes the final composite directly to ~/Pictures/Tinycast, creating the default
+folder on demand. Capture settings can choose another folder; a missing chosen folder reports an error.
+The bundle-scoped capture.quickSaveFolder preference is mirrored in settings.json and excluded from backups.
+Time/UUID filenames publish without replacing an existing file; cancellation and failure remove staging files.
+Quick Save uses the current format/export options and closes only the unchanged inline session after success.
+The expanded editor stays open. The main Save icon and Shift-Command-S open Save As, hide the overlay,
+and restore it after completion or cancellation; this does not change the quick-save folder.
+The save menu retains Quick Save with an actual Command-S binding and Show Quick Save Folder.
+Settings can also reveal the folder; successful saves report the destination directory.
+Both save shortcuts work while editing annotation text; text copy and undo keep their normal behavior.
+Scrolling controls offer Finish and Save As to stop sampling and open the result's save panel in one action.
+That action stays disabled until the first valid frame is captured.
+Cancelling that panel keeps the captured result in the editor. During sampling, the source application
+keeps keyboard focus for scrolling; its save shortcuts are not intercepted globally. Shift-Command-S
+also finishes and opens Save As when the scrolling controls themselves have keyboard focus.
+Text results dismiss the overlay before opening Translation, so capture cannot cover the result.
+Tooltips show shortcuts. Tool groups can wrap for narrow hosts or custom layouts, but More and Style never
+expand another toolbar row. Close Capture (Command-W) requests closure directly; Escape retains its
+contextual cancel/deselect/tool-reset behavior. Unsaved content still goes through the preservation dialog.
+See [the efficiency spec](../plans/capture-efficiency-spec.md) and [implementation plan](../plans/capture-efficiency-plan.md).
 
 QR scanning uses the existing recognition helper with a typed request content kind. It scans the
 composited overview and overlapping full-resolution tiles, maps results back into document coordinates,
@@ -97,13 +158,14 @@ Native multi-Space, keyboard and VoiceOver behavior remains in the acceptance ch
 
 ## Scrolling capture
 
-The scrolling icon enters preparation using the current region; returning to Screenshot keeps edits
-and undo. Screen/window captures first require a region inside the scrolling content; the previous
-selection is hidden so the first drag creates the new region. Start Scrolling
-is explicit and refreshes the ScreenCaptureKit filter to exclude the Dock. The frozen screenshot stays
-in memory as document metadata plus its disk source; annotations are not baked into scrolling frames.
+The scrolling icon starts manual vertical capture directly from a selected region. Its menu offers
+Vertical, Horizontal and Adjust Region; direction and region preparation remain available before sampling.
+Screen/window captures first require a region inside the scrolling content; the previous selection is
+hidden so the first drag creates the new region. Starting refreshes the ScreenCaptureKit filter to exclude
+the Dock. The original desktop workspace is retained until a result is accepted or cancellation restores it;
+annotations are not baked into scrolling frames.
 The result window provides Back to Screenshot / Scrolling Result, preserving each image and undo stack.
-Closing checks both unsaved results. Canceling an empty run restores the retained screenshot.
+Closing checks both unsaved results. Canceling without keeping a result restores the retained screenshot in its original desktop workspace.
 
 `ScrollCaptureSession` serializes stable-frame sampling, RGB registration, strip writes and incremental
 preview updates. It requires two stable samples, matches against the last accepted frame and rejects
@@ -132,6 +194,14 @@ records the failed check and window/PID metadata, without screen contents or win
 The control bar is placed outside the region, otherwise selection fails with a request to leave space.
 Return/Escape/Space work when controls have key focus; a configured capture hotkey finishes independently
 of page focus. No progress percentage or claim of reaching the bottom is inferred from duplicate frames.
+Reopening Tinycast raises the active scrolling or recording controls instead of opening the launcher.
+These nonactivating panels take keyboard focus without activating Tinycast over the captured application.
+Continue and Auto Scroll reactivate the original captured application before resuming target checks.
+Scrolling controls use the current interface metrics, matching their measured placement and hit areas.
+The compact single row shows status, Auto Scroll, Pause/Continue, Finish and More Scrolling Actions.
+The menu holds cancellation, reselection and optional preview/details. Paused reasons expand beneath
+that row; normal progress does not occupy a second row. Controls stay outside sampling and within
+screen visible frames. If the original display is disconnected, cancellation returns to the window editor.
 
 `CaptureSessionObserver` is owned while selecting, scrolling or recording. Display/system sleep, session switch-out,
 display changes and the distributed `com.apple.screenIsLocked` notification pause scrolling, cancel pending
@@ -141,7 +211,7 @@ notification-center tests verify routing and that a released observer cannot del
 
 ## Suggested covers
 
-More Tools → Suggest Covers can propose entire OCR lines containing email addresses, supported phone
+All Tools → Suggest Covers can propose entire OCR lines containing email addresses, supported phone
 numbers, US-style social-security numbers or Luhn-valid card-number patterns; Find All Text proposes
 all recognized lines. Detection runs locally in the existing bounded helper and uses the composited
 image, never an unredacted source. The result is a review list, not a guarantee that every private detail
@@ -161,7 +231,7 @@ the AX lookup. Queries are debounced and coalesced off-main; stale results canno
 
 ## Image adjustments
 
-More Tools → Adjust Image reveals brightness, contrast, saturation, sharpness and inversion. The default
+All Tools → Adjust Image reveals brightness, contrast, saturation, sharpness and inversion. The default
 screenshot toolbar stays compact. Adjustments affect the source image; annotations retain their chosen
 colors and covers are rendered last. Escape closes adjustments before closing the capture.
 The document stores validated numeric parameters, with one undo entry per slider gesture. Originals stay
@@ -216,8 +286,16 @@ real-time multi-track interleaving from blocking the screen queue. Pause finaliz
 resume starts another and waits up to five seconds for a valid screen frame before reporting Recording.
 A failed start stops the stream and cancels its encoders. Stop joins completed segments by audio identity, retaining silence when an input
 is absent from one segment. Static screens retain their last frame until Stop. A failed export retains
-completed source segments for retry. A floating control and the menu bar expose Stop; Escape does not discard
-an active recording. Hidden/closed windows and existing lock/sleep/display observers request a pause.
+completed source segments for retry. A floating control and the menu bar expose Stop. More Recording Actions
+provides Cancel Recording; Escape opens that cancellation path when the controls have keyboard focus.
+Cancellation first pauses, then offers Back, Discard and Keep Result when completed segments exist.
+Back leaves the recording paused; Keep Result opens the video preview without executing Save File or Copy File.
+Capture preservation dialogs put Back/Cancel last, matching DialogController dismissal semantics.
+Escape or click-away preserves the paused session or open result; only explicit actions keep or discard it.
+Recording finalization checks cancellation and session identity before presenting or delivering the result.
+Discard restores the retained screenshot workspace and undo state; a disconnected original display uses
+its window editor. Escape never silently discards an active recording. If the recording has finalized but
+inspection fails, Recorded controls retain Retry Opening Recording and cancellation rather than a spinner. Hidden/closed windows and existing lock/sleep/display observers request a pause.
 ScreenCaptureKit blank/suspended/stopped frame states also pause; idle frames retain the valid static screen.
 Recording pauses at two hours, 2 GB or 64 completed segments; users can stop and save the result.
 
@@ -227,7 +305,8 @@ The keyboard defaults to Off, with Shortcuts Only and All Keys choices. Secure i
 captions; no keystrokes are persisted separately. Camera and keyboard listeners stop on Pause, failure
 and cancellation. A bounded frame pump keeps these layers moving over a static screen. Camera and
 microphone request their own permissions on Start. Accessibility authorizes the keyboard observer.
-Encoder finalization has a 15-second deadline; cancellation explicitly stops the reader and writer.
+Encoder finalization has a 15-second deadline. Cancellation stops the writer immediately and cancels
+the reader after its sample tasks have finished, so reading and reader cancellation cannot overlap.
 
 `CaptureVideoState` keeps the immutable MP4 and a separate trim/speed/volume/cut/hold edit. Cut and Freeze
 opens an optional inspector; intervals use original recording time. Edits outside the trimmed range
@@ -337,7 +416,7 @@ Old 100 MB failures remain historical evidence. See [current acceptance](../plan
 
 ## Spotlight, blur and color sampling
 
-More Tools holds Spotlight, Blur and Pick Color. Spotlight regions form an illuminated union; only
+All Tools holds Spotlight, Blur and Pick Color. Spotlight regions form an illuminated union; only
 the image bounds are dimmed. Blur offers three strengths and uses bounded vImage neighborhoods, so
 preview tiles and PNG bands agree. Blur is a visual effect and does not guarantee text removal.
 Pixelation and solid covers render last. Color sampling reads the composited result, including all
@@ -453,3 +532,97 @@ Text recognition assigns overlapping vertical tiles half of each shared band. Th
 line's center retains that line; its neighbor's clipped top or bottom fragment is discarded before
 text merging. Horizontal fragments still merge by their text and geometry, and repeated lines at
 different document positions remain distinct. This does not alter clipboard search-index extraction.
+
+### Arrow and shape styles
+
+Arrow annotations persist single, double, thick and open heads plus reversal. Missing styles retain
+the previous open head. Shape style overrides the archived `filled` flag and supports outline, fill
+and both; rounded rectangles clamp their radius to half the shorter edge. The desktop Style menu
+and editor properties update the same annotation and undo history. Curved arrows expose a control
+handle in Select mode, with a persisted rotation center so dragging does not shift the curve pivot.
+
+### Rich text annotations
+
+Text annotations optionally carry a `CaptureTextFormat`: a base style and up to 512 ordered UTF-16
+runs whose endpoints must be complete character boundaries. Old annotations without it retain their
+original renderer. TextKit edits local styles and typing attributes without committing the annotation;
+formatting during composition waits for the marked text to commit. Text and supported styles enter
+document undo together when editing finishes. Paste accepts RTF or plain text and normalizes supported
+font families, colors and decorations; links and attachments are not persisted.
+
+CoreText renders font traits, alignment, underline and outlines; run geometry provides background and
+strikethrough. Reflected rich text is rasterized in bounded canonical blocks before reflection to avoid
+CoreText re-hinting flipped glyphs. PNG bands include one row of overlap at each edge so outlined glyphs
+agree with the full preview. Resizing a text annotation changes its wrapping bounds, preserving fonts.
+
+### Censor
+
+The annotation toolbar and All Tools expose one Censor menu containing Solid, Pixelate, Blur, Erase
+and Text Only. Text Only runs the existing OCR review over the current composited output; users include
+or exclude detected boxes before applying solid covers. Detection can miss text. Pixelate and Blur
+are visual effects, not secure concealment. B/M/F/E retain their original tool meanings and documents
+retain the original tool encodings. Saved toolbar entries for Pixelate, Blur and Erase become one
+Censor entry at the first saved position; a visible member keeps that entry visible.
+
+The composite reader applies opaque Solid and Erase masks before sharpening, blur and pixelation
+sample pixels, preventing hidden source content from influencing neighboring output. The final
+renderer also redraws these masks above annotations. Eyedropper, recognition, translation input and
+export use the same composited renderer; source rasters remain editable inside local documents.
+
+### Numbers and pen smoothing
+
+Number annotations optionally persist a format and value (1–3999): decimal, Roman, uppercase letters
+or lowercase letters. Letters continue with AA/aa after Z/z. The Next field sets the next value;
+creating a number increments it, undoing that creation restores it, and reopening continues from the
+last formatted number. Reaching 3999 requires choosing a new Next value before another number.
+Legacy numbered annotations keep their original text and drawing. New labels fit and center in the badge.
+
+Leader mode connects the badge to the dragged endpoint. Select exposes an independent endpoint handle;
+the badge center remains the rotation pivot. Pen annotations optionally persist a Smooth flag: new
+strokes default to quadratic midpoint curves, while missing flags retain the old polyline. The same
+annotation renderer draws canvas previews and exported pixels; neither option rewrites source images.
+
+### Text-line highlighting
+
+Highlighter defaults to Freehand. Highlight Mode → Text Lines recognizes the current composited
+output, then a horizontal or rectangular drag highlights the selected horizontal portion of every
+intersected text line. The draft previews the same snapped annotations that will be committed.
+Each line becomes an ordinary editable highlighter annotation, and the entire drag is one undo step.
+No text produces a notice and leaves Freehand available; partial recognition is reported.
+
+Recognition belongs to the current editor operation and checks cancellation, document identity and
+revision before applying results. Its line cache advances through highlighter edits and undo/redo;
+changes to geometry, image layers, adjustments, presentation or other annotations discard the cache
+and return to Freehand. Undo does not resurrect discarded recognition. Re-enter Text Lines to
+recognize the new composition. OCR coordinates and all export paths use document pixel coordinates.
+
+### Presentation presets
+
+Styling → Presets offers Gradient, Paper, Grid and Window. Applying a preset changes the existing
+presentation parameters in one undo step; source pixels, annotation coordinates and editable layers
+remain unchanged. Save Current Style opens an inline name field. Each saved preset can be applied,
+replaced with the current style, or deleted. At most 20 named presets are stored, with validated
+finite styling parameters. Names must be trimmed, 1–40 characters, and contain no control characters;
+case-insensitive duplicate names and duplicate IDs are rejected without changing existing presets.
+
+CaptureSettingsStore owns presets in the current bundle's preferences. `capture.presentationPresets`
+mirrors the structured list in settings.json, and configuration backups carry the same typed presets.
+Invalid imported lists leave saved presets unchanged. Existing document size limits also apply when
+styling is applied. Selecting or moving an existing annotation preserves its stacking position;
+a plain selection click creates no undo entry.
+
+### Continuous scrolling controls
+
+Scrolling uses the same frosted rounded surface, 30-point cells and optical glyph sizing as the
+ordinary screenshot toolbar. Its compact row shows accumulated pixel dimensions, Auto Scroll,
+Pause/Continue, Finish and More. The dimensions expose the current width and height in pixels
+as their accessibility value. Preview/details remain optional, and errors or pauses expand
+the explanation. Selection no longer displays a permanent “Drag to select” instruction.
+The content region and mouse passthrough remain stable while the page scrolls.
+
+Matching uses bounded five-row sampling and 5×5 averaged registration descriptors to tolerate
+browser text rasterization differences. Fixed header/footer boundaries use original descriptors;
+exported strips retain original pixels. The best 32 coarse candidates are verified densely; ambiguity is checked on local text blocks so
+shared paragraph boilerplate does not hide distinguishing content. Flat whitespace is not a fixed
+header/footer unless its color is distinct from the moving content background. Error ceilings and
+ambiguity margins retain their numeric limits; obstruction checks remain unchanged.

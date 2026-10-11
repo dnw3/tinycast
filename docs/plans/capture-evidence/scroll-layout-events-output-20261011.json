@@ -1,0 +1,100 @@
+{
+  "dark_text_bands" : [
+    [
+      10,
+      41,
+      31
+    ],
+    [
+      351,
+      405,
+      54
+    ],
+    [
+      521,
+      552,
+      31
+    ],
+    [
+      863,
+      917,
+      54
+    ],
+    [
+      1032,
+      1063,
+      31
+    ],
+    [
+      1374,
+      1428,
+      54
+    ],
+    [
+      1543,
+      1574,
+      31
+    ],
+    [
+      1885,
+      1939,
+      54
+    ],
+    [
+      2054,
+      2085,
+      31
+    ],
+    [
+      2396,
+      2450,
+      54
+    ]
+  ],
+  "full_decode" : true,
+  "height" : 2480,
+  "lines" : [
+    {
+      "text" : "Unique registration c",
+      "top_px" : -3.5607959247840881e-07
+    },
+    {
+      "text" : "ROW 011 \/ S",
+      "top_px" : 343.99999841212849
+    },
+    {
+      "text" : "Unique registration c",
+      "top_px" : 508.86485680907253
+    },
+    {
+      "text" : "ROW 012 \/ S",
+      "top_px" : 859.87772843053392
+    },
+    {
+      "text" : "Unique registration c",
+      "top_px" : 1020.0137410542793
+    },
+    {
+      "text" : "ROW 013 \/ S",
+      "top_px" : 1368.8733630628017
+    },
+    {
+      "text" : "Unique registration c",
+      "top_px" : 1531.1753131066807
+    },
+    {
+      "text" : "ROW 014 \/ S",
+      "top_px" : 1878.1660095772586
+    },
+    {
+      "text" : "Unique registration c",
+      "top_px" : 2042.0000004017097
+    },
+    {
+      "text" : "ROW 015 \/ S",
+      "top_px" : 2389.0000011334805
+    }
+  ],
+  "path" : "docs\/plans\/capture-evidence\/scroll-layout-events-native-20261011.png",
+  "width" : 520
+}

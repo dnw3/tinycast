@@ -6,19 +6,20 @@ enum SettingsFileSchema {
     static func bindings(
         settings: AppSettings, ai: AISettingsStore,
         shortcuts: HotKeySettingsFile, launcher: LauncherSettingsFile,
-        windowManagement: WindowManagementSettingsFile
+        windowManagement: WindowManagementSettingsFile, capturePresets: SettingsFileBinding
     ) -> [SettingsFileBinding] {
         SettingsFileKey.allCases.map { key in
             binding(
                 for: key, settings: settings, ai: ai,
-                shortcuts: shortcuts, launcher: launcher, windowManagement: windowManagement)
+                shortcuts: shortcuts, launcher: launcher, windowManagement: windowManagement,
+                capturePresets: capturePresets)
         }
     }
 
     private static func binding(
         for key: SettingsFileKey, settings: AppSettings, ai: AISettingsStore,
         shortcuts: HotKeySettingsFile,
-        launcher: LauncherSettingsFile, windowManagement: WindowManagementSettingsFile
+        launcher: LauncherSettingsFile, windowManagement: WindowManagementSettingsFile, capturePresets: SettingsFileBinding
     ) -> SettingsFileBinding {
         func bind<Root: AnyObject, Value: SettingsFileValue>(
             _ root: Root, _ path: ReferenceWritableKeyPath<Root, Value>,
@@ -28,6 +29,7 @@ enum SettingsFileSchema {
         }
 
         switch key {
+        case .capturePresentationPresets: return capturePresets
         case .launcherShortcut:
             return shortcuts.binding(for: key, action: .togglePalette, name: "App Launcher")
         case .showInMenuBar: return bind(settings, \.showInMenuBar)
@@ -83,6 +85,7 @@ enum SettingsFileSchema {
         case .notesEnabled: return bind(settings, \.notesEnabled)
         case .notesRendersMarkdown: return bind(settings, \.notesRendersMarkdown)
         case .notesShowsFormattingBar: return bind(settings, \.notesShowsFormattingBar)
+        case .captureQuickSaveFolder: return bind(settings, \.captureQuickSaveFolder, accept: folder)
         case .notesFolder: return bind(settings, \.notesFolder, accept: folder)
         case .notesCommands: return launcher.commandsBinding(for: key, owner: .notes)
         case .dictationMode: return bind(settings, \.dictationMode)

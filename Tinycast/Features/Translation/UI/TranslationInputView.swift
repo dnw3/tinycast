@@ -23,7 +23,7 @@ struct TranslationInputView: NSViewRepresentable {
         editor.textContainer?.widthTracksTextView = true
         editor.textContainerInset = NSSize(width: metrics.spacing.sm, height: metrics.spacing.md)
         editor.string = text
-        editor.setAccessibilityLabel("Source text")
+        editor.setAccessibilityLabel(String(localized: "Source text"))
         scroll.documentView = editor
         update(editor)
         return scroll

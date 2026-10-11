@@ -1,0 +1,66 @@
+{
+  "date": "2026-10-11",
+  "change": "Expose accumulated scrolling width and height in pixels through accessibilityValue.",
+  "candidate_sha256": "337e2da70495c04ee6ae11228aec20bfbb8817058a95e41dde4321842feef99a",
+  "installed_sha256": "337e2da70495c04ee6ae11228aec20bfbb8817058a95e41dde4321842feef99a",
+  "installed": true,
+  "installation_deferred_reason": null,
+  "debug": {
+    "exit_code": 0,
+    "log": "/private/tmp/tinycast-scroll-a11y-debug.log"
+  },
+  "release": {
+    "exit_code": 0,
+    "log": "/private/tmp/tinycast-scroll-a11y-release.log"
+  },
+  "warnings": "Only pre-existing AppIntents metadata extraction warning observed in build logs.",
+  "lint": {
+    "exit_code": 0,
+    "log": "/private/tmp/tinycast-scroll-a11y-lint.log"
+  },
+  "full_suite": {
+    "exit_code": 1,
+    "passed": 113,
+    "total": 114,
+    "failure": "capture-video-test timed out after 300 seconds of execution",
+    "log": "/private/tmp/tinycast-scroll-a11y-tests.log"
+  },
+  "focused_retry": {
+    "harness": "capture-video-test",
+    "exit_code": 0,
+    "execution_seconds": 9,
+    "total_seconds": 31,
+    "log": "/private/tmp/tinycast-scroll-a11y-video-retry.log"
+  },
+  "model_purity": true,
+  "diff_check": true,
+  "deep_strict_signature_verified": true,
+  "designated_requirement": "identifier com.tinycast.app and certificate leaf ccc45372b9efd58a7b102df90c075657a693d170",
+  "native_accessibility_verified": false,
+  "unresolved_observations": [
+    "NSHostingView reentrant layout faults coincide with scrolling pause state changes; causal diagnosis pending.",
+    "Tinycast result and Save window metadata show small off-screen rectangles. CUA binding fails with ScreenCaptureKit -3811; no non-CUA UI workaround used."
+  ],
+  "installation_receipt": "build/install-backups/efficiency-install-409c288e49.json",
+  "installed_pid": 96097,
+  "final_full_suite": {
+    "exit_code": 0,
+    "passed": 114,
+    "total": 114,
+    "seconds": 203,
+    "log": "/private/tmp/tinycast-installed-409c-full-tests.log",
+    "concurrent_build": false
+  },
+  "native_followup": {
+    "installed_receipt": "build/install-backups/efficiency-install-2edf5ac168.json",
+    "binary_sha256": "dea598e6d8488be2ca363d59f12caa1e16c9fd8e0accd791b48942d5ed0a7931",
+    "observed_values": [
+      "2,150 × 1,000 pixels",
+      "520 × 860 pixels",
+      "520 × 5,720 pixels",
+      "520 × 6,800 pixels"
+    ],
+    "confirmed": true,
+    "evidence": "scroll-direct-save-verification-20261011.json"
+  }
+}

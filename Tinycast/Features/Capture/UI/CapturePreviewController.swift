@@ -17,11 +17,13 @@ final class CapturePreviewController: NSObject, NSWindowDelegate {
     func show(_ entry: CaptureHistoryEntry, source: CaptureSource, metrics: InterfaceMetrics) {
         close()
         self.source = source
-        let size = CGSize(width: metrics.scaled(Theme.Size.captureEditor.width),
+        let size = CGSize(
+            width: metrics.scaled(Theme.Size.captureEditor.width),
             height: metrics.scaled(Theme.Size.captureEditor.height))
-        let window = Window(contentRect: CGRect(origin: .zero, size: size),
+        let window = Window(
+            contentRect: CGRect(origin: .zero, size: size),
             styleMask: [.titled, .closable, .resizable], backing: .buffered, defer: false)
-        window.title = "Capture Preview · \(entry.subtitle)"
+        window.title = String(localized: "Capture Preview · \(entry.subtitle)")
         window.isReleasedWhenClosed = false
         window.isRestorable = false
         window.contentMinSize = Theme.Size.captureEditorMinimum
@@ -29,7 +31,7 @@ final class CapturePreviewController: NSObject, NSWindowDelegate {
         if entry.animationDuration != nil {
             let imageView = NSImageView(frame: CGRect(origin: .zero, size: size))
             imageView.imageScaling = .scaleProportionallyUpOrDown
-            imageView.setAccessibilityLabel("Animated GIF Preview")
+            imageView.setAccessibilityLabel(String(localized: "Animated GIF Preview"))
             window.contentView = imageView
             self.imageView = imageView
             playAnimation(entry, source: source)
@@ -42,7 +44,8 @@ final class CapturePreviewController: NSObject, NSWindowDelegate {
             self.player = player
             player.play()
         } else {
-            let preview = QLPreviewView(frame: CGRect(origin: .zero, size: size), style: .normal) ?? QLPreviewView()
+            let preview =
+                QLPreviewView(frame: CGRect(origin: .zero, size: size), style: .normal) ?? QLPreviewView()
             preview.autostarts = true
             preview.shouldCloseWithWindow = false
             preview.previewItem = source.directory.appendingPathComponent(entry.filename) as NSURL
@@ -88,14 +91,22 @@ final class CapturePreviewController: NSObject, NSWindowDelegate {
         animationTask = Task { [weak self] in
             do {
                 while !Task.isCancelled {
-                    for try await frame in CaptureGIFService.frames(source.directory.appendingPathComponent(entry.filename)) {
+                    for try await frame in CaptureGIFService.frames(
+                        source.directory.appendingPathComponent(entry.filename))
+                    {
                         try Task.checkCancellation()
-                        self?.imageView?.image = NSImage(cgImage: frame, size: NSSize(width: frame.width, height: frame.height))
+                        self?.imageView?.image = NSImage(
+                            cgImage: frame, size: NSSize(width: frame.width, height: frame.height))
                     }
                 }
             } catch is CancellationError {} catch {
-                self?.window?.contentView = NSTextField(wrappingLabelWithString:
-                    "GIF preview could not load. \(error.localizedDescription)")
+                self?.window?.contentView = NSTextField(
+                    wrappingLabelWithString:
+                        String(
+                            localized:
+                                "GIF preview could not load. \(Bundle.main.localizedString(forKey: error.localizedDescription, value: nil, table: nil))"
+                        )
+                )
             }
         }
     }

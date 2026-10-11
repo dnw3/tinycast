@@ -34,6 +34,19 @@ struct SettingsSearchEntry: Identifiable, Hashable, Sendable {
         self.keywords = keywords
     }
 
+    func localizedTitle(in bundle: Bundle) -> String {
+        bundle.localizedString(forKey: title, value: nil, table: nil)
+    }
+
+    var localizedBreadcrumb: String { localizedBreadcrumb(in: .main) }
+
+    func localizedBreadcrumb(in bundle: Bundle) -> String {
+        let tab = bundle.localizedString(forKey: tab.title, value: nil, table: nil)
+        guard let anchor, anchor.title != self.tab.title else { return tab }
+        let section = bundle.localizedString(forKey: anchor.title, value: nil, table: nil)
+        return "\(tab) › \(section)"
+    }
+
     var anchor: SettingsAnchor? { target?.anchor }
 
     var id: String { "\(tab.title)/\(anchor?.title ?? "")/\(title)" }
@@ -60,7 +73,7 @@ enum SettingsSearchCatalog {
         var isEmpty: Bool { terms.isEmpty }
     }
 
-    static func results(for raw: String, limit: Int = 50) -> [SettingsSearchEntry] {
+    static func results(for raw: String, limit: Int = 50, bundle: Bundle = .main) -> [SettingsSearchEntry] {
         let query = Query(raw)
         guard !query.isEmpty else { return [] }
         // Catalog order is the tie-break, so results don't reshuffle between equal-scoring rows.
@@ -68,7 +81,7 @@ enum SettingsSearchCatalog {
             entries
             .enumerated()
             .compactMap { item -> (entry: SettingsSearchEntry, score: Int, rank: Int)? in
-                guard let score = score(query, item.element) else { return nil }
+                guard let score = score(query, item.element, bundle: bundle) else { return nil }
                 return (item.element, score, item.offset)
             }
             .sorted { $0.score != $1.score ? $0.score > $1.score : $0.rank < $1.rank }
@@ -77,11 +90,12 @@ enum SettingsSearchCatalog {
     }
 
     /// Every term must land somewhere; a term matched in the title outranks one found off it.
-    private static func score(_ query: Query, _ entry: SettingsSearchEntry) -> Int? {
+    private static func score(_ query: Query, _ entry: SettingsSearchEntry, bundle: Bundle) -> Int? {
         var titleScore = 0
         var titleMatches = 0
         for term in query.terms {
-            if let match = FuzzyMatch.match(term, candidate: entry.title) {
+            if let match = FuzzyMatch.match(term, candidate: entry.title)
+                ?? FuzzyMatch.match(term, candidate: entry.localizedTitle(in: bundle)) {
                 titleMatches += 1
                 titleScore += match.score
                 continue
@@ -89,6 +103,7 @@ enum SettingsSearchCatalog {
             guard
                 entry.keywords.contains(where: { FuzzyMatch.match(term, candidate: $0) != nil })
                     || FuzzyMatch.match(term, candidate: entry.breadcrumb) != nil
+                    || FuzzyMatch.match(term, candidate: entry.localizedBreadcrumb(in: bundle)) != nil
             else { return nil }
         }
 
@@ -329,7 +344,7 @@ enum SettingsSearchCatalog {
     private static let capture: [SettingsSearchEntry] = [
         .init(pane: .capture, keywords: ["screenshot", "scroll", "OCR", "截图", "长截图", "取字"]),
         .init(.captureCapture, "Enable Capture", keywords: ["image", "capture"]),
-        .init(.captureOutput, "Output format", keywords: ["PNG", "JPEG", "HEIC", "copy"]),
+        .init(.captureOutput, "Output format", keywords: ["PNG", "JPEG", "HEIC", "copy", "quick save", "folder", "保存", "目录"]),
         .init(.captureScrolling, "Direction", keywords: ["horizontal", "vertical", "scroll"]),
         .init(.captureHistory, "Keep editable originals", keywords: ["privacy", "redaction", "draft"]),
         .init(group: .captureUploads, "Upload destination", keywords: ["S3", "R2", "MinIO", "imgbb", "Google Drive", "link"]),

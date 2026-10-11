@@ -19,7 +19,8 @@ extension CaptureCoordinator {
             let editable = self.settings.keepsOriginals
             let entry = try await CaptureWork.run {
                 try CaptureRenderer.png(document: snapshot, directory: source.directory, to: rendered)
-                return try repository.commit(document: snapshot, directory: source.directory,
+                return try repository.commit(
+                    document: snapshot, directory: source.directory,
                     png: rendered, editable: editable, draft: false)
             }
             try await self.deliverFile(entry, via: delivery, from: self.editorWindow.sharingView)
@@ -41,31 +42,40 @@ extension CaptureCoordinator {
         state.progress = 0
         defer { state.busy = false; state.progress = nil }
         let snapshot = try state.edit.validated(duration: state.info.duration), options = state.exportOptions
-        let rendered = state.source.directory.appendingPathComponent("share-\(UUID()).\(options.format.rawValue)")
+        let rendered = state.source.directory.appendingPathComponent(
+            "share-\(UUID()).\(options.format.rawValue)")
         defer { try? FileManager.default.removeItem(at: rendered) }
         let repository = self.repository, entry: CaptureHistoryEntry
         if options.format == .gif {
-            try await CaptureGIFService.render(state.url, edit: snapshot, options: options, to: rendered) { value in
+            try await CaptureGIFService.render(state.url, edit: snapshot, options: options, to: rendered) {
+                value in
                 await MainActor.run { state.progress = value }
             }
             entry = try await CaptureWork.run { try repository.commitGIF(rendered) }
         } else {
-            try await CaptureVideoService.render(state.url, edit: snapshot, options: options, to: rendered) { value in
+            try await CaptureVideoService.render(state.url, edit: snapshot, options: options, to: rendered) {
+                value in
                 await MainActor.run { state.progress = value }
             }
             let info = try await CaptureVideoService.inspect(rendered)
             let preview = try await CaptureVideoService.thumbnail(rendered)
-            entry = try await CaptureWork.run { try repository.commitVideo(rendered, info: info, preview: preview) }
+            entry = try await CaptureWork.run {
+                try repository.commitVideo(rendered, info: info, preview: preview)
+            }
         }
         try await self.deliverFile(entry, via: delivery, from: self.videoWindow.sharingView)
         state.savedEdit = snapshot
     }
 
-    func deliverFile(_ entry: CaptureHistoryEntry, via delivery: CaptureFileDelivery, from view: NSView?) async throws {
-        let repository = repository, keeping = Set(PasteboardFiles.urls(on: .general)), preferences = settings.preferences
+    func deliverFile(
+        _ entry: CaptureHistoryEntry, via delivery: CaptureFileDelivery, from view: NSView?
+    ) async throws {
+        let repository = repository, keeping = Set(PasteboardFiles.urls(on: .general)),
+            preferences = settings.preferences
         let url = try await CaptureWork.run {
             let url = try repository.transfer(entry, now: Date(), keeping: keeping)
-            try repository.prune(now: Date(), days: max(1, preferences.retentionDays),
+            try repository.prune(
+                now: Date(), days: max(1, preferences.retentionDays),
                 maximumBytes: max(16, preferences.maximumHistoryMB) * 1_048_576)
             return url
         }
@@ -85,7 +95,8 @@ extension CaptureCoordinator {
     func uploadCapture(video: Bool = false) {
         do {
             guard let destination = settings.uploadDestination else { showUploadSettings(); return }
-            let delivery = CaptureFileDelivery.upload(destination, try settings.uploadCredential(for: destination))
+            let delivery = CaptureFileDelivery.upload(
+                destination, try settings.uploadCredential(for: destination))
             if video { shareVideo(delivery: delivery) } else { shareImage(delivery: delivery) }
         } catch { report(error) }
     }
@@ -98,15 +109,17 @@ extension CaptureCoordinator {
     private func uploadFile(
         _ file: URL, destination: CaptureUploadDestination, credential: CaptureUploadCredential
     ) async throws {
-        editor?.notice = "Uploading to \(destination.title)…"
-        video?.notice = "Uploading to \(destination.title)…"
+        editor?.notice = String(localized: "Uploading to \(destination.title)…")
+        video?.notice = String(localized: "Uploading to \(destination.title)…")
         let prepared: CaptureUploadService.Prepared
         if destination.kind == .drive {
-            let token = try await CaptureDriveService.refresh(destination: destination, credential: credential)
+            let token = try await CaptureDriveService.refresh(
+                destination: destination, credential: credential)
             prepared = try await CaptureDriveService.prepare(file: file, token: token, id: UUID())
         } else {
             prepared = try await CaptureWork.run {
-                try CaptureUploadService.prepare(file: file, destination: destination, credential: credential,
+                try CaptureUploadService.prepare(
+                    file: file, destination: destination, credential: credential,
                     scratch: file.deletingLastPathComponent(), id: UUID(), date: Date())
             }
         }
@@ -121,9 +134,9 @@ extension CaptureCoordinator {
         let link = try CaptureUploadService.result(data, response: response, prepared: prepared)
         try Task.checkCancellation()
         Paster.copyPlainText(link.absoluteString)
-        editor?.notice = "Uploaded · link copied"
-        video?.notice = "Uploaded · link copied"
-        core.showMessage("Uploaded · link copied", tone: .success)
+        editor?.notice = String(localized: "Uploaded · link copied")
+        video?.notice = String(localized: "Uploaded · link copied")
+        core.showMessage(String(localized: "Uploaded · link copied"), tone: .success)
     }
 
     private func observeUploadProgress(_ values: AsyncStream<Double>, state: CaptureVideoState?) async {

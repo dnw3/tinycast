@@ -55,7 +55,7 @@ struct ShortcutRecorder: View {
         if let binding = hotKeys.binding(for: action) {
             boundLabel(binding)
         } else {
-            Text(isRecording ? "Listening…" : "Record Hotkey")
+            Text(isRecording ? String(localized: "Listening…") : String(localized: "Record Hotkey"))
                 .font(Theme.Typography.keyCap)
                 .foregroundStyle(unsetInk)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -73,8 +73,9 @@ struct ShortcutRecorder: View {
                         .foregroundStyle(.orange)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Open Accessibility settings")
-                .help("Modifier-only hotkeys need Accessibility access. Click to grant it.")
+                .accessibilityLabel(String(localized: "Open Accessibility settings"))
+                .help(
+                    String(localized: "Modifier-only hotkeys need Accessibility access. Click to grant it."))
             }
             HStack(spacing: Theme.Spacing.xs) {
                 ForEach(Array(binding.recorderKeycaps.enumerated()), id: \.offset) { _, cap in

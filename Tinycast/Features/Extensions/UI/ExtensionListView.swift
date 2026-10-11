@@ -56,7 +56,7 @@ struct ExtensionListView: View {
             .padding(.horizontal, metrics.spacing.xl)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
-            EmptyResults(text: "No results")
+            EmptyResults(text: String(localized: "No results"))
         }
     }
 

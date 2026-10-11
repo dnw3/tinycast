@@ -44,15 +44,15 @@ enum CaptureScreenService {
     }
 
     static func image(
-        target: Target, rect: CGRect? = nil, window: SCWindow? = nil, cursor: Bool
+        target: Target, rect: CGRect? = nil, window: SCWindow? = nil, cursor: Bool, presentation: Bool = false
     ) async throws -> CGImage {
         try Task.checkCancellation()
         let filter = window.map { SCContentFilter(desktopIndependentWindow: $0) } ?? target.filter
         let configuration = SCScreenshotConfiguration()
         configuration.showsCursor = cursor
-        configuration.ignoreShadows = true
+        configuration.ignoreShadows = !presentation
         configuration.dynamicRange = .sdr
-        configuration.displayIntent = .canonical
+        configuration.displayIntent = presentation ? .local : .canonical
         let bounds = rect ?? filter.contentRect
         if let rect { configuration.sourceRect = rect }
         configuration.width = Int((bounds.width * CGFloat(filter.pointPixelScale)).rounded())
@@ -105,7 +105,8 @@ enum CaptureScreenService {
             cursorLayer: Int(CGWindowLevelForKey(.cursorWindow)), windows: snapshots)
         if assessment.status != .visible {
             let obstruction = assessment.obstructingWindow
-            logger.notice("""
+            logger.notice(
+                """
                 Capture paused: \(assessment.status.rawValue, privacy: .public), target=\(windowID), pid=\(pid), \
                 frontmost=\(frontmost ?? -1), obstruction=\(obstruction?.id ?? 0), \
                 owner=\(obstruction?.pid ?? 0), layer=\(obstruction?.layer ?? -1)
@@ -118,9 +119,11 @@ enum CaptureScreenService {
         case displayChanged, unavailable
         var errorDescription: String? {
             switch self {
-            case .displayChanged: "The display changed. Select a region again."
+            case .displayChanged: String(localized: "The display changed. Select a region again.")
             case .unavailable:
-                "The screen could not be captured. Check Screen Recording permission and retry."
+                String(
+                    localized:
+                        "The screen could not be captured. Check Screen Recording permission and retry.")
             }
         }
     }

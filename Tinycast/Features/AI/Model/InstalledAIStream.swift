@@ -4,6 +4,7 @@ struct InstalledAIStreamFrame: Equatable, Sendable {
     var events: [AIStreamEvent] = []
     var sessionID: String?
     var error: String?
+    var failedKind: InstalledAIKind?
     var completed = false
     /// A tool call the CLI is holding open; the runner answers it and the turn carries on.
     var controlRequest: ClaudeControlProtocol.Request?
@@ -48,7 +49,8 @@ enum InstalledAIStreamDecoder {
             }
             frame.completed = true
         case "error":
-            frame.error = message(in: object) ?? "OpenCode could not finish the response."
+            frame.error = message(in: object)
+            frame.failedKind = .openCode
         default:
             break
         }
@@ -99,7 +101,8 @@ enum InstalledAIStreamDecoder {
             return frame
         }
         if object["is_error"] as? Bool == true {
-            frame.error = object["result"] as? String ?? "Claude could not finish the response."
+            frame.error = object["result"] as? String
+            frame.failedKind = .claude
             return frame
         }
         if let usage = object["usage"] as? [String: Any] {
@@ -169,11 +172,12 @@ enum InstalledAIStreamDecoder {
         }
         if type == "result", object["is_error"] as? Bool == true {
             frame.error = grokFailure(object)
+            frame.failedKind = .grok
         }
         return frame
     }
 
-    private static func grokFailure(_ object: [String: Any]) -> String {
+    private static func grokFailure(_ object: [String: Any]) -> String? {
         if let errors = object["errors"] as? [Any] {
             let lines = errors.compactMap { item -> String? in
                 guard let text = item as? String else { return nil }
@@ -186,7 +190,7 @@ enum InstalledAIStreamDecoder {
             let trimmed = result.trimmingCharacters(in: .whitespacesAndNewlines)
             if !trimmed.isEmpty { return trimmed }
         }
-        return "Grok could not finish the response."
+        return nil
     }
 
     private static func cursor(
@@ -212,7 +216,7 @@ enum InstalledAIStreamDecoder {
                 frame.error =
                     (object["result"] as? String)
                     ?? message(in: object)
-                    ?? "Cursor could not finish the response."
+                frame.failedKind = .cursor
                 return frame
             }
             frame.completed = true

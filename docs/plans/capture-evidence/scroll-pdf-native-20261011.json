@@ -1,0 +1,94 @@
+{
+  "date": "2026-10-11",
+  "installed_receipt": "build/install-backups/efficiency-install-ccf20f8bb2.json",
+  "binary_sha256": "5e28997e1594144f5e65c7341fdd4189cc8ad8fc65a3e8bf94420d64b3ef01f5",
+  "pid": 76518,
+  "source": "/private/tmp/tinycast-scroll-fixture/pdf/anonymous-scroll-60-rows.pdf",
+  "target": "com.apple.Preview",
+  "initial_size": [
+    1700,
+    1000
+  ],
+  "manual_observed_sizes": [
+    [
+      1700,
+      1176
+    ],
+    [
+      1700,
+      1353
+    ]
+  ],
+  "automatic_scroll": true,
+  "paused_size": [
+    1700,
+    6033
+  ],
+  "stopped_pieces": 29,
+  "stopped_size": [
+    1700,
+    6033
+  ],
+  "stop_log_time": "2026-10-11 09:24:32.943",
+  "screenshot": "scroll-pdf-native-paused-20261011.png",
+  "observed_recovery": [
+    "Occlusion protection paused capture for automation helper window; no whitelist or bypass applied.",
+    "A four-step Down jump produced uncertain alignment. Scrolling back and continuing recovered capture; single steps appended content."
+  ],
+  "multi_piece_export_verified": true,
+  "multi_piece_save_as_verified": false,
+  "export_blocker": "CUA cannot bind Tinycast result window: ScreenCaptureKit -3811. Resetting the CUA runtime and resolving by full path or application name did not recover it. Preview remains readable.",
+  "save_shortcut_observation": "Shift-Command-S was attempted before the window observation failed. Tinycast logged an openAndSavePanelService connection at 09:25:37.116; this alone does not confirm a visible Save panel or completed export.",
+  "independent_seam_and_row_validation": "Rows 001-012 contiguous; heading-band spacing 531 or 532 pixels. This is limited evidence and does not close the entire seam matrix.",
+  "full_scroll_matrix_passed": false,
+  "export_blocker_resolved": "User confirmed visible Save window; CUA binding recovered. Cancel returned intact result; Command-S exported final PNG.",
+  "save_as_issue": "Save and New Folder remained disabled in tmp and repository directories, including 50-percent export. Toolbar primary and Shift-Command-S both opened the panel; cancellation preserved content.",
+  "output": "/Users/bytedance/Pictures/Tinycast/Screenshot-2026-10-11T02-31-11Z-E5EEC2BD-C306-4F1A-9008-44D05233927A.png",
+  "decoded_size": [
+    1700,
+    6033
+  ],
+  "recognized_rows": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12
+  ],
+  "rows_contiguous": true,
+  "heading_band_spacing": [
+    532,
+    531,
+    532,
+    531,
+    532,
+    531,
+    532,
+    531,
+    532,
+    531,
+    532
+  ],
+  "save_as_retest": {
+    "receipt": "build/install-backups/efficiency-install-409c288e49.json",
+    "binary_sha256": "337e2da70495c04ee6ae11228aec20bfbb8817058a95e41dde4321842feef99a",
+    "source": "Reopened flattened history of the real 29-piece result",
+    "shortcut": "Shift-Command-S",
+    "panel_opened": true,
+    "save_enabled": true,
+    "export": "scroll-pdf-save-as-native-20261011.png",
+    "decoded_size": [
+      1700,
+      6033
+    ],
+    "identical_to_original_quick_save_sha256": "2a33a93c699320843a8a1942c6d2f879bba1cec03a8525dc9d66a16ba84f5206",
+    "original_disabled_panel_cause": "Unknown; no save-panel source fix in this candidate."
+  }
+}

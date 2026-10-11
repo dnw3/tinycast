@@ -23,12 +23,57 @@ struct CaptureWorkflowTests {
         try annotationStyles(in: root)
         try emoji(in: root)
         try imageEffects(in: root)
+        try censorIsolation(in: root)
         try erase(in: root)
         try imageAdjustments(in: root)
         try previewSeams(in: root)
         print(
             "Capture geometry, stitch confidence, revision undo, import, cropped redaction and history passed"
         )
+    }
+
+    static func censorIsolation(in root: URL) throws {
+        let size = try CapturePixelSize(width: 128, height: 96)
+        let area = CGRect(x: 40, y: 24, width: 32, height: 40)
+        var documents: [CaptureDocument] = []
+        for secret: UInt8 in [0, 255] {
+            let raster = UUID().uuidString
+            try CaptureRasterStore.write(size: size, to: root.appendingPathComponent(raster)) { y, row in
+                for x in 0..<size.width {
+                    let value: UInt8 = area.contains(CGPoint(x: x, y: y)) ? secret : 180
+                    for channel in 0..<3 { row[x * 4 + channel] = value }
+                    row[x * 4 + 3] = 255
+                }
+            }
+            documents.append(CaptureDocument(id: UUID(), createdAt: Date(), size: size,
+                pieces: [.init(raster: raster, source: CGRect(origin: .zero, size: CGSize(width: 128, height: 96)),
+                    origin: .zero)]))
+        }
+        for censor in [CaptureAnnotation.Tool.cover, .erase] {
+            for effect in [CaptureAnnotation.Tool.blur, .pixelate, .magnifier] {
+                var outputs: [Data] = []
+                for var document in documents {
+                    document.edit.annotations = [
+                        .init(id: UUID(), tool: censor,
+                            points: [area.origin, CGPoint(x: area.maxX, y: area.maxY)],
+                            color: censor == .erase ? CaptureColor(red: 238, green: 238, blue: 238) : nil),
+                        .init(id: UUID(), tool: effect,
+                            points: [CGPoint(x: 16, y: 8), CGPoint(x: 112, y: 88)], width: 8)
+                    ]
+                    document.edit.adjustments = .init(sharpness: 1)
+                    let output = root.appendingPathComponent("isolation-\(UUID()).png")
+                    try CaptureRenderer.png(document: document, directory: root, to: output)
+                    let source = CGImageSourceCreateWithURL(output as CFURL, nil)!
+                    let image = CGImageSourceCreateImageAtIndex(source, 0, nil)!
+                    outputs.append(image.dataProvider!.data! as Data)
+                    let color = try CaptureRenderer.color(document: document, directory: root,
+                        at: CGPoint(x: area.midX, y: area.midY))
+                    precondition(color.hex == (censor == .erase ? "#EEEEEE" : "#000000"))
+                }
+                precondition(outputs[0] == outputs[1],
+                    "Hidden source pixels must not affect blur, pixelation, sharpening or magnification")
+            }
+        }
     }
 
     static func erase(in root: URL) throws {
@@ -243,6 +288,33 @@ struct CaptureWorkflowTests {
             CaptureControlPlacement.frame(
                 region: CGRect(x: 0, y: 0, width: 1440, height: 900), size: CGSize(width: 680, height: 120),
                 screens: [CGRect(x: 0, y: 0, width: 1440, height: 900)], gap: 8) == nil)
+        for scale in [1.0, 1.1, 1.2] {
+            let row = CGSize(width: (420 * scale).rounded(), height: (46 * scale).rounded())
+            let details = (72 * scale).rounded()
+            for visible in [CGRect(x: 0, y: 40, width: 1440, height: 820),
+                CGRect(x: -1920, y: -180, width: 1920, height: 1040)] {
+                for x in [visible.minX, visible.midX - 100, visible.maxX - 200] {
+                    for y in [visible.minY, visible.midY - 100, visible.maxY - 200] {
+                        let region = CGRect(x: x, y: y, width: 200, height: 200)
+                        let placement = CaptureControlPlacement.scrolling(region: region, row: row,
+                            detailsHeight: details, screens: [visible], gap: 8)!
+                        precondition(visible.contains(placement.expanded) && visible.contains(placement.collapsed))
+                        precondition(!region.intersects(placement.expanded))
+                        precondition(placement.expanded.contains(placement.collapsed))
+                        precondition(placement.collapsed.maxY == placement.expanded.maxY)
+                        precondition(placement.collapsed.minX == placement.expanded.minX)
+                    }
+                }
+                precondition(CaptureControlPlacement.scrolling(region: visible, row: row,
+                    detailsHeight: details, screens: [visible], gap: 8) == nil)
+            }
+        }
+        let external = CGRect(x: 1440, y: 40, width: 1920, height: 1040)
+        let externalRegion = CGRect(x: 1600, y: 200, width: 1400, height: 600)
+        let externalControls = CaptureControlPlacement.scrolling(region: externalRegion,
+            row: CGSize(width: 420, height: 46), detailsHeight: 72,
+            screens: [external, CGRect(x: 0, y: 40, width: 1440, height: 820)], gap: 8)!
+        precondition(external.contains(externalControls.expanded))
         for screen in [CGRect(x: 0, y: 0, width: 1728, height: 1117), screen] {
             for x in [screen.minX, screen.midX, screen.maxX - 2] {
                 for y in [screen.minY, screen.midY, screen.maxY - 2] {
@@ -260,11 +332,23 @@ struct CaptureWorkflowTests {
             precondition(screen.contains(full.tools) && screen.contains(full.outputs))
             precondition(!full.tools.intersects(full.outputs))
         }
+        let narrowRegion = CGRect(x: 1050, y: 542, width: 300, height: 160)
+        let narrow = CaptureControlPlacement.workspace(region: narrowRegion,
+            tools: CGSize(width: 680, height: 40), outputs: CGSize(width: 40, height: 264),
+            screen: CGRect(x: 0, y: 0, width: 1728, height: 1117), gap: 8)
+        precondition(!narrow.outputs.intersects(narrowRegion), "Output controls obscured a narrow selection")
+        precondition(narrow.outputs.minX >= narrow.tools.maxX + 8)
+        let leftRegion = narrowRegion.offsetBy(dx: 350, dy: 0)
+        let left = CaptureControlPlacement.workspace(region: leftRegion,
+            tools: CGSize(width: 680, height: 40), outputs: CGSize(width: 40, height: 264),
+            screen: CGRect(x: 0, y: 0, width: 1728, height: 1117), gap: 8)
+        precondition(!left.outputs.intersects(leftRegion), "Output controls ignored available space on the left")
         let corner = CaptureControlPlacement.workspace(
             region: CGRect(x: 1670, y: 30, width: 40, height: 50),
             tools: CGSize(width: 680, height: 46), outputs: CGSize(width: 60, height: 236),
             screen: CGRect(x: 0, y: 0, width: 1728, height: 1117), gap: 8)
-        precondition(corner.outputs.minY == corner.tools.maxY + 8)
+        precondition(!corner.outputs.intersects(CGRect(x: 1670, y: 30, width: 40, height: 50)))
+        precondition(!corner.outputs.intersects(corner.tools))
     }
 
     static func frame(offset: Int, fixed: Int = 0, lanes: Int = 8) -> ScrollStitchPolicy.Frame {
@@ -410,6 +494,16 @@ struct CaptureWorkflowTests {
             ScrollStitchPolicy.match(
                 previous: frame(offset: 0, fixed: 24), current: frame(offset: 80, fixed: 24))
                 == .append(offset: 80, fixedLeading: 24, fixedTrailing: 0))
+        let pattern = frame(offset: 0)
+        func repeated(_ offset: Int) -> ScrollStitchPolicy.Frame {
+            let rgb = (0..<pattern.length).flatMap { row in
+                let index = ((row + offset) % 60) * pattern.lanes * 3
+                return Array(pattern.rgb[index..<(index + pattern.lanes * 3)])
+            }
+            return .init(length: pattern.length, lanes: pattern.lanes, rgb: rgb)
+        }
+        precondition(ScrollStitchPolicy.match(previous: repeated(0), current: repeated(20)) == .uncertain,
+            "Identical repeated rows must not acquire false confidence from local patches")
         let wide = frame(offset: 0, lanes: 32), moved = frame(offset: 60, lanes: 32)
         var sidebar = moved.rgb
         for line in 0..<wide.length {

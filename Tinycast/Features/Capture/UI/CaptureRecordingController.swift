@@ -8,16 +8,22 @@ final class CaptureRecordingController {
     func show(_ session: CaptureRecordingSession, coordinator: CaptureCoordinator) {
         close()
         let metrics = coordinator.metrics
-        let size = CGSize(width: metrics.scaled(Theme.Size.captureRecordingBar.width),
+        let size = CGSize(
+            width: metrics.scaled(Theme.Size.captureRecordingBar.width),
             height: metrics.scaled(Theme.Size.captureRecordingBar.height))
         let screen = NSScreen.screens.first(where: { $0.frame.intersects(session.frame) }) ?? NSScreen.main
         let visible = screen?.visibleFrame ?? session.frame
-        let placement = CaptureControlPlacement.frame(region: session.frame, size: size,
-            screens: [visible], gap: metrics.spacing.md)
-            ?? CGRect(x: visible.midX - size.width / 2, y: visible.maxY - size.height - metrics.spacing.md,
+        let placement =
+            CaptureControlPlacement.frame(
+                region: session.frame, size: size,
+                screens: [visible], gap: metrics.spacing.md)
+            ?? CGRect(
+                x: visible.midX - size.width / 2, y: visible.maxY - size.height - metrics.spacing.md,
                 width: size.width, height: size.height)
-        let panel = Panel(contentRect: placement, styleMask: [.borderless, .nonactivatingPanel],
+        let panel = Panel(
+            contentRect: placement, styleMask: [.borderless, .nonactivatingPanel],
             backing: .buffered, defer: false)
+        panel.title = String(localized: "Recording Controls")
         panel.level = .floating
         panel.isFloatingPanel = true
         panel.hidesOnDeactivate = false
@@ -25,13 +31,21 @@ final class CaptureRecordingController {
         panel.backgroundColor = .clear
         panel.isOpaque = false
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
-        let hosting = NSHostingView(rootView: Controls(session: session)
-            .environment(coordinator).environment(\.metrics, metrics))
+        let hosting = NSHostingView(
+            rootView: Controls(session: session)
+                .environment(coordinator).environment(\.metrics, metrics))
         hosting.sizingOptions = []
         panel.contentView = hosting
         panel.setContentSize(size)
         panel.orderFrontRegardless()
         self.panel = panel
+    }
+
+    func focusExisting() -> Bool {
+        guard let panel else { return false }
+        panel.orderFrontRegardless()
+        panel.makeKey()
+        return true
     }
 
     func close() {
@@ -50,25 +64,68 @@ final class CaptureRecordingController {
         @Environment(CaptureCoordinator.self) private var coordinator
         @Environment(\.metrics) private var metrics
 
+        private var status: String {
+            switch session.phase {
+            case .starting: "Starting"
+            case .recording: String(localized: "Recording")
+            case .pausing: "Pausing"
+            case .paused: "Paused"
+            case .stopping: "Finishing"
+            case .finished: "Recorded"
+            }
+        }
+
         var body: some View {
             VStack(alignment: .leading, spacing: metrics.spacing.xs) {
                 HStack(spacing: metrics.spacing.md) {
                     if let camera = session.cameraPreview {
                         CameraPreview(camera: camera, mirrored: session.options.mirrorCamera)
-                            .frame(width: metrics.scaled(Theme.Size.captureTool), height: metrics.scaled(Theme.Size.captureTool))
-                            .clipShape(Circle()).accessibilityLabel("Live Camera Preview")
+                            .frame(
+                                width: metrics.scaled(Theme.Size.captureTool),
+                                height: metrics.scaled(Theme.Size.captureTool)
+                            )
+                            .clipShape(Circle()).accessibilityLabel(String(localized: "Live Camera Preview"))
                     }
-                    Text(session.phase == .paused ? "Paused" : "Recording")
-                    Text(Duration.seconds(session.elapsed).formatted(.time(pattern: .minuteSecond))).monospacedDigit()
+                    Text(status)
+                    Text(Duration.seconds(session.elapsed).formatted(.time(pattern: .minuteSecond)))
+                        .monospacedDigit()
                     Spacer()
                     if session.phase == .recording || session.phase == .paused {
-                        CaptureIconButton(title: session.phase == .paused ? "Resume Recording" : "Pause Recording",
-                            symbol: session.phase == .paused ? "play.fill" : "pause.fill") { coordinator.toggleRecordingPause() }
-                        CaptureIconButton(title: "Stop Recording", symbol: "stop.fill") { coordinator.finishRecording() }
-                    } else { ProgressView().controlSize(.small) }
+                        CaptureIconButton(
+                            title: session.phase == .paused
+                                ? String(localized: "Resume Recording")
+                                : String(localized: "Pause Recording"),
+                            symbol: session.phase == .paused ? "play.fill" : "pause.fill"
+                        ) { coordinator.toggleRecordingPause() }
+                        CaptureIconButton(title: String(localized: "Stop Recording"), symbol: "stop.fill") {
+                            coordinator.finishRecording()
+                        }
+                    } else if session.phase == .finished {
+                        CaptureIconButton(
+                            title: String(localized: "Retry Opening Recording"), symbol: "arrow.clockwise"
+                        ) {
+                            coordinator.finishRecording()
+                        }
+                    } else {
+                        ProgressView().controlSize(.small)
+                    }
+                    if session.phase == .recording || session.phase == .paused || session.phase == .finished {
+                        Menu {
+                            Button("Cancel Recording…") { coordinator.cancelRecording() }
+                                .keyboardShortcut(.escape, modifiers: [])
+                        } label: {
+                            CaptureToolbarGlyph(symbol: "ellipsis")
+                        }
+                        .menuStyle(CaptureToolbarMenuStyle()).fixedSize()
+                        .accessibilityLabel(String(localized: "More Recording Actions")).tooltip(
+                            String(localized: "More Recording Actions"))
+                    }
                 }
-                Text(session.notice ?? "\(session.size.width) × \(session.size.height) · \(session.options.framesPerSecond) fps")
-                    .foregroundStyle(Theme.Colors.textSecondary).lineLimit(2)
+                Text(
+                    session.notice
+                        ?? "\(session.size.width) × \(session.size.height) · \(session.options.framesPerSecond) fps"
+                )
+                .foregroundStyle(Theme.Colors.textSecondary).lineLimit(2)
             }
             .font(metrics.typography.bar).padding(metrics.spacing.lg)
             .frame(maxWidth: .infinity, maxHeight: .infinity)

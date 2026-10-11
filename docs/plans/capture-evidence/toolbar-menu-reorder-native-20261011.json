@@ -1,0 +1,29 @@
+{
+  "date": "2026-10-11",
+  "installation_receipt": "build/install-backups/efficiency-install-409c288e49.json",
+  "binary_sha256": "337e2da70495c04ee6ae11228aec20bfbb8817058a95e41dde4321842feef99a",
+  "surface": "Settings / Capture / Customize Toolbar",
+  "annotation_before": ["Select", "Text", "Ellipse", "Arrow", "Rectangle"],
+  "operations": [
+    "Arrow context menu Move Up: Arrow moved above hidden Ellipse.",
+    "Arrow context menu Move Up again: visible preview changed to Select, Arrow, Text, Rectangle, Censor.",
+    "Done, then reopen: reordered list and preview persisted.",
+    "Select context menu: Move Up and Move Down disabled; visibility checkbox disabled.",
+    "Search arrow: Arrow and Curved Arrow results; Clear search to reorder tools message; both move actions disabled.",
+    "Clear search; Arrow Move Down twice: original annotation order restored.",
+    "Capture and Output group: Save As Move Up changed action preview to Save As, Copy, Scroll Capture, Pin, Extract Text, Translate; annotation preview unchanged.",
+    "Save As Move Down, close and reopen: original action preview restored."
+  ],
+  "native_context_move_up_down": true,
+  "native_preview_updates": true,
+  "native_reopen_persistence": true,
+  "native_select_fixed": true,
+  "native_search_disables_reorder": true,
+  "native_groups_independent": true,
+  "original_order_restored": true,
+  "original_visibility_restored": true,
+  "restoration_check": "Read captureToolbarItems from bundle preferences and compare order plus normalized visible-item set with the pre-test configuration.",
+  "physical_drag_drop_verified": false,
+  "voiceover_spoken_actions_verified": false,
+  "multi_selection_drag_verified": false
+}

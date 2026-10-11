@@ -72,7 +72,8 @@ final class CaptureRecordingSession {
                 try await layers.start(options: options)
             }
             try Task.checkCancellation()
-            try await segment.start(filter: filter, configuration: configuration, options: options, overlays: layers?.overlays)
+            try await segment.start(
+                filter: filter, configuration: configuration, options: options, overlays: layers?.overlays)
             self.segment = segment
             phase = .recording
             startClock()
@@ -90,7 +91,11 @@ final class CaptureRecordingSession {
         notice = reason
         defer { phase = .paused; segment = nil }
         if let segment {
-            do { try await segment.finish { await self.layers?.stop(); self.layers = nil } } catch {
+            do {
+                try await segment.finish {
+                    await self.layers?.stop(); self.layers = nil
+                }
+            } catch {
                 await layers?.stop(); layers = nil
                 throw error
             }
@@ -129,7 +134,11 @@ final class CaptureRecordingSession {
                 if self.elapsed >= 7200 || self.completedBytes + (self.segment?.bytes ?? 0) >= 2_000_000_000
                     || self.segments.count >= 64
                 {
-                    self.interrupted("Recording limit reached. Stop to save this video, then start a new recording.")
+                    self.interrupted(
+                        String(
+                            localized:
+                                "Recording limit reached. Stop to save this video, then start a new recording."
+                        ))
                     return
                 }
             }
@@ -137,21 +146,29 @@ final class CaptureRecordingSession {
     }
 
     private func checkTarget() throws {
-        if let status = segment?.screenStatus, status == .blank || status == .suspended || status == .stopped {
+        if let status = segment?.screenStatus, status == .blank || status == .suspended || status == .stopped
+        {
             throw Failure.sourceUnavailable
         }
         if phase == .recording, options.camera, layers?.overlays.cameraIsFresh != true {
             throw CaptureRecordingCamera.Failure.unavailable
         }
-        guard CGPreflightScreenCaptureAccess(), NSScreen.screens.contains(where: {
-            $0.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? CGDirectDisplayID == displayID
-        }) else { throw CaptureScreenService.Failure.displayChanged }
+        guard CGPreflightScreenCaptureAccess(),
+            NSScreen.screens.contains(where: {
+                $0.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? CGDirectDisplayID
+                    == displayID
+            })
+        else { throw CaptureScreenService.Failure.displayChanged }
         if let windowID {
-            let windows = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID)
+            let windows =
+                CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID)
                 as? [[String: Any]] ?? []
-            guard windows.contains(where: {
-                $0[kCGWindowNumber as String] as? UInt32 == windowID && $0[kCGWindowIsOnscreen as String] as? Bool == true
-            }) else {
+            guard
+                windows.contains(where: {
+                    $0[kCGWindowNumber as String] as? UInt32 == windowID
+                        && $0[kCGWindowIsOnscreen as String] as? Bool == true
+                })
+            else {
                 throw Failure.windowUnavailable
             }
         }
@@ -161,9 +178,15 @@ final class CaptureRecordingSession {
         case empty, windowUnavailable, sourceUnavailable
         var errorDescription: String? {
             switch self {
-            case .empty: "No completed recording segment is available. Resume recording and try again."
-            case .windowUnavailable: "The recorded window is hidden or closed. Restore it to resume recording."
-            case .sourceUnavailable: "Capture updates stopped. Restore the source, then resume or save this recording."
+            case .empty:
+                String(
+                    localized: "No completed recording segment is available. Resume recording and try again.")
+            case .windowUnavailable:
+                String(localized: "The recorded window is hidden or closed. Restore it to resume recording.")
+            case .sourceUnavailable:
+                String(
+                    localized:
+                        "Capture updates stopped. Restore the source, then resume or save this recording.")
             }
         }
     }

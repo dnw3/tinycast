@@ -19,7 +19,9 @@ struct TranslationSettingsView: View {
             } header: {
                 SettingsSectionHeader(.translationTranslation)
             } footer: {
-                Text("Typing and copying work without Accessibility. Reading and replacing text in other apps need permission.")
+                Text(
+                    "Typing and copying work without Accessibility. Reading and replacing text in other apps need permission."
+                )
             }
             Group {
                 Section {
@@ -36,18 +38,20 @@ struct TranslationSettingsView: View {
                 } header: {
                     SettingsSectionHeader(.translationLanguages)
                 } footer: {
-                    Text("Primary language → secondary language. All other source languages → primary language.")
+                    Text(
+                        "Primary language → secondary language. All other source languages → primary language."
+                    )
                 }
                 Section {
                     Picker(selection: $store.preferences.engine) {
                         ForEach(TranslationPreferences.Engine.allCases, id: \.self) { engine in
-                            Text(engine.title).tag(engine)
+                            Text(LocalizedStringKey(engine.title)).tag(engine)
                         }
                     } label: {
                         SettingsRowTitle(.translationEngine, "Default engine")
                     }
                     AIModelSelectionRows(
-                        selection: store.model, inheritedTitle: "Choose a model…",
+                        selection: store.model, inheritedTitle: String(localized: "Choose a model…"),
                         select: { store.model = $0 },
                         modelLabel: { SettingsRowTitle(.translationEngine, "Translation model") },
                         effortLabel: { SettingsRowTitle(.translationEngine, "Reasoning effort") })
@@ -55,8 +59,10 @@ struct TranslationSettingsView: View {
                     SettingsSectionHeader(.translationEngine)
                 } footer: {
                     Text(
-                        "Apple runs on this Mac with downloaded languages. AI uses the selected provider "
-                        + "and may send text online. Configure providers in Settings → AI.")
+                        String(
+                            localized:
+                                "Apple runs on this Mac with downloaded languages. AI uses the selected provider and may send text online. Configure providers in Settings → AI."
+                        ))
                 }
                 FeatureCommandsSection(owner: .translation, anchor: .translationCommands)
             }
@@ -70,7 +76,9 @@ struct TranslationSettingsView: View {
 
     private func languageOptions(excluding identifier: String) -> some View {
         let family = TranslationLanguagePolicy.family(identifier)
-        return ForEach(coordinator.languages.filter { TranslationLanguagePolicy.family($0) != family }, id: \.self) { language in
+        return ForEach(
+            coordinator.languages.filter { TranslationLanguagePolicy.family($0) != family }, id: \.self
+        ) { language in
             Text(TranslationLanguageService.name(language)).tag(language)
         }
     }

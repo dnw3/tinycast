@@ -24,7 +24,7 @@ final class UpdateCoordinator {
     /// Environment injection and activity reads only — never for state this type owns.
     private unowned let core: AppCore
     @ObservationIgnored private lazy var window = AppWindowController(
-        title: "Software Update", contentSize: UpdateWindowView.initialSize,
+        title: String(localized: "Software Update"), contentSize: UpdateWindowView.initialSize,
         activation: core.activationPolicy)
     @ObservationIgnored private var installTask: Task<Void, Never>?
 
@@ -82,7 +82,7 @@ final class UpdateCoordinator {
             } else if answered {
                 stage = .upToDate
             } else {
-                stage = .failed(.downloadFailed("Tinycast could not reach GitHub."))
+                stage = .failed(.downloadFailed(String(localized: "Tinycast could not reach GitHub.")))
             }
         }
     }

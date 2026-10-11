@@ -35,17 +35,17 @@ struct CaptureExportControls: View {
     var body: some View {
         Form {
             Picker("Format", selection: $state.options.format) {
-                ForEach(CaptureRenderer.exportFormats, id: \.self) { Text($0.title).tag($0) }
+                ForEach(CaptureRenderer.exportFormats, id: \.self) { Text(LocalizedStringKey($0.title)).tag($0) }
             }
             Picker("Size", selection: $state.options.scale) {
-                ForEach(CaptureExportOptions.Scale.allCases, id: \.self) { Text($0.title).tag($0) }
+                ForEach(CaptureExportOptions.Scale.allCases, id: \.self) { Text(LocalizedStringKey($0.title)).tag($0) }
             }
             if let size = try? state.options.dimensions(for: document) {
                 LabeledContent("Pixels", value: "\(size.width) × \(size.height)")
             }
             if state.options.format == .webp {
                 Picker("Compression", selection: $state.options.webPCompression) {
-                    ForEach(CaptureExportOptions.WebPCompression.allCases, id: \.self) { Text($0.title).tag($0) }
+                    ForEach(CaptureExportOptions.WebPCompression.allCases, id: \.self) { Text(LocalizedStringKey($0.title)).tag($0) }
                 }
             }
             if state.options.showsQuality {
@@ -54,7 +54,7 @@ struct CaptureExportControls: View {
                 }
             }
             Picker("Color", selection: $state.options.profile) {
-                ForEach(CaptureExportOptions.Profile.allCases, id: \.self) { Text($0.title).tag($0) }
+                ForEach(CaptureExportOptions.Profile.allCases, id: \.self) { Text(LocalizedStringKey($0.title)).tag($0) }
             }
             if let message = validationMessage {
                 Text(message).foregroundStyle(Theme.Colors.textSecondary)
@@ -67,6 +67,6 @@ struct CaptureExportControls: View {
     }
 
     private var validationMessage: String? {
-        do { _ = try state.options.validatedDimensions(for: document); return nil } catch { return error.localizedDescription }
+        do { _ = try state.options.validatedDimensions(for: document); return nil } catch { return Bundle.main.localizedString(forKey: error.localizedDescription, value: nil, table: nil) }
     }
 }

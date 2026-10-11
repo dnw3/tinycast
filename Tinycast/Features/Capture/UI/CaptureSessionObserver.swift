@@ -14,11 +14,17 @@ final class CaptureSessionObserver {
     ) {
         self.interrupt = interrupt
         let events: [(NotificationCenter, Notification.Name, String)] = [
-            (workspace, NSWorkspace.sessionDidResignActiveNotification, "Session inactive"),
-            (workspace, NSWorkspace.screensDidSleepNotification, "Display sleeping"),
-            (workspace, NSWorkspace.willSleepNotification, "System sleeping"),
-            (application, NSApplication.didChangeScreenParametersNotification, "Display changed"),
-            (distributed, Self.screenLocked, "Screen locked")
+            (
+                workspace, NSWorkspace.sessionDidResignActiveNotification,
+                String(localized: "Session inactive")
+            ),
+            (workspace, NSWorkspace.screensDidSleepNotification, String(localized: "Display sleeping")),
+            (workspace, NSWorkspace.willSleepNotification, String(localized: "System sleeping")),
+            (
+                application, NSApplication.didChangeScreenParametersNotification,
+                String(localized: "Display changed")
+            ),
+            (distributed, Self.screenLocked, String(localized: "Screen locked"))
         ]
         for (center, name, reason) in events {
             tokens.append(

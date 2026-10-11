@@ -21,8 +21,8 @@ enum CaptureControlPlacement {
         let y = below >= safe.minY ? below : above + tools.height <= safe.maxY ? above : safe.minY
         var toolbar = clamped(CGPoint(x: x, y: y), size: tools)
         let candidates = [
-            CGPoint(x: region.maxX + gap, y: region.maxY - outputs.height),
-            CGPoint(x: region.minX - gap - outputs.width, y: region.maxY - outputs.height),
+            CGPoint(x: max(region.maxX, toolbar.maxX) + gap, y: region.maxY - outputs.height),
+            CGPoint(x: min(region.minX, toolbar.minX) - gap - outputs.width, y: region.maxY - outputs.height),
             CGPoint(x: region.maxX - outputs.width, y: toolbar.maxY + gap),
             CGPoint(x: region.maxX - outputs.width, y: toolbar.minY - gap - outputs.height),
             CGPoint(x: safe.maxX - outputs.width, y: safe.maxY - outputs.height),
@@ -30,11 +30,22 @@ enum CaptureControlPlacement {
             CGPoint(x: safe.maxX - outputs.width, y: safe.minY),
             safe.origin
         ].map { clamped($0, size: outputs) }
-        if let output = candidates.first(where: { !$0.intersects(toolbar.insetBy(dx: -gap, dy: -gap)) }) {
+        let clear = candidates.filter { !$0.intersects(toolbar.insetBy(dx: -gap, dy: -gap)) }
+        if let output = clear.first(where: { !$0.intersects(region) }) ?? clear.first {
             return (toolbar, output)
         }
         toolbar.origin.y = safe.minY
         return (toolbar, clamped(CGPoint(x: safe.maxX, y: safe.maxY), size: outputs))
+    }
+
+    static func scrolling(
+        region: CGRect, row: CGSize, detailsHeight: CGFloat, screens: [CGRect], gap: CGFloat
+    ) -> (collapsed: CGRect, expanded: CGRect)? {
+        let size = CGSize(width: row.width, height: row.height + detailsHeight)
+        guard let expanded = frame(region: region, size: size, screens: screens, gap: gap) else { return nil }
+        let collapsed = CGRect(x: expanded.minX, y: expanded.maxY - row.height,
+            width: row.width, height: row.height)
+        return (collapsed, expanded)
     }
 
     static func frame(region: CGRect, size: CGSize, screens: [CGRect], gap: CGFloat) -> CGRect? {

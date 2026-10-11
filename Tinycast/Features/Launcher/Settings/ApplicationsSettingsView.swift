@@ -11,7 +11,7 @@ struct ApplicationsSettingsView: View {
             LauncherItemsSection(
                 kind: .application,
                 anchor: .applicationsApplications,
-                searchPrompt: "Search applications…")
+                searchPrompt: String(localized: "Search applications…"))
         }
         .formStyle(.grouped)
         .settingsScrollTarget(.applications)

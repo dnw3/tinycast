@@ -1,0 +1,27 @@
+{
+  "receipt": "/Users/bytedance/code/github/tinycast/build/install-backups/efficiency-install-ccf20f8bb2.json",
+  "installed_binary_sha256": "5e28997e1594144f5e65c7341fdd4189cc8ad8fc65a3e8bf94420d64b3ef01f5",
+  "source_sha256": "8633ad4483b1c67fdf551746e3d63a9823c20005f73652dd7c9909f6a6d76aed",
+  "checks": {
+    "tests": {
+      "passed": 114,
+      "total": 114,
+      "seconds": 204
+    },
+    "debug": true,
+    "release": true,
+    "lint": true
+  },
+  "logs": {
+    "tests": "/private/tmp/tinycast-toolbar-selection-tests.log",
+    "debug": "/private/tmp/tinycast-toolbar-selection-debug.log",
+    "release": "/private/tmp/tinycast-toolbar-selection-release.log",
+    "lint": "/private/tmp/tinycast-toolbar-selection-lint-final.log"
+  },
+  "native": {
+    "whole_row_selection_verified": true,
+    "drag_reorder_verified": false,
+    "toolbar_preferences_preserved": true
+  },
+  "scope": "Selection feedback implementation and final build; does not close drag, scrolling, resource or external-device acceptance gates"
+}

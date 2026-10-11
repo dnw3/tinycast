@@ -25,11 +25,13 @@ struct ExtensionStorePanel: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.lg) {
             ExtensionSettingsEditorHeader(
-                title: storeInstall == nil ? "Search Extensions" : "Install Extension",
-                subtitle: "The Raycast Store's extensions arrive built, so they install as they are.")
+                title: storeInstall == nil
+                    ? String(localized: "Search Extensions") : String(localized: "Install Extension"),
+                subtitle: String(
+                    localized: "The Raycast Store's extensions arrive built, so they install as they are."))
             // The same borderless field the panes use, rather than a bordered capsule of its own.
             if storeInstall == nil {
-                SettingsFilterField(prompt: "Search extensions…", query: $query)
+                SettingsFilterField(prompt: String(localized: "Search extensions…"), query: $query)
             }
             content
             // The list scrolls right up to the footer without it, cutting the last row.
@@ -53,16 +55,21 @@ struct ExtensionStorePanel: View {
         } else if searching && results.isEmpty {
             VStack(spacing: Theme.Spacing.md) {
                 ProgressView()
-                Text(storeInstall == nil ? "Searching…" : "Looking up extension…")
-                    .font(.callout).foregroundStyle(.secondary)
+                Text(
+                    storeInstall == nil
+                        ? String(localized: "Searching…") : String(localized: "Looking up extension…")
+                )
+                .font(.callout).foregroundStyle(.secondary)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if let searchFailure {
             placeholder(searchFailure)
         } else if results.isEmpty && searched {
             placeholder(
-                storeInstall.map { "“\($0.handle)/\($0.name)” is unavailable in the Raycast Store." }
-                    ?? "Nothing matches “\(query)”.")
+                storeInstall.map {
+                    String(localized: "“\($0.handle)/\($0.name)” is unavailable in the Raycast Store.")
+                }
+                    ?? String(localized: "Nothing matches “\(query)”."))
         } else {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: Theme.Spacing.xxs) {
@@ -257,10 +264,10 @@ private struct StoreRow: View {
             }
             StoreFact(
                 symbol: "square.grid.2x2",
-                text: "\(listing.commandCount) command\(listing.commandCount == 1 ? "" : "s")")
+                text: String(localized: "\(listing.commandCount) commands"))
             if let downloads = listing.downloadCount, downloads > 0 {
                 StoreFact(symbol: "arrow.down.circle", text: ExtensionListing.abbreviate(downloads))
-                    .help("\(downloads.formatted()) installs")
+                    .help(String(localized: "\(downloads.formatted()) installs"))
             }
         }
         .font(.caption)
@@ -286,7 +293,7 @@ private struct StoreRow: View {
         case .alreadyInstalled:
             Button("Reinstall", action: onInstall)
                 .buttonStyle(ExtensionSettingsEditorButtonStyle(role: .standard, fillsWidth: false))
-                .help("Already installed. Reinstalling replaces it with the store's copy.")
+                .help(String(localized: "Already installed. Reinstalling replaces it with the store's copy."))
         case .failed:
             Button("Retry", action: onInstall)
                 .buttonStyle(ExtensionSettingsEditorButtonStyle(role: .standard, fillsWidth: false))

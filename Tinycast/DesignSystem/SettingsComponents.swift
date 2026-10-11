@@ -122,14 +122,14 @@ struct SettingsScopeRow: View {
                 if isMissing {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .foregroundStyle(.orange)
-                        .help("This location no longer exists.")
+                        .help(String(localized: "This location no longer exists."))
                 }
                 Button(action: onRemove) {
                     Image(systemName: "xmark.circle.fill")
                         .foregroundStyle(.tertiary)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Remove \(scope)")
+                .accessibilityLabel(String(localized: "Remove \(scope)"))
             }
         } label: {
             HStack {
@@ -192,7 +192,7 @@ extension View {
 
     /// The one place that says hiding a row from the launcher never unbinds its shortcut.
     func launcherVisibilityHelp() -> some View {
-        help("Show in launcher. Its shortcut works either way.")
+        help(String(localized: "Show in launcher. Its shortcut works either way."))
     }
 }
 
@@ -349,7 +349,7 @@ struct SettingsFilterField: View {
                         .foregroundStyle(.tertiary)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Clear search")
+                .accessibilityLabel(String(localized: "Clear search"))
             }
         }
         .contentShape(.rect)
@@ -486,7 +486,7 @@ struct AliasField: View {
                         .foregroundStyle(.tertiary)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Clear alias for \(name)")
+                .accessibilityLabel(String(localized: "Clear alias for \(name)"))
             }
         }
         .onAppear { draft = aliases.alias(for: key) ?? "" }
@@ -507,7 +507,7 @@ struct AliasField: View {
         .background(shape.fill(Theme.Colors.cardFill))
         .overlay(shape.strokeBorder(Theme.Colors.cardStroke, lineWidth: 1))
         .clipShape(shape)
-        .accessibilityLabel("Alias for \(name)")
+        .accessibilityLabel(String(localized: "Alias for \(name)"))
     }
 
     /// The one commit path — ↵ or focus landing elsewhere; a blank draft removes the alias.

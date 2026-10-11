@@ -1471,8 +1471,8 @@ struct AIProviderTests {
             "Grok execution errors name the cause, not Claude, and ignore an empty session id")
         let grokBare = Data(#"{"type":"result","is_error":true}"#.utf8)
         expect(
-            InstalledAIStreamDecoder.decode(grokBare, kind: .grok).error
-                == "Grok could not finish the response.",
+            InstalledAIStreamDecoder.decode(grokBare, kind: .grok).failedKind == .grok
+                && InstalledAIStreamDecoder.decode(grokBare, kind: .grok).error == nil,
             "a Grok error with no cause still names Grok")
     }
 

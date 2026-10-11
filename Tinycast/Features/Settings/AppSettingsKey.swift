@@ -105,6 +105,8 @@ enum AppSettingsKey: String, CaseIterable {
     case dictationAdaptsCapitalization = "dictationAdaptsCapitalization"
     case dictationIdleRelease = "dictationIdleReleaseMinutes"
     case dictationLanguage = "dictationLanguage"
+    case captureQuickSaveFolder = "captureQuickSaveFolder"
+    case capturePresentationPresets = "capturePresentationPresets"
     case capturePreferences = "capturePreferences"
     case captureKeepsOriginals = "captureKeepsOriginals"
     case captureLastRegions = "captureLastRegions"

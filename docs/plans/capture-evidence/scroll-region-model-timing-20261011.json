@@ -1,0 +1,141 @@
+{
+  "cases": [
+    {
+      "maximum_ms": 9.152375,
+      "milliseconds": [
+        9.121167,
+        8.958708,
+        8.936292,
+        8.946791,
+        8.983084,
+        8.979,
+        9.090792,
+        9.036875,
+        8.859958,
+        8.793333,
+        8.817208,
+        8.862,
+        9.118333,
+        9.092542,
+        9.152375,
+        8.966209,
+        8.8705,
+        8.781625,
+        8.762458,
+        8.916709
+      ],
+      "nearest_rank_p95_ms": 9.121167,
+      "region": [
+        0,
+        0,
+        1138,
+        932
+      ],
+      "sample_count": 20
+    },
+    {
+      "maximum_ms": 9.216,
+      "milliseconds": [
+        9.216,
+        9.059375,
+        9.054,
+        8.836042,
+        8.911708,
+        8.912958,
+        8.924708,
+        8.897375,
+        8.894333,
+        8.876,
+        8.945208,
+        8.903167,
+        8.887291,
+        8.832125,
+        8.892833,
+        8.833,
+        8.863875,
+        8.8535,
+        8.990334,
+        8.89525
+      ],
+      "nearest_rank_p95_ms": 9.059375,
+      "region": [
+        8,
+        0,
+        1122,
+        932
+      ],
+      "sample_count": 20
+    },
+    {
+      "maximum_ms": 10.710084,
+      "milliseconds": [
+        10.657459,
+        10.607917,
+        10.367084,
+        10.25425,
+        10.247791,
+        10.368625,
+        10.465083,
+        10.498125,
+        10.691167,
+        10.508083,
+        10.376584,
+        10.710084,
+        10.337292,
+        10.599791,
+        10.596083,
+        10.441042,
+        10.531083,
+        10.445917,
+        10.389083,
+        10.59175
+      ],
+      "nearest_rank_p95_ms": 10.691167,
+      "region": [
+        120,
+        0,
+        900,
+        932
+      ],
+      "sample_count": 20
+    },
+    {
+      "maximum_ms": 12.378833,
+      "milliseconds": [
+        11.712625,
+        11.8545,
+        12.378833,
+        11.718166,
+        11.762667,
+        12.068167,
+        11.608625,
+        11.744833,
+        11.628375,
+        11.754042,
+        11.694542,
+        11.823958,
+        11.67925,
+        11.839125,
+        11.91475,
+        11.940416,
+        12.170917,
+        11.721667,
+        11.744208,
+        12.333916
+      ],
+      "nearest_rank_p95_ms": 12.333916,
+      "region": [
+        16,
+        64,
+        1106,
+        868
+      ],
+      "sample_count": 20
+    }
+  ],
+  "scope": "Shipped ScrollStitchPolicy.match only, preloaded descriptors from anonymous browser frames; excludes ScreenCaptureKit, reading, app UI, preview and export; does not close native latency or resource gates",
+  "measured_at": "2026-10-11T00:48:31.263354+00:00",
+  "policy_sha256": "3c4603d488204d813da0bd9f2ad0591a54b7102976404c05daa83aeaec95ae12",
+  "environment": "Current Mac, optimized Swift 6 build; app build and harnesses running concurrently; not a controlled native latency benchmark",
+  "native_gate_proven": false
+}

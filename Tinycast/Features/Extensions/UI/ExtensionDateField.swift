@@ -27,7 +27,7 @@ struct ExtensionDateField: View {
     private var isFocused: Bool { focus == index }
 
     private var label: String {
-        guard let value else { return "No Date" }
+        guard let value else { return String(localized: "No Date") }
         return ExtensionDateExpression.detail(
             for: value, calendar: .current, includesTime: includesTime)
     }
@@ -39,10 +39,10 @@ struct ExtensionDateField: View {
 
     /// What the control does, then whatever the extension explains about the field.
     private var hint: String {
-        let state = open ? "Showing dates" : "Opens a list of dates"
+        let state = open ? String(localized: "Showing dates") : String(localized: "Opens a list of dates")
         let parts = [node.string("error"), node.string("info")]
             .compactMap { $0 }.filter { !$0.isEmpty }
-        return ([state] + parts).joined(separator: ". ")
+        return ([state] + parts).joined(separator: String(localized: ". "))
     }
 
     var body: some View {
@@ -112,7 +112,8 @@ struct ExtensionDateField: View {
                 .foregroundStyle(Theme.Colors.textSecondary)
             // While the list is open the control is the expression field, caret and all.
             if open {
-                ExtensionQueryText(query: query, prompt: "tomorrow at 10am", phase: typedAt)
+                ExtensionQueryText(
+                    query: query, prompt: String(localized: "tomorrow at 10am"), phase: typedAt)
             } else {
                 Text(label)
                     .font(metrics.typography.rowTitle)

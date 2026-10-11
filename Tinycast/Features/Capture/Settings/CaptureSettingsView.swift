@@ -20,14 +20,26 @@ struct CaptureSettingsView: View {
             Section {
                 Picker(selection: $store.preferences.format) {
                     ForEach(CaptureRenderer.exportFormats, id: \.self) {
-                        Text($0.title).tag($0.rawValue)
+                        Text(LocalizedStringKey($0.title)).tag($0.rawValue)
                     }
                 } label: {
                     SettingsRowTitle(.captureOutput, "Output format")
                 }
+                LabeledContent("Quick save folder") {
+                    Text(coordinator.quickSaveDirectory.path).lineLimit(1).truncationMode(.middle)
+                    Button("Show in Finder") { coordinator.revealQuickSaveFolder() }
+                    Button("Choose…") { coordinator.chooseQuickSaveFolder() }
+                    Button("Reset") { coordinator.resetQuickSaveFolder() }
+                }
+                Button("Customize Toolbar…") { coordinator.toolbarCustomization.show(coordinator) }
                 Toggle("Close after copying", isOn: $store.preferences.closeAfterCopy)
                 Toggle("Show completion thumbnail", isOn: $store.showsCompletionThumbnail)
-                    .help("Click to reopen, or drag the final file. Dismisses after 8 seconds when not hovered.")
+                    .help(
+                        String(
+                            localized:
+                                "Click to reopen, or drag the final file. Dismisses after 8 seconds when not hovered."
+                        )
+                    )
                     .onChange(of: store.showsCompletionThumbnail) { _, enabled in
                         if !enabled { coordinator.completionThumbnail.close() }
                     }
@@ -36,8 +48,10 @@ struct CaptureSettingsView: View {
                 SettingsSectionHeader(.captureOutput)
             } footer: {
                 Text(
-                    "Copies use PNG at original resolution. "
-                    + "Save large images as PNG when copying exceeds the memory budget."
+                    String(
+                        localized:
+                            "Copies use PNG at original resolution. The Save button asks for a location. ⌘S uses the quick save folder; ⇧⌘S opens Save As. Save large images as PNG when copying exceeds the memory budget."
+                    )
                 )
             }
             Section {
@@ -70,19 +84,23 @@ struct CaptureSettingsView: View {
                 SettingsSectionHeader(.captureHistory)
             } footer: {
                 Text(
-                    "Editable originals include the image before redaction. "
-                    + "This choice is never imported from a backup. Drafts remain until you delete them."
+                    String(
+                        localized:
+                            "Editable originals include the image before redaction. This choice is never imported from a backup. Drafts remain until you delete them."
+                    )
                 )
             }
             CaptureUploadSettingsView()
             FeatureCommandsSection(owner: .capture, anchor: .captureCommands)
             Section {
                 LabeledContent(
-                    "Screen Recording", value: CGPreflightScreenCaptureAccess() ? "Allowed" : "Required")
+                    String(localized: "Screen Recording"), value: CGPreflightScreenCaptureAccess() ? String(localized: "Allowed") : String(localized: "Required"))
                 Button("Screen Recording Settings…") { coordinator.openScreenPermission() }
                 LabeledContent(
                     "Accessibility",
-                    value: Permissions.isAccessibilityTrusted() ? "Allowed" : "Auto Scroll, Elements and Keys")
+                    value: Permissions.isAccessibilityTrusted()
+                        ? String(localized: "Allowed") : String(localized: "Auto Scroll, Elements and Keys")
+                )
                 Button("Accessibility Settings…") { Permissions.openAccessibilitySettings() }
             } header: {
                 SettingsSectionHeader(.capturePermissions)

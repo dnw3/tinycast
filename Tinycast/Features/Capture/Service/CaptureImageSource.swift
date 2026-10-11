@@ -36,10 +36,13 @@ enum CaptureImageSource {
 
     nonisolated static func preview(_ image: CGImage, maximum: Int = 900) throws -> CGImage {
         let scale = min(1, Double(maximum) / Double(max(image.width, image.height)))
-        let width = max(1, Int(Double(image.width) * scale)), height = max(1, Int(Double(image.height) * scale))
-        guard let context = CGContext(
-            data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: width * 4,
-            space: CGColorSpace(name: CGColorSpace.sRGB)!, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
+        let width = max(1, Int(Double(image.width) * scale)),
+            height = max(1, Int(Double(image.height) * scale))
+        guard
+            let context = CGContext(
+                data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: width * 4,
+                space: CGColorSpace(name: CGColorSpace.sRGB)!,
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
         else { throw CaptureRasterError.invalidSize }
         context.interpolationQuality = .high
         context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
@@ -83,7 +86,8 @@ enum CaptureImageSource {
     enum Failure: LocalizedError {
         case importBudget
         var errorDescription: String? {
-            "This image exceeds the safe decoding budget. Open a smaller region of the image."
+            String(
+                localized: "This image exceeds the safe decoding budget. Open a smaller region of the image.")
         }
     }
 }

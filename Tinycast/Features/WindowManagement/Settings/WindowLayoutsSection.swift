@@ -21,7 +21,7 @@ struct WindowLayoutsSection: View {
             }
 
             if store.layouts.count > Self.filterThreshold {
-                SettingsFilterField(prompt: "Search layouts…", query: $query)
+                SettingsFilterField(prompt: String(localized: "Search layouts…"), query: $query)
             }
 
             if results.isEmpty {
@@ -59,8 +59,8 @@ struct WindowLayoutsSection: View {
 
     private var emptyMessage: String {
         store.layouts.isEmpty
-            ? "Save an arrangement, then restore it with one shortcut."
-            : "No layout matches “\(query)”."
+            ? String(localized: "Save an arrangement, then restore it with one shortcut.")
+            : String(localized: "No layout matches “\(query)”.")
     }
 }
 
@@ -77,7 +77,7 @@ private struct WindowLayoutSettingsRow: View {
     var body: some View {
         let entry = AppEntry(layout)
         let isVisible = visibility.isItemVisible(entry)
-        SettingsRow(title: layout.name, subtitle: layout.summary) {
+        SettingsRow(title: layout.name, subtitle: layout.summary()) {
             SymbolImage(name: layout.symbol, size: 13)
         } trailing: {
             AliasField(entry: entry)
@@ -91,15 +91,15 @@ private struct WindowLayoutSettingsRow: View {
                 Image(systemName: "play")
             }
             .buttonStyle(.plain)
-            .help("Run this layout")
-            .accessibilityLabel("Run \(layout.name)")
+            .help(String(localized: "Run this layout"))
+            .accessibilityLabel(String(localized: "Run \(layout.name)"))
 
             Button(action: onEdit) {
                 Image(systemName: "pencil")
             }
             .buttonStyle(.plain)
-            .help("Edit")
-            .accessibilityLabel("Edit \(layout.name)")
+            .help(String(localized: "Edit"))
+            .accessibilityLabel(String(localized: "Edit \(layout.name)"))
 
             Button {
                 core.windowLayoutCoordinator.duplicateWindowLayout(id: layout.id)
@@ -107,16 +107,16 @@ private struct WindowLayoutSettingsRow: View {
                 Image(systemName: "plus.square.on.square")
             }
             .buttonStyle(.plain)
-            .help("Duplicate")
-            .accessibilityLabel("Duplicate \(layout.name)")
+            .help(String(localized: "Duplicate"))
+            .accessibilityLabel(String(localized: "Duplicate \(layout.name)"))
 
             Button(action: onDelete) {
                 Image(systemName: "trash")
                     .foregroundStyle(Theme.Colors.destructive)
             }
             .buttonStyle(.plain)
-            .help("Delete")
-            .accessibilityLabel("Delete \(layout.name)")
+            .help(String(localized: "Delete"))
+            .accessibilityLabel(String(localized: "Delete \(layout.name)"))
 
             Toggle(
                 "", isOn: Binding(get: { isVisible }, set: { visibility.setItemVisible($0, for: entry) })
@@ -124,7 +124,7 @@ private struct WindowLayoutSettingsRow: View {
             .labelsHidden()
             .toggleStyle(.checkbox)
             .launcherVisibilityHelp()
-            .accessibilityLabel("Show \(layout.name) in launcher")
+            .accessibilityLabel(String(localized: "Show \(layout.name) in launcher"))
         }
     }
 }

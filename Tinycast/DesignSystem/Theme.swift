@@ -69,7 +69,8 @@ enum Theme {
         static let captureEditorMinimum = CGSize(width: 760, height: 480)
         static let captureWorkspaceBar = CGSize(width: 680, height: 232)
         static let captureWorkspaceOutputs = CGSize(width: 60, height: 312)
-        static let captureScrollBar = CGSize(width: 680, height: 120)
+        static let captureScrollBar = CGSize(width: 280, height: 38)
+        static let captureScrollDetails: CGFloat = 72
         static let captureScrollPreview: CGFloat = 48
         static let captureCountdown = CGSize(width: 240, height: 48)
         static let captureRecordingBar = CGSize(width: 380, height: 88)
@@ -79,6 +80,10 @@ enum Theme {
         static let captureAdjustmentWidth: CGFloat = 150
         static let captureVideoTimeline: CGFloat = 52
         static let captureGlyph: CGFloat = 16
+        static let captureCompactGlyph: CGFloat = 14
+        static let captureToolbarCustomization = CGSize(width: 540, height: 560)
+        static let captureLoupePixels: CGFloat = 13
+        static let captureLoupeCell: CGFloat = 8
         static let captureHandle: CGFloat = 8
         static let capturePinMaximum: CGFloat = 600
         static let capturePinMinimum: CGFloat = 80

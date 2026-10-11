@@ -129,8 +129,7 @@ struct AIStreamDecoder: Sendable {
         if let choice = chunk.choices?.first {
             if choice.finishReason == "length" || choice.finishReason == "content_filter" {
                 isTerminal = true
-                throw AIProviderError.responseFailed(
-                    "The provider stopped before completing the response. Retry with shorter text.")
+                throw AIProviderError.incompleteResponse
             }
             if let content = choice.delta?.content, !content.isEmpty {
                 events += thinkTags.feed(content)
@@ -199,8 +198,7 @@ struct AIStreamDecoder: Sendable {
         case "message_delta":
             if event.delta?.stopReason == "max_tokens" {
                 isTerminal = true
-                throw AIProviderError.responseFailed(
-                    "The provider stopped before completing the response. Retry with shorter text.")
+                throw AIProviderError.incompleteResponse
             }
             usage.outputTokens = event.usage?.outputTokens ?? usage.outputTokens
             // The calls are complete here, and `message_stop` may never arrive on a tool turn.

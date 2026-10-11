@@ -8,29 +8,43 @@ struct CaptureVideoEffectCanvas: View {
     var body: some View {
         GeometryReader { geometry in
             if let effect = state.selectedEffect {
-                let scale = min(geometry.size.width / Double(state.info.size.width),
+                let scale = min(
+                    geometry.size.width / Double(state.info.size.width),
                     geometry.size.height / Double(state.info.size.height))
-                let size = CGSize(width: Double(state.info.size.width) * scale, height: Double(state.info.size.height) * scale)
-                let origin = CGPoint(x: (geometry.size.width - size.width) / 2, y: (geometry.size.height - size.height) / 2)
-                let rect = CGRect(x: origin.x + effect.rect.minX * size.width, y: origin.y + effect.rect.minY * size.height,
+                let size = CGSize(
+                    width: Double(state.info.size.width) * scale,
+                    height: Double(state.info.size.height) * scale)
+                let origin = CGPoint(
+                    x: (geometry.size.width - size.width) / 2, y: (geometry.size.height - size.height) / 2)
+                let rect = CGRect(
+                    x: origin.x + effect.rect.minX * size.width, y: origin.y + effect.rect.minY * size.height,
                     width: effect.rect.width * size.width, height: effect.rect.height * size.height)
                 ZStack(alignment: .topLeading) {
                     Rectangle().stroke(Color.accentColor, lineWidth: metrics.spacing.xxs)
                         .background(Color.accentColor.opacity(0.12)).contentShape(Rectangle())
                         .frame(width: rect.width, height: rect.height).position(x: rect.midX, y: rect.midY)
                         .gesture(move(effect: effect, size: size))
-                        .accessibilityLabel("Video Effect Position")
-                        .accessibilityHint("Drag to move. Use the percentage fields for precise placement.")
+                        .accessibilityLabel(String(localized: "Video Effect Position"))
+                        .accessibilityHint(
+                            String(
+                                localized: "Drag to move. Use the percentage fields for precise placement."))
                     ForEach(0..<4, id: \.self) { corner in
                         Circle().fill(Color.accentColor)
-                            .frame(width: metrics.scaled(Theme.Size.captureHandle),
-                                height: metrics.scaled(Theme.Size.captureHandle))
-                            .frame(width: metrics.scaled(Theme.Size.captureTool), height: metrics.scaled(Theme.Size.captureTool))
+                            .frame(
+                                width: metrics.scaled(Theme.Size.captureHandle),
+                                height: metrics.scaled(Theme.Size.captureHandle)
+                            )
+                            .frame(
+                                width: metrics.scaled(Theme.Size.captureTool),
+                                height: metrics.scaled(Theme.Size.captureTool)
+                            )
                             .contentShape(Rectangle())
-                            .position(x: corner.isMultiple(of: 2) ? rect.minX : rect.maxX,
-                                y: corner < 2 ? rect.minY : rect.maxY)
+                            .position(
+                                x: corner.isMultiple(of: 2) ? rect.minX : rect.maxX,
+                                y: corner < 2 ? rect.minY : rect.maxY
+                            )
                             .gesture(resize(effect: effect, corner: corner, size: size))
-                            .accessibilityLabel("Resize Video Effect Corner \(corner + 1)")
+                            .accessibilityLabel(String(localized: "Resize Video Effect Corner \(corner + 1)"))
                     }
                     Text("Position on original frame").font(metrics.typography.bar)
                         .padding(metrics.spacing.sm).background(Theme.Colors.panelScrim)
@@ -44,7 +58,8 @@ struct CaptureVideoEffectCanvas: View {
         DragGesture().onChanged { value in
             let rect = begin(effect)
             state.changeEffect {
-                $0.rect.origin = CGPoint(x: min(1 - rect.width, max(0, rect.minX + value.translation.width / size.width)),
+                $0.rect.origin = CGPoint(
+                    x: min(1 - rect.width, max(0, rect.minX + value.translation.width / size.width)),
                     y: min(1 - rect.height, max(0, rect.minY + value.translation.height / size.height)))
             }
         }.onEnded { _ in end() }

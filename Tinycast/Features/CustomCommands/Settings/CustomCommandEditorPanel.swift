@@ -47,7 +47,8 @@ struct CustomCommandEditorPanel: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.xl) {
             SettingsEditorHeader(
-                title: command == nil ? "Add Custom Command" : "Edit Custom Command")
+                title: command == nil
+                    ? String(localized: "Add Custom Command") : String(localized: "Edit Custom Command"))
 
             HStack(alignment: .bottom, spacing: Theme.Spacing.lg) {
                 VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
@@ -77,20 +78,22 @@ struct CustomCommandEditorPanel: View {
 
             VStack(alignment: .leading, spacing: Theme.Spacing.lg) {
                 optionToggle(
-                    "Show in root search", isOn: $showsInRootSearch,
-                    detail: "List this command alongside apps and other commands.")
+                    String(localized: "Show in root search"), isOn: $showsInRootSearch,
+                    detail: String(localized: "List this command alongside apps and other commands."))
                 optionToggle(
-                    "Load shell environment", isOn: $loadsShellEnvironment,
-                    detail: "Sources ~/.zshrc for aliases, functions and PATH. Slower to start.")
+                    String(localized: "Load shell environment"), isOn: $loadsShellEnvironment,
+                    detail: String(
+                        localized: "Sources ~/.zshrc for aliases, functions and PATH. Slower to start."))
                 optionToggle(
-                    "Needs confirmation", isOn: $requiresConfirmation,
-                    detail: "Ask before running this command.")
+                    String(localized: "Needs confirmation"), isOn: $requiresConfirmation,
+                    detail: String(localized: "Ask before running this command."))
                 optionToggle(
-                    "Show confirmation", isOn: $showsConfirmation,
-                    detail: "Confirm on screen after the command succeeds.")
+                    String(localized: "Show confirmation"), isOn: $showsConfirmation,
+                    detail: String(localized: "Confirm on screen after the command succeeds."))
                 optionToggle(
-                    "Show output", isOn: $showsOutput,
-                    detail: "Open a window with everything the command printed when it finishes.")
+                    String(localized: "Show output"), isOn: $showsOutput,
+                    detail: String(
+                        localized: "Open a window with everything the command printed when it finishes."))
             }
 
             if let errorMessage {
@@ -134,7 +137,7 @@ struct CustomCommandEditorPanel: View {
             } label: {
                 HStack(spacing: Theme.Spacing.sm) {
                     SymbolImage(name: iconSymbol ?? CustomCommand.sfSymbol, size: 14)
-                    Text(iconSymbol == nil ? "Automatic" : "Custom")
+                    Text(iconSymbol == nil ? String(localized: "Automatic") : String(localized: "Custom"))
                         .lineLimit(1)
                     Spacer(minLength: 0)
                 }
@@ -174,7 +177,7 @@ struct CustomCommandEditorPanel: View {
         panel.canChooseFiles = false
         panel.allowsMultipleSelection = false
         panel.prompt = "Choose"
-        panel.message = "Choose the folder this command runs in."
+        panel.message = String(localized: "Choose the folder this command runs in.")
         if !workingDirectory.isEmpty {
             panel.directoryURL = URL(
                 fileURLWithPath: (workingDirectory as NSString).expandingTildeInPath)
@@ -200,8 +203,10 @@ struct CustomCommandEditorPanel: View {
             }
             Text(
                 arguments.isEmpty
-                    ? "Add up to three, filled in beside the search field before the command runs."
-                    : "Passed to the command in order as $1, $2 …"
+                    ? String(
+                        localized:
+                            "Add up to three, filled in beside the search field before the command runs.")
+                    : String(localized: "Passed to the command in order as $1, $2 …")
             )
             .font(.caption)
             .foregroundStyle(.secondary)
@@ -225,7 +230,7 @@ struct CustomCommandEditorPanel: View {
                 Image(systemName: "minus.circle")
             }
             .buttonStyle(.borderless)
-            .help("Remove this argument")
+            .help(String(localized: "Remove this argument"))
         }
     }
 

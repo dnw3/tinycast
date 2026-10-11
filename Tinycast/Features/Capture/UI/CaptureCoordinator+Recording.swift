@@ -27,7 +27,9 @@ extension CaptureCoordinator {
                 }
             }
             if options.camera {
-                guard await AVCaptureDevice.requestAccess(for: .video) else { throw RecordingFailure.cameraPermission }
+                guard await AVCaptureDevice.requestAccess(for: .video) else {
+                    throw RecordingFailure.cameraPermission
+                }
             }
             if options.keys != .off, !Permissions.isAccessibilityTrusted() {
                 throw CaptureRecordingLayers.Failure.keyboardUnavailable
@@ -38,37 +40,48 @@ extension CaptureCoordinator {
                 let deadline = ContinuousClock.now.advanced(by: .seconds(options.delay))
                 for remaining in stride(from: options.delay, through: 1, by: -1) {
                     self.countdown = remaining
-                    try await Task.sleep(until: deadline.advanced(by: .seconds(1 - remaining)), clock: .continuous)
+                    try await Task.sleep(
+                        until: deadline.advanced(by: .seconds(1 - remaining)), clock: .continuous)
                 }
                 self.countdownPanel.close()
             }
             try Task.checkCancellation()
-            guard let screen = NSScreen.screens.first(where: { $0.frame == workspace.target.screenFrame }) else {
+            guard let screen = NSScreen.screens.first(where: { $0.frame == workspace.target.screenFrame })
+            else {
                 throw CaptureScreenService.Failure.displayChanged
             }
             let target = try await CaptureScreenService.target(screen: screen, scrolling: false)
-            let windowID = workspace.request.scope == .window
+            let windowID =
+                workspace.request.scope == .window
                 ? editor.document.pieces.first.flatMap { workspace.sourceWindows[$0.raster] } : nil
             let filter: SCContentFilter
             let region: CGRect?
             if workspace.request.scope == .window {
-                guard let windowID, let window = target.windows.first(where: { $0.windowID == windowID }) else {
+                guard let windowID, let window = target.windows.first(where: { $0.windowID == windowID })
+                else {
                     throw CaptureRecordingSession.Failure.windowUnavailable
                 }
                 filter = SCContentFilter(desktopIndependentWindow: window)
                 region = nil
             } else {
                 filter = target.filter
-                region = CGRect(x: rect.minX, y: target.screenFrame.height - rect.maxY,
+                region = CGRect(
+                    x: rect.minX, y: target.screenFrame.height - rect.maxY,
                     width: rect.width, height: rect.height)
             }
             let dimensions = (region ?? filter.contentRect).size
-            let size = try options.outputSize(CGSize(width: dimensions.width * CGFloat(filter.pointPixelScale),
-                height: dimensions.height * CGFloat(filter.pointPixelScale)))
+            let size = try options.outputSize(
+                CGSize(
+                    width: dimensions.width * CGFloat(filter.pointPixelScale),
+                    height: dimensions.height * CGFloat(filter.pointPixelScale)))
             let repository = self.repository
-            let source = try await CaptureWork.run { try CaptureSource(directory: try repository.create(id: UUID())) }
-            let session = CaptureRecordingSession(source: source, size: size,
-                frame: rect.offsetBy(dx: target.screenFrame.minX, dy: target.screenFrame.minY), options: options,
+            let source = try await CaptureWork.run {
+                try CaptureSource(directory: try repository.create(id: UUID()))
+            }
+            let session = CaptureRecordingSession(
+                source: source, size: size,
+                frame: rect.offsetBy(dx: target.screenFrame.minX, dy: target.screenFrame.minY),
+                options: options,
                 filter: filter, region: region, windowID: windowID, displayID: target.display.displayID
             ) { [weak self] reason in self?.pauseRecording(reason: reason) }
             self.recording = session
@@ -78,6 +91,7 @@ extension CaptureCoordinator {
                 throw CancellationError()
             }
             self.otherResult = editor
+            self.retainedWorkspace = workspace
             self.editor = nil
             self.clearSelection()
             self.observeSession()
@@ -103,19 +117,53 @@ extension CaptureCoordinator {
         }
     }
 
+    func cancelRecording() {
+        run { [weak self] in
+            guard let self, let session = self.recording else { return }
+            try await session.pause()
+            if !session.segments.isEmpty {
+                let choice = await self.core.choose(
+                    title: String(localized: "Keep this recording?"),
+                    message: String(
+                        localized:
+                            "Recording is paused. Keep the captured video or discard it and return to your screenshot."
+                    ),
+                    symbol: "record.circle",
+                    options: [
+                        .init(title: String(localized: "Keep Result")),
+                        .init(title: String(localized: "Discard"), role: .destructive),
+                        .init(title: String(localized: "Back"), role: .cancel)
+                    ], defaultIndex: 0)
+                try Task.checkCancellation()
+                guard self.recording === session else { return }
+                if choice == 2 { return }
+                if choice == 0 { try await self.finishRecordingCurrent(performCompletion: false); return }
+            }
+            self.recording = nil
+            self.recordingPanel.close()
+            self.sessionObserver = nil
+            self.restoreOtherResult()
+        }
+    }
+
     func finishRecording() { run { [weak self] in try await self?.finishRecordingCurrent() } }
 
-    func finishRecordingCurrent() async throws {
+    func finishRecordingCurrent(performCompletion: Bool = true) async throws {
         guard let recording else { return }
         let url = try await recording.finish()
+        try Task.checkCancellation()
         let info = try await CaptureVideoService.inspect(url)
+        try Task.checkCancellation()
+        guard self.recording === recording else { return }
         let state = CaptureVideoState(source: recording.source, url: url, info: info)
         state.exportOptions.videoFramesPerSecond = recording.options.framesPerSecond
         video = state
         self.recording = nil
+        retainedWorkspace = nil
         recordingPanel.close()
         sessionObserver = nil
         videoWindow.show(self)
+        guard performCompletion else { return }
         switch recording.options.completion {
         case .preview: break
         case .saveFile: _ = try await saveVideoCurrent(state)
@@ -142,16 +190,21 @@ extension CaptureCoordinator {
             defer { try? FileManager.default.removeItem(at: rendered) }
             var options = state.exportOptions
             options.format = .mp4
-            try await CaptureVideoService.render(state.url, edit: snapshot, options: options, to: rendered) { value in
+            try await CaptureVideoService.render(state.url, edit: snapshot, options: options, to: rendered) {
+                value in
                 await MainActor.run { state.progress = value }
             }
             let info = try await CaptureVideoService.inspect(rendered)
             let preview = try await CaptureVideoService.thumbnail(rendered), repository = self.repository
-            let draft = CaptureRepository.VideoDraft(original: state.url, duration: state.info.duration, edit: snapshot)
-            try await CaptureWork.run { _ = try repository.commitVideo(rendered, info: info, preview: preview, draft: draft) }
+            let draft = CaptureRepository.VideoDraft(
+                original: state.url, duration: state.info.duration, edit: snapshot)
+            try await CaptureWork.run {
+                _ = try repository.commitVideo(rendered, info: info, preview: preview, draft: draft)
+            }
             state.savedEdit = snapshot
-            state.notice = "Draft saved with the original recording. Copy and preview use the edited result."
-            self.core.showMessage("Saved editable video draft", tone: .success)
+            state.notice = String(
+                localized: "Draft saved with the original recording. Copy and preview use the edited result.")
+            self.core.showMessage(String(localized: "Saved editable video draft"), tone: .success)
         }
     }
 
@@ -188,29 +241,36 @@ extension CaptureCoordinator {
         let response = await videoWindow.present(panel)
         savePanel = nil
         guard response == .OK, let destination = panel.url else { return false }
-        let rendered = state.source.directory.appendingPathComponent("export-\(UUID().uuidString).\(options.format.rawValue)")
+        let rendered = state.source.directory.appendingPathComponent(
+            "export-\(UUID().uuidString).\(options.format.rawValue)")
         defer { state.progress = nil; try? FileManager.default.removeItem(at: rendered) }
         do {
             if options.format == .mp4 {
                 state.progress = 0
-                try await CaptureVideoService.render(state.url, edit: snapshot, options: options, to: rendered) { value in
+                try await CaptureVideoService.render(
+                    state.url, edit: snapshot, options: options, to: rendered
+                ) { value in
                     await MainActor.run { state.progress = value }
                 }
             } else {
                 state.progress = 0
-                try await CaptureGIFService.render(state.url, edit: snapshot, options: options, to: rendered) { value in
+                try await CaptureGIFService.render(state.url, edit: snapshot, options: options, to: rendered)
+                { value in
                     await MainActor.run { state.progress = value }
                 }
             }
             try await CaptureWork.run {
                 let files = FileManager.default
-                let temporary = destination.deletingLastPathComponent().appendingPathComponent(".\(UUID().uuidString).tmp")
+                let temporary = destination.deletingLastPathComponent().appendingPathComponent(
+                    ".\(UUID().uuidString).tmp")
                 defer { try? files.removeItem(at: temporary) }
                 try files.copyItem(at: rendered, to: temporary)
                 try Task.checkCancellation()
                 if files.fileExists(atPath: destination.path) {
                     _ = try files.replaceItemAt(destination, withItemAt: temporary)
-                } else { try files.moveItem(at: temporary, to: destination) }
+                } else {
+                    try files.moveItem(at: temporary, to: destination)
+                }
             }
             state.savedEdit = snapshot
             state.notice = nil
@@ -222,22 +282,30 @@ extension CaptureCoordinator {
                 } else {
                     let info = try await CaptureVideoService.inspect(rendered)
                     let preview = try await CaptureVideoService.thumbnail(rendered)
-                    entry = try await CaptureWork.run { try repository.commitVideo(rendered, info: info, preview: preview) }
+                    entry = try await CaptureWork.run {
+                        try repository.commitVideo(rendered, info: info, preview: preview)
+                    }
                 }
                 try await CaptureWork.run {
-                    try repository.prune(now: Date(), days: max(1, preferences.retentionDays),
+                    try repository.prune(
+                        now: Date(), days: max(1, preferences.retentionDays),
                         maximumBytes: max(16, preferences.maximumHistoryMB) * 1_048_576)
                 }
-                core.showMessage(options.format == .gif ? "Saved GIF" : "Saved recording", tone: .success)
+                core.showMessage(
+                    options.format == .gif
+                        ? String(localized: "Saved GIF") : String(localized: "Saved recording"),
+                    tone: .success)
                 completionThumbnail.show(entry, coordinator: self)
             } catch {
-                state.notice = "Saved — history could not be saved. Save again to retry."
-                core.showMessage("Saved — history could not be saved", tone: .neutral)
+                state.notice = String(localized: "Saved — history could not be saved. Save again to retry.")
+                core.showMessage(String(localized: "Saved — history could not be saved"), tone: .neutral)
             }
             return true
         } catch {
-            state.notice = error is CancellationError
-                ? "Export cancelled. Your recording is still open." : error.localizedDescription
+            state.notice =
+                error is CancellationError
+                ? String(localized: "Export cancelled. Your recording is still open.")
+                : Bundle.main.localizedString(forKey: error.localizedDescription, value: nil, table: nil)
             throw error
         }
     }
@@ -246,11 +314,15 @@ extension CaptureCoordinator {
         guard let video, video.needsPreservation else { return true }
         guard !video.busy else { return false }
         video.player.pause()
-        let choice = await core.choose(title: "Keep this recording?",
-            message: "Save the video before closing.", symbol: "record.circle",
-            options: [.init(title: "Cancel", role: .cancel), .init(title: "Discard", role: .destructive),
-                .init(title: "Save Video")], defaultIndex: 2)
-        if choice == 0 { return false }
+        let choice = await core.choose(
+            title: String(localized: "Keep this recording?"),
+            message: String(localized: "Save the video before closing."), symbol: "record.circle",
+            options: [
+                .init(title: String(localized: "Save Video")),
+                .init(title: String(localized: "Discard"), role: .destructive),
+                .init(title: String(localized: "Cancel"), role: .cancel)
+            ], defaultIndex: 0)
+        if Task.isCancelled || self.video !== video || choice == 2 { return false }
         if choice == 1 { return true }
         do { return try await saveVideoCurrent(video) } catch { report(error); return false }
     }
@@ -273,9 +345,12 @@ extension CaptureCoordinator {
         var errorDescription: String? {
             switch self {
             case .microphonePermission:
-                "Allow Microphone access in System Settings, or turn off Microphone and start again."
+                String(
+                    localized:
+                        "Allow Microphone access in System Settings, or turn off Microphone and start again.")
             case .cameraPermission:
-                "Allow Camera access in System Settings, or turn off Camera and start again."
+                String(
+                    localized: "Allow Camera access in System Settings, or turn off Camera and start again.")
             }
         }
     }

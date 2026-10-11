@@ -118,13 +118,6 @@ struct WindowLayout: Codable, Hashable, Identifiable, Sendable {
     /// The glyph every surface draws for this layout.
     var symbol: String { iconSymbol ?? Self.sfSymbol }
 
-    /// The settings row's subtitle: what this layout actually does, in one line.
-    var summary: String {
-        let displays = Set(entries.map(\.display.uuid)).count
-        let windows = entries.count == 1 ? "1 window" : "\(entries.count) windows"
-        return displays > 1 ? "\(windows) · \(displays) displays" : windows
-    }
-
     var entryID: String { Self.entryIDPrefix + id.uuidString.lowercased() }
 
     /// Cleans every entry, then drops a frontmost mark whose entry did not survive.
@@ -170,18 +163,10 @@ extension String {
     }
 }
 
-enum WindowLayoutValidationError: LocalizedError, Equatable {
+enum WindowLayoutValidationError: Error, Equatable {
     case emptyName
     case duplicateName
     case noEntries
     case invalidCharacter
 
-    var errorDescription: String? {
-        switch self {
-        case .emptyName: return "Enter a name for the layout."
-        case .duplicateName: return "A window layout with this name already exists."
-        case .noEntries: return "Add at least one app to the layout."
-        case .invalidCharacter: return "Names cannot contain null characters."
-        }
-    }
 }

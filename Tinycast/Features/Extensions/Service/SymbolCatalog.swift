@@ -5,9 +5,9 @@ struct SymbolCategory: Identifiable, Hashable, Sendable {
     let id: String
     let title: String
 
-    static let suggested = SymbolCategory(id: "tinycast.suggested", title: "Suggested")
-    static let all = SymbolCategory(id: "tinycast.all", title: "All Symbols")
-    static let bundled = SymbolCategory(id: "tinycast.bundled", title: "Tinycast")
+    static let suggested = SymbolCategory(id: "tinycast.suggested", title: String(localized: "Suggested"))
+    static let all = SymbolCategory(id: "tinycast.all", title: String(localized: "All Symbols"))
+    static let bundled = SymbolCategory(id: "tinycast.bundled", title: String(localized: "Tinycast"))
 }
 
 /// Read from `CoreGlyphs.bundle` at runtime; every read is optional, with a curated fallback.
@@ -157,13 +157,14 @@ struct SymbolCatalog: Sendable {
     /// Anything absent is a rendering-mode bucket, not a browsable subject.
     private nonisolated static let categoryTitles: [String: String] = [
         "communication": "Communication", "weather": "Weather", "maps": "Maps",
-        "objectsandtools": "Objects & Tools", "devices": "Devices",
-        "cameraandphotos": "Camera & Photos", "gaming": "Gaming",
+        "objectsandtools": String(localized: "Objects & Tools"), "devices": String(localized: "Devices"),
+        "cameraandphotos": String(localized: "Camera & Photos"), "gaming": String(localized: "Gaming"),
         "connectivity": "Connectivity", "transportation": "Transportation",
         "automotive": "Automotive", "accessibility": "Accessibility",
         "privacyandsecurity": "Privacy & Security", "human": "People", "home": "Home",
         "fitness": "Fitness", "nature": "Nature", "editing": "Editing",
-        "textformatting": "Text Formatting", "media": "Media", "keyboard": "Keyboard",
+        "textformatting": String(localized: "Text Formatting"), "media": String(localized: "Media"),
+        "keyboard": String(localized: "Keyboard"),
         "commerce": "Commerce", "time": "Time", "health": "Health", "shapes": "Shapes",
         "arrows": "Arrows", "indices": "Indices", "math": "Math"
     ]

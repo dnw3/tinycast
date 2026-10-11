@@ -6,7 +6,7 @@ extension CaptureCoordinator {
             guard let self, let editor = self.editor else { return }
             editor.finishEditing()
             guard self.pins.count < 3 else {
-                editor.notice = "Close a pinned image first (maximum 3)"; return
+                editor.notice = String(localized: "Close a pinned image first (maximum 3)"); return
             }
             editor.busy = true
             defer { editor.busy = false }
@@ -21,7 +21,8 @@ extension CaptureCoordinator {
 
     func pin(document: CaptureDocument, source: CaptureSource) async throws {
         guard pins.count < 3 else {
-            core.showMessage("Close a pinned image first (maximum 3)", tone: .neutral); return
+            core.showMessage(String(localized: "Close a pinned image first (maximum 3)"), tone: .neutral)
+            return
         }
         let preview = try await CaptureWork.run {
             try CaptureRenderer.preview(document: document, directory: source.directory, maximum: 720)
@@ -75,7 +76,9 @@ extension CaptureCoordinator {
                 try await self.previewHistory(entry)
                 return
             }
-            if action == "copyFile" || action == "copy" && (entry.videoDuration != nil || entry.animationDuration != nil) {
+            if action == "copyFile"
+                || action == "copy" && (entry.videoDuration != nil || entry.animationDuration != nil)
+            {
                 try await self.copyHistoryFile(entry)
                 return
             }
@@ -104,7 +107,8 @@ extension CaptureCoordinator {
 
     func revealHistory(_ entry: CaptureHistoryEntry) {
         NSWorkspace.shared.activateFileViewerSelecting([
-            repository.history.appendingPathComponent(entry.id.uuidString).appendingPathComponent(entry.filename)
+            repository.history.appendingPathComponent(entry.id.uuidString).appendingPathComponent(
+                entry.filename)
         ])
     }
 
@@ -112,9 +116,10 @@ extension CaptureCoordinator {
         run { [weak self] in
             guard let self,
                 await self.core.confirm(
-                    title: "Delete Capture?",
-                    message: "This removes the saved capture and its editable draft, if any.",
-                    symbol: "trash", confirmTitle: "Delete")
+                    title: String(localized: "Delete Capture?"),
+                    message: String(
+                        localized: "This removes the saved capture and its editable draft, if any."),
+                    symbol: "trash", confirmTitle: String(localized: "Delete"))
             else { return }
             let url = self.repository.history.appendingPathComponent(entry.id.uuidString)
             try await CaptureWork.run { try FileManager.default.removeItem(at: url) }

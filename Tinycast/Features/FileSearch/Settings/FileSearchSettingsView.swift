@@ -10,7 +10,7 @@ struct FileSearchSettingsView: View {
                 Toggle(isOn: $settings.fileSearchEnabled) {
                     SettingsFeatureToggleLabel(
                         anchor: .fileSearchFileSearch, title: "Enable File Search",
-                        subtitle: "Uses the Spotlight index, only when you search.")
+                        subtitle: String(localized: "Uses the Spotlight index, only when you search."))
                 }
             }
             .settingsAnchor(.fileSearchFileSearch)
@@ -50,7 +50,7 @@ private struct FileSearchScopesSection: View {
 
             HStack(spacing: Theme.Spacing.lg) {
                 Button("Add…", action: addScopes)
-                    .help("Add a folder to search.")
+                    .help(String(localized: "Add a folder to search."))
                 if !isDefault {
                     Button("Restore Defaults") {
                         settings.fileSearchScopes = FileSearchScope.defaultScopes
@@ -82,7 +82,7 @@ private struct FileSearchScopesSection: View {
         panel.canChooseFiles = false
         panel.allowsMultipleSelection = true
         panel.prompt = "Add"
-        panel.message = "Choose folders to include when searching for files."
+        panel.message = String(localized: "Choose folders to include when searching for files.")
         // Tinycast is an accessory app, so the panel opens behind the frontmost app without this.
         NSApp.activate(ignoringOtherApps: true)
         guard panel.runModal() == .OK else { return }
@@ -141,7 +141,7 @@ private struct PatternRow: View {
                         .foregroundStyle(.tertiary)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Remove \(pattern)")
+                .accessibilityLabel(String(localized: "Remove \(pattern)"))
             }
         } label: {
             Text(pattern)

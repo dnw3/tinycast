@@ -64,6 +64,9 @@ implemented invariants.
   [implementation plan](plans/capture-plan.md), [interaction design](plans/capture-interaction.md),
   [interactive prototype](plans/capture-prototype/index.html).
 
+- Capture efficiency: [Spec](plans/capture-efficiency-spec.md), [Plan](plans/capture-efficiency-plan.md).
+- Capture complete experience: [Spec](plans/capture-product-spec.md), [Plan](plans/capture-product-plan.md).
+
 ## Contributing
 
 [`CONTRIBUTING.md`](../CONTRIBUTING.md) covers the workflow — what to open, what to test, what a PR needs.

@@ -23,16 +23,17 @@ struct WindowManagementSettingsFile {
                 return WindowManagementFileFormat.json(commandShortcuts: texts)
             },
             write: { json in
-                guard let decoded = WindowManagementFileFormat.commandShortcuts(from: json) else {
+                guard let decoded = WindowManagementFileFormat.commandShortcuts(from: json, locale: .current) else {
                     return [.invalidValue(key)]
                 }
                 let wanted = WindowCommand.ID.allCases.compactMap { id in
                     decoded.texts[id].map { text in
                         HotKeySettingsFile.Wanted(
-                            action: .windowCommand(id: id), text: text, label: "“\(id.rawValue)”")
+                            action: .windowCommand(id: id), text: text,
+                            label: String(localized: "“\(id.rawValue)”"))
                     }
                 }
-                return decoded.problems.map { .invalidEntry(key, $0) }
+                return decoded.problems.map { .invalidEntry(key, String(localized: $0)) }
                     + shortcuts.apply(wanted, key: key)
             })
     }
@@ -48,14 +49,14 @@ struct WindowManagementSettingsFile {
                 return WindowManagementFileFormat.json(commandAliases: texts)
             },
             write: { json in
-                guard let decoded = WindowManagementFileFormat.commandAliases(from: json) else {
+                guard let decoded = WindowManagementFileFormat.commandAliases(from: json, locale: .current) else {
                     return [.invalidValue(key)]
                 }
                 for command in WindowCommandCatalog.all {
                     guard let alias = decoded.texts[command.id] else { continue }
                     aliases.setAlias(alias ?? "", for: command.entryID)
                 }
-                return decoded.problems.map { .invalidEntry(key, $0) }
+                return decoded.problems.map { .invalidEntry(key, String(localized: $0)) }
             })
     }
 
@@ -73,7 +74,7 @@ struct WindowManagementSettingsFile {
                     })
             },
             write: { json in
-                guard let decoded = WindowManagementFileFormat.customSizes(from: json) else {
+                guard let decoded = WindowManagementFileFormat.customSizes(from: json, locale: .current) else {
                     return [.invalidValue(key)]
                 }
                 let previous = Set(sizes.sizes.map(\.entryID))
@@ -102,7 +103,7 @@ struct WindowManagementSettingsFile {
                     })
             },
             write: { json in
-                guard let decoded = WindowManagementFileFormat.layouts(from: json) else {
+                guard let decoded = WindowManagementFileFormat.layouts(from: json, locale: .current) else {
                     return [.invalidValue(key)]
                 }
                 let previous = Set(layouts.layouts.map(\.entryID))
@@ -132,7 +133,7 @@ struct WindowManagementSettingsFile {
                     })
             },
             write: { json in
-                guard let decoded = WindowManagementFileFormat.rooms(from: json) else {
+                guard let decoded = WindowManagementFileFormat.rooms(from: json, locale: .current) else {
                     return [.invalidValue(key)]
                 }
                 let learned = Dictionary(
@@ -162,11 +163,12 @@ struct WindowManagementSettingsFile {
         _ decoded: WindowManagementFileFormat.Decoded<Value>, kept: Int, kind: String,
         rule: String, key: SettingsFileKey
     ) -> [SettingsFileIssue] {
-        var issues = decoded.problems.map { SettingsFileIssue.invalidEntry(key, $0) }
+        var issues = decoded.problems.map { SettingsFileIssue.invalidEntry(key, String(localized: $0)) }
         let skipped = decoded.records.count - kept
         if skipped > 0 {
-            let noun = skipped == 1 ? "1 \(kind) was" : "\(skipped) \(kind)s were"
-            issues.append(.invalidEntry(key, "\(noun) skipped: \(rule)"))
+            let kind = Bundle.main.localizedString(forKey: kind, value: nil, table: nil)
+            let rule = Bundle.main.localizedString(forKey: rule, value: nil, table: nil)
+            issues.append(.invalidEntry(key, String(localized: "\(skipped) \(kind) entries skipped: \(rule)")))
         }
         return issues
     }
@@ -189,7 +191,8 @@ struct WindowManagementSettingsFile {
         let wanted = records.compactMap { record in
             decoded.shortcuts[record.id].map { text in
                 HotKeySettingsFile.Wanted(
-                    action: action(record.id), text: text, label: "\(kind) “\(record.name)”")
+                    action: action(record.id), text: text,
+                    label: String(localized: "\(kind) “\(record.name)”"))
             }
         }
         return shortcuts.apply(wanted, key: key)

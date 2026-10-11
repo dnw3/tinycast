@@ -52,11 +52,14 @@ enum CaptureVideoEncoder {
         try reader.start()
         try writer.start()
         writer.startSession(atSourceTime: .zero)
-        let cancellation = CaptureEncodingCancellation(writer: writer, reader: reader)
-        async let videoResult = pipe(video, to: receiver, duration: duration.seconds,
-            cancellation: cancellation, progress: progress)
-        async let audioResult = pipe(audio, to: audioReceiver, duration: nil, cancellation: cancellation, progress: progress)
-        do { _ = try await (videoResult, audioResult) } catch {
+        let cancellation = CaptureEncodingCancellation(writer: writer)
+        do {
+            async let videoResult = pipe(video, to: receiver, duration: duration.seconds,
+                cancellation: cancellation, progress: progress)
+            async let audioResult = pipe(audio, to: audioReceiver, duration: nil,
+                cancellation: cancellation, progress: progress)
+            _ = try await (videoResult, audioResult)
+        } catch {
             reader.cancelReading(); writer.cancelWriting()
             throw error
         }
@@ -82,7 +85,9 @@ enum CaptureVideoEncoder {
         defer { receiver.finish() }
         try await withTaskCancellationHandler {
             var reported = -1.0
-            while let sample = try await provider.next() {
+            while true {
+                try Task.checkCancellation()
+                guard let sample = try await provider.next() else { break }
                 try Task.checkCancellation()
                 try await receiver.append(sample)
                 if let duration {

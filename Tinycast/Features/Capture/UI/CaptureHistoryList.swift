@@ -13,7 +13,7 @@ struct CaptureHistoryList: View {
 
     var body: some View {
         if rows.isEmpty {
-            EmptyResults(text: "No captures yet")
+            EmptyResults(text: String(localized: "No captures yet"))
         } else {
             ScrollViewReader { proxy in
                 ScrollView {

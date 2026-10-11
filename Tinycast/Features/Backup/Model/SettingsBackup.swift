@@ -23,6 +23,7 @@ struct SettingsBackup: Codable {
         var captureFormat: String?
         var captureDirection: String?
         var captureCloseAfterCopy: Bool?
+        var capturePresentationPresets: [CapturePresentationPreset]?
         var clipboardEnabled: Bool?
         var clipboardRetentionDays: Int?
         var clipboardDefaultAction: String?
@@ -138,6 +139,7 @@ extension SettingsBackup {
             captureFormat: core.captureCoordinator.settings.preferences.format,
             captureDirection: core.captureCoordinator.settings.preferences.axis.rawValue,
             captureCloseAfterCopy: core.captureCoordinator.settings.preferences.closeAfterCopy,
+            capturePresentationPresets: core.captureCoordinator.settings.presentationPresets,
             clipboardEnabled: s.clipboardEnabled,
             clipboardRetentionDays: s.clipboardRetention.rawValue,
             clipboardDefaultAction: s.clipboardDefaultAction.rawValue,
@@ -307,6 +309,8 @@ extension SettingsBackup {
     private func applySettings(_ s: SettingsData, to core: AppCore) -> Int {
         let settings = core.settings
         var count = 0
+        if let presets = s.capturePresentationPresets,
+            core.captureCoordinator.settings.replacePresentationPresets(presets) { count += 1 }
         if let format = s.captureFormat, ["png", "jpeg", "heic", "avif"].contains(format) {
             core.captureCoordinator.settings.preferences.format = format
             count += 1

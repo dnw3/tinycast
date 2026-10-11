@@ -6,16 +6,10 @@ import System
 enum BackupArchive {
     static let fileExtension = "tinycast"
 
-    enum ArchiveError: LocalizedError, Equatable {
+    enum ArchiveError: Error, Equatable {
         case cannotWrite
         case cannotRead
 
-        var errorDescription: String? {
-            switch self {
-            case .cannotWrite: return "Couldn't write the backup file."
-            case .cannotRead: return "This file isn't a Tinycast backup, or it's damaged."
-            }
-        }
     }
 
     /// No `UID`/`GID` to restore a foreign owner, no `IDX` to dangle; `MTM` feeds the note sort.

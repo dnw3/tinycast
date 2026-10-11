@@ -4,6 +4,7 @@ import Foundation
 enum SettingsBackupCoverage {
     /// Each `SettingsData` field paired with the `AppSettings` key it mirrors.
     static let mirrored: [String: AppSettingsKey] = [
+        "capturePresentationPresets": .capturePresentationPresets,
         "clipboardEnabled": .clipboardEnabled,
         "clipboardRetentionDays": .clipboardRetention,
         "clipboardDefaultAction": .clipboardDefaultAction,
@@ -89,6 +90,7 @@ enum SettingsBackupCoverage {
             "Dictation preferences stay local until backup supports them.",
         AppSettingsKey.dictationIdleRelease.rawValue:
             "Dictation memory use stays a device-local preference.",
+        AppSettingsKey.captureQuickSaveFolder.rawValue: "The quick-save folder is a path on this Mac.",
         AppSettingsKey.capturePreferences.rawValue:
             "Only format, direction and close behavior are exported; retention and enablement stay local.",
         AppSettingsKey.captureKeepsOriginals.rawValue: "An import must not enable storage of unredacted originals.",

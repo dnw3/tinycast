@@ -55,15 +55,9 @@ struct CaptureExportOptions: Equatable, Sendable {
         return size
     }
 
-    enum Failure: LocalizedError {
+    enum Failure: Error {
         case encodingBudget, webPDimensions, quality
-        var errorDescription: String? {
-            switch self {
-            case .encodingBudget: "Choose original-size PNG in sRGB, or reduce the export size to 4 million pixels."
-            case .webPDimensions: "WebP supports up to 16,383 pixels per side. Choose PNG, or reduce the export size."
-            case .quality: "Choose an export quality between 0 and 100%."
-            }
-        }
+
     }
 
     func dimensions(for document: CaptureDocument) throws -> CapturePixelSize {
@@ -74,7 +68,8 @@ struct CaptureExportOptions: Equatable, Sendable {
         case .quarter: 0.25
         }
         guard factor.isFinite, factor > 0, CaptureGeometry.valid(document.outputBounds),
-            document.bounds.contains(document.outputBounds)
+            CaptureGeometry.valid(document.contentBounds), document.bounds.contains(document.contentBounds),
+            document.edit.presentation?.isValid ?? true
         else { throw CaptureRasterError.invalidSize }
         return try CapturePixelSize(
             width: max(1, Int(document.outputBounds.width * factor)),

@@ -18,7 +18,7 @@ struct MCPServerEditor: View {
         case stdio
 
         var id: String { rawValue }
-        var title: String { self == .http ? "HTTP" : "Command" }
+        var title: String { self == .http ? String(localized: "HTTP") : String(localized: "Command") }
     }
 
     private enum Probe: Equatable {
@@ -87,7 +87,8 @@ struct MCPServerEditor: View {
     var body: some View {
         VStack(spacing: 0) {
             SettingsEditorHeader(
-                title: target.isNew ? "Add MCP Server" : "Edit MCP Server"
+                title: target.isNew
+                    ? String(localized: "Add MCP Server") : String(localized: "Edit MCP Server")
             )
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, Theme.Spacing.dialogInset)
@@ -106,7 +107,7 @@ struct MCPServerEditor: View {
                     }
                     field("Connection") {
                         SteadySegmentedPicker(
-                            title: "Connection",
+                            title: String(localized: "Connection"),
                             options: Kind.allCases.map { .init(value: $0, title: $0.title) },
                             selection: $kind)
                     }
@@ -131,7 +132,8 @@ struct MCPServerEditor: View {
                             }
                             field("Value") {
                                 RevealableSecureField(
-                                    title: "Value", text: $headerValue, prompt: Text("Bearer …")
+                                    title: String(localized: "Value"), text: $headerValue,
+                                    prompt: Text("Bearer …")
                                 )
                                 .settingsEditorTextField()
                             }
@@ -161,10 +163,14 @@ struct MCPServerEditor: View {
                 } footer: {
                     Text(
                         kind == .http
-                            ? "Remote endpoints must use HTTPS. Credentials are stored in your "
-                                + "login Keychain, never in preferences."
-                            : "The command runs on this Mac with your own account. One "
-                                + "NAME=value per line; values are stored in your login Keychain."
+                            ? String(
+                                localized:
+                                    "Remote endpoints must use HTTPS. Credentials are stored in your login Keychain, never in preferences."
+                            )
+                            : String(
+                                localized:
+                                    "The command runs on this Mac with your own account. One NAME=value per line; values are stored in your login Keychain."
+                            )
                     )
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -174,7 +180,7 @@ struct MCPServerEditor: View {
                     Toggle("Offer this server's tools", isOn: $isEnabled)
                     field("Trust") {
                         Picker("Trust", selection: $trust) {
-                            ForEach(MCPTrust.allCases) { Text($0.title).tag($0) }
+                            ForEach(MCPTrust.allCases) { Text(LocalizedStringKey($0.title)).tag($0) }
                         }
                         .labelsHidden()
                     }
@@ -188,8 +194,10 @@ struct MCPServerEditor: View {
                     }
                 } footer: {
                     Text(
-                        "Ask Each Chat puts the first tool call of every conversation through a "
-                            + "confirmation. Never Allow withholds the server without removing it."
+                        String(
+                            localized:
+                                "Ask Each Chat puts the first tool call of every conversation through a confirmation. Never Allow withholds the server without removing it."
+                        )
                     )
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -231,8 +239,10 @@ struct MCPServerEditor: View {
                     .settingsEditorTextField()
             }
             field("Client secret") {
-                RevealableSecureField(title: "Client secret", text: $clientSecret, prompt: Text("Optional"))
-                    .settingsEditorTextField()
+                RevealableSecureField(
+                    title: String(localized: "Client secret"), text: $clientSecret, prompt: Text("Optional")
+                )
+                .settingsEditorTextField()
             }
             field("Sign-in") {
                 HStack(spacing: Theme.Spacing.lg) {
@@ -291,7 +301,9 @@ struct MCPServerEditor: View {
             storedOAuth?.token = nil
             probe = .idle
             error = nil
-        } catch { self.error = "The credentials could not be removed from your login Keychain." }
+        } catch {
+            self.error = String(localized: "The credentials could not be removed from your login Keychain.")
+        }
     }
 
     private func cancelOperation() {
@@ -307,9 +319,12 @@ struct MCPServerEditor: View {
         case .running:
             ProgressView().controlSize(.small)
         case .found(let count):
-            Label(count == 1 ? "1 tool" : "\(count) tools", systemImage: "checkmark.circle")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            Label(
+                count == 1 ? String(localized: "1 tool") : String(localized: "\(count) tools"),
+                systemImage: "checkmark.circle"
+            )
+            .font(.caption)
+            .foregroundStyle(.secondary)
         case .failed(let message):
             Label(message, systemImage: "exclamationmark.triangle")
                 .font(.caption)
@@ -379,7 +394,7 @@ struct MCPServerEditor: View {
             case .ready(let tools): probe = .found(tools)
             case .failed(let message): probe = .failed(message)
             case .signInRequired: probe = .failed("Sign-in required")
-            default: probe = .failed("The server did not answer.")
+            default: probe = .failed(String(localized: "The server did not answer."))
             }
         }
     }
@@ -402,7 +417,7 @@ struct MCPServerEditor: View {
                 return error.localizedDescription
             }
         case .stdio where command.trimmingCharacters(in: .whitespaces).isEmpty:
-            return "Enter the command that starts this server."
+            return String(localized: "Enter the command that starts this server.")
         case .stdio:
             break
         }

@@ -1,0 +1,42 @@
+{
+  "installed_binary_sha256": "4788a78288940d2d6b3f535afe20fa7c63492de2095f4b6c5515e0b2b6887176",
+  "installation_receipt": "build/install-backups/efficiency-install-7cc4a7d8dc.json",
+  "method": "Native UI key input and independent output image decoding",
+  "save_as_shift_command_s": {
+    "opens_save_panel": true,
+    "while_editing_text": true,
+    "cancel_returns_to_selection": true
+  },
+  "primary_save_button": {
+    "opens_save_panel": true,
+    "output": "/private/tmp/tinycast-native-primary-save-20261011-0857.png",
+    "decoded_dimensions": [900, 550]
+  },
+  "quick_save_command_s": {
+    "while_editing_text": true,
+    "output": "/Users/bytedance/Pictures/Tinycast/Screenshot-2026-10-11T01-04-53Z-F78632A7-E06C-4823-9F19-3E8D3122851E.png",
+    "decoded_dimensions": [900, 550],
+    "annotation": "SAVE SHORTCUT OK",
+    "annotation_visually_verified": true,
+    "destination_hud_seen_in_prior_trial": true
+  },
+  "scroll_capture_return": {
+    "source": "Anonymous local PDF",
+    "capture_paused_due_to_occluding_automation_window": true,
+    "finish_returns_to_screenshot_workspace": true,
+    "shift_command_s_opens_save_panel": true,
+    "save_panel_pixels": [2500, 1230],
+    "cancel_returns_to_workspace": true,
+    "command_s_quick_save": true,
+    "destination_hud_seen": true,
+    "full_image_decoded": true,
+    "decoded_dimensions": [2500, 1230],
+    "output": "/Users/bytedance/Pictures/Tinycast/Screenshot-2026-10-11T01-07-45Z-38821289-1A9C-46CC-A2AF-2F52655A951D.png",
+    "multiple_frame_stitching_proven": false
+  },
+  "limits": [
+    "Scrolling return test covers a single accepted frame only; multi-frame stitching remains unverified",
+    "Does not prove physical keyboard layouts or the full product acceptance matrix",
+    "An earlier trial placed two annotations on top of each other; its OCR failure was not an annotation-loss finding"
+  ]
+}

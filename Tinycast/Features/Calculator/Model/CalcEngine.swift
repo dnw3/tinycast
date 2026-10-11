@@ -6,7 +6,7 @@ struct CalcResult: Equatable, Sendable {
         /// `display` is grouped ("1,234,567"); `copyText` is the same answer, ungrouped.
         case value(display: String, copyText: String)
         /// A friendly error, only for a clear conversion attempt — never a half-typed expression.
-        case error(message: String)
+        case error(message: CalcFailure)
 
         static func number(_ value: Double, suffix: String = "") -> Self {
             let text = CalcFormatter.copyText(value)
@@ -121,7 +121,7 @@ enum CalcEngine {
                     expression: query,
                     payload: .error(
                         message:
-                            "Cannot convert \(from.category.displayName) to \(to.category.displayName)."
+                            .incompatibleConversion(first: from.category.displayName, second: to.category.displayName)
                     ))
             }
         }
@@ -141,15 +141,15 @@ enum CalcEngine {
             case .mismatch(let from, let to):
                 return CalcResult(
                     expression: query,
-                    payload: .error(message: "Cannot convert \(from) to \(to)."))
+                    payload: .error(message: .incompatibleConversion(first: from, second: to)))
             case .noRate(let code):
                 return CalcResult(
                     expression: query,
-                    payload: .error(message: "No exchange rate for \(code)."))
+                    payload: .error(message: .missingRate(code)))
             case .unavailable:
                 return CalcResult(
                     expression: query,
-                    payload: .error(message: "Exchange rates unavailable — check your connection."))
+                    payload: .error(message: .ratesUnavailable))
             }
         }
 

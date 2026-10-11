@@ -1,0 +1,85 @@
+{
+  "date": "2026-10-11",
+  "install_receipt": "build/install-backups/efficiency-install-df68327e8e.json",
+  "binary_sha256": "01b8b2a7d26b44ad32e6d5b399ae72fcf3dbe74dd3218d4adc49fbb0737b389b",
+  "pid": 45246,
+  "target": "Preview anonymous-scroll-60-rows.pdf",
+  "region_pixels": [
+    520,
+    860
+  ],
+  "details": {
+    "physical_coordinate_menu_click": true,
+    "expanded": true,
+    "preview_visible": true,
+    "notice_visible": true,
+    "axis_and_size_visible": true,
+    "collapsed": true,
+    "screenshot_expanded_pixels": [
+      560,
+      220
+    ],
+    "screenshot_collapsed_pixels": [
+      560,
+      76
+    ]
+  },
+  "cancel_back_keep": {
+    "auto_scroll_pieces": 11,
+    "size_pixels": [
+      520,
+      2660
+    ],
+    "cancel_dialog_buttons": [
+      "Keep Result",
+      "Discard",
+      "Back"
+    ],
+    "back_preserves_size": true,
+    "back_leaves_paused": true,
+    "keep_result_size_preserved": true,
+    "shift_cmd_s_opens_actual_save_panel": true,
+    "actual_png": "docs/plans/capture-evidence/scroll-cancel-keep-native-20261011.png",
+    "full_decode": true,
+    "back_to_screenshot_pixels": [
+      520,
+      860
+    ],
+    "switch_to_scrolling_result_pixels": [
+      520,
+      2660
+    ],
+    "saved_result_closed": true,
+    "visual": "Visible ROW 014–019 ordered; narrow crop and partial end row. Not an OCR or <=1px seam proof."
+  },
+  "layout_log": "/private/tmp/tinycast-scroll-details-cancel-native.log",
+  "reentrant_warning_count": 0,
+  "discard_restore": {
+    "status": "pending native",
+    "source_arrow_created": true,
+    "source_undo_enabled": true,
+    "new_content_size_pixels": [
+      520,
+      5180
+    ],
+    "paused": true,
+    "automation_blocker": "After AX More Scrolling Actions click, binding selects decorative border instead of control panel. Preview capture omits other windows; no unobserved coordinate input attempted. Session and annotation retained, no restart."
+  },
+  "scope": "Current installed build, anonymous PDF vertical automatic sampling, default size and light appearance. Other axes/targets/size/edge/resource gates remain open.",
+  "display_condition": {
+    "checked": "2026-10-11",
+    "online_displays": 1,
+    "name": "Color LCD",
+    "connection": "internal",
+    "pixels": [
+      3456,
+      2234
+    ],
+    "logical_points": [
+      1728,
+      1117
+    ],
+    "refresh_hz": 120,
+    "external_or_mixed_dpi_acceptance_available": false
+  }
+}

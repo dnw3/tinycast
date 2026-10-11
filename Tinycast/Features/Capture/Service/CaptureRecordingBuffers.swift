@@ -33,7 +33,9 @@ final class CaptureRecordingBuffers: NSObject, SCStreamOutput, Sendable {
         super.init()
     }
 
-    func stream(_ stream: SCStream, didOutputSampleBuffer sampleBuffer: CMSampleBuffer, of type: SCStreamOutputType) {
+    func stream(
+        _ stream: SCStream, didOutputSampleBuffer sampleBuffer: CMSampleBuffer, of type: SCStreamOutputType
+    ) {
         receive(sampleBuffer, type: type)
     }
 
@@ -42,10 +44,13 @@ final class CaptureRecordingBuffers: NSObject, SCStreamOutput, Sendable {
         let track: Track
         switch type {
         case .screen:
-            guard let attachments = CMSampleBufferGetSampleAttachmentsArray(sampleBuffer, createIfNecessary: false)
-                as? [[SCStreamFrameInfo: Any]],
+            guard
+                let attachments = CMSampleBufferGetSampleAttachmentsArray(
+                    sampleBuffer, createIfNecessary: false)
+                    as? [[SCStreamFrameInfo: Any]],
                 let raw = attachments.first?[.status] as? Int,
-                let status = SCFrameStatus(rawValue: raw) else { return }
+                let status = SCFrameStatus(rawValue: raw)
+            else { return }
             screen.withLock { $0.status = status }
             guard status == .complete, sampleBuffer.imageBuffer != nil else { return }
             track = .screen
@@ -64,7 +69,11 @@ final class CaptureRecordingBuffers: NSObject, SCStreamOutput, Sendable {
 
     func accept(_ sample: Sample, track: Track) {
         guard stopped == nil else { return }
-        if overlayFrames && track == .screen { latestScreen.withLock { $0 = sample } } else { yield(sample, track: track) }
+        if overlayFrames && track == .screen {
+            latestScreen.withLock { $0 = sample }
+        } else {
+            yield(sample, track: track)
+        }
     }
 
     func yield(_ sample: Sample, track: Track) {
@@ -107,7 +116,10 @@ final class CaptureRecordingBuffers: NSObject, SCStreamOutput, Sendable {
     enum Failure: LocalizedError {
         case overloaded(Track), encoderStalled
         var errorDescription: String? {
-            "Recording could not keep up. Earlier segments are safe; try a smaller region or lower frame rate."
+            String(
+                localized:
+                    "Recording could not keep up. Earlier segments are safe; try a smaller region or lower frame rate."
+            )
         }
     }
 }

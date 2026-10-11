@@ -9,28 +9,35 @@ struct CapturePresentationControls: View {
     var body: some View {
         if state.presentationControls {
             CaptureToolFlow(spacing: metrics.spacing.md) {
+                CapturePresentationPresets(state: state)
                 Picker("Background", selection: binding(\.background)) {
-                    ForEach(CapturePresentation.Background.allCases, id: \.self) { Text($0.title).tag($0) }
+                    ForEach(CapturePresentation.Background.allCases, id: \.self) {
+                        Text(LocalizedStringKey($0.title)).tag($0)
+                    }
                 }.fixedSize()
                 if style.background != .transparent {
-                    color("Background Color", key: \.color)
+                    color(String(localized: "Background Color"), key: \.color)
                     if style.background == .gradient || style.background == .grid {
-                        color("Accent Color", key: \.secondary)
+                        color(String(localized: "Accent Color"), key: \.secondary)
                     }
                 }
-                slider("Padding", key: \.padding, range: 0...160)
-                slider("Corners", key: \.radius, range: 0...80)
-                slider("Shadow", key: \.shadow, range: 0...60)
-                CaptureIconButton(title: "Window Frame", symbol: "macwindow", selected: style.windowFrame) {
+                slider(String(localized: "Padding"), key: \.padding, range: 0...160)
+                slider(String(localized: "Corners"), key: \.radius, range: 0...80)
+                slider(String(localized: "Shadow"), key: \.shadow, range: 0...60)
+                CaptureIconButton(
+                    title: String(localized: "Window Frame"), symbol: "macwindow", selected: style.windowFrame
+                ) {
                     state.finishEditing()
                     binding(\.windowFrame).wrappedValue.toggle()
                 }
-                CaptureIconButton(title: "Remove Styling", symbol: "arrow.counterclockwise") {
+                CaptureIconButton(
+                    title: String(localized: "Remove Styling"), symbol: "arrow.counterclockwise"
+                ) {
                     state.finishEditing()
                     state.setPresentation(nil)
                     state.presentationControls = false
                 }
-                CaptureIconButton(title: "Close Styling", symbol: "xmark") {
+                CaptureIconButton(title: String(localized: "Close Styling"), symbol: "xmark") {
                     state.finishEditing()
                     state.presentationControls = false
                 }
@@ -41,14 +48,17 @@ struct CapturePresentationControls: View {
     }
 
     private func binding<Value>(_ key: WritableKeyPath<CapturePresentation, Value>) -> Binding<Value> {
-        Binding(get: { style[keyPath: key] }, set: {
-            var replacement = style
-            replacement[keyPath: key] = $0
-            state.setPresentation(replacement)
-        })
+        Binding(
+            get: { style[keyPath: key] },
+            set: {
+                var replacement = style
+                replacement[keyPath: key] = $0
+                state.setPresentation(replacement)
+            })
     }
 
-    private func color(_ title: String, key: WritableKeyPath<CapturePresentation, CaptureColor>) -> some View {
+    private func color(_ title: String, key: WritableKeyPath<CapturePresentation, CaptureColor>) -> some View
+    {
         ColorField(title: title, value: binding(key), finish: state.finishEditing)
     }
 
@@ -59,11 +69,19 @@ struct CapturePresentationControls: View {
             HStack {
                 Text(title)
                 Spacer()
-                Text("\(Int(style[keyPath: key])) px").monospacedDigit().foregroundStyle(Theme.Colors.textSecondary)
+                Text("\(Int(style[keyPath: key])) px").monospacedDigit().foregroundStyle(
+                    Theme.Colors.textSecondary)
             }
-            Slider(value: binding(key), in: range, step: 1, onEditingChanged: { editing in
-                if editing { state.finishEditing(); state.undo.begin(state.document) } else { state.undo.end(state.document) }
-            }).accessibilityLabel(title)
+            Slider(
+                value: binding(key), in: range, step: 1,
+                onEditingChanged: { editing in
+                    if editing {
+                        state.finishEditing(); state.undo.begin(state.document)
+                    } else {
+                        state.undo.end(state.document)
+                    }
+                }
+            ).accessibilityLabel(title)
         }.frame(width: metrics.scaled(Theme.Size.captureAdjustmentWidth))
     }
 
@@ -77,7 +95,9 @@ struct CapturePresentationControls: View {
         var body: some View {
             HStack(spacing: metrics.spacing.xxs) {
                 Circle().fill(Color(red: value.rgba[0], green: value.rgba[1], blue: value.rgba[2]))
-                    .frame(width: metrics.scaled(Theme.Size.captureGlyph), height: metrics.scaled(Theme.Size.captureGlyph))
+                    .frame(
+                        width: metrics.scaled(Theme.Size.captureGlyph),
+                        height: metrics.scaled(Theme.Size.captureGlyph))
                 TextField(title, text: $text)
                     .frame(width: metrics.scaled(Theme.Size.capturePropertyField * 2))
                     .accessibilityLabel(title).tooltip(title)

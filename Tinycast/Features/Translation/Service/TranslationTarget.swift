@@ -8,7 +8,7 @@ struct TranslationTarget {
     let value: String
     let range: NSRange
 
-    var title: String { range.length == 0 ? "Insert" : "Replace" }
+    var title: String { range.length == 0 ? String(localized: "Insert") : String(localized: "Replace") }
     var selectedText: String? { TranslationTargetPolicy.selection(in: value, range: range) }
 
     static func capture(in app: NSRunningApplication) -> Self? {
@@ -33,8 +33,9 @@ struct TranslationTarget {
 
     private static func isEditable(_ element: AXUIElement) -> Bool {
         var settable = DarwinBoolean(false)
-        guard AXUIElementIsAttributeSettable(
-            element, kAXSelectedTextAttribute as CFString, &settable) == .success, settable.boolValue
+        guard
+            AXUIElementIsAttributeSettable(
+                element, kAXSelectedTextAttribute as CFString, &settable) == .success, settable.boolValue
         else { return false }
         return true
     }
@@ -48,8 +49,9 @@ struct TranslationTarget {
 
     private static func range(in element: AXUIElement) -> NSRange? {
         var value: CFTypeRef?
-        guard AXUIElementCopyAttributeValue(
-            element, kAXSelectedTextRangeAttribute as CFString, &value) == .success,
+        guard
+            AXUIElementCopyAttributeValue(
+                element, kAXSelectedTextRangeAttribute as CFString, &value) == .success,
             let value, CFGetTypeID(value) == AXValueGetTypeID()
         else { return nil }
         var range = CFRange()

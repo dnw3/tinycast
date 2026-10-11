@@ -1,0 +1,100 @@
+{
+  "dark_text_bands" : [
+    [
+      85,
+      139,
+      54
+    ],
+    [
+      254,
+      285,
+      31
+    ],
+    [
+      596,
+      650,
+      54
+    ],
+    [
+      765,
+      796,
+      31
+    ],
+    [
+      1107,
+      1161,
+      54
+    ],
+    [
+      1276,
+      1307,
+      31
+    ],
+    [
+      1618,
+      1672,
+      54
+    ],
+    [
+      1788,
+      1819,
+      31
+    ],
+    [
+      2129,
+      2183,
+      54
+    ],
+    [
+      2299,
+      2330,
+      31
+    ]
+  ],
+  "full_decode" : true,
+  "height" : 2660,
+  "lines" : [
+    {
+      "text" : "ROW 014 \/ S",
+      "top_px" : 81.999999191773156
+    },
+    {
+      "text" : "Unique registration c",
+      "top_px" : 242.47514390728941
+    },
+    {
+      "text" : "ROW 015 \/ S",
+      "top_px" : 591.00000118952244
+    },
+    {
+      "text" : "Unique registration c",
+      "top_px" : 753.81107518340241
+    },
+    {
+      "text" : "ROW 016 \/ S",
+      "top_px" : 1100.000000285537
+    },
+    {
+      "text" : "Unique registration c",
+      "top_px" : 1265.0000000597333
+    },
+    {
+      "text" : "ROW 017 \/ S",
+      "top_px" : 1611.5960922410911
+    },
+    {
+      "text" : "Unique registration c",
+      "top_px" : 1776.0000001467913
+    },
+    {
+      "text" : "ROW 018 \/ S",
+      "top_px" : 2124.9674264051127
+    },
+    {
+      "text" : "Unique registration c",
+      "top_px" : 2287.0000002337711
+    }
+  ],
+  "path" : "docs\/plans\/capture-evidence\/scroll-cancel-keep-native-20261011.png",
+  "width" : 520
+}

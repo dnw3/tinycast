@@ -10,7 +10,8 @@ enum CaptureTranslationRenderer {
 
     nonisolated static func draw(_ translation: CaptureTranslation?, in context: CGContext) throws {
         guard let translation, translation.enabled else { return }
-        for block in translation.blocks where block.included && context.boundingBoxOfClipPath.intersects(block.rect) {
+        for block in translation.blocks
+        where block.included && context.boundingBoxOfClipPath.intersects(block.rect) {
             let visible = context.boundingBoxOfClipPath.intersection(block.rect).integral
             let reflection = block.reflection ?? .init()
             let sample = reflection.rect(visible, in: block.rect).integral
@@ -26,17 +27,21 @@ enum CaptureTranslationRenderer {
         }
     }
 
-    nonisolated private static func image(_ block: CaptureTranslation.Block, sample: CGRect) throws -> CGImage {
+    nonisolated private static func image(_ block: CaptureTranslation.Block, sample: CGRect) throws -> CGImage
+    {
         guard CaptureGeometry.valid(sample), sample.width * sample.height <= 4_194_304,
-            let context = CGContext(data: nil, width: Int(sample.width), height: Int(sample.height),
+            let context = CGContext(
+                data: nil, width: Int(sample.width), height: Int(sample.height),
                 bitsPerComponent: 8, bytesPerRow: Int(sample.width) * 4,
                 space: CGColorSpace(name: CGColorSpace.sRGB)!,
                 bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
         else { throw CaptureRasterError.invalidSize }
         context.translateBy(x: -sample.minX, y: sample.height + sample.minY)
         context.scaleBy(x: 1, y: -1)
-        context.setFillColor(CGColor(colorSpace: CGColorSpace(name: CGColorSpace.sRGB)!,
-            components: block.background.rgba.map { CGFloat($0) })!)
+        context.setFillColor(
+            CGColor(
+                colorSpace: CGColorSpace(name: CGColorSpace.sRGB)!,
+                components: block.background.rgba.map { CGFloat($0) })!)
         context.fill(block.rect)
         context.translateBy(x: block.rect.minX, y: block.rect.maxY)
         context.scaleBy(x: 1, y: -1)
@@ -47,12 +52,16 @@ enum CaptureTranslationRenderer {
     }
 
     nonisolated private static func frame(_ block: CaptureTranslation.Block) throws -> CTFrame {
-        let luminance = Double(block.background.red) * 0.2126
+        let luminance =
+            Double(block.background.red) * 0.2126
             + Double(block.background.green) * 0.7152 + Double(block.background.blue) * 0.0722
         let color = CGColor(gray: luminance > 140 ? 0 : 1, alpha: 1)
         func make(_ size: CGFloat) -> CTFrame {
-            let attributes = [kCTFontAttributeName: CTFontCreateUIFontForLanguage(.system, size, nil)!,
-                kCTForegroundColorAttributeName: color] as CFDictionary
+            let attributes =
+                [
+                    kCTFontAttributeName: CTFontCreateUIFontForLanguage(.system, size, nil)!,
+                    kCTForegroundColorAttributeName: color
+                ] as CFDictionary
             let string = CFAttributedStringCreate(nil, block.text as CFString, attributes)!
             let setter = CTFramesetterCreateWithAttributedString(string)
             let bounds = CGRect(origin: .zero, size: block.rect.size).insetBy(dx: 1, dy: 1)
@@ -66,13 +75,18 @@ enum CaptureTranslationRenderer {
             let size = (lower + upper) / 2, candidate = make(size)
             if CTFrameGetVisibleStringRange(candidate).length == block.text.utf16.count {
                 lower = size; result = candidate
-            } else { upper = size }
+            } else {
+                upper = size
+            }
         }
         return result
     }
 
     enum Failure: LocalizedError {
         case layout
-        var errorDescription: String? { "A translation is too long for its paragraph. Shorten it, or use the text panel." }
+        var errorDescription: String? {
+            String(
+                localized: "A translation is too long for its paragraph. Shorten it, or use the text panel.")
+        }
     }
 }

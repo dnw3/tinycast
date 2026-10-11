@@ -46,11 +46,14 @@ struct ExtensionCommandView: View {
             case .unsupported(let type):
                 if type.isEmpty {
                     // A commit rendered null; "Starting…" here would look like a hang.
-                    EmptyResults(text: "Nothing to show")
+                    EmptyResults(text: String(localized: "Nothing to show"))
                 } else {
                     ExtensionFailureView(
                         message:
-                            "This command renders \(type), which Tinycast doesn't support yet. See docs/extensions.md."
+                            String(
+                                localized:
+                                    "This command renders \(type), which Tinycast doesn't support yet. See docs/extensions.md."
+                            )
                     )
                 }
             }
@@ -135,7 +138,7 @@ struct ExtensionToastPill: View {
                         // The wider word holds the width, so the pill never twitches on copy.
                         ZStack {
                             Text("Copied").hidden()
-                            Text(copiedAt == nil ? "Copy" : "Copied")
+                            Text(copiedAt == nil ? String(localized: "Copy") : String(localized: "Copied"))
                         }
                     }
                 } else if let action = toast.primaryAction {

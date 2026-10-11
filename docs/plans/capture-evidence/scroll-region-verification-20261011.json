@@ -1,0 +1,55 @@
+{
+  "verified_at": "2026-10-11T00:51:27.739552+00:00",
+  "scope": "Current final installation includes S4.2 UI/save/sorting plus cropped-body registration refinement",
+  "mechanical": {
+    "harnesses": 114,
+    "passed": 114,
+    "elapsed_seconds": 206,
+    "suite_log": "/private/tmp/tinycast-scroll-region-suite.log",
+    "focused_log": "/private/tmp/tinycast-scroll-region-regression-final.log",
+    "debug_log": "/private/tmp/tinycast-scroll-region-debug.log",
+    "release_log": "/private/tmp/tinycast-scroll-region-release.log",
+    "lint_log": "/private/tmp/tinycast-scroll-region-lint.log",
+    "debug_release": "passed; only pre-existing AppIntents metadata notice",
+    "lint": "passed; no new warnings",
+    "model_ui_imports": 0,
+    "diff_whitespace": "passed"
+  },
+  "regression": {
+    "cases": "full viewport, slight inset, body subregion, fixed header removed",
+    "offsets": [
+      280,
+      279,
+      280,
+      279
+    ],
+    "fixed_trailing": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "fully_repeated_rows": "uncertain; never accepted by local patch confidence",
+    "reverse": "rejected",
+    "export_pixels": "original strips; existing fixed-header/footer composite exact-pixel harness passes",
+    "native_sck_workflow_proven": false
+  },
+  "installation": {
+    "installed_at": "2026-10-11T00:50:09.993943+00:00",
+    "branch": "dnw/capture-workspace",
+    "source": "current working tree: Capture S4.2 continuous screenshot-to-scroll handoff, shared frosted toolbar and icon cells, native customization drag sorting, Save As primary action, actual save shortcuts including text editing, discoverable quick save destination; fixed-header browser registration, dense candidate validation, local ambiguity checks and blank-margin rejection, including cropped body regions with original pixel export; preserves prior S4.1 and S6 work",
+    "bundle_id": "com.tinycast.app",
+    "version": "0.1.0",
+    "installed_path": "/Applications/Tinycast.app",
+    "backup_path": "/Users/bytedance/code/github/tinycast/build/install-backups/Tinycast-before-efficiency-7cc4a7d8dc.app",
+    "executable_sha256": "4788a78288940d2d6b3f535afe20fa7c63492de2095f4b6c5515e0b2b6887176",
+    "pids": [
+      67656
+    ],
+    "signature_verified": true,
+    "native_ui_acceptance": "pending",
+    "receipt": "/Users/bytedance/code/github/tinycast/build/install-backups/efficiency-install-7cc4a7d8dc.json"
+  },
+  "native": "pending desktop availability reply; current save shortcuts, actual row dragging, full transition and multi-frame real scroll not yet verified",
+  "external_prerequisites": "single online built-in Color LCD; no configured upload destination; credentials not read"
+}

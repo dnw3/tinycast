@@ -188,6 +188,19 @@ struct CaptureOCRTests {
         precondition(result.boxes.filter { $0.text.contains("4826") }.count == 2)
         precondition(result.boxes.contains { $0.text.contains("4826") && $0.rect.minY > 1700 })
         precondition(result.text.contains("中文") && result.text.contains("6284"))
+        let receipt = result.boxes.first { $0.text.contains("7391") }!.rect
+        let highlight = CaptureTextHighlight(document: document, lines: result.boxes.map(\.rect))
+        let markers = highlight.annotations(
+            from: CGPoint(x: receipt.minX + receipt.width * 0.2, y: receipt.midY),
+            to: CGPoint(x: receipt.minX + receipt.width * 0.7, y: receipt.midY), ink: .yellow, color: nil)
+        precondition(markers.count == 1 && markers[0].points[0].y == receipt.midY)
+        var highlighted = document
+        highlighted.edit.annotations += markers
+        let highlightInput = try CaptureTextInput.prepare(document: highlighted, source: source,
+            at: root.appendingPathComponent("highlighted"))
+        let afterHighlight = try await TextRecognitionWorker.recognize(at: highlightInput, executable: executable)
+        precondition(afterHighlight.text.contains("7391") && !afterHighlight.text.contains("9182"),
+            "Snapped highlighter must leave recognized text readable and existing covers opaque")
         let edgeLines = result.boxes.filter { $0.rect.midY > 995 && $0.rect.midY < 1060 }
         precondition(edgeLines.count == 1 && edgeLines[0].text == "EDGE LINE 5738",
             "Only the complete line may survive a vertical tile boundary")
@@ -201,6 +214,17 @@ struct CaptureOCRTests {
             at: root.appendingPathComponent("suggested-covers"))
         let afterCover = try await TextRecognitionWorker.recognize(at: redacted, executable: executable)
         precondition(!afterCover.text.contains("qa@example.test") && afterCover.text.contains("7391"))
+        var textOnly = document
+        let textCandidates = CaptureRedactionPolicy.allText.candidates(
+            in: afterCover.boxes.map { ($0.text, $0.rect) }, bounds: textOnly.outputBounds)
+        precondition(!textCandidates.isEmpty)
+        textOnly.edit.annotations += textCandidates.map {
+            .init(id: UUID(), tool: .cover, points: [$0.rect.origin, .init(x: $0.rect.maxX, y: $0.rect.maxY)])
+        }
+        let textOnlyInput = try CaptureTextInput.prepare(document: textOnly, source: source,
+            at: root.appendingPathComponent("text-only"))
+        let afterTextOnly = try await TextRecognitionWorker.recognize(at: textOnlyInput, executable: executable)
+        precondition(afterTextOnly.text.isEmpty, "Text Only must conceal the reviewed OCR boxes")
         document.edit.presentation = .init(padding: 57, windowFrame: true)
         let styled = try CaptureTextInput.prepare(document: document, source: source,
             at: root.appendingPathComponent("styled"))

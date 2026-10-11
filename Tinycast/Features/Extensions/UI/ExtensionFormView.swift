@@ -307,7 +307,9 @@ private struct ExtensionTextArea: View {
             .extensionFieldChrome(focused: focus == index, hovered: hovered, multiline: true)
             .onHover { hovered = $0 }
             .modifier(ExtensionFormKeys(field: .textArea, onActivate: {}, onSubmit: onSubmit))
-            .accessibilityLabel(Text(node.string("title") ?? "Text area"))
+            .accessibilityLabel(
+                Text(node.string(String(localized: "title")) ?? String(localized: "Text area"))
+            )
             .extensionFieldHint(node.string("info"), error: node.string("error"))
             .overlay(alignment: .topLeading) {
                 if text.isEmpty {
@@ -370,7 +372,7 @@ private struct ExtensionCheckbox: View {
         .accessibilityLabel(Text(node.string("label") ?? node.string("title") ?? "Checkbox"))
         // A toggle announces what it is and what it holds, not just that it can be pressed.
         .accessibilityAddTraits(isOn ? [.isToggle, .isSelected] : .isToggle)
-        .accessibilityValue(Text(isOn ? "On" : "Off"))
+        .accessibilityValue(Text(isOn ? String(localized: "On") : String(localized: "Off")))
         .extensionFieldHint(node.string("info"), error: node.string("error"))
         .accessibilityAction { toggle() }
         .modifier(ExtensionFormKeys(field: .checkbox, onActivate: toggle, onSubmit: onSubmit))
@@ -422,8 +424,8 @@ private struct ExtensionFilePicker: View {
     @State private var hovered = false
 
     private var label: String {
-        guard !paths.isEmpty else { return "Choose…" }
-        return paths.map { ($0 as NSString).lastPathComponent }.joined(separator: ", ")
+        guard !paths.isEmpty else { return String(localized: "Choose…") }
+        return paths.map { ($0 as NSString).lastPathComponent }.joined(separator: String(localized: ", "))
     }
 
     var body: some View {

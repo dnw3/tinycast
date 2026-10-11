@@ -15,7 +15,7 @@ struct DictationSettingsView: View {
                 Toggle(isOn: enabledBinding) {
                     SettingsFeatureToggleLabel(
                         anchor: .dictationDictation, title: "Enable Dictation",
-                        subtitle: "Transcribe speech on your Mac with a local model.")
+                        subtitle: String(localized: "Transcribe speech on your Mac with a local model."))
                 }
                 if microphoneAccess != .authorized {
                     HStack(alignment: .center, spacing: Theme.Spacing.lg) {
@@ -32,7 +32,8 @@ struct DictationSettingsView: View {
                         Spacer(minLength: Theme.Spacing.lg)
                         Button(
                             microphoneAccess == .notDetermined
-                                ? "Grant Access…" : "Open System Settings"
+                                ? String(localized: "Grant Access…")
+                                : String(localized: "Open System Settings")
                         ) {
                             if microphoneAccess == .notDetermined {
                                 Task {
@@ -52,7 +53,7 @@ struct DictationSettingsView: View {
                 Section {
                     Picker(selection: $settings.dictationMode) {
                         ForEach(DictationMode.allCases) { mode in
-                            Text(mode.title).tag(mode)
+                            Text(LocalizedStringKey(mode.title)).tag(mode)
                         }
                     } label: {
                         SettingsRowTitle(.dictationCommands, "Shortcut behavior")
@@ -65,8 +66,11 @@ struct DictationSettingsView: View {
                     if settings.dictationMode == .pushToTalk {
                         let issue = coordinator.holdShortcutIssue
                         Text(
-                            issue ?? "Hold a key combination or a single modifier; release it to transcribe. "
-                                + "Double taps work in toggle mode."
+                            issue
+                                ?? String(
+                                    localized:
+                                        "Hold a key combination or a single modifier; release it to transcribe. Double taps work in toggle mode."
+                                )
                         )
                         .font(.caption)
                         .foregroundStyle(issue == nil ? Color.secondary : Color.orange)
@@ -83,7 +87,8 @@ struct DictationSettingsView: View {
                     } label: {
                         SettingsRowTitle(.dictationModel, "Engine")
                         Text(
-                            settings.dictationModel.family.summary + " · " + settings.dictationModel.coverage)
+                            Bundle.main.localizedString(forKey: settings.dictationModel.family.summary, value: nil, table: nil)
+                                + " · " + Bundle.main.localizedString(forKey: settings.dictationModel.coverage, value: nil, table: nil))
                     }
                     Picker(selection: $settings.dictationModel) {
                         ForEach(
@@ -93,7 +98,7 @@ struct DictationSettingsView: View {
                         }
                     } label: {
                         SettingsRowTitle(.dictationModel, "Model")
-                        Text(settings.dictationModel.summary)
+                        Text(LocalizedStringKey(settings.dictationModel.summary))
                     }
 
                     let installed = coordinator.models.isInstalled(settings.dictationModel)
@@ -113,7 +118,9 @@ struct DictationSettingsView: View {
                                             || coordinator.models.removing == settings.dictationModel)
                             }
                         } label: {
-                            Text(installed ? "Installed" : "Not installed")
+                            Text(
+                                installed
+                                    ? String(localized: "Installed") : String(localized: "Not installed"))
                             Text(modelDescription)
                         }
                     }
@@ -135,7 +142,7 @@ struct DictationSettingsView: View {
                 Section {
                     Picker(selection: $settings.dictationIdleRelease) {
                         ForEach(DictationIdleRelease.allCases) { option in
-                            Text(option.title).tag(option)
+                            Text(LocalizedStringKey(option.title)).tag(option)
                         }
                     } label: {
                         SettingsRowTitle(.dictationMemory, "Release model from memory")
@@ -148,8 +155,12 @@ struct DictationSettingsView: View {
 
                 Section {
                     Picker(selection: microphoneBinding) {
-                        Text(microphones.isEmpty ? "No microphone available" : "System default")
-                            .tag("")
+                        Text(
+                            microphones.isEmpty
+                                ? String(localized: "No microphone available")
+                                : String(localized: "System default")
+                        )
+                        .tag("")
                         if !microphones.isEmpty { Divider() }
                         ForEach(microphones, id: \.uniqueID) { microphone in
                             Text(microphone.localizedName).tag(microphone.uniqueID)
@@ -159,7 +170,7 @@ struct DictationSettingsView: View {
                     }
                     Picker(selection: $settings.dictationDestination) {
                         ForEach(DictationDestination.allCases) { destination in
-                            Text(destination.title).tag(destination)
+                            Text(LocalizedStringKey(destination.title)).tag(destination)
                         }
                     } label: {
                         SettingsRowTitle(.dictationOutput, "When finished")
@@ -232,8 +243,10 @@ struct DictationSettingsView: View {
     }
 
     private var modelDescription: String {
-        modelSize.map { "\(ByteCountFormatter.string(fromByteCount: $0, countStyle: .file)) on disk" }
-            ?? "About \(settings.dictationModel.approximateInstalledMegabytes) MB on disk"
+        modelSize.map {
+            String(localized: "\(ByteCountFormatter.string(fromByteCount: $0, countStyle: .file)) on disk")
+        }
+            ?? String(localized: "About \(settings.dictationModel.approximateInstalledMegabytes) MB on disk")
     }
 
     private struct DownloadProgressView: View {
@@ -250,7 +263,7 @@ struct DictationSettingsView: View {
                 if let progress, progress.total > 0 {
                     ProgressView(value: Double(progress.received), total: Double(progress.total))
                         .tint(.accentColor)
-                        .accessibilityLabel("Model download progress")
+                        .accessibilityLabel(String(localized: "Model download progress"))
                     HStack {
                         let received = progress.received.formatted(.byteCount(style: .file))
                         let total = progress.total.formatted(.byteCount(style: .file))
@@ -266,15 +279,17 @@ struct DictationSettingsView: View {
                 } else {
                     ProgressView()
                         .progressViewStyle(.linear)
-                        .accessibilityLabel("Preparing model download")
+                        .accessibilityLabel(String(localized: "Preparing model download"))
                 }
             }
         }
 
         private var title: String {
-            guard let progress = models.downloadProgress else { return "Preparing download…" }
+            guard let progress = models.downloadProgress else {
+                return String(localized: "Preparing download…")
+            }
             return progress.total > 0 && progress.received >= progress.total
-                ? "Finishing download…" : "Downloading model…"
+                ? String(localized: "Finishing download…") : String(localized: "Downloading model…")
         }
     }
 

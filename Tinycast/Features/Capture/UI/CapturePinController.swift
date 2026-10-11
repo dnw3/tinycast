@@ -27,7 +27,7 @@ final class CapturePinController: Identifiable {
             contentRect: CGRect(origin: .zero, size: size),
             styleMask: [.borderless, .nonactivatingPanel, .resizable], backing: .buffered, defer: false)
         panel.level = .floating
-        panel.title = "Pinned Screenshot"
+        panel.title = String(localized: "Pinned Screenshot")
         panel.isFloatingPanel = true
         panel.isMovableByWindowBackground = true
         panel.isReleasedWhenClosed = false
@@ -68,16 +68,27 @@ final class CapturePinController: Identifiable {
                 .overlay(alignment: .topTrailing) {
                     if pin.hovering || accessibilityFocused {
                         CaptureToolFlow(spacing: metrics.spacing.xxs) {
-                            CaptureIconButton(title: "Copy", symbol: "doc.on.doc") { coordinator.copyPin(pin) }
-                            CaptureIconButton(title: "Save", symbol: "square.and.arrow.down") {
-                                coordinator.save(CaptureEditorState(document: pin.document, source: pin.source))
+                            CaptureIconButton(title: String(localized: "Copy"), symbol: "doc.on.doc") {
+                                coordinator.copyPin(pin)
                             }
-                            CaptureIconButton(title: "Edit", symbol: "pencil") { coordinator.editPin(pin) }
                             CaptureIconButton(
-                                title: "Opacity \(Int(pin.opacityValue * 100))%", symbol: "circle.lefthalf.filled") {
+                                title: String(localized: "Save"), symbol: "square.and.arrow.down"
+                            ) {
+                                coordinator.save(
+                                    CaptureEditorState(document: pin.document, source: pin.source))
+                            }
+                            CaptureIconButton(title: String(localized: "Edit"), symbol: "pencil") {
+                                coordinator.editPin(pin)
+                            }
+                            CaptureIconButton(
+                                title: String(localized: "Opacity \(Int(pin.opacityValue * 100))%"),
+                                symbol: "circle.lefthalf.filled"
+                            ) {
                                 pin.cycleOpacity()
                             }
-                            CaptureIconButton(title: "Close Pin", symbol: "xmark") { coordinator.closePin(pin) }
+                            CaptureIconButton(title: String(localized: "Close Pin"), symbol: "xmark") {
+                                coordinator.closePin(pin)
+                            }
                         }
                         .font(metrics.typography.bar)
                         .padding(metrics.spacing.sm)
@@ -87,7 +98,7 @@ final class CapturePinController: Identifiable {
                 .onHover { pin.hovering = $0 }
                 .accessibilityElement(children: .contain)
                 .accessibilityHidden(false)
-                .accessibilityLabel("Pinned screenshot")
+                .accessibilityLabel(String(localized: "Pinned screenshot"))
                 .accessibilityFocused($accessibilityFocused)
                 .accessibilityAction(named: "Copy") { coordinator.copyPin(pin) }
                 .accessibilityAction(named: "Save") {

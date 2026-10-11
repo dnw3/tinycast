@@ -131,13 +131,13 @@ struct LauncherScreen: PaletteScreen {
 
     var primaryActionTitle: String {
         switch row(at: clampedSelection) {
-        case .calc: return "Copy Answer"
-        case .color: return "Copy Color"
+        case .calc: return String(localized: "Copy Answer")
+        case .color: return String(localized: "Copy Color")
         case .meeting(let meeting):
-            return meeting.link == nil ? "Open in Calendar" : "Join Meeting"
-        case .entry(let app): return app.kind.descriptor.openVerb
-        case .fallback(let fallback, _): return fallback.openVerb
-        case nil: return "Open Application"
+            return meeting.link == nil ? String(localized: "Open in Calendar") : String(localized: "Join Meeting")
+        case .entry(let app): return Bundle.main.localizedString(forKey: app.kind.descriptor.openVerb, value: nil, table: nil)
+        case .fallback(let fallback, _): return Bundle.main.localizedString(forKey: fallback.openVerb, value: nil, table: nil)
+        case nil: return String(localized: "Open Application")
         }
     }
 

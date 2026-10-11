@@ -13,20 +13,27 @@ struct CaptureCodeResults: View {
                     .font(metrics.typography.bar).frame(maxWidth: .infinity, alignment: .leading)
                 if state.codes.count > 1 {
                     Text("\(state.codeIndex + 1)/\(state.codes.count)").font(metrics.typography.bar)
-                    CaptureIconButton(title: "Next Code", symbol: "chevron.right") {
+                    CaptureIconButton(title: String(localized: "Next Code"), symbol: "chevron.right") {
                         state.codeIndex = (state.codeIndex + 1) % state.codes.count
                     }
                 }
-                CaptureIconButton(title: "Copy Code", symbol: "doc.on.doc") { Paster.copyPlainText(code) }
+                CaptureIconButton(title: String(localized: "Copy Code"), symbol: "doc.on.doc") {
+                    Paster.copyPlainText(code)
+                }
                 if let url = URL(string: code), ["https", "http"].contains(url.scheme?.lowercased() ?? "") {
-                    CaptureIconButton(title: "Open Link", symbol: "arrow.up.right.square") {
+                    CaptureIconButton(title: String(localized: "Open Link"), symbol: "arrow.up.right.square")
+                    {
                         NSWorkspace.shared.open(url)
                     }
                 }
-                CaptureIconButton(title: "Dismiss Codes", symbol: "xmark") { state.codes = [] }
+                CaptureIconButton(title: String(localized: "Dismiss Codes"), symbol: "xmark") {
+                    state.codes = []
+                }
             }
             .padding(metrics.spacing.sm)
-            .background(Theme.Colors.panelScrim, in: RoundedRectangle(cornerRadius: metrics.radius.row, style: .continuous))
+            .background(
+                Theme.Colors.panelScrim,
+                in: RoundedRectangle(cornerRadius: metrics.radius.row, style: .continuous))
         }
     }
 }

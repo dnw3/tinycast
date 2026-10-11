@@ -6,7 +6,7 @@ extension CaptureCoordinator {
         run { [weak self] in
             guard let self, let editor = self.editor, !editor.busy else { return }
             guard editor.document.imageLayers.count < 32 else {
-                editor.notice = "Remove an image first (maximum 32)."
+                editor.notice = String(localized: "Remove an image first (maximum 32).")
                 return
             }
             editor.finishEditing()
@@ -21,7 +21,8 @@ extension CaptureCoordinator {
                 if !added {
                     try? FileManager.default.removeItem(at: destination)
                     for raster in generated {
-                        try? FileManager.default.removeItem(at: source.directory.appendingPathComponent(raster))
+                        try? FileManager.default.removeItem(
+                            at: source.directory.appendingPathComponent(raster))
                     }
                 }
             }
@@ -40,14 +41,17 @@ extension CaptureCoordinator {
             }
             try Task.checkCancellation()
             guard self.editor === editor, revision == editor.document.revision else { return }
-            var layer = CaptureImageLayer.placed(id: UUID(), raster: raster, size: size, in: editor.document.outputBounds)
+            var layer = CaptureImageLayer.placed(
+                id: UUID(), raster: raster, size: size, in: editor.document.outputBounds)
             if let axis {
                 layer.frame = CGRect(x: 0, y: 0, width: size.width, height: size.height)
                 let snapshot = editor.document, image = layer
                 let replacement = try await CaptureWork.run {
-                    try CaptureCompositionService.append(image, to: snapshot, directory: source.directory, axis: axis)
+                    try CaptureCompositionService.append(
+                        image, to: snapshot, directory: source.directory, axis: axis)
                 }
-                generated = Set(replacement.rasterRegions.map(\.raster)).subtracting(snapshot.rasterRegions.map(\.raster))
+                generated = Set(replacement.rasterRegions.map(\.raster)).subtracting(
+                    snapshot.rasterRegions.map(\.raster))
                 try Task.checkCancellation()
                 guard self.editor === editor, revision == editor.document.revision else { return }
                 editor.reframe(replacement)

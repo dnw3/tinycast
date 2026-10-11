@@ -31,24 +31,12 @@ enum AIModelDiscovery {
         let responseShape: ResponseShape
     }
 
-    enum DiscoveryError: LocalizedError, Equatable {
+    enum DiscoveryError: Error, Equatable {
         case malformedResponse
         case rejectedKey
         case unavailable
         case unsupported
 
-        var errorDescription: String? {
-            switch self {
-            case .malformedResponse:
-                return "The provider returned an unreadable model list. Enter a model ID manually."
-            case .rejectedKey:
-                return "The API key was rejected. Check it and try again."
-            case .unavailable:
-                return "The provider could not load models right now. Try again or enter one manually."
-            case .unsupported:
-                return "This endpoint does not expose a model list. Enter a model ID manually."
-            }
-        }
     }
 
     static func query(

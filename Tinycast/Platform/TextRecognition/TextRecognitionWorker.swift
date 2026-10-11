@@ -6,9 +6,13 @@ nonisolated enum TextRecognitionWorker {
         case recognition, outputLimit, foreground
         var errorDescription: String? {
             switch self {
-            case .recognition: "Text recognition did not finish. Try a smaller region or retry."
-            case .outputLimit: "Too much text was returned. Select a smaller region and retry."
-            case .foreground: "Background removal did not finish. Try a clearer subject or a smaller image."
+            case .recognition:
+                String(localized: "Text recognition did not finish. Try a smaller region or retry.")
+            case .outputLimit:
+                String(localized: "Too much text was returned. Select a smaller region and retry.")
+            case .foreground:
+                String(
+                    localized: "Background removal did not finish. Try a clearer subject or a smaller image.")
             }
         }
     }
@@ -40,10 +44,13 @@ nonisolated enum TextRecognitionWorker {
 
     static func foreground(
         at url: URL,
-        executable: URL = Bundle.main.bundleURL.appendingPathComponent("Contents/Helpers/TextRecognitionHelper")
+        executable: URL = Bundle.main.bundleURL.appendingPathComponent(
+            "Contents/Helpers/TextRecognitionHelper")
     ) async throws -> URL {
         do {
-            guard try await run(at: url, mode: "foreground", executable: executable, timeout: .seconds(90)) == "ok"
+            guard
+                try await run(at: url, mode: "foreground", executable: executable, timeout: .seconds(90))
+                    == "ok"
             else { throw Failure.foreground }
             return url.appendingPathExtension("mask.png")
         } catch is CancellationError {

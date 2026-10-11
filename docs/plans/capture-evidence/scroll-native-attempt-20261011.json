@@ -1,0 +1,22 @@
+{
+  "versions": {
+    "Arc": {
+      "version": "1.168.0",
+      "build": "88413"
+    },
+    "ChatGPT": {
+      "version": "26.1007.21159",
+      "build": "20052"
+    }
+  },
+  "fixture": "scroll-acceptance-fixture-20261011.html",
+  "source_region_pixels": {
+    "width": 1760,
+    "height": 1130
+  },
+  "axis": "vertical",
+  "input": "manual browser automation",
+  "result": "incomplete; automation overlay obstruction, then source/window interaction interfered; no strip output proven",
+  "protected_behavior": "obscured capture paused; empty Finish/Cancel restored original screenshot",
+  "resource_acceptance": "not measured"
+}

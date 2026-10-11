@@ -1,7 +1,9 @@
 import AVFoundation
 
 // Session configuration stays on its worker; the delegate writes only to the locked overlay state.
-final class CaptureRecordingCamera: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate, @unchecked Sendable {
+final class CaptureRecordingCamera: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate,
+    @unchecked Sendable
+{
     private let session = AVCaptureSession()
     private let overlays: CaptureRecordingOverlays
     private let queue = DispatchQueue(label: "Capture.Camera.Samples")
@@ -21,7 +23,11 @@ final class CaptureRecordingCamera: NSObject, AVCaptureVideoDataOutputSampleBuff
             guard camera.session.isRunning else { throw Failure.unavailable }
             return camera
         }
-        let camera = try await withTaskCancellationHandler { try await worker.value } onCancel: { worker.cancel() }
+        let camera = try await withTaskCancellationHandler {
+            try await worker.value
+        } onCancel: {
+            worker.cancel()
+        }
         do {
             let deadline = ContinuousClock.now.advanced(by: .seconds(5))
             while !overlays.cameraIsFresh {
@@ -62,8 +68,12 @@ final class CaptureRecordingCamera: NSObject, AVCaptureVideoDataOutputSampleBuff
         output.setSampleBufferDelegate(self, queue: queue)
     }
 
-    func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
-        guard sampleBuffer.isValid, sampleBuffer.dataReadiness == .ready, sampleBuffer.imageBuffer != nil else { return }
+    func captureOutput(
+        _ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer,
+        from connection: AVCaptureConnection
+    ) {
+        guard sampleBuffer.isValid, sampleBuffer.dataReadiness == .ready, sampleBuffer.imageBuffer != nil
+        else { return }
         do {
             // The camera lends immutable pixels; a sample copy separates metadata ownership.
             nonisolated(unsafe) let copy = try CMSampleBuffer(copying: sampleBuffer)
@@ -73,6 +83,9 @@ final class CaptureRecordingCamera: NSObject, AVCaptureVideoDataOutputSampleBuff
 
     enum Failure: LocalizedError {
         case unavailable
-        var errorDescription: String? { "The camera is unavailable. Close other camera apps or turn Camera off and retry." }
+        var errorDescription: String? {
+            String(
+                localized: "The camera is unavailable. Close other camera apps or turn Camera off and retry.")
+        }
     }
 }

@@ -216,18 +216,10 @@ struct ExtensionManifest: Sendable, Hashable {
         return platforms.contains { $0.caseInsensitiveCompare("macOS") == .orderedSame }
     }
 
-    enum ParseError: LocalizedError {
+    enum ParseError: Error {
         case unreadable(URL)
         case notAnExtension(URL)
 
-        var errorDescription: String? {
-            switch self {
-            case .unreadable(let url):
-                return "Couldn't read \(url.lastPathComponent)."
-            case .notAnExtension(let url):
-                return "\(url.lastPathComponent) doesn't contain a Raycast extension manifest."
-            }
-        }
     }
 
     static func load(directory: URL) throws -> ExtensionManifest {

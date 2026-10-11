@@ -3,7 +3,7 @@ import SwiftUI
 
 @MainActor
 final class NotesWindowController: NSObject, NSWindowDelegate {
-    private static let frameAutosaveName = "Notes Window"
+    private static let frameAutosaveName = String(localized: "Notes Window")
 
     private unowned let coordinator: NotesCoordinator
     private var panel: NotesPanel?

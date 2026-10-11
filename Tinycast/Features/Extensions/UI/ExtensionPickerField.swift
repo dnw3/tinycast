@@ -39,20 +39,20 @@ struct ExtensionPickerField: View {
     /// What a screen reader hears: the query while searching, else the value held.
     private var announcedValue: String {
         guard open, !query.isEmpty else { return chosen.isEmpty ? placeholder : label }
-        return chosen.isEmpty ? query : "\(label), searching \(query)"
+        return chosen.isEmpty ? query : String(localized: "\(label), searching \(query)")
     }
 
     /// What the control does, then whatever the extension explains about the field.
     private var hint: String {
-        let state = open ? "Showing choices" : "Opens a list of choices"
+        let state = open ? String(localized: "Showing choices") : String(localized: "Opens a list of choices")
         let parts = [error, info].compactMap { $0 }.filter { !$0.isEmpty }
-        return ([state] + parts).joined(separator: ". ")
+        return ([state] + parts).joined(separator: String(localized: ". "))
     }
 
     /// What the closed control reads as: the chosen titles, or the placeholder.
     private var label: String {
         let titles = chosen.compactMap { value in items.first { $0.value == value }?.title }
-        return titles.isEmpty ? placeholder : titles.joined(separator: ", ")
+        return titles.isEmpty ? placeholder : titles.joined(separator: String(localized: ", "))
     }
 
     private var leadingIcon: ExtensionImage.Resolved? {
@@ -156,7 +156,7 @@ struct ExtensionPickerField: View {
                         .font(metrics.typography.rowTitle)
                         .foregroundStyle(Theme.Colors.textTertiary)
                 }
-                ExtensionQueryText(query: query, prompt: "Search…", phase: typedAt)
+                ExtensionQueryText(query: query, prompt: String(localized: "Search…"), phase: typedAt)
             } else {
                 Text(label)
                     .font(metrics.typography.rowTitle)

@@ -130,20 +130,12 @@ extension String {
     }
 }
 
-enum CustomCommandValidationError: LocalizedError {
+enum CustomCommandValidationError: Error {
     case emptyName
     case emptyCommand
     case duplicateName
     case invalidCharacter
 
-    var errorDescription: String? {
-        switch self {
-        case .emptyName: return "Enter a name for the command."
-        case .emptyCommand: return "Enter a command to run."
-        case .duplicateName: return "A custom command with this name already exists."
-        case .invalidCharacter: return "Names and commands cannot contain null characters."
-        }
-    }
 }
 
 @MainActor

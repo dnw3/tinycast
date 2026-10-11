@@ -3,10 +3,14 @@ import ScreenCaptureKit
 
 extension CaptureCoordinator {
     func prepare(screen: NSScreen, command: CommandID) async throws {
-        try await prepare(screen: screen, request: CaptureRequest(
-            mode: command == .captureScrollingScreenshot ? .scrolling : command == .captureRecording ? .recording : .screenshot,
-            scope: command == .captureFullscreen ? .screen : .region,
-            action: command == .captureText ? .text : command == .captureAndTranslate ? .translate : .edit))
+        try await prepare(
+            screen: screen,
+            request: CaptureRequest(
+                mode: command == .captureScrollingScreenshot
+                    ? .scrolling : command == .captureRecording ? .recording : .screenshot,
+                scope: command == .captureFullscreen ? .screen : .region,
+                action: command == .captureText ? .text : command == .captureAndTranslate ? .translate : .edit
+            ))
     }
 
     func prepare(screen: NSScreen, request: CaptureRequest) async throws {
@@ -17,12 +21,17 @@ extension CaptureCoordinator {
         var presented = false
         defer { if !presented { clearSelection() } }
         let targetStarted = ContinuousClock.now
-        let displayID = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? CGDirectDisplayID
+        let displayID =
+            screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? CGDirectDisplayID
         async let pendingTarget = { @MainActor in
-            guard let screen = NSScreen.screens.first(where: {
-                $0.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? CGDirectDisplayID == displayID
-            }) else { throw CaptureScreenService.Failure.displayChanged }
-            return try await CaptureScreenService.target(screen: screen, scrolling: request.mode == .scrolling)
+            guard
+                let screen = NSScreen.screens.first(where: {
+                    $0.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? CGDirectDisplayID
+                        == displayID
+                })
+            else { throw CaptureScreenService.Failure.displayChanged }
+            return try await CaptureScreenService.target(
+                screen: screen, scrolling: request.mode == .scrolling)
         }()
         await Task.yield()
         let paletteStarted = ContinuousClock.now
@@ -31,40 +40,39 @@ extension CaptureCoordinator {
         let target = try await pendingTarget
         CapturePerformance.completed("selection-target", since: targetStarted)
         let imageStarted = ContinuousClock.now
-        let image = try await CaptureScreenService.image(target: target, cursor: settings.preferences.includesCursor)
+        let image = try await CaptureScreenService.image(
+            target: target, cursor: settings.preferences.includesCursor, presentation: true)
         CapturePerformance.completed("selection-snapshot", since: imageStarted)
-        let rasterStarted = ContinuousClock.now
-        let id = UUID(), raster = UUID().uuidString, repository = repository, scale = Double(target.scale)
-        let result = try await CaptureWork.run {
-            let storeStarted = ContinuousClock.now
-            let source = try CaptureSource(directory: try repository.create(id: id))
-            let size = try CaptureImageSource.store(image, at: source.directory.appendingPathComponent(raster))
-            let document = CaptureDocument(
-                id: id, createdAt: Date(), size: size,
-                pieces: [.init(raster: raster, source: CGRect(x: 0, y: 0, width: size.width, height: size.height),
-                    origin: .zero)], captureScale: scale)
-            CapturePerformance.completed("selection-store", since: storeStarted)
-            let previewStarted = ContinuousClock.now
-            let preview = try CaptureImageSource.preview(image)
-            CapturePerformance.completed("selection-preview", since: previewStarted)
-            return (source, document, preview)
-        }
-        CapturePerformance.completed("selection-raster", since: rasterStarted)
+        let id = UUID(), raster = UUID().uuidString, repository = repository
+        let source = try await CaptureWork.run { try CaptureSource(directory: repository.create(id: id)) }
+        let size = try CapturePixelSize(width: image.width, height: image.height)
+        let document = CaptureDocument(
+            id: id, createdAt: Date(), size: size,
+            pieces: [
+                .init(
+                    raster: raster, source: CGRect(x: 0, y: 0, width: size.width, height: size.height),
+                    origin: .zero)
+            ], captureScale: Double(target.scale))
         try Task.checkCancellation()
         guard selectionSession?.accepts(id: session.id, revision: session.revision) == true else {
             throw CancellationError()
         }
         selectionSession?.advance(to: .selecting)
         let workspace = CaptureWorkspaceState(
-            target: target, source: result.0, document: result.1, preview: result.2,
+            target: target, source: source, document: document, preview: image,
             request: request, axis: settings.preferences.axis)
-        workspace.lastRegion = settings.lastRegion(displayID: target.display.displayID, screenSize: target.screenFrame.size)
+        workspace.lastRegion = settings.lastRegion(
+            displayID: target.display.displayID, screenSize: target.screenFrame.size)
+        workspace.preparation = CaptureSelectionPreparation()
         self.workspace = workspace
-        if request.scope == .screen { editor = CaptureEditorState(document: result.1, source: result.0) }
         let presentationStarted = ContinuousClock.now
         overlay.show(self, workspace: workspace)
         CapturePerformance.completed("selection-present", since: presentationStarted)
         presented = true
+        prepareSource(workspace: workspace, images: [(image, raster)])
+        if request.scope == .screen {
+            selectRegion(CGRect(origin: .zero, size: target.screenFrame.size), scope: .screen)
+        }
     }
 
     func selectRegion(_ rect: CGRect, scope: CaptureRequest.Scope = .region) {
@@ -73,6 +81,7 @@ extension CaptureCoordinator {
                 rect, screen: CGRect(origin: .zero, size: workspace.target.screenFrame.size),
                 scale: workspace.target.scale)
         else { return }
+        if workspace.preparation.deferSelection(.region(rect, scope)) { return }
         do {
             let base = workspace.document
             if let editor, let oldFrame = workspace.frame(for: editor.document, cropped: false) {
@@ -96,8 +105,10 @@ extension CaptureCoordinator {
             workspace.choosingElement = false
             workspace.requiresScrollRegion = false
             if scope == .region {
-                settings.remember(.init(displayID: workspace.target.display.displayID,
-                    screenSize: workspace.target.screenFrame.size, rect: rect))
+                settings.remember(
+                    .init(
+                        displayID: workspace.target.display.displayID,
+                        screenSize: workspace.target.screenFrame.size, rect: rect))
             }
             performCaptureAction()
         } catch { report(error) }
@@ -111,9 +122,11 @@ extension CaptureCoordinator {
 
     func chooseCaptureElement() {
         guard let workspace, !workspace.busy, editor?.busy != true else { return }
+        workspace.preparation.discardSelection()
         guard Permissions.isAccessibilityTrusted() else {
             Permissions.ensureAccessibility()
-            core.showMessage("Grant Accessibility, then choose Select Element again", tone: .neutral)
+            core.showMessage(
+                String(localized: "Grant Accessibility, then choose Select Element again"), tone: .neutral)
             return
         }
         editor?.finishEditing()
@@ -124,15 +137,17 @@ extension CaptureCoordinator {
 
     func sizeCaptureRegion(_ pixels: CGSize) {
         guard let workspace, let editor, let frame = workspace.frame(for: editor.document),
-            let rect = CaptureSelectionConstraint.sized(frame, pixels: pixels, scale: workspace.target.scale,
+            let rect = CaptureSelectionConstraint.sized(
+                frame, pixels: pixels, scale: workspace.target.scale,
                 in: CGRect(origin: .zero, size: workspace.target.screenFrame.size))
-        else { self.editor?.notice = "Choose dimensions that fit this screen."; return }
+        else { self.editor?.notice = String(localized: "Choose dimensions that fit this screen."); return }
         editor.notice = nil
         selectRegion(rect)
     }
 
     func selectWindow(_ window: SCWindow) {
         guard let workspace, !workspace.busy else { return }
+        if workspace.preparation.deferSelection(.window(window.windowID)) { return }
         run { [weak self] in
             try await self?.captureWindow(window, workspace: workspace)
         }
@@ -160,7 +175,9 @@ extension CaptureCoordinator {
         document.size = size
         document.captureScale = Double(size.width) / window.frame.width
         document.pieces = [.init(raster: raster, source: document.bounds, origin: .zero)]
-        if let editor = self.editor { editor.reframe(document) } else {
+        if let editor = self.editor {
+            editor.reframe(document)
+        } else {
             self.editor = CaptureEditorState(document: document, source: source)
         }
         workspace.request.scope = .window
@@ -177,6 +194,7 @@ extension CaptureCoordinator {
     func setCaptureScope(_ scope: CaptureRequest.Scope) {
         guard let workspace, workspace.displays == nil, !workspace.busy, editor?.busy != true else { return }
         editor?.finishEditing()
+        workspace.preparation.discardSelection()
         workspace.request.scope = scope
         workspace.choosingWindow = scope == .window
         workspace.choosingElement = false
@@ -188,10 +206,13 @@ extension CaptureCoordinator {
 
     func setCaptureMode(_ mode: CaptureRequest.Mode) {
         guard pendingCapture == nil, let workspace, workspace.displays == nil,
-            !workspace.busy, editor?.busy != true else { return }
+            !workspace.busy, editor?.busy != true
+        else { return }
         editor?.finishEditing()
-        workspace.requiresScrollRegion = mode == .scrolling && (workspace.request.scope != .region
-            || editor?.document.pieces.first?.raster != workspace.document.pieces.first?.raster)
+        workspace.requiresScrollRegion =
+            mode == .scrolling
+            && (workspace.request.scope != .region
+                || editor?.document.pieces.first?.raster != workspace.document.pieces.first?.raster)
         workspace.request.mode = mode
         workspace.choosingWindow = false
         workspace.choosingElement = false
@@ -202,7 +223,9 @@ extension CaptureCoordinator {
         run { [weak self] in
             if let self, self.pendingCapture != nil {
                 self.editor = nil
-                do { try await self.prepare(screen: screen, request: .init()) } catch { self.restoreAppendCapture(); throw error }
+                do { try await self.prepare(screen: screen, request: .init()) } catch {
+                    self.restoreAppendCapture(); throw error
+                }
                 return
             }
             guard let self, let workspace = self.workspace, await self.mayClose() else { return }
@@ -232,7 +255,20 @@ extension CaptureCoordinator {
         }
     }
 
-    func startSelectedScroll() {
+    func beginScrollCapture(axis: CaptureDocument.Axis = .vertical) {
+        guard let workspace else { return }
+        let originalMode = workspace.request.mode
+        workspace.axis = axis
+        if workspace.request.scope != .region
+            || editor?.document.pieces.first?.raster != workspace.document.pieces.first?.raster
+        {
+            setCaptureMode(.scrolling)
+            return
+        }
+        startSelectedScroll(returnMode: originalMode)
+    }
+
+    func startSelectedScroll(returnMode: CaptureRequest.Mode? = nil) {
         guard let workspace, let editor, !workspace.busy, !editor.busy,
             !workspace.selectingTarget, !workspace.requiresScrollRegion,
             let rect = workspace.frame(for: editor.document),
@@ -244,11 +280,13 @@ extension CaptureCoordinator {
             guard let self else { return }
             editor.finishEditing()
             workspace.busy = true
-            self.overlay.suspend()
             var started = false
             defer {
                 workspace.busy = false
-                if !started { self.overlay.resume() }
+                if !started {
+                    if let returnMode { workspace.request.mode = returnMode }
+                    self.overlay.resume()
+                }
             }
             let target = try await CaptureScreenService.target(screen: screen, scrolling: true)
             let point = CGPoint(x: screen.frame.minX + rect.midX, y: screen.frame.minY + rect.midY)
@@ -266,13 +304,16 @@ extension CaptureCoordinator {
                 width: pixels.width / target.scale, height: pixels.height / target.scale)
             let size = try CapturePixelSize(width: Int(pixels.width), height: Int(pixels.height))
             let session = ScrollCaptureSession(
-                document: .init(id: id, createdAt: Date(), size: size, pieces: [], axis: workspace.axis,
+                document: .init(
+                    id: id, createdAt: Date(), size: size, pieces: [], axis: workspace.axis,
                     captureScale: Double(target.scale)),
                 source: source, target: target, region: region, windowID: window.windowID,
                 pid: pid, windowFrame: window.frame, axis: workspace.axis,
                 speed: self.settings.preferences.scrollSpeed)
             try self.scrollPanel.show(session, coordinator: self)
+            self.overlay.suspend()
             self.otherResult = editor
+            self.retainedWorkspace = workspace
             self.editor = nil
             self.scrollSource = source
             self.scroll = session
@@ -295,7 +336,23 @@ extension CaptureCoordinator {
         guard editor == nil, let otherResult else { return }
         editor = otherResult
         self.otherResult = nil
-        editorWindow.show(self)
+        if let workspace = retainedWorkspace,
+            NSScreen.screens.contains(where: { $0.frame == workspace.target.screenFrame })
+        {
+            retainedWorkspace = nil
+            workspace.request.mode = .screenshot
+            workspace.request.action = .edit
+            workspace.preparation = CaptureSelectionPreparation(ready: true)
+            workspace.busy = false
+            self.workspace = workspace
+            selectionSession = CaptureSessionState(id: UUID())
+            selectionSession?.advance(to: .selecting)
+            observeSession()
+            overlay.show(self, workspace: workspace)
+        } else {
+            retainedWorkspace = nil
+            editorWindow.show(self)
+        }
     }
 
     private func performCaptureAction() {

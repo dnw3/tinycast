@@ -20,13 +20,13 @@ struct MeetingDetailsView: View {
                     .padding(.top, metrics.spacing.xl)
                 }
                 if !details.attendees.isEmpty {
-                    sectionHeader("Attendees")
+                    sectionHeader(String(localized: "Attendees"))
                     ForEach(details.attendees.indices, id: \.self) { index in
                         AttendeeRow(attendee: details.attendees[index])
                     }
                 }
                 if let notes = details.notes {
-                    sectionHeader("Description")
+                    sectionHeader(String(localized: "Description"))
                     Text(notes)
                         .font(metrics.typography.rowTitle)
                         .foregroundStyle(Theme.Colors.textSecondary)
@@ -66,7 +66,7 @@ struct MeetingDetailsView: View {
 
     private var subtitle: String {
         let day = UpcomingWindow.dayLabel(meeting.start, calendar: .current)
-        return "\(day) · \(MeetingTimeFormat.range(of: meeting)) · \(meeting.calendarName)"
+        return String(localized: "\(day) · \(MeetingTimeFormat.range(of: meeting)) · \(meeting.calendarName)")
     }
 
     private func sectionHeader(_ title: String) -> some View {
@@ -128,10 +128,10 @@ private extension MeetingDetails.Attendee.Response {
 
     var label: String {
         switch self {
-        case .accepted: "Accepted"
-        case .tentative: "Maybe"
-        case .declined: "Declined"
-        case .pending: "No response"
+        case .accepted: String(localized: "Accepted")
+        case .tentative: String(localized: "Maybe")
+        case .declined: String(localized: "Declined")
+        case .pending: String(localized: "No response")
         }
     }
 }

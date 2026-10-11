@@ -122,7 +122,8 @@ struct CalculatorHistoryScreen: PaletteScreen {
         if rows.isEmpty {
             EmptyResults(
                 text: vm.query.trimmingCharacters(in: .whitespaces).isEmpty
-                    ? "No calculations yet" : "No matching calculations")
+                    ? String(localized: "No calculations yet") : String(localized: "No matching calculations")
+            )
         } else {
             CalculatorHistoryList(
                 results: entries,
@@ -163,22 +164,26 @@ enum CalcHistoryActionsMenu {
         PopoverMenuContent(
             header: core.calcNumberFormat.localizedExpression(entry.expression),
             items: [
-                PopoverMenuItem(title: "Copy Answer", systemImage: "doc.on.doc", shortcut: "↵") {
+                PopoverMenuItem(
+                    title: String(localized: "Copy Answer"), systemImage: "doc.on.doc", shortcut: "↵"
+                ) {
                     core.calculatorCoordinator.copyHistoryEntry(entry)
                 },
                 PopoverMenuItem(
-                    title: "Copy Expression", systemImage: "doc.on.doc.fill", shortcut: "⌘↵"
+                    title: String(localized: "Copy Expression"), systemImage: "doc.on.doc.fill",
+                    shortcut: "⌘↵"
                 ) {
                     core.calculatorCoordinator.copyHistoryExpression(entry)
                 },
                 PopoverMenuItem(
-                    title: "Delete Entry", systemImage: "trash", startsSection: true, shortcut: "⌃X",
+                    title: String(localized: "Delete Entry"), systemImage: "trash", startsSection: true,
+                    shortcut: "⌃X",
                     isDestructive: true
                 ) {
                     calcHistory.remove(entry)
                 },
                 PopoverMenuItem(
-                    title: "Delete All Entries", systemImage: "trash", shortcut: "⌃⇧X",
+                    title: String(localized: "Delete All Entries"), systemImage: "trash", shortcut: "⌃⇧X",
                     isDestructive: true
                 ) {
                     Task { await core.calculatorCoordinator.deleteAllHistory() }

@@ -31,6 +31,30 @@ def processes():
     return result
 
 
+def owned_processes(snapshot, pid, bundle):
+    owned = {pid} | {p[0] for p in snapshot if p[3].startswith(bundle)}
+    while True:
+        children = {p[0] for p in snapshot if p[1] in owned}
+        if children.issubset(owned):
+            return owned
+        owned.update(children)
+
+
+def native_events(path, rows):
+    events = []
+    for line in path.read_text().splitlines():
+        try:
+            event = json.loads(line)
+            timestamp = datetime.datetime.fromisoformat(event["timestamp"]).timestamp()
+        except (ValueError, TypeError, KeyError):
+            continue
+        if (event.get("processID") == rows[0]["pid"]
+                and event.get("category") == "CapturePerformance"
+                and rows[0]["at"] <= timestamp <= rows[-1]["at"]):
+            events.append((timestamp, event.get("eventMessage", "")))
+    return sorted(events)
+
+
 def record(args):
     if not 0.02 <= args.interval <= 1:
         raise ValueError("Sampling interval must be between 0.02 and 1 second")
@@ -49,16 +73,11 @@ def record(args):
             main = next((p[2] for p in snapshot if p[0] == pid), None)
             if main is None:
                 raise ValueError("Measured app exited; this run is incomplete")
-            owned = {pid}
-            for _ in range(len(snapshot)):
-                children = {p[0] for p in snapshot if p[1] in owned and p[3].startswith(bundle)}
-                if children.issubset(owned):
-                    break
-                owned.update(children)
+            owned = owned_processes(snapshot, pid, bundle)
             helper = sum(p[2] for p in snapshot if p[0] in owned and p[0] != pid)
             rows.append({"at": time.time(), "seconds": time.monotonic() - started,
                          "stage": stage, "pid": pid, "mainRSS": main, "helperRSS": helper,
-                         "totalRSS": main + helper})
+                         "totalRSS": main + helper, "helperPIDs": sorted(owned - {pid})})
             if len(rows) % 5 == 0:
                 write(args.output, rows)
             time.sleep(args.interval)
@@ -93,20 +112,13 @@ def report(args):
         if row["stage"].endswith("closed"):
             groups.setdefault(row["stage"], []).append(row)
     anchors = {}
+    events = native_events(args.log, rows) if args.log else []
     if args.native_closures:
         if not args.log:
             raise ValueError("Native closures require a log stream in ndjson format")
-        for line in args.log.read_text().splitlines():
-            try:
-                event = json.loads(line)
-            except ValueError:
-                continue
-            if (event.get("processID") == rows[0]["pid"]
-                    and event.get("category") == "CapturePerformance"
-                    and event.get("eventMessage") == args.closure_event):
-                anchor = datetime.datetime.fromisoformat(event["timestamp"]).timestamp()
-                if rows[0]["at"] <= anchor <= rows[-1]["at"]:
-                    anchors[f"cycle-{len(anchors) + 1:02}-closed"] = anchor
+        for anchor, message in events:
+            if message == args.closure_event:
+                anchors[f"cycle-{len(anchors) + 1:02}-closed"] = anchor
         groups = {stage: rows for stage in anchors}
         result["nativeClosureCount"] = len(anchors)
         result["nativeClosureEvent"] = args.closure_event
@@ -136,10 +148,11 @@ def report(args):
     checks.extend(r["passed"] for r in result["recovery"])
     result["resourcePassed"] = False if False in checks else None if None in checks else True
     if args.log:
-        logs = args.log.read_text()
         result["latency"] = {}
         for event in ("selection-ready", "scroll-preview-ready"):
-            values = sorted(float(v) for v in re.findall(event + r" milliseconds=(\d+(?:\.\d+)?)", logs))
+            pattern = re.compile(event + r" milliseconds=(\d+(?:\.\d+)?)")
+            values = sorted(float(match[1]) for _, message in events
+                            if (match := pattern.fullmatch(message)))
             p95 = values[math.ceil(len(values) * 0.95) - 1] if values else None
             result["latency"][event] = {"count": len(values), "p95Milliseconds": p95,
                 "passed": (p95 < policy["latencyP95Milliseconds"]

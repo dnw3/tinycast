@@ -19,7 +19,7 @@ final class CaptureEditorController: NSObject, NSWindowDelegate {
         let window = Window(
             contentRect: CGRect(origin: .zero, size: size),
             styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
-        window.title = "Capture"
+        window.title = String(localized: "Capture")
         window.isReleasedWhenClosed = false
         window.isRestorable = false
         window.titlebarAppearsTransparent = true
@@ -74,6 +74,9 @@ final class CaptureEditorController: NSObject, NSWindowDelegate {
     private final class Window: NSWindow {
         weak var coordinator: CaptureCoordinator?
         override func performKeyEquivalent(with event: NSEvent) -> Bool {
+            if let coordinator, CaptureWorkspaceKeys.handleSave(event, coordinator: coordinator) {
+                return true
+            }
             guard !(firstResponder is NSTextView), let coordinator, let state = coordinator.editor else {
                 return super.performKeyEquivalent(with: event)
             }
@@ -87,7 +90,13 @@ final class CaptureEditorController: NSObject, NSWindowDelegate {
                 switch key {
                 case "c": coordinator.copy(); return true
                 case "v": coordinator.addImage(clipboard: true); return true
-                case "s": coordinator.save(); return true
+                case "s":
+                    if event.modifierFlags.contains(.shift) {
+                        coordinator.saveAs()
+                    } else {
+                        coordinator.save()
+                    }
+                    return true
                 case "w": coordinator.requestClose(); return true
                 case "z":
                     if event.modifierFlags.contains(.shift) { state.redoEdit() } else { state.undoEdit() }
@@ -114,7 +123,9 @@ final class CaptureEditorController: NSObject, NSWindowDelegate {
                     state.selected = nil
                 } else if state.tool != .select {
                     state.selectTool(.select)
-                } else { coordinator.requestClose() }
+                } else {
+                    coordinator.requestClose()
+                }
                 return true
             }
             return super.performKeyEquivalent(with: event)

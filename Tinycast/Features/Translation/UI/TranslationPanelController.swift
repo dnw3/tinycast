@@ -7,7 +7,8 @@ import SwiftUI
 final class TranslationPanelController: NSObject, NSWindowDelegate {
     private var panel: TranslationPanel?
     private weak var coordinator: TranslationCoordinator?
-    private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.tinycast.app", category: "TranslationWindow")
+    private let logger = Logger(
+        subsystem: Bundle.main.bundleIdentifier ?? "com.tinycast.app", category: "TranslationWindow")
     var isKey: Bool { panel?.isKeyWindow == true }
 
     func present(_ coordinator: TranslationCoordinator, metrics: InterfaceMetrics) {
@@ -59,7 +60,8 @@ final class TranslationPanelController: NSObject, NSWindowDelegate {
 
     private func resize(to size: CGSize) {
         guard let panel, size.width > 0, size.height > 0,
-            let visible = (panel.screen ?? NSScreen.main)?.visibleFrame else { return }
+            let visible = (panel.screen ?? NSScreen.main)?.visibleFrame
+        else { return }
         let frame = TranslationWindowGeometry.frame(
             size: CGSize(width: ceil(size.width), height: ceil(size.height)),
             topRight: CGPoint(x: panel.frame.maxX, y: panel.frame.maxY),
@@ -74,7 +76,9 @@ final class TranslationPanelController: NSObject, NSWindowDelegate {
     func windowDidResignKey(_ notification: Notification) {
         guard let panel, notification.object as? NSWindow === panel else { return }
         if let state = coordinator?.state {
-            logger.info("Resign key: pinned=\(state.isPinned) delivering=\(state.isDelivering) dismiss=\(state.dismissesOnBlur)")
+            logger.info(
+                "Resign key: pinned=\(state.isPinned) delivering=\(state.isDelivering) dismiss=\(state.dismissesOnBlur)"
+            )
         }
         coordinator?.windowLostFocus()
     }
@@ -98,7 +102,7 @@ final class TranslationPanel: NSPanel {
             contentRect: NSRect(origin: .zero, size: content.frame.size),
             styleMask: [.borderless, .fullSizeContentView, .nonactivatingPanel],
             backing: .buffered, defer: false)
-        title = "Translation"
+        title = String(localized: "Translation")
         isFloatingPanel = true
         hidesOnDeactivate = false
         level = .floating

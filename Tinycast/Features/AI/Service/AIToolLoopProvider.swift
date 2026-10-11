@@ -70,7 +70,8 @@ struct AIToolLoopProvider: AIProvider {
                 messages.append(AIMessage(role: .tool, text: "", toolResult: result))
             }
         }
-        throw AIProviderError.responseFailed("Stopped after \(rounds) rounds of tool calls.")
+        throw AIProviderError.responseFailed(
+            String(localized: "Stopped after \(rounds) rounds of tool calls."))
     }
 
     /// One pass over the base route: text flows straight to the transcript, calls are collected.
@@ -99,7 +100,7 @@ struct AIToolLoopProvider: AIProvider {
 
     private func bounded(_ result: AIToolResult, spent: inout Int) -> AIToolResult {
         guard spent < Self.maxTurnResultBytes else {
-            return .failure(result.callID, "This turn's tool output budget is used up.")
+            return .failure(result.callID, String(localized: "This turn's tool output budget is used up."))
         }
         let allowance = min(Self.maxResultBytes, Self.maxTurnResultBytes - spent)
         let utf8 = result.content.utf8

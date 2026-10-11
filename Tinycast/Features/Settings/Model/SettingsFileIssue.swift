@@ -13,23 +13,4 @@ enum SettingsFileIssue: Error, Equatable, Sendable {
     case unreadable
     case unwritable
 
-    var message: String {
-        switch self {
-        case .invalidJSON(let detail): "not valid JSON — \(detail)"
-        case .notAnObject(nil): "the file must hold one JSON object"
-        case .notAnObject(let path?): "“\(path)” must be an object"
-        case .unknownSetting(let path): "unknown setting “\(path)”"
-        case .invalidValue(let key): "“\(key.rawValue)” has a value Tinycast can't use"
-        case .invalidEntry(let key, let detail): "“\(key.rawValue)”: \(detail)"
-        case .unreadable: "couldn't be read"
-        case .unwritable: "couldn't be saved"
-        }
-    }
-
-    /// The HUD's line: the first issue, and how many more there are.
-    static func summary(_ issues: [SettingsFileIssue]) -> String? {
-        guard let first = issues.first else { return nil }
-        let more = issues.count > 1 ? " (+\(issues.count - 1) more)" : ""
-        return "settings.json: \(first.message)\(more)"
-    }
 }

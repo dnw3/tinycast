@@ -692,7 +692,8 @@ final class ExtensionManager: ExtensionRuntimeDelegate, ExtensionHostContext {
             if extensionNamed(reference.extensionName) != nil {
                 commandMetadata.recordBackgroundResult(
                     extension: reference.extensionName, command: reference.commandName,
-                    success: succeeded, error: succeeded ? nil : (backgroundFailure ?? "Timed out."),
+                    success: succeeded,
+                    error: succeeded ? nil : (backgroundFailure ?? String(localized: "Timed out.")),
                     now: Date())
             }
             backgroundSessionID = nil
@@ -995,9 +996,12 @@ final class ExtensionManager: ExtensionRuntimeDelegate, ExtensionHostContext {
         guard let owningName, let owner = extensionNamed(owningName),
             let command = owner.command(named: name)
         else { throw ExtensionLaunchError.unknownCommand(name) }
-        guard isEnabled else { throw ExtensionLaunchError.unsupported("Extensions are disabled.") }
+        guard isEnabled else {
+            throw ExtensionLaunchError.unsupported(String(localized: "Extensions are disabled."))
+        }
         guard launchType != .background || command.mode != .view else {
-            throw ExtensionLaunchError.unsupported("A view command cannot run in the background.")
+            throw ExtensionLaunchError.unsupported(
+                String(localized: "A view command cannot run in the background."))
         }
         coordinator?.runExtensionCommand(
             entry(for: command, in: owner), arguments: arguments, fallbackText: fallbackText,

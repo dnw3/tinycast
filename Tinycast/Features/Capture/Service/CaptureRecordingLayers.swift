@@ -19,9 +19,11 @@ final class CaptureRecordingLayers {
                 return
             }
             let flags = event.modifierFlags
-            let text = CaptureKeystrokePolicy.label(mode: mode, keyCode: event.keyCode,
+            let text = CaptureKeystrokePolicy.label(
+                mode: mode, keyCode: event.keyCode,
                 characters: event.charactersIgnoringModifiers, command: flags.contains(.command),
-                control: flags.contains(.control), option: flags.contains(.option), shift: flags.contains(.shift),
+                control: flags.contains(.control), option: flags.contains(.option),
+                shift: flags.contains(.shift),
                 repeated: event.isARepeat, secure: false)
             overlays.key(text, at: CMClockGetTime(CMClockGetHostTimeClock()))
         }
@@ -47,7 +49,10 @@ final class CaptureRecordingLayers {
     enum Failure: LocalizedError {
         case keyboardUnavailable
         var errorDescription: String? {
-            "Keyboard display needs Accessibility permission. Turn Keys off or allow access and retry."
+            String(
+                localized:
+                    "Keyboard display needs Accessibility permission. Turn Keys off or allow access and retry."
+            )
         }
     }
 }

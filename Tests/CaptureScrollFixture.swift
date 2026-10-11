@@ -4,6 +4,7 @@ import Foundation
 
 enum CaptureScrollFixture {
     static func verify(in root: URL) throws {
+        try browserFrames(in: root)
         let page = root.appendingPathComponent("text-page")
         let width = 900, height = 2_400, viewport = 600
         let context = CGContext(
@@ -84,6 +85,58 @@ enum CaptureScrollFixture {
                 let actual = try composite.read(rect: CGRect(x: 0, y: row, width: width, height: 1))
                 precondition(actual == Data(expected), "Text image mismatch at row \(row), fixed=\(fixed)")
             }
+        }
+    }
+
+    static func browserFrames(in root: URL) throws {
+        let fixtures = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+            .appendingPathComponent("Fixtures/CaptureScroll")
+        let before = root.appendingPathComponent("browser-before")
+        let after = root.appendingPathComponent("browser-after")
+        _ = try CaptureImageSource.load(fixtures.appendingPathComponent("fixed-header-before.png"), at: before)
+        let size = try CaptureImageSource.load(fixtures.appendingPathComponent("fixed-header-after.png"), at: after)
+        try browserRegions(before: before, after: after, size: size, in: root)
+        let first = try ScrollFrameReader.sample(directory: before, axis: .vertical)
+        let second = try ScrollFrameReader.sample(directory: after, axis: .vertical)
+        precondition(ScrollStitchPolicy.stable(first, first))
+        precondition(ScrollStitchPolicy.match(previous: first, current: first) == .duplicate)
+        guard case .append(let offset, let leading, let trailing) =
+            ScrollStitchPolicy.match(previous: first, current: second)
+        else { preconditionFailure("Fixed-header browser frames must register despite text rasterization differences") }
+        precondition((279...280).contains(offset) && (62...66).contains(leading) && trailing == 0)
+        precondition(ScrollStitchPolicy.match(previous: second, current: first) == .reverse)
+        let strip = root.appendingPathComponent("browser-strip")
+        try ScrollFrameReader.strip(from: after,
+            rect: CGRect(x: 0, y: size.height - offset, width: size.width, height: offset), to: strip)
+        let original = try CaptureRasterReader(directory: after), appended = try CaptureRasterReader(directory: strip)
+        var originalRow = [UInt8](repeating: 0, count: size.rowBytes)
+        var appendedRow = originalRow
+        for y in 0..<offset {
+            try originalRow.withUnsafeMutableBytes { try original.read(row: size.height - offset + y, into: $0) }
+            try appendedRow.withUnsafeMutableBytes { try appended.read(row: y, into: $0) }
+            precondition(originalRow == appendedRow, "Registration smoothing must never alter exported strip pixels")
+        }
+    }
+
+    private static func browserRegions(before: URL, after: URL, size: CapturePixelSize, in root: URL) throws {
+        let regions = [
+            CGRect(x: 8, y: 0, width: size.width - 16, height: size.height),
+            CGRect(x: 120, y: 0, width: 900, height: size.height),
+            CGRect(x: 16, y: 64, width: size.width - 32, height: size.height - 64)
+        ]
+        for (index, region) in regions.enumerated() {
+            let croppedBefore = root.appendingPathComponent("browser-region-before-\(index)")
+            let croppedAfter = root.appendingPathComponent("browser-region-after-\(index)")
+            try ScrollFrameReader.strip(from: before, rect: region, to: croppedBefore)
+            try ScrollFrameReader.strip(from: after, rect: region, to: croppedAfter)
+            let first = try ScrollFrameReader.sample(directory: croppedBefore, axis: .vertical)
+            let second = try ScrollFrameReader.sample(directory: croppedAfter, axis: .vertical)
+            let decision = ScrollStitchPolicy.match(previous: first, current: second)
+            guard case .append(let offset, _, let trailing) = decision,
+                (279...280).contains(offset), trailing == 0 else {
+                preconditionFailure("Browser region \(region) failed: \(decision)")
+            }
+            precondition(ScrollStitchPolicy.match(previous: second, current: first) == .reverse)
         }
     }
 }

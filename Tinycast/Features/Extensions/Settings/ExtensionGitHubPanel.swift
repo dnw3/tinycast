@@ -17,17 +17,21 @@ struct ExtensionGitHubPanel: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.xl) {
             ExtensionSettingsEditorHeader(
-                title: "Install from GitHub",
-                subtitle: "Builds an extension from source on this Mac. Only the build is kept — "
-                    + "the source and its dependencies are deleted once it installs.")
+                title: String(localized: "Install from GitHub"),
+                subtitle: String(
+                    localized:
+                        "Builds an extension from source on this Mac. Only the build is kept — the source and its dependencies are deleted once it installs."
+                ))
 
             repositoryField
             ExtensionToolchainFields()
                 .disabled(isInstalling)
 
             Text(
-                "Installing runs your package manager and the extension's own build script. "
-                    + "Install only from someone you trust."
+                String(
+                    localized:
+                        "Installing runs your package manager and the extension's own build script. Install only from someone you trust."
+                )
             )
             .font(.caption)
             .foregroundStyle(.secondary)
@@ -36,9 +40,12 @@ struct ExtensionGitHubPanel: View {
             status
 
             HStack(spacing: Theme.Spacing.md) {
-                Button(installedTitle == nil ? "Cancel" : "Done", action: onClose)
-                    .buttonStyle(ExtensionSettingsEditorButtonStyle(role: .cancel))
-                    .keyboardShortcut(.cancelAction)
+                Button(
+                    installedTitle == nil ? String(localized: "Cancel") : String(localized: "Done"),
+                    action: onClose
+                )
+                .buttonStyle(ExtensionSettingsEditorButtonStyle(role: .cancel))
+                .keyboardShortcut(.cancelAction)
                 Button("Install", action: install)
                     .buttonStyle(ExtensionSettingsEditorButtonStyle(role: .primary))
                     .keyboardShortcut(.defaultAction)
@@ -156,9 +163,10 @@ private struct ExtensionToolchainFields: View {
                         settings.extensionCustomSearchPaths = Self.parseSearchPaths(value)
                     }
                 Text(
-                    "Colon-separated, like PATH — checked before Homebrew and the rest. For mise: "
-                        + "~/.local/share/mise/shims. For Nix (Home Manager): "
-                        + "/etc/profiles/per-user/<you>/home-path/bin."
+                    String(
+                        localized:
+                            "Colon-separated, like PATH — checked before Homebrew and the rest. For mise: ~/.local/share/mise/shims. For Nix (Home Manager): /etc/profiles/per-user/<you>/home-path/bin."
+                    )
                 )
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -175,12 +183,14 @@ private struct ExtensionToolchainFields: View {
         let additionalSearchPaths = core.settings.extensionCustomSearchPaths
         guard let resolved = chosen.resolve(additionalSearchPaths: additionalSearchPaths) else {
             return chosen == .automatic
-                ? "None found on this Mac. Install pnpm, npm, Yarn or Bun to build an extension."
-                : "\(chosen.title) isn't installed on this Mac."
+                ? String(
+                    localized: "None found on this Mac. Install pnpm, npm, Yarn or Bun to build an extension."
+                )
+                : String(localized: "\(chosen.title) isn't installed on this Mac.")
         }
         return chosen == .automatic
-            ? "Found \(resolved.manager.title) at \(resolved.url.path)."
-            : "Found at \(resolved.url.path)."
+            ? String(localized: "Found \(resolved.manager.title) at \(resolved.url.path).")
+            : String(localized: "Found at \(resolved.url.path).")
     }
 
     /// Splits on `:`, the same separator PATH itself uses, dropping anything blank in between.

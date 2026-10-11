@@ -7,21 +7,33 @@ struct CaptureRecordingPreparation: View {
 
     var body: some View {
         HStack(spacing: metrics.spacing.xxs) {
-            CaptureIconButton(title: workspace.recordingOptions.systemAudio ? "System Audio On" : "System Audio Off",
+            CaptureIconButton(
+                title: workspace.recordingOptions.systemAudio
+                    ? String(localized: "System Audio On") : String(localized: "System Audio Off"),
                 symbol: workspace.recordingOptions.systemAudio ? "speaker.wave.2" : "speaker.slash",
-                selected: workspace.recordingOptions.systemAudio) {
+                selected: workspace.recordingOptions.systemAudio
+            ) {
                 workspace.recordingOptions.systemAudio.toggle()
             }
-            CaptureIconButton(title: workspace.recordingOptions.microphone ? "Microphone On" : "Microphone Off",
+            CaptureIconButton(
+                title: workspace.recordingOptions.microphone
+                    ? String(localized: "Microphone On") : String(localized: "Microphone Off"),
                 symbol: workspace.recordingOptions.microphone ? "mic" : "mic.slash",
-                selected: workspace.recordingOptions.microphone) {
+                selected: workspace.recordingOptions.microphone
+            ) {
                 workspace.recordingOptions.microphone.toggle()
             }
-            CaptureIconButton(title: workspace.recordingOptions.camera ? "Camera On" : "Camera Off",
+            CaptureIconButton(
+                title: workspace.recordingOptions.camera
+                    ? String(localized: "Camera On") : String(localized: "Camera Off"),
                 symbol: workspace.recordingOptions.camera ? "video" : "video.slash",
-                selected: workspace.recordingOptions.camera) { workspace.recordingOptions.camera.toggle() }
-            CaptureIconButton(title: workspace.recordingOptions.keys == .off ? "Keyboard Display Off" : "Keyboard Display On",
-                symbol: "keyboard", selected: workspace.recordingOptions.keys != .off) {
+                selected: workspace.recordingOptions.camera
+            ) { workspace.recordingOptions.camera.toggle() }
+            CaptureIconButton(
+                title: workspace.recordingOptions.keys == .off
+                    ? String(localized: "Keyboard Display Off") : String(localized: "Keyboard Display On"),
+                symbol: "keyboard", selected: workspace.recordingOptions.keys != .off
+            ) {
                 workspace.recordingOptions.keys = workspace.recordingOptions.keys == .off ? .shortcuts : .off
             }
             Menu {
@@ -57,12 +69,16 @@ struct CaptureRecordingPreparation: View {
                     Text("Copy File").tag(CaptureRecordingOptions.Completion.copyFile)
                 }
             } label: {
-                SymbolImage(name: "slider.horizontal.3", size: metrics.scaled(Theme.Size.captureGlyph))
-                    .frame(width: metrics.scaled(Theme.Size.captureTool), height: metrics.scaled(Theme.Size.captureTool))
+                CaptureToolbarGlyph(symbol: "slider.horizontal.3")
             }
-            .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
-            .help("Recording Options").accessibilityLabel("Recording Options")
-            Button(workspace.recordingOptions.delay == 0 ? "Start Recording" : "Start in \(workspace.recordingOptions.delay)s") {
+            .menuStyle(CaptureToolbarMenuStyle()).fixedSize()
+            .help(String(localized: "Recording Options")).accessibilityLabel(
+                String(localized: "Recording Options"))
+            Button(
+                workspace.recordingOptions.delay == 0
+                    ? String(localized: "Start Recording")
+                    : String(localized: "Start in \(workspace.recordingOptions.delay)s")
+            ) {
                 coordinator.startSelectedRecording()
             }
             .buttonStyle(.borderedProminent).fixedSize()

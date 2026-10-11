@@ -291,6 +291,11 @@ Views 经 `@Environment(CaptureCoordinator.self)` 调用动作，不引入第二
   三贴图组合关闭编辑器和 OCR 后，以 `--closure-event pins-closed` 的最后贴图关闭事件为准；其他完整工作区用 `workspace-closed`。
   手工标记迟到时不能替代精确边界。短生命周期编码 helper 可使用 `--interval 0.02`
   提高采样频率，并报告实际采样间隔与观测峰值。
+- 资源脚本按采样 PID、采样起止时间和 `CapturePerformance` category 读取 ndjson，
+  关闭与延迟事件使用相同范围；其他进程或旧会话不能补足成功样本。
+  RSS 包含同一包内重新托管的 helper 及所有已识别后代，并记录 helper PID；
+  非后代且包外的服务若属于场景，仍须另行证明归属并统计，不能把脚本结果当作全部资源证明。
+  `python3 Scripts/test-capture-memory.py` 验证日志隔离和进程归属，不代替原生资源矩阵。
 - G0 不通过时继续缩减常驻像素与排队；不得删除长截图或改用进程增量来标记一期完成。
 
 ## 10. 验收矩阵

@@ -123,6 +123,8 @@ Where a number has a special case, the case is a word:
 | `calendar.menuBarUpcomingEvents` | `"today"`, or 2, 5, 10, 30 minutes before |
 | `calendar.hideCurrentEventAfterMinutes` | `"never"`, 0 (as it starts), 5, 10, 30 |
 | `windowManagement.gap` | 0 to 64 |
+| `capture.presentationPresets` | up to 20 named styling presets with id/name/style; mirrored and included in backups |
+| `capture.quickSaveFolder` | an absolute or `~/` path, or `null` for ~/Pictures/Tinycast; excluded from backups |
 | `snippets.folder`, `notes.folder` | an absolute or `~/` path, or `null` for Application Support |
 
 ## Shortcut chords
@@ -184,3 +186,9 @@ in `commands.builtIn` — by their ID after `command:`. App Launcher and Dictati
 4. Run its side effect from a `track` sink in `AppCore`.
 
 A consent flag, content or machine state gets no key.
+
+Capture preset `style` holds `background` (transparent/solid/gradient/grid), `color` and `secondary`
+as six-digit hex, `padding` (0–160), `radius` (0–80), `shadow` (0–60), and `windowFrame`.
+Names are 1–40 characters, trimmed, without control characters. Duplicate names (ignoring case)
+or IDs, invalid fields, and oversized lists reject the entire replacement and keep existing presets.
+The existing CaptureSettingsStore owns these values; applying a preset changes the document through Undo.

@@ -11,6 +11,7 @@ final class CaptureWorkspaceState {
     var request: CaptureRequest
     var axis: CaptureDocument.Axis
     var busy = false
+    var preparation = CaptureSelectionPreparation(ready: true)
     var choosingWindow = false
     var choosingElement = false
     var selectingTarget: Bool { choosingWindow || choosingElement }

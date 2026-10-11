@@ -8,10 +8,13 @@ final class CaptureCountdownController {
     func show(_ coordinator: CaptureCoordinator, frame: CGRect) {
         close()
         let metrics = coordinator.metrics
-        let size = CGSize(width: metrics.scaled(Theme.Size.captureCountdown.width),
+        let size = CGSize(
+            width: metrics.scaled(Theme.Size.captureCountdown.width),
             height: metrics.scaled(Theme.Size.captureCountdown.height))
-        let panel = Panel(contentRect: CGRect(x: frame.midX - size.width / 2,
-            y: frame.maxY - size.height - metrics.spacing.xxl, width: size.width, height: size.height),
+        let panel = Panel(
+            contentRect: CGRect(
+                x: frame.midX - size.width / 2,
+                y: frame.maxY - size.height - metrics.spacing.xxl, width: size.width, height: size.height),
             styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
         panel.coordinator = coordinator
         panel.level = .floating
@@ -20,7 +23,8 @@ final class CaptureCountdownController {
         panel.isOpaque = false
         panel.backgroundColor = .clear
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
-        let hosting = NSHostingView(rootView: Countdown().environment(coordinator).environment(\.metrics, metrics))
+        let hosting = NSHostingView(
+            rootView: Countdown().environment(coordinator).environment(\.metrics, metrics))
         hosting.sizingOptions = []
         panel.contentView = hosting
         panel.setContentSize(size)
@@ -52,7 +56,9 @@ final class CaptureCountdownController {
                 SymbolImage(name: "timer", size: metrics.scaled(Theme.Size.captureGlyph))
                 Text("Capturing in \(coordinator.countdown ?? 0)…").monospacedDigit()
                 Spacer()
-                CaptureIconButton(title: "Cancel Delayed Capture", symbol: "xmark") { coordinator.cancelWork() }
+                CaptureIconButton(title: String(localized: "Cancel Delayed Capture"), symbol: "xmark") {
+                    coordinator.cancelWork()
+                }
             }
             .font(metrics.typography.bar).padding(.horizontal, metrics.spacing.lg)
             .frame(maxWidth: .infinity, maxHeight: .infinity)

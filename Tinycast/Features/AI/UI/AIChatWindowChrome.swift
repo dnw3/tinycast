@@ -25,16 +25,18 @@ final class AIChatWindowChrome: NSObject, WindowChrome, NSToolbarDelegate, NSSea
         self.find = find
         searchItem = NSSearchToolbarItem(itemIdentifier: Self.search)
         actionsButton = NSButton(
-            image: NSImage(systemSymbolName: "slider.horizontal.3", accessibilityDescription: "Actions")
+            image: NSImage(
+                systemSymbolName: "slider.horizontal.3",
+                accessibilityDescription: String(localized: "Actions"))
                 ?? NSImage(),
             target: nil, action: nil)
         super.init()
-        searchItem.searchField.placeholderString = "Find in Chat"
+        searchItem.searchField.placeholderString = String(localized: "Find in Chat")
         searchItem.searchField.delegate = self
-        searchItem.toolTip = "Find in Chat  ⌘F"
+        searchItem.toolTip = String(localized: "Find in Chat  ⌘F")
         searchItem.resignsFirstResponderWithCancel = true
         actionsButton.bezelStyle = .toolbar
-        actionsButton.toolTip = "Actions  ⌘K"
+        actionsButton.toolTip = String(localized: "Actions  ⌘K")
         actionsButton.target = self
         actionsButton.action = #selector(showActions)
     }
@@ -88,11 +90,13 @@ final class AIChatWindowChrome: NSObject, WindowChrome, NSToolbarDelegate, NSSea
         switch identifier {
         case Self.sidebar:
             return button(
-                identifier, symbol: "sidebar.left", label: "Sidebar", toolTip: "Show or Hide Sidebar",
+                identifier, symbol: "sidebar.left", label: String(localized: "Sidebar"),
+                toolTip: String(localized: "Show or Hide Sidebar"),
                 action: #selector(toggleSidebar))
         case Self.newChat:
             return button(
-                identifier, symbol: "square.and.pencil", label: "New Chat", toolTip: "New Chat  ⌘N",
+                identifier, symbol: "square.and.pencil", label: String(localized: "New Chat"),
+                toolTip: String(localized: "New Chat  ⌘N"),
                 action: #selector(newChatAction))
         case Self.search:
             return searchItem
@@ -264,7 +268,7 @@ enum AIChatActionsMenu {
             menu.addItem(.separator())
             let pinned = coordinator.isPinned(chat)
             menu.addItem(
-                ClosureMenuItem(pinned ? "Unpin Chat" : "Pin Chat", symbol: "pin") {
+                ClosureMenuItem(pinned ? String(localized: "Unpin Chat") : String(localized: "Pin Chat"), symbol: "pin") {
                     coordinator.togglePin(id: chat.session.id)
                 })
             menu.addItem(

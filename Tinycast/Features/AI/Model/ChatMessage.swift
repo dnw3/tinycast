@@ -124,10 +124,6 @@ struct ChatToolUse: Equatable, Hashable, Sendable {
     let textOffset: Int
     let sequence: Int
 
-    var label: String {
-        let verb = state == .running ? "Calling" : "Called"
-        return origin.isEmpty ? "\(verb) \(title)" : "\(verb) \(origin) · \(title)"
-    }
 }
 
 extension Array where Element == ChatToolUse {
@@ -135,11 +131,6 @@ extension Array where Element == ChatToolUse {
     var isLive: Bool { runningCall != nil }
     var failedCount: Int { count { $0.state == .failed } }
 
-    var completedLabel: String {
-        let label = "Called \(count) tools"
-        let failures = failedCount
-        return failures == 0 ? label : "\(label) · \(failures) failed"
-    }
 }
 
 /// One stretch of thinking: a reply may think, answer, then think again before going on.

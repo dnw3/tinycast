@@ -10,32 +10,45 @@ struct CaptureImageAdjustmentControls: View {
     var body: some View {
         if state.imageAdjustments {
             CaptureToolFlow(spacing: metrics.spacing.md) {
-                CaptureIconButton(title: "Flip Horizontally",
-                    symbol: "arrow.left.and.right.righttriangle.left.righttriangle.right") {
+                CaptureIconButton(
+                    title: String(localized: "Flip Horizontally"),
+                    symbol: "arrow.left.and.right.righttriangle.left.righttriangle.right"
+                ) {
                     state.flipImage(.horizontal)
                 }
-                CaptureIconButton(title: "Flip Vertically", symbol: "arrow.up.and.down.righttriangle.up.righttriangle.down") {
+                CaptureIconButton(
+                    title: String(localized: "Flip Vertically"),
+                    symbol: "arrow.up.and.down.righttriangle.up.righttriangle.down"
+                ) {
                     state.flipImage(.vertical)
                 }
-                CaptureIconButton(title: state.backgroundImage?.backgroundMask?.enabled == true
-                    ? "Restore Background" : "Remove Background", symbol: "person.crop.rectangle") {
+                CaptureIconButton(
+                    title: state.backgroundImage?.backgroundMask?.enabled == true
+                        ? String(localized: "Restore Background") : String(localized: "Remove Background"),
+                    symbol: "person.crop.rectangle"
+                ) {
                     coordinator.removeBackground()
                 }
-                slider("Brightness", key: \.brightness, range: -1...1)
-                slider("Contrast", key: \.contrast, range: 0...2)
-                slider("Saturation", key: \.saturation, range: 0...2)
-                slider("Sharpness", key: \.sharpness, range: 0...1)
-                CaptureIconButton(title: "Invert Colors", symbol: "circle.lefthalf.filled", selected: adjustments.inverted) {
+                slider(String(localized: "Brightness"), key: \.brightness, range: -1...1)
+                slider(String(localized: "Contrast"), key: \.contrast, range: 0...2)
+                slider(String(localized: "Saturation"), key: \.saturation, range: 0...2)
+                slider(String(localized: "Sharpness"), key: \.sharpness, range: 0...1)
+                CaptureIconButton(
+                    title: String(localized: "Invert Colors"), symbol: "circle.lefthalf.filled",
+                    selected: adjustments.inverted
+                ) {
                     state.finishEditing()
                     var replacement = adjustments
                     replacement.inverted.toggle()
                     state.adjustImage(replacement)
                 }
-                CaptureIconButton(title: "Reset Adjustments", symbol: "arrow.counterclockwise") {
+                CaptureIconButton(
+                    title: String(localized: "Reset Adjustments"), symbol: "arrow.counterclockwise"
+                ) {
                     state.finishEditing()
                     state.adjustImage(.init())
                 }.disabled(adjustments.isIdentity)
-                CaptureIconButton(title: "Close Adjustments", symbol: "xmark") {
+                CaptureIconButton(title: String(localized: "Close Adjustments"), symbol: "xmark") {
                     state.finishEditing()
                     state.imageAdjustments = false
                 }
@@ -56,16 +69,23 @@ struct CaptureImageAdjustmentControls: View {
                 Text(adjustments[keyPath: key], format: .percent.precision(.fractionLength(0)))
                     .foregroundStyle(Theme.Colors.textSecondary).monospacedDigit()
             }
-            Slider(value: Binding(get: { adjustments[keyPath: key] }, set: { value in
-                var replacement = adjustments
-                replacement[keyPath: key] = value
-                state.adjustImage(replacement)
-            }), in: range, onEditingChanged: { editing in
-                if editing {
-                    state.finishEditing()
-                    state.undo.begin(state.document)
-                } else { state.undo.end(state.document) }
-            }).accessibilityLabel(title)
+            Slider(
+                value: Binding(
+                    get: { adjustments[keyPath: key] },
+                    set: { value in
+                        var replacement = adjustments
+                        replacement[keyPath: key] = value
+                        state.adjustImage(replacement)
+                    }), in: range,
+                onEditingChanged: { editing in
+                    if editing {
+                        state.finishEditing()
+                        state.undo.begin(state.document)
+                    } else {
+                        state.undo.end(state.document)
+                    }
+                }
+            ).accessibilityLabel(title)
         }
         .frame(width: metrics.scaled(Theme.Size.captureAdjustmentWidth))
     }

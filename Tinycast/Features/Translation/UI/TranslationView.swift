@@ -14,7 +14,9 @@ struct TranslationView: View {
             if state.isExpanded || state.phase != .idle {
                 Divider()
                 TranslationResultView()
-                    .frame(maxWidth: .infinity, maxHeight: state.isExpanded ? .infinity : nil, alignment: .topLeading)
+                    .frame(
+                        maxWidth: .infinity, maxHeight: state.isExpanded ? .infinity : nil,
+                        alignment: .topLeading)
             }
             if let notice = state.notice {
                 Text(notice)
@@ -25,8 +27,10 @@ struct TranslationView: View {
         }
         .padding(state.isExpanded ? metrics.spacing.xxl : metrics.spacing.xl)
         .frame(
-            width: state.isExpanded ? metrics.size.translationPanel.width : metrics.size.translationMiniPanel.width,
-            height: state.isExpanded ? metrics.size.translationPanel.height : nil)
+            width: state.isExpanded
+                ? metrics.size.translationPanel.width : metrics.size.translationMiniPanel.width,
+            height: state.isExpanded ? metrics.size.translationPanel.height : nil
+        )
         .fixedSize(horizontal: false, vertical: true)
         .foregroundStyle(Theme.Colors.textPrimary)
         .background(Theme.Colors.panelScrim)
@@ -38,12 +42,19 @@ struct TranslationView: View {
 
     private var header: some View {
         HStack(spacing: metrics.spacing.md) {
-            Label(state.origin == .selection ? "Translation" : "Screenshot Text", systemImage: "translate")
-                .font(metrics.typography.panelTitle)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .windowDraggable(true)
+            Label(
+                state.origin == .selection
+                    ? String(localized: "Translation") : String(localized: "Screenshot Text"),
+                systemImage: "translate"
+            )
+            .font(metrics.typography.panelTitle)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .windowDraggable(true)
             Menu(state.engine.title) {
-                Picker("Translation engine", selection: Binding(get: { state.engine }, set: coordinator.changeEngine)) {
+                Picker(
+                    "Translation engine",
+                    selection: Binding(get: { state.engine }, set: coordinator.changeEngine)
+                ) {
                     ForEach(TranslationPreferences.Engine.allCases, id: \.self) { engine in
                         Text(engine.title).tag(engine)
                     }
@@ -56,42 +67,59 @@ struct TranslationView: View {
             .menuIndicator(.visible)
             .fixedSize()
             .font(metrics.typography.bar)
-            .accessibilityLabel("Translation engine")
+            .accessibilityLabel(String(localized: "Translation engine"))
             .accessibilityValue(state.engine.title)
-            .help("Choose Apple or AI translation")
-            if state.origin == .selection { Button(action: coordinator.togglePinned) {
-                Image(systemName: state.isPinned ? "pin.fill" : "pin")
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(state.isPinned ? "Unpin Translation" : "Pin Translation")
-            .accessibilityValue(state.isPinned ? "Pinned" : "Not pinned")
-            .help(state.isPinned ? "Unpin: close when focus leaves" : "Pin: keep open when switching apps")
+            .help(String(localized: "Choose Apple or AI translation"))
+            if state.origin == .selection {
+                Button(action: coordinator.togglePinned) {
+                    Image(systemName: state.isPinned ? "pin.fill" : "pin")
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(
+                    state.isPinned
+                        ? String(localized: "Unpin Translation") : String(localized: "Pin Translation")
+                )
+                .accessibilityValue(state.isPinned ? String(localized: "Pinned") : String(localized: "Not pinned"))
+                .help(
+                    state.isPinned
+                        ? String(localized: "Unpin: close when focus leaves")
+                        : String(localized: "Pin: keep open when switching apps"))
             }
             Button(action: coordinator.toggleExpanded) {
-                Image(systemName: state.isExpanded ? "arrow.down.right.and.arrow.up.left" : "arrow.up.left.and.arrow.down.right")
+                Image(
+                    systemName: state.isExpanded
+                        ? "arrow.down.right.and.arrow.up.left" : "arrow.up.left.and.arrow.down.right")
             }
             .buttonStyle(.plain)
-            .accessibilityLabel(state.isExpanded ? "Use Mini Window" : "Expand Translation")
-            .help(state.isExpanded ? "Use Mini window" : "Expand for longer text")
+            .accessibilityLabel(
+                state.isExpanded
+                    ? String(localized: "Use Mini Window") : String(localized: "Expand Translation")
+            )
+            .help(
+                state.isExpanded
+                    ? String(localized: "Use Mini window") : String(localized: "Expand for longer text"))
             Button(action: coordinator.cancel) { Image(systemName: "xmark") }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Close Translation")
-                .help("Close (Esc)")
+                .accessibilityLabel(String(localized: "Close Translation"))
+                .help(String(localized: "Close (Esc)"))
         }
     }
 
     private var languages: some View {
         HStack(spacing: metrics.spacing.md) {
             languageMenu(
-                title: state.sourceOverride.isEmpty ? "Auto · \(sourceName)" : sourceName,
-                automatic: "Detect language", action: coordinator.changeSource)
-                .accessibilityLabel("Source language")
+                title: state.sourceOverride.isEmpty ? String(localized: "Auto · \(sourceName)") : sourceName,
+                automatic: String(localized: "Detect language"), action: coordinator.changeSource
+            )
+            .accessibilityLabel(String(localized: "Source language"))
             Image(systemName: "arrow.right").foregroundStyle(Theme.Colors.textTertiary)
             languageMenu(
-                title: (state.targetOverride.isEmpty ? "Auto · " : "")
-                    + TranslationLanguageService.name(coordinator.targetLanguage),
-                automatic: "Automatic direction", action: coordinator.changeTarget)
-                .accessibilityLabel("Target language")
+                title: state.targetOverride.isEmpty
+                    ? String(localized: "Auto · \(TranslationLanguageService.name(coordinator.targetLanguage))")
+                    : TranslationLanguageService.name(coordinator.targetLanguage),
+                automatic: String(localized: "Automatic direction"), action: coordinator.changeTarget
+            )
+            .accessibilityLabel(String(localized: "Target language"))
             Spacer()
         }
     }
@@ -121,23 +149,27 @@ struct TranslationView: View {
             if let preview = coordinator.sourcePreview {
                 Image(decorative: preview, scale: 1).resizable().scaledToFit()
                     .frame(maxWidth: .infinity, maxHeight: metrics.size.rowIcon * 2, alignment: .leading)
-                    .accessibilityLabel("Source screenshot with current annotations")
+                    .accessibilityLabel(String(localized: "Source screenshot with current annotations"))
             }
             TranslationInputView(
                 text: state.input, metrics: metrics, onChange: coordinator.inputChanged,
-                onSubmit: coordinator.submit, onSelection: { state.selectedInput = $0 })
-                .frame(height: state.isExpanded ? metrics.size.translationInputHeight : metrics.size.translationMiniInputHeight)
-                .overlay(alignment: .topLeading) {
-                    if state.input.isEmpty {
-                        Text("Type or paste text…")
-                            .font(metrics.typography.rowTitle)
-                            .foregroundStyle(Theme.Colors.textTertiary)
-                            .padding(metrics.spacing.md)
-                            .allowsHitTesting(false)
-                    }
+                onSubmit: coordinator.submit, onSelection: { state.selectedInput = $0 }
+            )
+            .frame(
+                height: state.isExpanded
+                    ? metrics.size.translationInputHeight : metrics.size.translationMiniInputHeight
+            )
+            .overlay(alignment: .topLeading) {
+                if state.input.isEmpty {
+                    Text("Type or paste text…")
+                        .font(metrics.typography.rowTitle)
+                        .foregroundStyle(Theme.Colors.textTertiary)
+                        .padding(metrics.spacing.md)
+                        .allowsHitTesting(false)
                 }
-                .background(Theme.Colors.controlSurface)
-                .clipShape(RoundedRectangle(cornerRadius: metrics.radius.row))
+            }
+            .background(Theme.Colors.controlSurface)
+            .clipShape(RoundedRectangle(cornerRadius: metrics.radius.row))
             HStack {
                 if state.origin == .selection {
                     Text("Translates automatically · ⇧↵ New line")

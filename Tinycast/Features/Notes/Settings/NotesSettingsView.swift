@@ -11,7 +11,7 @@ struct NotesSettingsView: View {
                 Toggle(isOn: $settings.notesEnabled) {
                     SettingsFeatureToggleLabel(
                         anchor: .notesNotes, title: "Enable Notes",
-                        subtitle: "Plain Markdown in a floating editor.")
+                        subtitle: String(localized: "Plain Markdown in a floating editor."))
                 }
             }
             .settingsAnchor(.notesNotes)

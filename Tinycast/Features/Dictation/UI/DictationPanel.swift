@@ -63,10 +63,10 @@ private struct DictationPanelView: View {
                         return level * (0.2 + 0.8 * taper)
                     }, processing: false
                 )
-                .accessibilityLabel("Dictation listening")
+                .accessibilityLabel(String(localized: "Dictation listening"))
             } else {
                 DictationProcessingWave()
-                    .accessibilityLabel("Transcribing dictation")
+                    .accessibilityLabel(String(localized: "Transcribing dictation"))
             }
         }
         .frame(width: Theme.Size.dictationPanel.width, height: Theme.Size.dictationPanel.height)

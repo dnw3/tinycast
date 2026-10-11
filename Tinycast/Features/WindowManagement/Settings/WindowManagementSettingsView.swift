@@ -14,7 +14,7 @@ struct WindowManagementSettingsView: View {
             FeatureSwitchSection(
                 anchor: .windowManagementWindowManagement,
                 enableTitle: "Enable window management",
-                enableSubtitle: "Moves the last window you used. Needs Accessibility.",
+                enableSubtitle: String(localized: "Moves the last window you used. Needs Accessibility."),
                 isEnabled: $settings.windowManagementEnabled,
                 showsInLauncher: $settings.windowManagementShowInLauncher,
                 showsIcon: true,
@@ -64,11 +64,11 @@ struct WindowManagementSettingsView: View {
         return Section {
             Picker(selection: $settings.windowCycle) {
                 ForEach(WindowCycle.allCases) { cycle in
-                    Text(cycle.title).tag(cycle)
+                    Text(LocalizedStringKey(cycle.title)).tag(cycle)
                 }
             } label: {
                 SettingsRowTitle(.windowManagementOptions, "Cycling")
-                Text(settings.windowCycle.detail)
+                Text(LocalizedStringKey(settings.windowCycle.detail))
             }
 
             LabeledContent {
@@ -90,7 +90,7 @@ struct WindowManagementSettingsView: View {
             LabeledContent {
                 HStack(spacing: Theme.Spacing.sm) {
                     Picker("Shortcut preset", selection: $chosenPreset) {
-                        Text("Choose…").tag(WindowShortcutPreset?.none)
+                        Text(String(localized: "Choose…")).tag(WindowShortcutPreset?.none)
                         ForEach(WindowShortcutPreset.allCases) { preset in
                             Text(preset.title).tag(Optional(preset))
                         }
@@ -124,7 +124,7 @@ struct WindowManagementSettingsView: View {
                         command: command, showsInLauncher: settings.windowManagementShowInLauncher)
                 }
             } header: {
-                Text(section.group.title)
+                Text(LocalizedStringKey(section.group.title))
             }
         }
     }
@@ -139,7 +139,7 @@ private struct WindowCommandSettingsRow: View {
     var body: some View {
         let entry = AppEntry(command)
         let isVisible = visibility.isItemVisible(entry)
-        SettingsRow(title: command.name) {
+        SettingsRow(title: Bundle.main.localizedString(forKey: command.name, value: nil, table: nil)) {
             Image(systemName: command.sfSymbol)
         } trailing: {
             // The ranker never sees a hidden entry, so typing here would match nothing.
@@ -154,7 +154,7 @@ private struct WindowCommandSettingsRow: View {
             .labelsHidden()
             .toggleStyle(.checkbox)
             .launcherVisibilityHelp()
-            .accessibilityLabel("Show \(command.name) in launcher")
+            .accessibilityLabel(String(localized: "Show \(command.name) in launcher"))
         }
     }
 }

@@ -27,7 +27,7 @@ struct WindowLayoutEntryPicker: View {
                 .layoutFieldChrome()
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Add an app to this layout")
+        .accessibilityLabel(String(localized: "Add an app to this layout"))
         .popover(isPresented: $showingAppPicker, arrowEdge: .bottom) {
             AppPickerPopover { bundleID in
                 showingAppPicker = false
@@ -61,7 +61,7 @@ struct WindowLayoutEntryPicker: View {
         }
         .buttonStyle(.plain)
         .disabled(draft.entries.isEmpty)
-        .accessibilityLabel("Entry being edited")
+        .accessibilityLabel(String(localized: "Entry being edited"))
         .popover(isPresented: $showingEntries, arrowEdge: .bottom) { entryList }
     }
 

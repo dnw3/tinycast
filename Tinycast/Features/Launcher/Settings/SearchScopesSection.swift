@@ -22,7 +22,7 @@ struct SearchScopesSection: View {
 
             HStack(spacing: Theme.Spacing.lg) {
                 Button("Add…", action: addScopes)
-                    .help("Add a folder or application to search.")
+                    .help(String(localized: "Add a folder or application to search."))
                 if !isDefault {
                     Button("Restore Defaults") { settings.searchScopes = SearchScopes.defaults }
                 }
@@ -49,7 +49,7 @@ struct SearchScopesSection: View {
         panel.treatsFilePackagesAsDirectories = false
         panel.allowsMultipleSelection = true
         panel.prompt = "Add"
-        panel.message = "Choose folders or applications to include in the launcher."
+        panel.message = String(localized: "Choose folders or applications to include in the launcher.")
         // Tinycast is an accessory app, so the panel opens behind the frontmost app without this.
         NSApp.activate(ignoringOtherApps: true)
         guard panel.runModal() == .OK else { return }

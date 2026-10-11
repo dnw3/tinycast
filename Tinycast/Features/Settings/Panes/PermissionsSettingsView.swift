@@ -20,10 +20,13 @@ struct PermissionsSettingsView: View {
                             Text(accessibilityStatus.title)
                         }
                         .foregroundStyle(accessibilityStatus.tint)
-                        Button(accessibilityTrusted ? "Open…" : "Grant Access…") {
+                        Button(
+                            accessibilityTrusted
+                                ? String(localized: "Open…") : String(localized: "Grant Access…")
+                        ) {
                             Permissions.openAccessibilitySettings()
                         }
-                        .help("Opens Privacy & Security › Accessibility.")
+                        .help(String(localized: "Opens Privacy & Security › Accessibility."))
                     }
                 } label: {
                     HStack(spacing: Theme.Spacing.lg) {
@@ -51,7 +54,10 @@ struct PermissionsSettingsView: View {
                             Text(calendarStatus.title)
                         }
                         .foregroundStyle(calendarStatus.tint)
-                        Button(calendarNeedsPrompt ? "Grant Access…" : "Open…") {
+                        Button(
+                            calendarNeedsPrompt
+                                ? String(localized: "Grant Access…") : String(localized: "Open…")
+                        ) {
                             // Settings lists no app TCC was never asked about, so asking is the way in.
                             if calendarNeedsPrompt {
                                 core.calendarCoordinator.setCalendarEnabled(true)
@@ -61,8 +67,8 @@ struct PermissionsSettingsView: View {
                         }
                         .help(
                             calendarNeedsPrompt
-                                ? "Turns the calendar on, then asks macOS for access."
-                                : "Opens Privacy & Security › Calendars.")
+                                ? String(localized: "Turns the calendar on, then asks macOS for access.")
+                                : String(localized: "Opens Privacy & Security › Calendars."))
                     }
                 } label: {
                     HStack(spacing: Theme.Spacing.lg) {
@@ -88,7 +94,10 @@ struct PermissionsSettingsView: View {
                             Text(microphoneStatus.title)
                         }
                         .foregroundStyle(microphoneStatus.tint)
-                        Button(microphoneAccess == .notDetermined ? "Grant Access…" : "Open…") {
+                        Button(
+                            microphoneAccess == .notDetermined
+                                ? String(localized: "Grant Access…") : String(localized: "Open…")
+                        ) {
                             if microphoneAccess == .notDetermined {
                                 Task {
                                     _ = await Permissions.requestMicrophoneAccess()
@@ -100,8 +109,8 @@ struct PermissionsSettingsView: View {
                         }
                         .help(
                             microphoneAccess == .notDetermined
-                                ? "Asks macOS for microphone access."
-                                : "Opens Privacy & Security › Microphone.")
+                                ? String(localized: "Asks macOS for microphone access.")
+                                : String(localized: "Opens Privacy & Security › Microphone."))
                     }
                 } label: {
                     HStack(spacing: Theme.Spacing.lg) {
@@ -130,23 +139,25 @@ struct PermissionsSettingsView: View {
 
     private var accessibilityStatus: (title: String, symbol: String, tint: Color) {
         accessibilityTrusted
-            ? ("Granted", "checkmark.circle.fill", .green)
-            : ("Not granted", "exclamationmark.triangle.fill", .orange)
+            ? (String(localized: "Granted"), "checkmark.circle.fill", .green)
+            : (String(localized: "Not granted"), "exclamationmark.triangle.fill", .orange)
     }
 
     private var calendarStatus: (title: String, symbol: String, tint: Color) {
         switch calendarAccess {
-        case .granted: return ("Granted", "checkmark.circle.fill", .green)
-        case .notDetermined: return ("Not asked yet", "questionmark.circle.fill", .secondary)
-        case .denied: return ("Not granted", "exclamationmark.triangle.fill", .orange)
+        case .granted: return (String(localized: "Granted"), "checkmark.circle.fill", .green)
+        case .notDetermined:
+            return (String(localized: "Not asked yet"), "questionmark.circle.fill", .secondary)
+        case .denied: return (String(localized: "Not granted"), "exclamationmark.triangle.fill", .orange)
         }
     }
 
     private var microphoneStatus: (title: String, symbol: String, tint: Color) {
         switch microphoneAccess {
-        case .authorized: return ("Granted", "checkmark.circle.fill", .green)
-        case .notDetermined: return ("Not asked yet", "questionmark.circle.fill", .secondary)
-        default: return ("Not granted", "exclamationmark.triangle.fill", .orange)
+        case .authorized: return (String(localized: "Granted"), "checkmark.circle.fill", .green)
+        case .notDetermined:
+            return (String(localized: "Not asked yet"), "questionmark.circle.fill", .secondary)
+        default: return (String(localized: "Not granted"), "exclamationmark.triangle.fill", .orange)
         }
     }
 

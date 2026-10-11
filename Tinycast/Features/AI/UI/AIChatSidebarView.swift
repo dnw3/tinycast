@@ -23,7 +23,9 @@ struct AIChatSidebarView: View {
         let results = history.search(query)
         var sections: [ChatSection] = []
         let pinned = results.filter(\.isPinned)
-        if !pinned.isEmpty { sections.append(ChatSection(title: "Pinned", conversations: pinned)) }
+        if !pinned.isEmpty {
+            sections.append(ChatSection(title: String(localized: "Pinned"), conversations: pinned))
+        }
         for conversation in results where !conversation.isPinned {
             let title = DateBucket(for: conversation.updatedAt).title
             if sections.last?.title == title {
@@ -121,7 +123,7 @@ struct AIChatSidebarView: View {
 
     @ViewBuilder private func menu(for conversation: ChatConversation) -> some View {
         Button(
-            conversation.isPinned ? "Unpin Chat" : "Pin Chat",
+            conversation.isPinned ? String(localized: "Unpin Chat") : String(localized: "Pin Chat"),
             systemImage: conversation.isPinned ? "pin.slash" : "pin"
         ) {
             coordinator.togglePin(id: conversation.id)
@@ -182,12 +184,12 @@ private struct ChatSidebarRow: View {
             if isAnswering {
                 ProgressView()
                     .controlSize(.mini)
-                    .accessibilityLabel("Answering")
+                    .accessibilityLabel(String(localized: "Answering"))
             } else if conversation.isPinned {
                 Image(systemName: "pin.fill")
                     .font(.caption)
                     .foregroundStyle(.tertiary)
-                    .accessibilityLabel("Pinned")
+                    .accessibilityLabel(String(localized: "Pinned"))
             }
         }
         // The whole cell, so the pointer never crosses a gap where no row is hovered.
@@ -231,7 +233,7 @@ private struct ChatSearchField: View {
                         .foregroundStyle(.tertiary)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Clear search")
+                .accessibilityLabel(String(localized: "Clear search"))
             }
         }
         .padding(.horizontal, Theme.Spacing.lg)
@@ -239,6 +241,6 @@ private struct ChatSearchField: View {
         .background { Color.clear.frosted(in: Capsule()) }
         .contentShape(.rect)
         .onTapGesture { focused = true }
-        .accessibilityLabel("Search chats")
+        .accessibilityLabel(String(localized: "Search chats"))
     }
 }

@@ -12,7 +12,8 @@ enum PopToRootTimeout: Int, CaseIterable, Identifiable, Sendable {
     var id: Int { rawValue }
 
     var title: String {
-        self == .immediately ? "Immediately" : "After \(rawValue) seconds"
+        self == .immediately
+            ? String(localized: "Immediately") : String(localized: "After \(rawValue) seconds")
     }
 
     var interval: TimeInterval { TimeInterval(rawValue) }
@@ -28,7 +29,9 @@ enum JoinWindow: Int, CaseIterable, Identifiable, Sendable {
 
     var id: Int { rawValue }
 
-    var title: String { rawValue == 1 ? "1 minute" : "\(rawValue) minutes" }
+    var title: String {
+        rawValue == 1 ? String(localized: "1 minute") : String(localized: "\(rawValue) minutes")
+    }
 }
 
 /// How early the calendar item picks the next event up. Zero, which `integer(forKey:)` also
@@ -42,7 +45,9 @@ enum MenuBarEvents: Int, CaseIterable, Identifiable, Sendable {
 
     var id: Int { rawValue }
 
-    var title: String { self == .today ? "Today" : "\(rawValue) minutes before" }
+    var title: String {
+        self == .today ? String(localized: "Today") : String(localized: "\(rawValue) minutes before")
+    }
 }
 
 /// The calendar's independent menu-bar presence. Zero matches an unset preference.
@@ -55,9 +60,9 @@ enum CalendarMenuBarDisplay: Int, CaseIterable, Identifiable, Sendable {
 
     var title: String {
         switch self {
-        case .disabled: "Disabled"
-        case .meetingIcon: "Meeting Icon"
-        case .meetingTitle: "Meeting Title"
+        case .disabled: String(localized: "Disabled")
+        case .meetingIcon: String(localized: "Meeting Icon")
+        case .meetingTitle: String(localized: "Meeting Title")
         }
     }
 }
@@ -73,10 +78,10 @@ enum CalendarLauncherLimit: Int, CaseIterable, Identifiable, Sendable {
 
     var title: String {
         switch self {
-        case .one: "1 next"
-        case .three: "3 next"
-        case .five: "5 next"
-        case .all: "All"
+        case .one: String(localized: "1 next")
+        case .three: String(localized: "3 next")
+        case .five: String(localized: "5 next")
+        case .all: String(localized: "All")
         }
     }
 
@@ -95,9 +100,9 @@ enum HideCurrentEvent: Int, CaseIterable, Identifiable, Sendable {
 
     var title: String {
         switch self {
-        case .dontHide: "Keep visible — show time left"
-        case .automatically: "Automatically"
-        default: "After \(rawValue) minutes"
+        case .dontHide: String(localized: "Keep visible — show time left")
+        case .automatically: String(localized: "Automatically")
+        default: String(localized: "After \(rawValue) minutes")
         }
     }
 
@@ -358,6 +363,10 @@ final class AppSettings {
 
     var notesShowsFormattingBar: Bool {
         didSet { defaults.set(notesShowsFormattingBar, forKey: Key.notesShowsFormattingBar.rawValue) }
+    }
+
+    var captureQuickSaveFolder: String? {
+        didSet { defaults.set(captureQuickSaveFolder, forKey: Key.captureQuickSaveFolder.rawValue) }
     }
 
     /// The notes folder as the user wrote it, `~` allowed; nil keeps it in Application Support.
@@ -739,6 +748,7 @@ final class AppSettings {
         notesShowsFormattingBar =
             defaults.object(forKey: Key.notesShowsFormattingBar.rawValue) == nil
             || defaults.bool(forKey: Key.notesShowsFormattingBar.rawValue)
+        captureQuickSaveFolder = defaults.string(forKey: Key.captureQuickSaveFolder.rawValue)
         notesFolder = defaults.string(forKey: Key.notesFolder.rawValue)
         aiEnabled = defaults.bool(forKey: Key.aiEnabled.rawValue)
         mcpEnabled = defaults.bool(forKey: Key.mcpEnabled.rawValue)

@@ -6,9 +6,6 @@ struct CaptureAnnotation: Codable, Equatable, Sendable, Identifiable {
         case line, curvedArrow, highlighter, ruler, spotlight, blur, erase, emoji, magnifier
 
         var title: String { self == .curvedArrow ? "Curved Arrow" : rawValue.capitalized }
-        var advanced: Bool {
-            [.line, .curvedArrow, .highlighter, .ruler, .spotlight, .blur, .erase, .emoji, .magnifier].contains(self)
-        }
         var key: String {
             switch self {
             case .select: "v"
@@ -60,6 +57,22 @@ struct CaptureAnnotation: Codable, Equatable, Sendable, Identifiable {
         }
     }
 
+    enum ArrowStyle: String, Codable, CaseIterable, Sendable {
+        case single, double, thick, open
+        var title: String { rawValue.capitalized }
+    }
+
+    enum ShapeStyle: String, Codable, CaseIterable, Sendable {
+        case outline, fill, both
+        var title: String {
+            switch self {
+            case .outline: "Outline"
+            case .fill: "Fill"
+            case .both: "Outline and Fill"
+            }
+        }
+    }
+
     enum Font: String, Codable, CaseIterable, Sendable {
         case system, serif, monospaced
         var title: String { rawValue.capitalized }
@@ -91,27 +104,73 @@ struct CaptureAnnotation: Codable, Equatable, Sendable, Identifiable {
     var color: CaptureColor?
     var reflection: CaptureReflection?
     var magnification: Double?
+    var arrowStyle: ArrowStyle?
+    var reversed: Bool?
+    var shapeStyle: ShapeStyle?
+    var cornerRadius: Double?
+    var controlPoint: CGPoint?
+    var controlCenter: CGPoint?
+    var textFormat: CaptureTextFormat?
+    var numberFormat: CaptureNumberFormat?
+    var numberLeader: Bool?
+    var smoothed: Bool?
+    var effectiveShapeStyle: ShapeStyle { shapeStyle ?? (filled == true ? .fill : .outline) }
     var rgba: [Double] { color?.rgba ?? ink.rgba }
+    var effectiveTextFormat: CaptureTextFormat {
+        textFormat ?? CaptureTextFormat(base: CaptureTextStyle(font: font ?? .system, size: fontSize ?? width * 6,
+            color: CaptureColor(red: UInt8((rgba[0] * 255).rounded()), green: UInt8((rgba[1] * 255).rounded()),
+                blue: UInt8((rgba[2] * 255).rounded()))))
+    }
+
+    var transformCenter: CGPoint {
+        let bounds = tool == .number ? numberBounds : drawingBounds
+        return controlCenter ?? CGPoint(x: bounds.midX, y: bounds.midY)
+    }
 
     var bounds: CGRect {
         let rect = drawingBounds
-        let angle = (rotation ?? 0) * .pi / 180
-        let width = abs(rect.width * cos(angle)) + abs(rect.height * sin(angle))
-        let height = abs(rect.width * sin(angle)) + abs(rect.height * cos(angle))
-        return CGRect(x: rect.midX - width / 2, y: rect.midY - height / 2, width: width, height: height)
+        let corners = [CGPoint(x: rect.minX, y: rect.minY), CGPoint(x: rect.maxX, y: rect.minY),
+            CGPoint(x: rect.minX, y: rect.maxY), CGPoint(x: rect.maxX, y: rect.maxY)].map(transformed)
+        let xs = corners.map(\.x), ys = corners.map(\.y)
+        return CGRect(x: xs.min()!, y: ys.min()!, width: xs.max()! - xs.min()!, height: ys.max()! - ys.min()!)
     }
 
     var curveControl: CGPoint {
+        if let controlPoint { return controlPoint }
         guard let first = points.first, let last = points.last else { return .zero }
         return CGPoint(x: (first.x + last.x) / 2 - (last.y - first.y) / 4,
             y: (first.y + last.y) / 2 + (last.x - first.x) / 4)
     }
 
+    var displayedControl: CGPoint? {
+        if tool == .curvedArrow { return transformed(curveControl) }
+        if tool == .number, numberLeader == true, points.count > 1, let last = points.last { return transformed(last) }
+        return nil
+    }
+
+    func transformed(_ point: CGPoint) -> CGPoint {
+        let center = transformCenter
+        let x = (point.x - center.x) * (reflection?.horizontal == true ? -1 : 1)
+        let y = (point.y - center.y) * (reflection?.vertical == true ? -1 : 1)
+        let angle = (rotation ?? 0) * .pi / 180
+        return CGPoint(x: center.x + x * cos(angle) - y * sin(angle),
+            y: center.y + x * sin(angle) + y * cos(angle))
+    }
+
+    func untransformed(_ point: CGPoint) -> CGPoint {
+        let center = transformCenter
+        let angle = -(rotation ?? 0) * .pi / 180
+        let x = point.x - center.x, y = point.y - center.y
+        return CGPoint(x: center.x + (x * cos(angle) - y * sin(angle)) * (reflection?.horizontal == true ? -1 : 1),
+            y: center.y + (x * sin(angle) + y * cos(angle)) * (reflection?.vertical == true ? -1 : 1))
+    }
+
     var drawingBounds: CGRect {
         guard let first = points.first else { return .zero }
         if tool == .number {
-            let side = max(28, width * 9)
-            return CGRect(x: first.x, y: first.y, width: side, height: side)
+            let badge = numberBounds
+            guard numberLeader == true, let last = points.last else { return badge }
+            return badge.union(CGRect(x: last.x - width / 2, y: last.y - width / 2, width: width, height: width))
         }
         let outline = tool == .curvedArrow ? points + [curveControl] : points
         return outline.dropFirst().reduce(CGRect(origin: first, size: .zero)) { rect, point in
@@ -122,19 +181,35 @@ struct CaptureAnnotation: Codable, Equatable, Sendable, Identifiable {
         }
     }
 
+    var numberBounds: CGRect {
+        let origin = points.first ?? .zero, side = max(28, width * 9)
+        return CGRect(x: origin.x, y: origin.y, width: side, height: side)
+    }
+
+    var numberLabel: String { numberFormat?.label ?? text }
+
     var isValid: Bool {
         !points.isEmpty && points.count <= 20_000 && width.isFinite && (1...128).contains(width)
             && points.allSatisfy {
                 $0.x.isFinite && $0.y.isFinite && abs($0.x) <= 30_000 && abs($0.y) <= 30_000
             }
             && text.utf8.count <= 32_000 && tool != .select && tool != .crop
+            && (textFormat.map { $0.isValid(for: text) } ?? true)
+            && (numberFormat.map(\.isValid) ?? true)
+            && (tool != .number || numberLeader != true || points.count > 1)
             && (rotation.map { $0.isFinite && (-180...180).contains($0) } ?? true)
             && (fontSize.map { $0.isFinite && (6...768).contains($0) } ?? true)
+            && (cornerRadius.map { $0.isFinite && (0...256).contains($0) } ?? true)
+            && [controlPoint, controlCenter].compactMap { $0 }.allSatisfy {
+                $0.x.isFinite && $0.y.isFinite && abs($0.x) <= 30_000 && abs($0.y) <= 30_000
+            }
             && (magnification.map { $0.isFinite && (2...8).contains($0) } ?? true)
     }
 
     mutating func move(by delta: CGSize) {
         points = points.map { CGPoint(x: $0.x + delta.width, y: $0.y + delta.height) }
+        controlPoint = controlPoint.map { CGPoint(x: $0.x + delta.width, y: $0.y + delta.height) }
+        controlCenter = controlCenter.map { CGPoint(x: $0.x + delta.width, y: $0.y + delta.height) }
     }
 
     mutating func sizeEmoji(_ size: Double, in bounds: CGRect) {

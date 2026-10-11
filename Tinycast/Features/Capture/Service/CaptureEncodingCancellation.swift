@@ -3,12 +3,9 @@ import Synchronization
 
 final class CaptureEncodingCancellation: @unchecked Sendable {
     private let writer: AVAssetWriter
-    private let reader: AVAssetReader?
     private let cancelled = Mutex(false)
 
-    init(writer: AVAssetWriter, reader: AVAssetReader? = nil) {
-        self.writer = writer; self.reader = reader
-    }
+    init(writer: AVAssetWriter) { self.writer = writer }
 
     // Only cancellation crosses threads; configuration and samples remain owned by the encoding task.
     func cancel() {
@@ -17,7 +14,6 @@ final class CaptureEncodingCancellation: @unchecked Sendable {
             value = true
             return true
         }) else { return }
-        reader?.cancelReading()
         writer.cancelWriting()
     }
 

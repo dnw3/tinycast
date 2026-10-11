@@ -4,7 +4,7 @@ import Foundation
 /// Window management's lists as settings.json spells them, each record with its shortcut and alias.
 enum WindowManagementFileFormat {
     /// Every command's chord or alias, nil for none; one of the wrong type has no entry and keeps its own.
-    typealias CommandTexts = (texts: [WindowCommand.ID: String?], problems: [String])
+    typealias CommandTexts = (texts: [WindowCommand.ID: String?], problems: [LocalizedStringResource])
 
     /// A list read back from the file: the records it could use, and what it had to skip.
     struct Decoded<Record> {
@@ -12,7 +12,7 @@ enum WindowManagementFileFormat {
         /// By record, nil for `null`; a field left out or of the wrong type has none, and keeps its value.
         var shortcuts: [UUID: String?] = [:]
         var aliases: [UUID: String?] = [:]
-        var problems: [String] = []
+        var problems: [LocalizedStringResource] = []
     }
 
     // MARK: - Command shortcuts
@@ -26,8 +26,8 @@ enum WindowManagementFileFormat {
     }
 
     /// A command the object leaves out is unbound, the same as one set to `null`.
-    static func commandShortcuts(from json: SettingsFileJSON) -> CommandTexts? {
-        commandTexts(from: json, noun: "a shortcut")
+    static func commandShortcuts(from json: SettingsFileJSON, locale: Locale = Locale(identifier: "en"), bundle: LocalizedStringResource.BundleDescription = .main) -> CommandTexts? {
+        commandTexts(from: json, noun: LocalizedStringResource("a shortcut", locale: locale, bundle: bundle))
     }
 
     // MARK: - Command aliases
@@ -39,17 +39,17 @@ enum WindowManagementFileFormat {
             })
     }
 
-    static func commandAliases(from json: SettingsFileJSON) -> CommandTexts? {
-        commandTexts(from: json, noun: "an alias")
+    static func commandAliases(from json: SettingsFileJSON, locale: Locale = Locale(identifier: "en"), bundle: LocalizedStringResource.BundleDescription = .main) -> CommandTexts? {
+        commandTexts(from: json, noun: LocalizedStringResource("an alias", locale: locale, bundle: bundle))
     }
 
-    private static func commandTexts(from json: SettingsFileJSON, noun: String) -> CommandTexts? {
+    private static func commandTexts(from json: SettingsFileJSON, noun: LocalizedStringResource) -> CommandTexts? {
         guard let members = json.members else { return nil }
         var texts = Dictionary(uniqueKeysWithValues: WindowCommand.ID.allCases.map { ($0, String?.none) })
-        var problems: [String] = []
+        var problems: [LocalizedStringResource] = []
         for member in members {
             guard let id = WindowCommand.ID(rawValue: member.key) else {
-                problems.append("no command is called “\(member.key)”")
+                problems.append(LocalizedStringResource("no command is called “\(member.key)”", locale: noun.locale, bundle: noun.bundle))
                 continue
             }
             switch member.value {
@@ -57,7 +57,7 @@ enum WindowManagementFileFormat {
             case .string(let text): texts[id] = text
             default:
                 texts.removeValue(forKey: id)
-                problems.append("“\(member.key)” needs \(noun) in quotes, or null")
+                problems.append(LocalizedStringResource("“\(member.key)” needs \(noun) in quotes, or null", locale: noun.locale, bundle: noun.bundle))
             }
         }
         return (texts, problems)
@@ -78,17 +78,17 @@ enum WindowManagementFileFormat {
         ])
     }
 
-    static func customSizes(from json: SettingsFileJSON) -> Decoded<CustomWindowSize>? {
+    static func customSizes(from json: SettingsFileJSON, locale: Locale = Locale(identifier: "en"), bundle: LocalizedStringResource.BundleDescription = .main) -> Decoded<CustomWindowSize>? {
         guard let items = json.items else { return nil }
         var decoded = Decoded<CustomWindowSize>()
         for (index, item) in items.enumerated() {
             guard let name = item["name"]?.string else {
-                decoded.problems.append("custom size \(index + 1) needs a “name”")
+                decoded.problems.append(LocalizedStringResource("custom size \(index + 1) needs a “name”", locale: locale, bundle: bundle))
                 continue
             }
-            let label = "custom size “\(name)”"
+            let label = LocalizedStringResource("custom size “\(name)”", locale: locale, bundle: bundle)
             guard let width = dimension(item["width"]), let height = dimension(item["height"]) else {
-                decoded.problems.append("\(label) needs a “width” and “height”, as \"60%\" or \"900pt\"")
+                decoded.problems.append(LocalizedStringResource("\(label) needs a “width” and “height”, as \"60%\" or \"900pt\"", locale: locale, bundle: bundle))
                 continue
             }
             let id = identity(of: item, kind: "custom-size", name: name, label: label, into: &decoded)
@@ -135,15 +135,15 @@ enum WindowManagementFileFormat {
         ])
     }
 
-    static func layouts(from json: SettingsFileJSON) -> Decoded<WindowLayout>? {
+    static func layouts(from json: SettingsFileJSON, locale: Locale = Locale(identifier: "en"), bundle: LocalizedStringResource.BundleDescription = .main) -> Decoded<WindowLayout>? {
         guard let items = json.items else { return nil }
         var decoded = Decoded<WindowLayout>()
         for (index, item) in items.enumerated() {
             guard let name = item["name"]?.string else {
-                decoded.problems.append("layout \(index + 1) needs a “name”")
+                decoded.problems.append(LocalizedStringResource("layout \(index + 1) needs a “name”", locale: locale, bundle: bundle))
                 continue
             }
-            let label = "layout “\(name)”"
+            let label = LocalizedStringResource("layout “\(name)”", locale: locale, bundle: bundle)
             let id = identity(of: item, kind: "layout", name: name, label: label, into: &decoded)
             var frontmostEntryID: UUID?
             var entries: [WindowLayoutEntry] = []
@@ -152,7 +152,7 @@ enum WindowManagementFileFormat {
                     let displayID = display["id"]?.string
                 else {
                     decoded.problems.append(
-                        "\(label): app \(position + 1) needs an “app” and a “display.id”")
+                        LocalizedStringResource("\(label): app \(position + 1) needs an “app” and a “display.id”", locale: locale, bundle: bundle))
                     continue
                 }
                 // Derived, not stored, so reading the same file twice yields the same layout.
@@ -220,20 +220,20 @@ enum WindowManagementFileFormat {
     }
 
     /// Recency and window numbers are left for the store to put back; the file never holds them.
-    static func rooms(from json: SettingsFileJSON) -> Decoded<Room>? {
+    static func rooms(from json: SettingsFileJSON, locale: Locale = Locale(identifier: "en"), bundle: LocalizedStringResource.BundleDescription = .main) -> Decoded<Room>? {
         guard let items = json.items else { return nil }
         var decoded = Decoded<Room>()
         for (index, item) in items.enumerated() {
             guard let name = item["name"]?.string else {
-                decoded.problems.append("room \(index + 1) needs a “name”")
+                decoded.problems.append(LocalizedStringResource("room \(index + 1) needs a “name”", locale: locale, bundle: bundle))
                 continue
             }
-            let label = "room “\(name)”"
+            let label = LocalizedStringResource("room “\(name)”", locale: locale, bundle: bundle)
             let id = identity(of: item, kind: "room", name: name, label: label, into: &decoded)
             var windows: [RoomWindow] = []
             for (position, window) in (item["windows"]?.items ?? []).enumerated() {
                 guard let bundleID = window["app"]?.string else {
-                    decoded.problems.append("\(label): window \(position + 1) needs an “app”")
+                    decoded.problems.append(LocalizedStringResource("\(label): window \(position + 1) needs an “app”", locale: locale, bundle: bundle))
                     continue
                 }
                 windows.append(
@@ -247,7 +247,7 @@ enum WindowManagementFileFormat {
                 if let kind = RoomLayoutKind(rawValue: spelled) {
                     layout = kind
                 } else {
-                    decoded.problems.append("\(label): no layout is called “\(spelled)”")
+                    decoded.problems.append(LocalizedStringResource("\(label): no layout is called “\(spelled)”", locale: locale, bundle: bundle))
                 }
             }
             var layoutsByDisplay: [String: RoomLayoutKind] = [:]
@@ -297,42 +297,42 @@ enum WindowManagementFileFormat {
 
     /// The record's own id, or one its name always yields when the file was written without one.
     private static func identity<Record>(
-        of item: SettingsFileJSON, kind: String, name: String, label: String,
+        of item: SettingsFileJSON, kind: String, name: String, label: LocalizedStringResource,
         into decoded: inout Decoded<Record>
     ) -> UUID {
         let derived = SettingsFileIdentity.uuid(for: kind + ":" + name.lowercased())
         guard let spelled = item["id"] else { return derived }
         guard let id = spelled.string.flatMap(UUID.init(uuidString:)) else {
-            decoded.problems.append("\(label): “id” isn't a UUID, so one was derived from the name")
+            decoded.problems.append(LocalizedStringResource("\(label): “id” isn't a UUID, so one was derived from the name", locale: label.locale, bundle: label.bundle))
             return derived
         }
         return id
     }
 
     private static func anchor<Record>(
-        _ json: SettingsFileJSON?, label: String, into decoded: inout Decoded<Record>
+        _ json: SettingsFileJSON?, label: LocalizedStringResource, into decoded: inout Decoded<Record>
     ) -> WindowLayoutAnchor {
         guard let spelled = json?.string else { return .center }
         guard let anchor = WindowLayoutAnchor(rawValue: spelled) else {
-            decoded.problems.append("\(label): no position is called “\(spelled)”")
+            decoded.problems.append(LocalizedStringResource("\(label): no position is called “\(spelled)”", locale: label.locale, bundle: label.bundle))
             return .center
         }
         return anchor
     }
 
     private static func point<Record>(
-        _ json: SettingsFileJSON?, label: String, into decoded: inout Decoded<Record>
+        _ json: SettingsFileJSON?, label: LocalizedStringResource, into decoded: inout Decoded<Record>
     ) -> (x: Double, y: Double) {
         guard let json else { return (0, 0) }
         guard let x = json["x"]?.number, let y = json["y"]?.number else {
-            decoded.problems.append("\(label): “offset” needs numbers for “x” and “y”")
+            decoded.problems.append(LocalizedStringResource("\(label): “offset” needs numbers for “x” and “y”", locale: label.locale, bundle: label.bundle))
             return (0, 0)
         }
         return (x, y)
     }
 
     private static func texts<Record>(
-        of item: SettingsFileJSON, id: UUID, label: String, into decoded: inout Decoded<Record>
+        of item: SettingsFileJSON, id: UUID, label: LocalizedStringResource, into decoded: inout Decoded<Record>
     ) {
         let fields: KeyValuePairs<String, WritableKeyPath<Decoded<Record>, [UUID: String?]>> = [
             "shortcut": \.shortcuts, "alias": \.aliases
@@ -342,7 +342,7 @@ enum WindowManagementFileFormat {
             case nil: continue
             case .null?: decoded[keyPath: texts].updateValue(nil, forKey: id)
             case .string(let text)?: decoded[keyPath: texts][id] = text
-            default: decoded.problems.append("\(label): “\(field)” needs quotes, or null")
+            default: decoded.problems.append(LocalizedStringResource("\(label): “\(field)” needs quotes, or null", locale: label.locale, bundle: label.bundle))
             }
         }
     }

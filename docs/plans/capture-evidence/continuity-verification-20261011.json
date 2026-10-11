@@ -1,0 +1,36 @@
+{
+  "verified_at": "2026-10-11T00:33:24.129337+00:00",
+  "scope": "Capture S4.2 continuity, customization sorting, save command routing and fixed-header matching",
+  "mechanical": {
+    "harnesses": 114,
+    "passed": 114,
+    "elapsed_seconds": 207,
+    "suite_log": "/private/tmp/tinycast-ux-continuity-suite.log",
+    "debug_log": "/private/tmp/tinycast-ux-continuity-debug-final.log",
+    "debug": "passed; only pre-existing AppIntents metadata notice",
+    "lint_log": "/private/tmp/tinycast-ux-continuity-lint-final.log",
+    "lint": "passed; no new warnings",
+    "model_ui_imports": 0,
+    "diff_whitespace": "passed",
+    "release_log": "/private/tmp/tinycast-ux-continuity-release-final.log",
+    "release": "passed; stable designated requirement unchanged"
+  },
+  "browser_regression": "Shipped reader and policy accept fixed-header browser frames, reject reverse/duplicate and preserve strip pixels; not a native SCK end-to-end result",
+  "native": {
+    "save_shortcuts": "pending, including active annotation text editor",
+    "drag_reordering": "pending",
+    "transition_and_toolbar": "pending",
+    "fixed_header_scroll_multi_screen": "pending; last user result failed with previous installed build"
+  },
+  "installation": {
+    "installed_at": "2026-10-11T00:34:23.942698+00:00",
+    "installed_path": "/Applications/Tinycast.app",
+    "branch": "dnw/capture-workspace",
+    "executable_sha256": "505f5dec3959ce7d86becc295474cf38b6ab130c003aa8b72e23387706d76be3",
+    "pids": [
+      54748
+    ],
+    "signature_verified": true,
+    "receipt": "/Users/bytedance/code/github/tinycast/build/install-backups/efficiency-install-bc5cec9611.json"
+  }
+}

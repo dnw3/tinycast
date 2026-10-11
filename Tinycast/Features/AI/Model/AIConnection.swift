@@ -351,16 +351,10 @@ struct AIHTTPConfiguration: Equatable, Sendable {
 }
 
 enum AIEndpointPolicy {
-    enum ValidationError: LocalizedError, Equatable {
+    enum ValidationError: Error, Equatable {
         case invalidURL
         case insecureRemoteURL
 
-        var errorDescription: String? {
-            switch self {
-            case .invalidURL: return "Enter a valid provider base URL."
-            case .insecureRemoteURL: return "Remote AI providers require an HTTPS base URL."
-            }
-        }
     }
 
     static func validate(_ value: String) throws -> URL {

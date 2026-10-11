@@ -72,7 +72,7 @@ struct MCPSettingsSection: View {
         do {
             try coordinator.save(server, secrets: secrets)
         } catch {
-            return "The credentials could not be saved to your login Keychain."
+            return String(localized: "The credentials could not be saved to your login Keychain.")
         }
         editor = nil
         return nil
@@ -85,7 +85,10 @@ struct MCPSettingsSection: View {
             removalError = nil
         } catch {
             removalError =
-                "\(server.title) was kept: its credentials could not be removed from your login Keychain."
+                String(
+                    localized:
+                        "\(server.title) was kept: its credentials could not be removed from your login Keychain."
+                )
         }
     }
 }
@@ -103,20 +106,20 @@ private struct MCPServerRow: View {
         } trailing: {
             Button(action: onEdit) { Image(systemName: "pencil") }
                 .buttonStyle(.plain)
-                .help("Edit \(server.title)")
-                .accessibilityLabel("Edit \(server.title)")
+                .help(String(localized: "Edit \(server.title)"))
+                .accessibilityLabel(String(localized: "Edit \(server.title)"))
             Button(action: onRemove) {
                 Image(systemName: "trash").foregroundStyle(.red)
             }
             .buttonStyle(.plain)
-            .help("Remove \(server.title)")
-            .accessibilityLabel("Remove \(server.title)")
+            .help(String(localized: "Remove \(server.title)"))
+            .accessibilityLabel(String(localized: "Remove \(server.title)"))
         }
     }
 
     /// The slug leads, because it is the half a reader has to type into the composer.
     private var subtitle: String {
-        let state = server.isEnabled ? status.label : "Disabled"
-        return "@\(server.slug) · \(state) · \(server.transport.summary)"
+        let state = server.isEnabled ? status.label : String(localized: "Disabled")
+        return String(localized: "@\(server.slug) · \(state) · \(server.transport.summary)")
     }
 }

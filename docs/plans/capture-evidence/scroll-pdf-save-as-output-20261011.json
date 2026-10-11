@@ -1,0 +1,217 @@
+{
+  "dark_text_bands" : [
+    [
+      79,
+      136,
+      57
+    ],
+    [
+      246,
+      289,
+      43
+    ],
+    [
+      611,
+      668,
+      57
+    ],
+    [
+      777,
+      820,
+      43
+    ],
+    [
+      1142,
+      1199,
+      57
+    ],
+    [
+      1309,
+      1352,
+      43
+    ],
+    [
+      1674,
+      1731,
+      57
+    ],
+    [
+      1840,
+      1883,
+      43
+    ],
+    [
+      2205,
+      2262,
+      57
+    ],
+    [
+      2372,
+      2415,
+      43
+    ],
+    [
+      2737,
+      2794,
+      57
+    ],
+    [
+      2903,
+      2946,
+      43
+    ],
+    [
+      3268,
+      3325,
+      57
+    ],
+    [
+      3435,
+      3478,
+      43
+    ],
+    [
+      3800,
+      3857,
+      57
+    ],
+    [
+      3966,
+      4009,
+      43
+    ],
+    [
+      4331,
+      4388,
+      57
+    ],
+    [
+      4499,
+      4541,
+      42
+    ],
+    [
+      4863,
+      4920,
+      57
+    ],
+    [
+      5029,
+      5072,
+      43
+    ],
+    [
+      5394,
+      5451,
+      57
+    ],
+    [
+      5560,
+      5603,
+      43
+    ],
+    [
+      5926,
+      5983,
+      57
+    ]
+  ],
+  "full_decode" : true,
+  "height" : 6033,
+  "lines" : [
+    {
+      "text" : "ROW 001 \/ Segment 001 \/ Value 07919",
+      "top_px" : 49.37723111851983
+    },
+    {
+      "text" : "Unique registration content 000131 - retain this line",
+      "top_px" : 225.93824386423537
+    },
+    {
+      "text" : "ROW 002 \/ Segment 002 \/ Value 15838",
+      "top_px" : 580.55654747964729
+    },
+    {
+      "text" : "Unique registration content 000524 - retain this line",
+      "top_px" : 757.11755961854101
+    },
+    {
+      "text" : "ROW 003 \/ Segment 003 \/ Value 23757",
+      "top_px" : 1111.7147904426256
+    },
+    {
+      "text" : "Unique registration content 001179 - retain this line",
+      "top_px" : 1288.2968762537971
+    },
+    {
+      "text" : "ROW 004 \/ Segment 004 \/ Value 31676",
+      "top_px" : 1642.7887333537424
+    },
+    {
+      "text" : "Unique registration content 002096 - retain this line",
+      "top_px" : 1819.4761894871301
+    },
+    {
+      "text" : "ROW 005 \/ Segment 005 \/ Value 39595",
+      "top_px" : 2173.8626777659611
+    },
+    {
+      "text" : "Unique registration content 003275 - retain this line",
+      "top_px" : 2350.6555058475069
+    },
+    {
+      "text" : "ROW 006 \/ Segment 006 \/ Value 47514",
+      "top_px" : 2704.936621427933
+    },
+    {
+      "text" : "Unique registration content 004716 - retain this line",
+      "top_px" : 2881.8348228129576
+    },
+    {
+      "text" : "ROW 007 \/ Segment 007 \/ Value 55433",
+      "top_px" : 3236.0105650899045
+    },
+    {
+      "text" : "Unique registration content 006419 - retain this line",
+      "top_px" : 3419.6763733507478
+    },
+    {
+      "text" : "ROW 008 \/ Segment 008 \/ Value 63352",
+      "top_px" : 3767.0845080016293
+    },
+    {
+      "text" : "Unique registration content 008384 - retain this line",
+      "top_px" : 3944.1091556156889
+    },
+    {
+      "text" : "ROW 009 \/ Segment 009 \/ Value 71271",
+      "top_px" : 4298.1584516636003
+    },
+    {
+      "text" : "Unique registration content 010611 - retain this line",
+      "top_px" : 4467.7997954975499
+    },
+    {
+      "text" : "ROW 010 \/ Segment 010 \/ Value 79190",
+      "top_px" : 4822.1514066991094
+    },
+    {
+      "text" : "Unique registration content 013100 - retain this line",
+      "top_px" : 5006.2570429526995
+    },
+    {
+      "text" : "ROW 011 \/ Segment 011 \/ Value 87109",
+      "top_px" : 5353.2253494212982
+    },
+    {
+      "text" : "Unique registration content 015851 - retain this line",
+      "top_px" : 5537.3309872194868
+    },
+    {
+      "text" : "ROW 012 \/ Segment 012 \/ Value 95028",
+      "top_px" : 5890.8534199070928
+    }
+  ],
+  "path" : "\/Users\/bytedance\/code\/github\/tinycast\/docs\/plans\/capture-evidence\/scroll-pdf-save-as-native-20261011.png",
+  "width" : 1700
+}

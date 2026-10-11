@@ -88,7 +88,7 @@ enum ExtensionStoreResponse {
     }
 }
 
-enum ExtensionStoreError: LocalizedError {
+enum ExtensionStoreError: Error {
     case malformedResponse
     case rejected(String)
     case downloadFailed(String)
@@ -97,26 +97,4 @@ enum ExtensionStoreError: LocalizedError {
     case buildFailed(String)
     case notAnExtension
 
-    var errorDescription: String? {
-        switch self {
-        case .malformedResponse:
-            return "The server answered with something this version doesn't understand."
-        case .rejected(let message):
-            return message
-        case .downloadFailed(let reason):
-            return "Download failed: \(reason)"
-        case .noPackageManager:
-            return
-                "No package manager was found. Install pnpm, npm, Yarn or Bun, or add the folder "
-                + "it lives in to Custom search paths."
-        case .noNode:
-            return
-                "Node wasn't found. Install Node.js, add the folder it lives in to Custom search "
-                + "paths, or install this extension from the Raycast Store instead."
-        case .buildFailed(let output):
-            return "The extension didn't build: \(output)"
-        case .notAnExtension:
-            return "That download didn't contain a Raycast extension."
-        }
-    }
 }

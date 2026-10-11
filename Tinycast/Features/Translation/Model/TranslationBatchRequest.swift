@@ -43,13 +43,8 @@ struct TranslationBatchRequest: Sendable {
         return items.sorted { $0.id < $1.id }.map(\.text)
     }
 
-    enum Failure: LocalizedError {
+    enum Failure: Error {
         case invalidInput, invalidResponse
-        var errorDescription: String? {
-            switch self {
-            case .invalidInput: "Translate up to 32 paragraphs and 12 KB at a time. Select a smaller region."
-            case .invalidResponse: "The translation did not preserve every paragraph. Retry before applying it to the image."
-            }
-        }
+
     }
 }

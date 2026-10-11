@@ -10,15 +10,20 @@ final class CaptureCompletionController {
     func show(_ entry: CaptureHistoryEntry, coordinator: CaptureCoordinator) {
         close()
         let metrics = coordinator.metrics
-        guard coordinator.settings.showsCompletionThumbnail, let screen = NSScreen.underCursor ?? NSScreen.main else { return }
-        let size = CGSize(width: metrics.scaled(Theme.Size.captureCompletionThumbnail.width),
+        guard coordinator.settings.showsCompletionThumbnail,
+            let screen = NSScreen.underCursor ?? NSScreen.main
+        else { return }
+        let size = CGSize(
+            width: metrics.scaled(Theme.Size.captureCompletionThumbnail.width),
             height: metrics.scaled(Theme.Size.captureCompletionThumbnail.height))
         let frame = screen.visibleFrame
-        let panel = Panel(contentRect: CGRect(x: frame.maxX - size.width - metrics.spacing.xxl,
-            y: frame.minY + metrics.spacing.xxl, width: size.width, height: size.height),
+        let panel = Panel(
+            contentRect: CGRect(
+                x: frame.maxX - size.width - metrics.spacing.xxl,
+                y: frame.minY + metrics.spacing.xxl, width: size.width, height: size.height),
             styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
         panel.level = .floating
-        panel.title = "Capture Complete"
+        panel.title = String(localized: "Capture Complete")
         panel.isReleasedWhenClosed = false
         panel.hidesOnDeactivate = false
         panel.isOpaque = false
@@ -26,8 +31,11 @@ final class CaptureCompletionController {
         panel.hasShadow = true
         panel.collectionBehavior = [.moveToActiveSpace, .fullScreenAuxiliary]
         panel.onDismiss = { [weak self] in self?.close() }
-        let hosting = NSHostingView(rootView: Preview(entry: entry, coordinator: coordinator,
-            onHover: { [weak self] in self?.hovering = $0 }, onClose: { [weak self] in self?.close() })
+        let hosting = NSHostingView(
+            rootView: Preview(
+                entry: entry, coordinator: coordinator,
+                onHover: { [weak self] in self?.hovering = $0 }, onClose: { [weak self] in self?.close() }
+            )
             .environment(\.metrics, metrics))
         hosting.sizingOptions = []
         panel.contentView = hosting
@@ -74,19 +82,25 @@ final class CaptureCompletionController {
                 coordinator.openHistory(entry)
             } label: {
                 Group {
-                    if let image { Image(nsImage: image).resizable().scaledToFit() } else { ProgressView().controlSize(.small) }
+                    if let image {
+                        Image(nsImage: image).resizable().scaledToFit()
+                    } else {
+                        ProgressView().controlSize(.small)
+                    }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .padding(metrics.spacing.md)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Reopen capture, \(entry.title), \(entry.subtitle)")
-            .help("Click to reopen · Drag to copy the final file")
+            .accessibilityLabel(String(localized: "Reopen capture, \(entry.title), \(entry.subtitle)"))
+            .help(String(localized: "Click to reopen · Drag to copy the final file"))
             .onDrag { CaptureFileProvider.make(entry, repository: coordinator.repository) }
             .overlay(alignment: .topTrailing) {
-                CaptureIconButton(title: "Dismiss Capture Thumbnail", symbol: "xmark", action: onClose)
-                    .padding(metrics.spacing.xxs)
+                CaptureIconButton(
+                    title: String(localized: "Dismiss Capture Thumbnail"), symbol: "xmark", action: onClose
+                )
+                .padding(metrics.spacing.xxs)
             }
             .background(Theme.Colors.panelScrim).background(GlassEffectView())
             .clipShape(RoundedRectangle(cornerRadius: metrics.radius.row))

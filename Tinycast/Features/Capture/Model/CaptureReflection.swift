@@ -50,8 +50,10 @@ struct CaptureReflection: Codable, Equatable, Sendable {
         }
         result.edit.annotations = document.edit.annotations.map { original in
             var annotation = original
-            let bounds = original.drawingBounds, reflected = operation.rect(bounds, in: document.bounds)
-            annotation.move(by: CGSize(width: reflected.minX - bounds.minX, height: reflected.minY - bounds.minY))
+            let center = original.transformCenter
+            annotation.move(by: CGSize(
+                width: axis == .horizontal ? document.bounds.minX + document.bounds.maxX - center.x * 2 : 0,
+                height: axis == .vertical ? document.bounds.minY + document.bounds.maxY - center.y * 2 : 0))
             if let rotation = original.rotation { annotation.rotation = -rotation }
             var reflection = original.reflection ?? .init()
             reflection.toggle(axis)

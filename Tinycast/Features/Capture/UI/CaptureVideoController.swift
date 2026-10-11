@@ -13,18 +13,21 @@ final class CaptureVideoController: NSObject, NSWindowDelegate {
         self.coordinator = coordinator
         if focusExisting() { return }
         let metrics = coordinator.metrics
-        let size = CGSize(width: metrics.scaled(Theme.Size.captureEditor.width),
+        let size = CGSize(
+            width: metrics.scaled(Theme.Size.captureEditor.width),
             height: metrics.scaled(Theme.Size.captureEditor.height))
-        let window = NSWindow(contentRect: CGRect(origin: .zero, size: size),
+        let window = NSWindow(
+            contentRect: CGRect(origin: .zero, size: size),
             styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
-        window.title = "Recording"
+        window.title = String(localized: "Recording")
         window.isReleasedWhenClosed = false
         window.isRestorable = false
         window.titlebarAppearsTransparent = true
         window.contentMinSize = Theme.Size.captureEditorMinimum
         window.delegate = self
-        let hosting = NSHostingController(rootView: CaptureVideoView()
-            .environment(coordinator).environment(\.metrics, metrics))
+        let hosting = NSHostingController(
+            rootView: CaptureVideoView()
+                .environment(coordinator).environment(\.metrics, metrics))
         hosting.sizingOptions = []
         window.contentViewController = hosting
         window.setContentSize(size)

@@ -11,14 +11,16 @@ extension CaptureCoordinator {
 
     func writeCaptureFile(_ url: URL) throws {
         let item = NSPasteboardItem()
-        guard item.setString(url.absoluteString, forType: .fileURL), item.setString(url.path, forType: .string),
+        guard item.setString(url.absoluteString, forType: .fileURL),
+            item.setString(url.path, forType: .string),
             item.setString("capture", forType: ClipboardManager.internalType)
         else { throw CopyFailure.failed }
         core.clipboardManager.prepareForTinycastPasteboardMutation()
         NSPasteboard.general.clearContents()
         guard NSPasteboard.general.writeObjects([item]) else { throw CopyFailure.failed }
-        core.clipboardManager.synchronizeAfterTinycastPasteboardMutation(changeCount: NSPasteboard.general.changeCount)
-        core.showMessage("Copied capture file", tone: .success)
+        core.clipboardManager.synchronizeAfterTinycastPasteboardMutation(
+            changeCount: NSPasteboard.general.changeCount)
+        core.showMessage(String(localized: "Copied capture file"), tone: .success)
     }
 
     func previewHistory(_ entry: CaptureHistoryEntry) async throws {

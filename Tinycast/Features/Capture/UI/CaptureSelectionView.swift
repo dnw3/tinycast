@@ -22,17 +22,28 @@ final class CaptureSelectionView: NSView {
     private var pendingElementPoint: CGPoint?
     private var elementTask: Task<Void, Never>?
     private var observationGeneration = 0
+    private var pointerTracking: NSTrackingArea?
+    private var loupeFrame: CGRect?
 
     init(frame: CGRect, coordinator: CaptureCoordinator, workspace: CaptureWorkspaceState, screen: NSScreen) {
         self.coordinator = coordinator
         self.workspace = workspace
         self.screen = screen
         super.init(frame: frame)
-        setAccessibilityLabel("Capture selection")
+        setAccessibilityLabel(String(localized: "Capture selection"))
         if active {
-            let tools = NSHostingView(rootView: CaptureWorkspaceToolbar(workspace: workspace)
+            let tools = NSHostingView(
+                rootView: CaptureWorkspaceToolbar(
+                    workspace: workspace,
+                    availableWidth: min(
+                        frame.width - 2 * coordinator.metrics.spacing.md,
+                        coordinator.metrics.scaled(Theme.Size.captureWorkspaceBar.width))
+                )
                 .environment(coordinator).environment(\.metrics, coordinator.metrics))
-            let outputs = NSHostingView(rootView: CaptureWorkspaceOutputs()
+            let outputs = NSHostingView(
+                rootView: CaptureWorkspaceOutputs(
+                    availableHeight: frame.height - 2 * coordinator.metrics.spacing.md
+                )
                 .environment(coordinator).environment(\.metrics, coordinator.metrics))
             tools.clipsToBounds = false
             outputs.clipsToBounds = false
@@ -53,9 +64,13 @@ final class CaptureSelectionView: NSView {
     private var locked: Bool { workspace.busy || coordinator?.editor?.busy == true }
     private var selectedRect: CGRect? {
         if let selection = workspace.displays {
+            if case .displays(let rect) = workspace.preparation.pending {
+                return rect.offsetBy(dx: -screen.frame.minX, dy: -screen.frame.minY)
+            }
             return selection.region.map { $0.offsetBy(dx: -screen.frame.minX, dy: -screen.frame.minY) }
         }
         if let dragRect { return dragRect }
+        if case .region(let rect, _) = workspace.preparation.pending { return rect }
         if workspace.requiresScrollRegion { return nil }
         if workspace.selectingTarget { return hoverRect }
         return coordinator?.editor.flatMap { workspace.frame(for: $0.document) }
@@ -72,13 +87,14 @@ final class CaptureSelectionView: NSView {
             _ = workspace.choosingElement
             _ = workspace.requiresScrollRegion
             _ = workspace.busy
+            _ = workspace.preparation
             _ = workspace.selectionOptions
+            _ = coordinator.settings.toolbarConfiguration
             if active, let state = coordinator.editor {
                 _ = state.document.revision
                 _ = state.busy
                 _ = state.tool
                 _ = state.selected
-                _ = state.advancedTools
                 _ = state.imageAdjustments
                 _ = state.font
                 _ = state.codes
@@ -86,10 +102,13 @@ final class CaptureSelectionView: NSView {
                 _ = state.notice
                 let content = CaptureCanvas(
                     state: state, fixedScale: 1 / workspace.scale(for: state.document),
-                    moveSelection: { [weak self] delta, finished in self?.moveSelection(delta, finished: finished) })
+                    moveSelection: { [weak self] delta, finished in
+                        self?.moveSelection(delta, finished: finished)
+                    })
                 let view = content.inlineView(reusing: canvas)
                 if canvas !== view {
                     canvas?.removeFromSuperview()
+                    view.wantsLayer = true
                     addSubview(view, positioned: .below, relativeTo: tools)
                     canvas = view
                 }
@@ -99,6 +118,7 @@ final class CaptureSelectionView: NSView {
             canvas?.alphaValue = dragRect == nil ? 1 : 0
             if active { positionControls() }
             window?.invalidateCursorRects(for: self)
+            updatePointer()
             needsDisplay = true
         } onChange: { [weak self] in
             Task { @MainActor [weak self] in
@@ -115,9 +135,12 @@ final class CaptureSelectionView: NSView {
             width: min(bounds.width - 2 * gap, metrics.scaled(Theme.Size.captureWorkspaceBar.width)),
             height: metrics.scaled(Theme.Size.captureWorkspaceBar.height))
         var outputSize = CGSize(
-            width: metrics.scaled(Theme.Size.captureWorkspaceOutputs.width),
-            height: metrics.scaled(Theme.Size.captureWorkspaceOutputs.height))
+            width: metrics.scaled(Theme.Size.captureTool) + 2 * metrics.spacing.xs,
+            height: bounds.height - 2 * gap)
         if let tools {
+            tools.setFrameSize(size)
+            tools.layoutSubtreeIfNeeded()
+            size.width = min(size.width, max(1, tools.fittingSize.width))
             tools.setFrameSize(size)
             tools.layoutSubtreeIfNeeded()
             size.height = min(size.height, max(1, tools.fittingSize.height))
@@ -132,20 +155,22 @@ final class CaptureSelectionView: NSView {
         tools?.frame = placement.tools
         outputs?.frame = placement.outputs
         tools?.isHidden = dragRect != nil || workspace.displays?.region != nil
-        outputs?.isHidden = dragRect != nil || workspace.displays?.region != nil
+        outputs?.isHidden =
+            dragRect != nil || workspace.displays != nil || coordinator.editor == nil
+            || workspace.selectingTarget || workspace.request.mode != .screenshot
     }
 
     override func draw(_ dirtyRect: NSRect) {
         guard let context = NSGraphicsContext.current?.cgContext, let coordinator else { return }
-        let preview = workspace.displays?.snapshot(for: screen.frame)?.preview ?? (active ? workspace.preview : nil)
-        if let preview { context.draw(preview, in: bounds) }
+        let preview =
+            workspace.displays?.snapshot(for: screen.frame)?.preview ?? (active ? workspace.preview : nil)
+        defer { drawLoupe(in: context, image: preview) }
+        guard active || workspace.displays != nil, preview != nil, let rect = selectedRect else { return }
+        let mask = NSBezierPath(rect: bounds)
+        mask.appendRect(rect.intersection(bounds))
+        mask.windingRule = .evenOdd
         NSColor.black.withAlphaComponent(0.35).setFill()
-        bounds.fill()
-        guard active || workspace.displays != nil, let preview, let rect = selectedRect else { return }
-        context.saveGState()
-        context.clip(to: rect)
-        context.draw(preview, in: bounds)
-        context.restoreGState()
+        mask.fill()
         NSColor.controlAccentColor.setStroke()
         NSBezierPath(rect: rect).stroke()
         if !workspace.selectingTarget, workspace.displays == nil {
@@ -160,17 +185,22 @@ final class CaptureSelectionView: NSView {
         }
         let scale = workspace.displays?.snapshots.map(\.display.scale).max() ?? workspace.target.scale
         let dimensions = "\(Int(rect.width * scale)) × \(Int(rect.height * scale))"
-        let text = NSAttributedString(string: dimensions, attributes: [
-            .font: coordinator.metrics.typography.chipNSFont,
-            .foregroundColor: NSColor.white, .backgroundColor: NSColor.black.withAlphaComponent(0.7)
-        ])
-        text.draw(at: CGPoint(
-            x: max(0, rect.minX),
-            y: min(bounds.maxY - text.size().height, rect.maxY + coordinator.metrics.spacing.sm)))
+        let text = NSAttributedString(
+            string: dimensions,
+            attributes: [
+                .font: coordinator.metrics.typography.chipNSFont,
+                .foregroundColor: NSColor.white, .backgroundColor: NSColor.black.withAlphaComponent(0.7)
+            ])
+        text.draw(
+            at: CGPoint(
+                x: max(0, rect.minX),
+                y: min(bounds.maxY - text.size().height, rect.maxY + coordinator.metrics.spacing.sm)))
     }
 
     private func hitHandle(_ point: CGPoint) -> CaptureSelectionGeometry.Handle? {
-        guard workspace.displays == nil, !workspace.selectingTarget, let rect = selectedRect else { return nil }
+        guard workspace.displays == nil, !workspace.selectingTarget, let rect = selectedRect else {
+            return nil
+        }
         return CaptureSelectionGeometry.Handle.allCases.first {
             let anchor = CaptureSelectionGeometry.point($0, in: rect)
             return hypot(point.x - anchor.x, point.y - anchor.y) <= Theme.Size.captureHandle
@@ -204,7 +234,8 @@ final class CaptureSelectionView: NSView {
 
     override func mouseDragged(with event: NSEvent) {
         if let selection = workspace.displays, !locked {
-            selection.region = CaptureGeometry.selection(from: anchor, to: screenPoint(event), in: selection.bounds)
+            selection.region = CaptureGeometry.selection(
+                from: anchor, to: screenPoint(event), in: selection.bounds)
             return
         }
         guard active, !locked, !workspace.choosingWindow else { return }
@@ -215,27 +246,35 @@ final class CaptureSelectionView: NSView {
             pendingElementPoint = nil
             originalRect = nil
         }
-        let point = workspace.snaps && !event.modifierFlags.contains(.option)
-            ? CaptureSelectionConstraint.snapped(rawPoint, edges: snapEdges, tolerance: Theme.Size.captureHandle)
+        let point =
+            workspace.snaps && !event.modifierFlags.contains(.option)
+            ? CaptureSelectionConstraint.snapped(
+                rawPoint, edges: snapEdges, tolerance: Theme.Size.captureHandle)
             : rawPoint
         let ratio = event.modifierFlags.contains(.shift) ? 1 : workspace.aspect.ratio
         if let handle, let originalRect {
-            dragRect = CaptureSelectionConstraint.resized(originalRect, handle: handle, to: point, ratio: ratio, in: bounds)
+            dragRect = CaptureSelectionConstraint.resized(
+                originalRect, handle: handle, to: point, ratio: ratio, in: bounds)
         } else if workspace.request.mode == .scrolling, let originalRect, originalRect.contains(anchor) {
             dragRect = CaptureSelectionGeometry.moved(
                 originalRect, by: CGSize(width: point.x - anchor.x, height: point.y - anchor.y), in: bounds)
-        } else { dragRect = CaptureSelectionConstraint.selection(from: anchor, to: point, ratio: ratio, in: bounds) }
+        } else {
+            dragRect = CaptureSelectionConstraint.selection(from: anchor, to: point, ratio: ratio, in: bounds)
+        }
         canvas?.alphaValue = 0
         positionControls()
         needsDisplay = true
     }
 
     private var snapEdges: [CGRect] {
-        [bounds] + workspace.target.windows.map { window in
-            CGRect(x: window.frame.minX - screen.frame.minX,
-                y: (NSScreen.primary?.frame.maxY ?? 0) - window.frame.maxY - screen.frame.minY,
-                width: window.frame.width, height: window.frame.height).intersection(bounds)
-        }.filter { !$0.isNull && !$0.isEmpty }
+        [bounds]
+            + workspace.target.windows.map { window in
+                CGRect(
+                    x: window.frame.minX - screen.frame.minX,
+                    y: (NSScreen.primary?.frame.maxY ?? 0) - window.frame.maxY - screen.frame.minY,
+                    width: window.frame.width, height: window.frame.height
+                ).intersection(bounds)
+            }.filter { !$0.isNull && !$0.isEmpty }
     }
 
     override func mouseUp(with event: NSEvent) {
@@ -249,11 +288,15 @@ final class CaptureSelectionView: NSView {
             if let hoverWindow { coordinator?.selectWindow(hoverWindow) }
         } else if workspace.choosingElement {
             let point = screenPoint(event)
-            if elementPoint == point, let hoverRect { coordinator?.selectRegion(hoverRect) } else {
+            if elementPoint == point, let hoverRect {
+                coordinator?.selectRegion(hoverRect)
+            } else {
                 pendingElementPoint = point
                 updateElement(at: point)
             }
-        } else if let dragRect { coordinator?.selectRegion(dragRect) }
+        } else if let dragRect {
+            coordinator?.selectRegion(dragRect)
+        }
         dragRect = nil
         originalRect = nil
         handle = nil
@@ -275,20 +318,78 @@ final class CaptureSelectionView: NSView {
         needsDisplay = true
     }
 
-    override func mouseMoved(with event: NSEvent) {
-        if workspace.choosingWindow { updateWindow() }
-        if workspace.choosingElement { updateElement(at: screenPoint(event)) }
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        if let pointerTracking { removeTrackingArea(pointerTracking) }
+        let area = NSTrackingArea(
+            rect: .zero,
+            options: [.activeInKeyWindow, .inVisibleRect, .mouseMoved, .mouseEnteredAndExited, .cursorUpdate],
+            owner: self)
+        addTrackingArea(area)
+        pointerTracking = area
     }
 
-    override func resetCursorRects() {
-        guard !locked else { return }
-        addCursorRect(bounds, cursor: workspace.selectingTarget ? .pointingHand : .crosshair)
-        guard workspace.displays == nil else { return }
-        guard !workspace.selectingTarget, let rect = selectedRect else { return }
-        if workspace.request.mode == .scrolling { addCursorRect(rect, cursor: .openHand) }
-        for handle in CaptureSelectionGeometry.Handle.allCases {
-            let point = CaptureSelectionGeometry.point(handle, in: rect)
-            let position: NSCursor.FrameResizePosition = switch handle {
+    override func mouseEntered(with event: NSEvent) { updatePointer() }
+    override func mouseExited(with event: NSEvent) { needsDisplay = true }
+    override func cursorUpdate(with event: NSEvent) { updatePointer() }
+
+    func updatePointer() {
+        guard let window, window.isVisible, window.isKeyWindow else { return }
+        let point = convert(window.convertPoint(fromScreen: NSEvent.mouseLocation), from: nil)
+        guard bounds.contains(point) else { return }
+        let overControls = [tools, outputs].contains { view in
+            view.map { !$0.isHidden && $0.frame.contains(point) } ?? false
+        }
+        let cursor: NSCursor
+        if locked || overControls {
+            cursor = .arrow
+        } else if workspace.selectingTarget {
+            cursor = .pointingHand
+        } else if let handle = hitHandle(point) {
+            cursor = resizeCursor(for: handle)
+        } else if let rect = selectedRect {
+            if rect.contains(point), workspace.request.mode == .scrolling {
+                cursor = .openHand
+            } else if rect.contains(point), let state = coordinator?.editor {
+                cursor =
+                    state.pickingColor
+                    ? .crosshair
+                    : state.tool == .text ? .iBeam : state.tool == .select ? .arrow : .crosshair
+            } else {
+                cursor = .arrow
+            }
+        } else {
+            cursor = .crosshair
+        }
+        cursor.set()
+        if let loupeFrame { setNeedsDisplay(loupeFrame) }
+        if coordinator?.editor == nil, let metrics = coordinator?.metrics {
+            let frame = CaptureSelectionLoupe.frame(at: point, bounds: bounds, metrics: metrics)
+            setNeedsDisplay(frame)
+            loupeFrame = frame
+        } else {
+            loupeFrame = nil
+        }
+    }
+
+    private func drawLoupe(in context: CGContext, image: CGImage?) {
+        guard !locked, coordinator?.editor == nil, !workspace.selectingTarget,
+            workspace.displays == nil, let image, let window
+        else { return }
+        let point = convert(window.convertPoint(fromScreen: NSEvent.mouseLocation), from: nil)
+        guard bounds.contains(point),
+            ![tools, outputs].contains(where: { view in
+                view.map { !$0.isHidden && $0.frame.contains(point) } ?? false
+            })
+        else { return }
+        CaptureSelectionLoupe.draw(
+            image: image, at: point, bounds: bounds,
+            context: context, metrics: coordinator?.metrics ?? .standard)
+    }
+
+    private func resizeCursor(for handle: CaptureSelectionGeometry.Handle) -> NSCursor {
+        let position: NSCursor.FrameResizePosition =
+            switch handle {
             case .bottomLeft: .bottomLeft
             case .bottom: .bottom
             case .bottomRight: .bottomRight
@@ -298,10 +399,34 @@ final class CaptureSelectionView: NSView {
             case .topLeft: .topLeft
             case .left: .left
             }
+        return .frameResize(position: position, directions: [.inward, .outward])
+    }
+
+    override func mouseMoved(with event: NSEvent) {
+        updatePointer()
+        if workspace.choosingWindow { updateWindow() }
+        if workspace.choosingElement { updateElement(at: screenPoint(event)) }
+    }
+
+    override func resetCursorRects() {
+        guard !locked else { return }
+        addCursorRect(
+            bounds,
+            cursor: workspace.selectingTarget
+                ? .pointingHand
+                : selectedRect == nil ? .crosshair : .arrow)
+        for view in [tools, outputs].compactMap({ $0 }) where !view.isHidden {
+            addCursorRect(view.frame, cursor: .arrow)
+        }
+        guard workspace.displays == nil else { return }
+        guard !workspace.selectingTarget, let rect = selectedRect else { return }
+        if workspace.request.mode == .scrolling { addCursorRect(rect, cursor: .openHand) }
+        for handle in CaptureSelectionGeometry.Handle.allCases {
+            let point = CaptureSelectionGeometry.point(handle, in: rect)
             let side = Theme.Size.captureHandle
             addCursorRect(
                 CGRect(x: point.x - side, y: point.y - side, width: side * 2, height: side * 2),
-                cursor: .frameResize(position: position, directions: [.inward, .outward]))
+                cursor: resizeCursor(for: handle))
         }
     }
 
@@ -312,7 +437,8 @@ final class CaptureSelectionView: NSView {
             CGRect(
                 x: $0.frame.minX - workspace.target.screenFrame.minX,
                 y: (NSScreen.primary?.frame.maxY ?? 0) - $0.frame.maxY - workspace.target.screenFrame.minY,
-                width: $0.frame.width, height: $0.frame.height).intersection(bounds)
+                width: $0.frame.width, height: $0.frame.height
+            ).intersection(bounds)
         }
         positionControls()
         needsDisplay = true
@@ -329,7 +455,8 @@ final class CaptureSelectionView: NSView {
         if point != elementPoint { hoverRect = nil; needsDisplay = true }
         guard elementTask == nil else { return }
         guard let window = CaptureScreenService.window(at: point, target: workspace.target),
-            let pid = window.owningApplication?.processID else { return }
+            let pid = window.owningApplication?.processID
+        else { return }
         let top = NSScreen.primary?.frame.maxY ?? 0
         let quartz = CGPoint(x: point.x, y: top - point.y), windowFrame = window.frame
         elementTask = Task { [weak self] in
@@ -348,15 +475,20 @@ final class CaptureSelectionView: NSView {
                 self.elementPoint = point
                 self.hoverRect = rect.map { rect in
                     let clipped = rect.intersection(windowFrame)
-                    return CGRect(x: clipped.minX - self.screen.frame.minX,
+                    return CGRect(
+                        x: clipped.minX - self.screen.frame.minX,
                         y: top - clipped.maxY - self.screen.frame.minY,
-                        width: clipped.width, height: clipped.height).intersection(self.bounds)
+                        width: clipped.width, height: clipped.height
+                    ).intersection(self.bounds)
                 }.flatMap { CaptureGeometry.valid($0) ? $0 : nil }
                 if self.pendingElementPoint == point {
                     self.pendingElementPoint = nil
-                    if let rect = self.hoverRect { self.coordinator?.selectRegion(rect) } else {
+                    if let rect = self.hoverRect {
+                        self.coordinator?.selectRegion(rect)
+                    } else {
                         self.coordinator?.core.showMessage(
-                            "This element is unavailable. Drag to select a region.", tone: .neutral)
+                            String(localized: "This element is unavailable. Drag to select a region."),
+                            tone: .neutral)
                     }
                 }
                 self.positionControls()
@@ -370,7 +502,9 @@ final class CaptureSelectionView: NSView {
         if CaptureWorkspaceKeys.handle(event, coordinator: coordinator) { return }
         if !workspace.selectingTarget, event.modifierFlags.isDisjoint(with: [.command, .control, .option]),
             let tool = CaptureAnnotation.Tool.shortcut(event.charactersIgnoringModifiers)
-        { coordinator.editor?.tool = tool; return }
+        {
+            coordinator.editor?.tool = tool; return
+        }
         super.keyDown(with: event)
     }
 }

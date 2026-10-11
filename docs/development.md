@@ -219,3 +219,18 @@ left out and decided by hand in `CalcCurrency.contested`. The crypto tickers are
 they have no external source of truth, so `CalcCurrency.crypto` is hand-written, and that same list is
 the set of symbols the fetch asks for. Re-run the script when a currency is added or retired; nothing
 breaks in the meantime, since an unquoted code just reports "no exchange rate".
+
+## Localization
+
+The app uses `Localizable.xcstrings` and `InfoPlist.xcstrings` with English as the source language
+and Simplified Chinese as the first translation. macOS chooses the application language.
+SwiftUI literal text is extracted directly; app-owned strings passed through variables or AppKit
+must use `String(localized:)` at their display boundary. Keep model values, persistent IDs, user
+content, third-party strings, protocol fields and paths independent of the app language.
+
+Debug builds emit compiler `.stringsdata`. After introducing or changing text, run
+`./Scripts/sync-localization.sh build/DerivedData` (or your DerivedData path), complete the catalog's
+translations, then rebuild. `./Scripts/lint.sh` checks missing Chinese and format arguments;
+`./Scripts/run-tests.sh localization-test` compiles and loads the actual resources. These checks
+cover extracted keys; they do not prove that every ordinary runtime string has been migrated.
+See [the current scan](plans/localization-audit.md) for the remaining audit boundaries.

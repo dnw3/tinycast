@@ -60,10 +60,4 @@ enum Fallback: Hashable, Sendable {
         let known = storedIDs.compactMap { remaining.removeValue(forKey: $0) }
         return known + available.filter { remaining[$0.id] != nil }
     }
-
-    /// The section header. A long query is elided in the middle, so “with…” always survives.
-    static func sectionTitle(query: String, limit: Int = 72) -> String {
-        guard query.count > limit else { return "Use “\(query)” with…" }
-        return "Use “\(query.prefix(limit / 2))…\(query.suffix(limit - limit / 2 - 1))” with…"
-    }
 }

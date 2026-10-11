@@ -10,6 +10,7 @@ final class CaptureCoordinator {
     var scroll: ScrollCaptureSession?
     var workspace: CaptureWorkspaceState?
     var otherResult: CaptureEditorState?
+    var retainedWorkspace: CaptureWorkspaceState?
     var pendingCapture: CaptureAppendState?
     var historyEntries: [CaptureHistoryEntry] = []
     var historyQuery = ""
@@ -22,10 +23,12 @@ final class CaptureCoordinator {
     var uploadNotice: String?
     @ObservationIgnored unowned let core: AppCore
     @ObservationIgnored var task: Task<Void, Never>?
+    @ObservationIgnored var sourcePreparation: Task<Void, Never>?
     @ObservationIgnored var uploadAuthorization: Task<Void, Never>?
     @ObservationIgnored lazy var repository = CaptureRepository(
         root: AppPaths.applicationSupport().appendingPathComponent("captures"))
     @ObservationIgnored lazy var editorWindow = CaptureEditorController(activation: core.activationPolicy)
+    @ObservationIgnored let toolbarCustomization = CaptureToolbarCustomizationController()
     @ObservationIgnored let overlay = CaptureOverlayController()
     @ObservationIgnored let scrollPanel = ScrollCapturePanelController()
     @ObservationIgnored let countdownPanel = CaptureCountdownController()
@@ -50,7 +53,8 @@ final class CaptureCoordinator {
             savePanel.makeKeyAndOrderFront(nil)
             return true
         }
-        return previewWindow.focusExisting() || editorWindow.focusExisting()
+        return scrollPanel.focusExisting() || recordingPanel.focusExisting()
+            || previewWindow.focusExisting() || editorWindow.focusExisting()
             || videoWindow.focusExisting() || overlay.focusExisting()
     }
 
@@ -97,10 +101,14 @@ final class CaptureCoordinator {
             CapturePerformance.completed("selection-permission", since: permissionStarted)
             guard permitted else {
                 let allow = await self.core.confirm(
-                    title: "Allow Screen Recording",
+                    title: String(localized: "Allow Screen Recording"),
                     message:
-                        "Capture needs Screen Recording permission. After granting it, run the command again.",
-                    symbol: "camera", confirmTitle: "Open Permission", tone: .neutral, confirmRole: .standard)
+                        String(
+                            localized:
+                                "Capture needs Screen Recording permission. After granting it, run the command again."
+                        ),
+                    symbol: "camera", confirmTitle: String(localized: "Open Permission"), tone: .neutral,
+                    confirmRole: .standard)
                 if allow { CGRequestScreenCaptureAccess(); self.openScreenPermission() }
                 return
             }
@@ -133,7 +141,8 @@ final class CaptureCoordinator {
         let states = [editor, otherResult].compactMap { $0 }
         for state in states { state.finishEditing() }
         guard !states.contains(where: { $0.busy }) else {
-            core.showMessage("Finish or cancel the current operation first", tone: .neutral)
+            core.showMessage(
+                String(localized: "Finish or cancel the current operation first"), tone: .neutral)
             return false
         }
         overlay.suspend()
@@ -141,14 +150,18 @@ final class CaptureCoordinator {
         defer { if !closed { overlay.resume() } }
         for state in states where state.needsPreservation {
             let choice = await core.choose(
-                title: state.document.axis == nil ? "Keep this screenshot?" : "Keep this scrolling screenshot?",
-                message: "Save an editable draft to keep your original and annotations.", symbol: "camera",
+                title: state.document.axis == nil
+                    ? String(localized: "Keep this screenshot?")
+                    : String(localized: "Keep this scrolling screenshot?"),
+                message: String(localized: "Save an editable draft to keep your original and annotations."),
+                symbol: "camera",
                 options: [
-                    .init(title: "Cancel", role: .cancel), .init(title: "Discard", role: .destructive),
-                    .init(title: "Save Draft")
-                ], defaultIndex: 2)
-            if choice == 0 { return false }
-            if choice == 2 {
+                    .init(title: String(localized: "Save Draft")),
+                    .init(title: String(localized: "Discard"), role: .destructive),
+                    .init(title: String(localized: "Cancel"), role: .cancel)
+                ], defaultIndex: 0)
+            if Task.isCancelled || choice == 2 { return false }
+            if choice == 0 {
                 do { try await publishDraft(state) } catch { report(error); return false }
             }
         }
@@ -164,16 +177,22 @@ final class CaptureCoordinator {
         return true
     }
 
-    func finishScroll() {
+    func finishScroll(saveAs: Bool = false) {
         run { [weak self] in
             guard let self, let session = self.scroll, let source = self.scrollSource else { return }
             await session.stop()
+            try Task.checkCancellation()
+            guard self.scroll === session, self.scrollSource === source else { return }
             self.scrollPanel.close()
             self.scroll = nil; self.scrollSource = nil
             self.sessionObserver = nil
             if !session.document.pieces.isEmpty {
+                self.retainedWorkspace = nil
                 self.show(document: session.document, source: source)
-            } else { self.restoreOtherResult() }
+                if saveAs { try await self.saveAsCurrent() }
+            } else {
+                self.restoreOtherResult()
+            }
         }
     }
 
@@ -184,20 +203,27 @@ final class CaptureCoordinator {
             var keep = false
             if session.document.pieces.count > 1 {
                 let choice = await self.core.choose(
-                    title: "Keep captured content?", message: nil, symbol: "camera",
+                    title: String(localized: "Keep captured content?"), message: nil, symbol: "camera",
                     options: [
-                        .init(title: "Back", role: .cancel), .init(title: "Discard", role: .destructive),
-                        .init(title: "Keep Result")
-                    ], defaultIndex: 2)
-                if choice == 0 { return }
-                keep = choice == 2
+                        .init(title: String(localized: "Keep Result")),
+                        .init(title: String(localized: "Discard"), role: .destructive),
+                        .init(title: String(localized: "Back"), role: .cancel)
+                    ], defaultIndex: 0)
+                try Task.checkCancellation()
+                guard self.scroll === session, choice != 2 else { return }
+                keep = choice == 0
             }
             await session.stop()
             let source = self.scrollSource
             self.scrollPanel.close()
             self.scroll = nil; self.scrollSource = nil
             self.sessionObserver = nil
-            if keep, let source { self.show(document: session.document, source: source) } else { self.restoreOtherResult() }
+            if keep, let source {
+                self.retainedWorkspace = nil
+                self.show(document: session.document, source: source)
+            } else {
+                self.restoreOtherResult()
+            }
         }
     }
 
@@ -205,12 +231,22 @@ final class CaptureCoordinator {
         guard let scroll else { return }
         if scroll.automatic { scroll.automatic = false; return }
         if !Permissions.isAccessibilityTrusted() {
-            scroll.pause("Grant Accessibility permission, then choose Auto Scroll again")
+            scroll.pause(String(localized: "Grant Accessibility permission, then choose Auto Scroll again"))
             Permissions.ensureAccessibility()
             return
         }
-        scroll.resume()
+        resumeScroll(scroll)
         scroll.automatic = true
+    }
+
+    func toggleScrollPause() {
+        guard let scroll else { return }
+        if scroll.paused { resumeScroll(scroll) } else { scroll.pause() }
+    }
+
+    private func resumeScroll(_ scroll: ScrollCaptureSession) {
+        NSRunningApplication(processIdentifier: scroll.targetPID)?.activate()
+        scroll.resume()
     }
 
     func restartScroll() {
@@ -218,17 +254,21 @@ final class CaptureCoordinator {
             guard let self, let session = self.scroll else { return }
             session.pause()
             let choice = await self.core.choose(
-                title: "Select another region?", message: "Keep this result, or discard it and select again.",
+                title: String(localized: "Select another region?"),
+                message: String(localized: "Keep this result, or discard it and select again."),
                 symbol: "crop",
                 options: [
-                    .init(title: "Back", role: .cancel), .init(title: "Keep Result"),
-                    .init(title: "Discard and Reselect", role: .destructive)
-                ], defaultIndex: 1)
-            guard choice != 0 else { return }
+                    .init(title: String(localized: "Keep Result")),
+                    .init(title: String(localized: "Discard and Reselect"), role: .destructive),
+                    .init(title: String(localized: "Back"), role: .cancel)
+                ], defaultIndex: 0)
+            try Task.checkCancellation()
+            guard self.scroll === session, choice != 2 else { return }
             await session.stop()
             let source = self.scrollSource
             self.scrollPanel.close(); self.scroll = nil; self.scrollSource = nil; self.sessionObserver = nil
-            if choice == 1, let source, !session.document.pieces.isEmpty {
+            if choice == 0, let source, !session.document.pieces.isEmpty {
+                self.retainedWorkspace = nil
                 self.show(document: session.document, source: source)
             } else if let screen = NSScreen.screens.first(where: { $0.frame == session.target.screenFrame })
                 ?? NSScreen.underCursor
@@ -241,6 +281,10 @@ final class CaptureCoordinator {
     }
 
     func clearSelection() {
+        sourcePreparation?.cancel()
+        sourcePreparation = nil
+        workspace?.preparation.cancel()
+        toolbarCustomization.close()
         selectionSession?.advance(to: .closed)
         selectionSession = nil
         overlay.close()
@@ -262,6 +306,7 @@ final class CaptureCoordinator {
         scroll?.cancel()
         scroll = nil
         scrollSource = nil
+        retainedWorkspace = nil
         clearSelection()
         scrollPanel.close()
         countdownPanel.close()
@@ -298,8 +343,11 @@ final class CaptureCoordinator {
         scrollPanel.close()
         sessionObserver = nil
         if let source, !session.document.pieces.isEmpty {
+            retainedWorkspace = nil
             show(document: session.document, source: source)
-        } else { restoreOtherResult() }
+        } else {
+            restoreOtherResult()
+        }
     }
 
     func run(_ operation: @escaping @MainActor () async throws -> Void) {
@@ -307,16 +355,21 @@ final class CaptureCoordinator {
         task = Task { [weak self] in
             defer { self?.task = nil }
             do { try await operation() } catch is CancellationError {
-                self?.editor?.notice = "Cancelled"
+                self?.editor?.notice = String(localized: "Cancelled")
             } catch { self?.report(error) }
         }
     }
 
     func report(_ error: Error) {
-        editor?.notice = error.localizedDescription
-        recording?.notice = error.localizedDescription
-        video?.notice = error.localizedDescription
-        core.showMessage(error.localizedDescription, tone: .danger)
+        editor?.notice = Bundle.main.localizedString(
+            forKey: error.localizedDescription, value: nil, table: nil)
+        recording?.notice = Bundle.main.localizedString(
+            forKey: error.localizedDescription, value: nil, table: nil)
+        video?.notice = Bundle.main.localizedString(
+            forKey: error.localizedDescription, value: nil, table: nil)
+        core.showMessage(
+            Bundle.main.localizedString(forKey: error.localizedDescription, value: nil, table: nil),
+            tone: .danger)
     }
 
     func restoreFocus() {

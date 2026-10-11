@@ -46,10 +46,12 @@ enum CaptureRenderer {
         document: CaptureDocument, directory: URL, rect: CGRect, includingVectorAnnotations: Bool = true
     ) throws -> CGImage {
         if document.edit.presentation != nil {
-            return try CapturePresentationRenderer.image(document: document, directory: directory,
+            return try CapturePresentationRenderer.image(
+                document: document, directory: directory,
                 rect: rect, includingVectorAnnotations: includingVectorAnnotations)
         }
-        return try contentImage(document: document, directory: directory, rect: rect,
+        return try contentImage(
+            document: document, directory: directory, rect: rect,
             includingVectorAnnotations: includingVectorAnnotations)
     }
 
@@ -57,14 +59,17 @@ enum CaptureRenderer {
         document: CaptureDocument, directory: URL, rect: CGRect, includingVectorAnnotations: Bool
     ) throws -> CGImage {
         let reader = try CaptureCompositeReader(document: document, directory: directory)
-        var pixels = try CaptureImageProcessing.pixels(reader: reader, rect: rect, bounds: document.bounds,
+        var pixels = try CaptureImageProcessing.pixels(
+            reader: reader, rect: rect, bounds: document.bounds,
             adjustments: document.edit.adjustments)
         return try pixels.withUnsafeMutableBytes { bytes in
             var source = vImage_Buffer(
                 data: bytes.baseAddress, height: vImagePixelCount(rect.height),
                 width: vImagePixelCount(rect.width), rowBytes: Int(rect.width) * 4)
             var destination = source
-            guard vImagePremultiplyData_RGBA8888(&source, &destination, vImage_Flags(kvImageDoNotTile)) == kvImageNoError
+            guard
+                vImagePremultiplyData_RGBA8888(&source, &destination, vImage_Flags(kvImageDoNotTile))
+                    == kvImageNoError
             else { throw CaptureRasterError.invalidTile }
             guard
                 let context = CGContext(
@@ -84,9 +89,12 @@ enum CaptureRenderer {
                     CaptureAnnotationRenderer.draw([annotation], in: context)
                 }
             }
-            if includingVectorAnnotations { CaptureAnnotationRenderer.spotlight(document.edit.annotations, in: context) }
+            if includingVectorAnnotations {
+                CaptureAnnotationRenderer.spotlight(document.edit.annotations, in: context)
+            }
             for annotation in document.edit.annotations where annotation.tool == .magnifier {
-                try CaptureMagnifierRenderer.draw(annotation, document: document, directory: directory,
+                try CaptureMagnifierRenderer.draw(
+                    annotation, document: document, directory: directory,
                     rect: rect, context: context)
             }
             for annotation in document.edit.annotations where annotation.tool == .pixelate {
@@ -105,12 +113,16 @@ enum CaptureRenderer {
     ) throws {
         let intersection = annotation.bounds.intersection(rect).intersection(document.bounds).integral
         guard CaptureGeometry.valid(intersection) else { return }
-        let data = try CaptureImageProcessing.blurred(reader: reader, rect: intersection, bounds: document.bounds,
+        let data = try CaptureImageProcessing.blurred(
+            reader: reader, rect: intersection, bounds: document.bounds,
             adjustments: document.edit.adjustments, radius: min(24, max(2, Int(annotation.width * 2))))
         guard let provider = CGDataProvider(data: data as CFData),
-            let image = CGImage(width: Int(intersection.width), height: Int(intersection.height), bitsPerComponent: 8,
-                bitsPerPixel: 32, bytesPerRow: Int(intersection.width) * 4, space: CGColorSpace(name: CGColorSpace.sRGB)!,
-                bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedLast.rawValue), provider: provider,
+            let image = CGImage(
+                width: Int(intersection.width), height: Int(intersection.height), bitsPerComponent: 8,
+                bitsPerPixel: 32, bytesPerRow: Int(intersection.width) * 4,
+                space: CGColorSpace(name: CGColorSpace.sRGB)!,
+                bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedLast.rawValue),
+                provider: provider,
                 decode: nil, shouldInterpolate: false, intent: .defaultIntent)
         else { throw CaptureRasterError.invalidTile }
         context.saveGState()
@@ -121,13 +133,17 @@ enum CaptureRenderer {
         context.restoreGState()
     }
 
-    nonisolated static func color(document: CaptureDocument, directory: URL, at point: CGPoint) throws -> CaptureColor {
+    nonisolated static func color(
+        document: CaptureDocument, directory: URL, at point: CGPoint
+    ) throws -> CaptureColor {
         let bounds = document.outputBounds
         guard point.x.isFinite, point.y.isFinite else { throw CaptureRasterError.invalidRow }
-        let rect = CGRect(x: min(bounds.maxX - 1, max(bounds.minX, floor(point.x))),
+        let rect = CGRect(
+            x: min(bounds.maxX - 1, max(bounds.minX, floor(point.x))),
             y: min(bounds.maxY - 1, max(bounds.minY, floor(point.y))), width: 1, height: 1)
         let image = try image(document: document, directory: directory, rect: rect)
-        guard let data = image.dataProvider?.data, CFDataGetLength(data) >= 4, let bytes = CFDataGetBytePtr(data)
+        guard let data = image.dataProvider?.data, CFDataGetLength(data) >= 4,
+            let bytes = CFDataGetBytePtr(data)
         else { throw CaptureRasterError.invalidTile }
         let alpha = Double(bytes[3])
         func channel(_ index: Int) -> UInt8 {
@@ -155,7 +171,8 @@ enum CaptureRenderer {
             for x in stride(from: startX, to: Int(intersection.maxX), by: side) {
                 let block = CGRect(x: x, y: y, width: side, height: side).intersection(document.bounds)
                     .integral
-                let pixels = try CaptureImageProcessing.pixels(reader: reader, rect: block, bounds: document.bounds,
+                let pixels = try CaptureImageProcessing.pixels(
+                    reader: reader, rect: block, bounds: document.bounds,
                     adjustments: document.edit.adjustments)
                 var totals = [Double](repeating: 0, count: 4)
                 for offset in stride(from: 0, to: pixels.count, by: 4) {
@@ -175,18 +192,21 @@ enum CaptureRenderer {
         let rect = document.outputBounds
         let size = try CapturePixelSize(width: Int(rect.width), height: Int(rect.height))
         var band = -1
+        var bandOffset = 0
         var imageData: CFData?
         let bandHeight = max(1, min(32, 1_048_576 / size.rowBytes))
         try CapturePNGWriter.write(size: size, to: url) { row, buffer in
             let next = row / bandHeight
             if next != band {
                 band = next
+                let top = max(rect.minY, rect.minY + CGFloat(band * bandHeight) - 1)
+                let bottom = min(rect.maxY, rect.minY + CGFloat((band + 1) * bandHeight) + 1)
+                bandOffset = Int(rect.minY + CGFloat(band * bandHeight) - top)
                 imageData = try autoreleasepool {
                     let image = try image(
                         document: document, directory: directory,
                         rect: CGRect(
-                            x: rect.minX, y: rect.minY + CGFloat(band * bandHeight), width: rect.width,
-                            height: CGFloat(min(bandHeight, size.height - band * bandHeight))))
+                            x: rect.minX, y: top, width: rect.width, height: bottom - top))
                     return image.dataProvider?.data
                 }
             }
@@ -195,7 +215,8 @@ enum CaptureRenderer {
             }
             buffer.copyMemory(
                 from: UnsafeRawBufferPointer(
-                    start: start.advanced(by: (row % bandHeight) * size.rowBytes), count: size.rowBytes))
+                    start: start.advanced(by: (row % bandHeight + bandOffset) * size.rowBytes),
+                    count: size.rowBytes))
             try CapturePixelAlpha.unpremultiply(buffer)
         }
     }
@@ -219,7 +240,8 @@ enum CaptureRenderer {
                     let rect = CGRect(
                         x: x, y: y, width: min(512, Int(bounds.maxX) - x),
                         height: min(512, Int(bounds.maxY) - y))
-                    let tile = try image(document: document, directory: directory, rect: rect,
+                    let tile = try image(
+                        document: document, directory: directory, rect: rect,
                         includingVectorAnnotations: includingVectorAnnotations)
                     let left = ((rect.minX - bounds.minX) * CGFloat(width) / bounds.width).rounded()
                     let right = ((rect.maxX - bounds.minX) * CGFloat(width) / bounds.width).rounded()
@@ -239,7 +261,9 @@ enum CaptureRenderer {
 
     nonisolated static var exportFormats: [CaptureExportOptions.Format] {
         let identifiers = CGImageDestinationCopyTypeIdentifiers() as? [String] ?? []
-        return CaptureExportOptions.Format.allCases.filter { $0 == .webp || identifiers.contains($0.identifier) }
+        return CaptureExportOptions.Format.allCases.filter {
+            $0 == .webp || identifiers.contains($0.identifier)
+        }
     }
 
     nonisolated static func export(
@@ -253,10 +277,12 @@ enum CaptureRenderer {
             return
         }
         let image = try exportImage(document: document, directory: directory, size: size, options: options)
-        let temporary = url.deletingLastPathComponent().appendingPathComponent(".\(UUID()).\(options.format.rawValue)")
+        let temporary = url.deletingLastPathComponent().appendingPathComponent(
+            ".\(UUID()).\(options.format.rawValue)")
         defer { try? FileManager.default.removeItem(at: temporary) }
         if options.format == .webp {
-            try CaptureWebPEncoder.write(image, to: temporary, quality: options.quality,
+            try CaptureWebPEncoder.write(
+                image, to: temporary, quality: options.quality,
                 lossless: options.webPCompression == .lossless)
         } else {
             try imageIO(image, to: temporary, options: options)
@@ -268,14 +294,19 @@ enum CaptureRenderer {
     nonisolated static func exportImage(
         document: CaptureDocument, directory: URL, size: CapturePixelSize, options: CaptureExportOptions
     ) throws -> CGImage {
-        let source = try preview(document: document, directory: directory, maximum: max(size.width, size.height))
-        if options.format == .webp, options.profile == .sRGB, source.width == size.width, source.height == size.height {
+        let source = try preview(
+            document: document, directory: directory, maximum: max(size.width, size.height))
+        if options.format == .webp, options.profile == .sRGB, source.width == size.width,
+            source.height == size.height
+        {
             return source
         }
         let colorSpace = options.profile == .displayP3 ? CGColorSpace.displayP3 : CGColorSpace.sRGB
-        guard let context = CGContext(data: nil, width: size.width, height: size.height, bitsPerComponent: 8,
-            bytesPerRow: size.rowBytes, space: CGColorSpace(name: colorSpace)!,
-            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
+        guard
+            let context = CGContext(
+                data: nil, width: size.width, height: size.height, bitsPerComponent: 8,
+                bytesPerRow: size.rowBytes, space: CGColorSpace(name: colorSpace)!,
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
         else { throw CaptureRasterError.invalidSize }
         let rect = CGRect(x: 0, y: 0, width: size.width, height: size.height)
         if options.format == .jpeg {
@@ -287,7 +318,9 @@ enum CaptureRenderer {
         return image
     }
 
-    nonisolated private static func imageIO(_ image: CGImage, to url: URL, options: CaptureExportOptions) throws {
+    nonisolated private static func imageIO(
+        _ image: CGImage, to url: URL, options: CaptureExportOptions
+    ) throws {
         guard
             let destination = CGImageDestinationCreateWithURL(
                 url as CFURL, options.format.identifier as CFString, 1, nil)
@@ -301,7 +334,8 @@ enum CaptureRenderer {
         case unsupportedFormat
         var errorDescription: String? {
             switch self {
-            case .unsupportedFormat: "This format or quality is unavailable. Choose another export format."
+            case .unsupportedFormat:
+                String(localized: "This format or quality is unavailable. Choose another export format.")
             }
         }
     }

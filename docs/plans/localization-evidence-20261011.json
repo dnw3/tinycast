@@ -1,0 +1,61 @@
+{
+  "date": "2026-10-11",
+  "branch": "dnw/capture-workspace",
+  "automated": {
+    "harnesses": 115,
+    "fullRunSeconds": 215,
+    "fullRunPassed": 112,
+    "fixtureEnvironmentFailures": [
+      "ext-test",
+      "mcp-oauth-test",
+      "mcp-stdio-test"
+    ],
+    "fixtureRechecksPassed": true,
+    "additionalRechecks": [
+      "fallback-test",
+      "localization-test",
+      "ai-chat-test"
+    ],
+    "debug": "passed; no new warnings",
+    "lint": "passed",
+    "modelFrameworkImports": "none",
+    "catalogKeys": 2982,
+    "release": "signed build passed"
+  },
+  "native": {
+    "english": {
+      "systemPerAppLanguage": "English",
+      "launcherAndMenus": "passed",
+      "generalSettingsLayout": "passed",
+      "captureSettings": "passed",
+      "selectionAndEditorToolbarLabels": "passed"
+    },
+    "chinese": {
+      "systemDefault": "zh-Hans-CN",
+      "launcherAndMenus": "passed",
+      "generalAndCaptureSettingsLayout": "passed",
+      "toolbarCustomization": "passed",
+      "permissionAllowedLabel": "已允许",
+      "commandAliasAccessibility": "截取屏幕 的别名",
+      "settingsSearchQuery": "截图",
+      "settingsSearchDestination": "截图 › 长截图 › 方向",
+      "launcherFinalRecheck": "passed: Results, Configure Fallbacks, built-in fallback names localized"
+    },
+    "languageOverrideRemoved": true,
+    "testCaptureExported": false,
+    "censorMenuAccessibilityRecheck": "passed: 遮盖",
+    "testCaptureClosed": true
+  },
+  "installation": {
+    "installedAt": "20261011-170058",
+    "branch": "dnw/capture-workspace",
+    "installedApp": "/Applications/Tinycast.app",
+    "backup": "/Users/bytedance/code/github/tinycast/build/install-backups/Tinycast-before-localization-20261011-164006.app",
+    "sourceSHA256": "fd29e5af7d469d8f11726917992fd02e7f464177b0410d8f88420b50352e0c5c",
+    "installedSHA256": "fd29e5af7d469d8f11726917992fd02e7f464177b0410d8f88420b50352e0c5c",
+    "languages": [
+      "en",
+      "zh-Hans"
+    ]
+  }
+}

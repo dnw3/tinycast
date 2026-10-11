@@ -100,12 +100,13 @@ struct CaptureCanvas: NSViewRepresentable {
         private var textEditor: CaptureTextEditor?
         private var editingAnnotation: CaptureAnnotation?
         private var resizing = false
+        private var movingControl = false
         private var alignment: CaptureAnnotationPlacement.Result?
 
         init(state: CaptureEditorState) {
             self.state = state
             super.init(frame: .zero)
-            setAccessibilityLabel("Screenshot canvas")
+            setAccessibilityLabel(String(localized: "Screenshot canvas"))
             setAccessibilityRole(.image)
             state.finishText = { [weak self] in self?.finishText() }
             state.cancelEditingWork = { [weak self] in self?.sampling?.cancel() }
@@ -134,7 +135,10 @@ struct CaptureCanvas: NSViewRepresentable {
                     self?.needsDisplay = true
                 } catch is CancellationError {
                     return
-                } catch { self?.state.notice = error.localizedDescription }
+                } catch {
+                    self?.state.notice = Bundle.main.localizedString(
+                        forKey: error.localizedDescription, value: nil, table: nil)
+                }
             }
         }
 
@@ -151,7 +155,9 @@ struct CaptureCanvas: NSViewRepresentable {
 
         override func viewDidMoveToWindow() {
             super.viewDidMoveToWindow()
-            if window == nil { loading?.cancel(); loadingPreview?.cancel(); fitting?.cancel(); sampling?.cancel() }
+            if window == nil {
+                loading?.cancel(); loadingPreview?.cancel(); fitting?.cancel(); sampling?.cancel()
+            }
         }
 
         override func layout() {
@@ -188,13 +194,16 @@ struct CaptureCanvas: NSViewRepresentable {
                 return
             }
             guard let scroll = enclosingScrollView else { return }
-            if fixedScale == nil, state.followsViewport, fitID != state.fitRequest, scroll.contentSize.width > 0 {
+            if fixedScale == nil, state.followsViewport, fitID != state.fitRequest,
+                scroll.contentSize.width > 0
+            {
                 fitID = state.fitRequest
                 let fit: CaptureViewportPolicy.Fit =
                     state.fitMode
                     ?? (state.document.axis == .vertical
                         ? .width
-                        : state.document.axis == .horizontal ? .height
+                        : state.document.axis == .horizontal
+                            ? .height
                             : CaptureViewportPolicy.preferredFit(image: state.document.outputBounds.size))
                 let zoom = CaptureViewportPolicy.scale(
                     image: state.document.outputBounds.size,
@@ -230,30 +239,43 @@ struct CaptureCanvas: NSViewRepresentable {
                 currentZoom = zoom
             }
             let translation = state.translationReview
-            let paragraph = translation.flatMap { $0.translation.blocks.indices.contains($0.index)
-                ? $0.translation.blocks[$0.index].rect : nil }
-            let review = paragraph ?? (state.redactionCandidates.indices.contains(state.redactionIndex)
-                ? state.redactionCandidates[state.redactionIndex].rect : nil)
+            let paragraph = translation.flatMap {
+                $0.translation.blocks.indices.contains($0.index)
+                    ? $0.translation.blocks[$0.index].rect : nil
+            }
+            let review =
+                paragraph
+                ?? (state.redactionCandidates.indices.contains(state.redactionIndex)
+                    ? state.redactionCandidates[state.redactionIndex].rect : nil)
             if review != reviewedRect {
                 reviewedRect = review
                 if let review, fixedScale == nil {
                     let origin = CGPoint(
-                        x: max(0, min(frame.width - scroll.contentSize.width,
-                            (review.midX - bounds.minX) * zoom - scroll.contentSize.width / 2)),
-                        y: max(0, min(frame.height - scroll.contentSize.height,
-                            (review.midY - bounds.minY) * zoom - scroll.contentSize.height / 2)))
+                        x: max(
+                            0,
+                            min(
+                                frame.width - scroll.contentSize.width,
+                                (review.midX - bounds.minX) * zoom - scroll.contentSize.width / 2)),
+                        y: max(
+                            0,
+                            min(
+                                frame.height - scroll.contentSize.height,
+                                (review.midY - bounds.minY) * zoom - scroll.contentSize.height / 2)))
                     scroll.contentView.scroll(to: origin)
                     scroll.reflectScrolledClipView(scroll.contentView)
                 }
             }
             needsDisplay = true
-            scroll.contentView.scroll(to: scroll.contentView.constrainBoundsRect(scroll.contentView.bounds).origin)
+            scroll.contentView.scroll(
+                to: scroll.contentView.constrainBoundsRect(scroll.contentView.bounds).origin)
             window?.invalidateCursorRects(for: self)
         }
 
         override func resetCursorRects() {
             guard !state.busy else { return }
-            let cursor: NSCursor = state.pickingColor ? .crosshair
+            let cursor: NSCursor =
+                state.pickingColor
+                ? .crosshair
                 : state.tool == .text ? .iBeam : state.tool == .select ? .arrow : .crosshair
             addCursorRect(visibleRect, cursor: cursor)
         }
@@ -287,7 +309,9 @@ struct CaptureCanvas: NSViewRepresentable {
             }
             if preview == nil {
                 CaptureAnnotationRenderer.draw(
-                    state.document.edit.annotations.filter { [.pixelate, .blur, .magnifier].contains($0.tool) }, in: context)
+                    state.document.edit.annotations.filter {
+                        [.pixelate, .blur, .magnifier].contains($0.tool)
+                    }, in: context)
             }
             let selected = Array(requested.prefix(4))
             for (key, rect) in selected {
@@ -305,8 +329,11 @@ struct CaptureCanvas: NSViewRepresentable {
                 ![.pixelate, .blur, .magnifier].contains($0.tool) && $0.id != editingAnnotation?.id
             }
             if let draft {
-                annotations.removeAll { $0.id == draft.id }
-                annotations.append(draft)
+                if let index = annotations.firstIndex(where: { $0.id == draft.id }) {
+                    annotations[index] = draft
+                } else {
+                    annotations += state.snappedHighlights(draft) ?? [draft]
+                }
             }
             context.saveGState()
             context.clip(to: state.document.contentBounds)
@@ -323,17 +350,22 @@ struct CaptureCanvas: NSViewRepresentable {
             context.clip(to: state.document.contentBounds)
             context.addPath(CapturePresentationRenderer.path(state.document))
             context.clip()
-            CaptureAnnotationRenderer.draw(annotations.filter { $0.tool == .cover || $0.tool == .erase }, in: context)
+            CaptureAnnotationRenderer.draw(
+                annotations.filter { $0.tool == .cover || $0.tool == .erase }, in: context)
             context.restoreGState()
             for (index, candidate) in state.redactionCandidates.enumerated() {
                 context.saveGState()
-                context.setStrokeColor(NSColor.controlAccentColor.withAlphaComponent(candidate.included ? 1 : 0.3).cgColor)
+                context.setStrokeColor(
+                    NSColor.controlAccentColor.withAlphaComponent(candidate.included ? 1 : 0.3).cgColor)
                 context.setLineWidth((index == state.redactionIndex ? 3 : 1) / zoom)
                 context.setLineDash(phase: 0, lengths: [4 / zoom, 3 / zoom])
                 context.stroke(candidate.rect)
                 context.restoreGState()
             }
-            if let selected = draft ?? state.document.edit.annotations.first(where: { $0.id == state.selected }) {
+            if let selected = draft
+                ?? state.document.edit.annotations.first(where: { $0.id == state.selected }),
+                !(draft != nil && beforeDrag == nil && state.snappedHighlights(selected) != nil)
+            {
                 context.setStrokeColor(NSColor.controlAccentColor.cgColor)
                 context.setLineWidth(1 / zoom)
                 context.stroke(selected.bounds.insetBy(dx: -4 / zoom, dy: -4 / zoom))
@@ -343,18 +375,34 @@ struct CaptureCanvas: NSViewRepresentable {
                         x: selected.bounds.maxX - side / 2, y: selected.bounds.maxY - side / 2,
                         width: side, height: side))
             }
+            if let selected =
+                (draft ?? state.document.edit.annotations.first(where: { $0.id == state.selected })),
+                let point = selected.displayedControl
+            {
+                let side = Theme.Size.captureHandle / zoom
+                context.setStrokeColor(NSColor.controlAccentColor.cgColor)
+                context.setLineWidth(1 / zoom)
+                context.strokeEllipse(
+                    in: CGRect(
+                        x: point.x - side / 2, y: point.y - side / 2,
+                        width: side, height: side))
+            }
             if let image = state.selectedImage {
                 context.setStrokeColor(NSColor.controlAccentColor.cgColor)
                 context.setLineWidth(1 / zoom)
                 context.stroke(image.bounds.insetBy(dx: -4 / zoom, dy: -4 / zoom))
                 let side = Theme.Size.captureHandle / zoom
-                context.stroke(CGRect(x: image.bounds.maxX - side / 2, y: image.bounds.maxY - side / 2,
-                    width: side, height: side))
+                context.stroke(
+                    CGRect(
+                        x: image.bounds.maxX - side / 2, y: image.bounds.maxY - side / 2,
+                        width: side, height: side))
             }
-            if let review = state.translationReview, review.translation.blocks.indices.contains(review.index) {
+            if let review = state.translationReview, review.translation.blocks.indices.contains(review.index)
+            {
                 context.setStrokeColor(NSColor.controlAccentColor.cgColor)
                 context.setLineWidth(1 / zoom)
-                context.stroke(review.translation.blocks[review.index].rect.insetBy(dx: -2 / zoom, dy: -2 / zoom))
+                context.stroke(
+                    review.translation.blocks[review.index].rect.insetBy(dx: -2 / zoom, dy: -2 / zoom))
             }
             if let crop {
                 context.setStrokeColor(NSColor.controlAccentColor.cgColor)
@@ -398,13 +446,16 @@ struct CaptureCanvas: NSViewRepresentable {
                     do {
                         let image = try await CaptureWork.run {
                             try CaptureRenderer.image(
-                                document: snapshot, directory: source.directory, rect: rect, includingVectorAnnotations: false)
+                                document: snapshot, directory: source.directory, rect: rect,
+                                includingVectorAnnotations: false)
                         }
                         try Task.checkCancellation()
                         guard self?.generation == generation else { return }
                         self?.tiles[key] = image
                     } catch is CancellationError { return } catch {
-                        self?.state.notice = error.localizedDescription; return
+                        self?.state.notice = Bundle.main.localizedString(
+                            forKey: error.localizedDescription, value: nil, table: nil)
+                        return
                     }
                 }
                 self?.needsDisplay = true
@@ -427,6 +478,12 @@ struct CaptureCanvas: NSViewRepresentable {
             if state.pickingColor { sampleColor(at: anchor); return }
             movingSelection = false
             if state.tool == .select {
+                if let selected = state.document.edit.annotations.first(where: { $0.id == state.selected }),
+                    let control = selected.displayedControl,
+                    hypot(anchor.x - control.x, anchor.y - control.y) < 12 / zoom
+                {
+                    beforeDrag = selected; draft = selected; movingControl = true; return
+                }
                 if let image = state.selectedImage,
                     hypot(anchor.x - image.bounds.maxX, anchor.y - image.bounds.maxY) < 12 / zoom
                 {
@@ -440,7 +497,9 @@ struct CaptureCanvas: NSViewRepresentable {
                 let selected = state.document.edit.annotations.last {
                     $0.bounds.insetBy(dx: -8 / zoom, dy: -8 / zoom).contains(anchor)
                 }
-                if selected == nil, let image = state.document.imageLayers.last(where: { $0.bounds.contains(anchor) }) {
+                if selected == nil,
+                    let image = state.document.imageLayers.last(where: { $0.bounds.contains(anchor) })
+                {
                     state.selected = image.id
                     beforeImage = image
                     resizing = false
@@ -458,8 +517,21 @@ struct CaptureCanvas: NSViewRepresentable {
                     state.rotation = selected.rotation ?? 0
                     state.font = selected.font ?? .system
                     state.fontSize = selected.fontSize ?? selected.width * 6
-                    state.filled = selected.filled ?? false
-                    if selected.tool == .emoji { state.emoji = selected.text; state.emojiSize = selected.fontSize ?? 64 }
+                    if selected.tool == .text {
+                        state.adoptTextStyle(selected.effectiveTextFormat.style(at: 0))
+                    }
+                    state.shapeStyle = selected.effectiveShapeStyle
+                    state.cornerRadius = selected.cornerRadius ?? 0
+                    state.arrowStyle = selected.arrowStyle ?? .open
+                    state.reversed = selected.reversed ?? false
+                    if selected.tool == .number {
+                        state.numberStyle = selected.numberFormat?.style ?? .decimal
+                        state.numberLeader = selected.numberLeader ?? false
+                    }
+                    if selected.tool == .pen { state.smoothPen = selected.smoothed ?? false }
+                    if selected.tool == .emoji {
+                        state.emoji = selected.text; state.emojiSize = selected.fontSize ?? 64
+                    }
                     if selected.tool == .magnifier { state.magnification = selected.magnification ?? 2 }
                 }
                 if event.clickCount == 2, let selected, selected.tool == .text {
@@ -476,20 +548,32 @@ struct CaptureCanvas: NSViewRepresentable {
             } else if state.tool == .text {
                 startText(at: anchor)
             } else if state.tool == .emoji {
-                draft = CaptureAnnotation(id: UUID(), tool: .emoji,
+                draft = CaptureAnnotation(
+                    id: UUID(), tool: .emoji,
                     points: [anchor], text: state.emoji,
                     rotation: state.rotation, fontSize: state.emojiSize)
                 draft?.sizeEmoji(state.emojiSize, in: state.document.outputBounds)
             } else {
-                let number = state.document.edit.annotations.filter { $0.tool == .number }.count + 1
+                guard state.tool != .number || (1...3999).contains(state.nextNumber) else {
+                    state.notice = String(localized: "Choose a next number from 1 to 3999.")
+                    return
+                }
                 draft = CaptureAnnotation(
                     id: UUID(), tool: state.tool, points: [anchor, anchor],
                     ink: state.ink, width: state.strokeWidth,
-                    text: state.tool == .number ? String(number) : "",
+                    text: state.tool == .number ? String(state.nextNumber) : "",
                     rotation: [.cover, .pixelate, .blur, .spotlight, .erase, .magnifier].contains(state.tool)
                         ? nil : state.rotation,
-                    filled: state.filled, color: state.tool == .erase ? nil : state.color,
-                    magnification: state.tool == .magnifier ? state.magnification : nil)
+                    color: state.tool == .erase ? nil : state.color,
+                    magnification: state.tool == .magnifier ? state.magnification : nil,
+                    arrowStyle: [.arrow, .curvedArrow].contains(state.tool) ? state.arrowStyle : nil,
+                    reversed: [.arrow, .curvedArrow].contains(state.tool) && state.reversed ? true : nil,
+                    shapeStyle: [.rectangle, .ellipse].contains(state.tool) ? state.shapeStyle : nil,
+                    cornerRadius: state.tool == .rectangle ? state.cornerRadius : nil,
+                    numberFormat: state.tool == .number
+                        ? .init(style: state.numberStyle, value: state.nextNumber) : nil,
+                    numberLeader: state.tool == .number ? state.numberLeader : nil,
+                    smoothed: state.tool == .pen ? state.smoothPen : nil)
             }
             needsDisplay = true
         }
@@ -507,10 +591,12 @@ struct CaptureCanvas: NSViewRepresentable {
                     }
                     try Task.checkCancellation()
                     guard let self, self.state.document.revision == snapshot.revision else { return }
-                    self.state.color = color
-                    self.state.updateSelectedStyle()
-                    self.state.notice = "\(color.hex) — selected for annotations"
-                } catch is CancellationError { return } catch { self?.state.notice = error.localizedDescription }
+                    self.state.setColor(color)
+                    self.state.notice = String(localized: "\(color.hex) — selected for annotations")
+                } catch is CancellationError { return } catch {
+                    self?.state.notice = Bundle.main.localizedString(
+                        forKey: error.localizedDescription, value: nil, table: nil)
+                }
             }
         }
 
@@ -521,18 +607,27 @@ struct CaptureCanvas: NSViewRepresentable {
             if let original = beforeImage {
                 var image = original
                 if resizing {
-                    let scale = max(0.02, min((next.x - original.bounds.minX) / original.bounds.width,
-                        (next.y - original.bounds.minY) / original.bounds.height))
-                    image.frame.size = CGSize(width: max(1, original.frame.width * scale),
+                    let scale = max(
+                        0.02,
+                        min(
+                            (next.x - original.bounds.minX) / original.bounds.width,
+                            (next.y - original.bounds.minY) / original.bounds.height))
+                    image.frame.size = CGSize(
+                        width: max(1, original.frame.width * scale),
                         height: max(1, original.frame.height * scale))
                 } else {
-                    let targets = event.modifierFlags.contains(.option) ? [] : [state.document.outputBounds]
-                        + state.document.imageLayers.filter { $0.id != original.id }.map(\.bounds)
-                        + state.document.edit.annotations.map(\.bounds)
-                    let placement = CaptureAnnotationPlacement.moved(original.bounds,
+                    let targets =
+                        event.modifierFlags.contains(.option)
+                        ? []
+                        : [state.document.outputBounds]
+                            + state.document.imageLayers.filter { $0.id != original.id }.map(\.bounds)
+                            + state.document.edit.annotations.map(\.bounds)
+                    let placement = CaptureAnnotationPlacement.moved(
+                        original.bounds,
                         by: CGSize(width: next.x - anchor.x, height: next.y - anchor.y),
                         in: state.document.bounds, aligning: targets, tolerance: 6 / zoom)
-                    image.frame = original.frame.offsetBy(dx: placement.offset.width, dy: placement.offset.height)
+                    image.frame = original.frame.offsetBy(
+                        dx: placement.offset.width, dy: placement.offset.height)
                     alignment = placement
                 }
                 state.updateImage(image)
@@ -540,31 +635,55 @@ struct CaptureCanvas: NSViewRepresentable {
             }
             if let original = beforeDrag {
                 draft = original
-                if resizing {
-                    let scaleX = original.bounds.width > 0
+                if movingControl {
+                    draft?.controlCenter = original.transformCenter
+                    if original.tool == .number {
+                        draft?.points[original.points.count - 1] = original.untransformed(next)
+                    } else {
+                        draft?.controlPoint = original.untransformed(next)
+                    }
+                } else if resizing {
+                    let scaleX =
+                        original.bounds.width > 0
                         ? max(0.1, (next.x - original.bounds.minX) / original.bounds.width) : 1
-                    let scaleY = original.bounds.height > 0
+                    let scaleY =
+                        original.bounds.height > 0
                         ? max(0.1, (next.y - original.bounds.minY) / original.bounds.height) : 1
                     draft?.points = original.points.map {
                         CGPoint(
                             x: original.bounds.minX + ($0.x - original.bounds.minX) * scaleX,
                             y: original.bounds.minY + ($0.y - original.bounds.minY) * scaleY)
                     }
+                    if let control = original.controlPoint {
+                        draft?.controlPoint = CGPoint(
+                            x: original.bounds.minX + (control.x - original.bounds.minX) * scaleX,
+                            y: original.bounds.minY + (control.y - original.bounds.minY) * scaleY)
+                    }
+                    if let center = original.controlCenter {
+                        draft?.controlCenter = CGPoint(
+                            x: original.bounds.minX + (center.x - original.bounds.minX) * scaleX,
+                            y: original.bounds.minY + (center.y - original.bounds.minY) * scaleY)
+                    }
                     if original.points.count > 1 {
                         if original.bounds.width == 0 { draft?.points[original.points.count - 1].x = next.x }
                         if original.bounds.height == 0 { draft?.points[original.points.count - 1].y = next.y }
                     }
-                    if [.text, .number, .emoji].contains(original.tool) {
+                    if [.number, .emoji].contains(original.tool) {
                         draft?.width = min(128, max(1, original.width * min(scaleX, scaleY)))
                         if let size = original.fontSize {
                             draft?.fontSize = min(768, max(6, size * min(scaleX, scaleY)))
                         }
                     }
                 } else {
-                    let targets = event.modifierFlags.contains(.option) ? [] : [state.document.outputBounds]
-                        + state.document.edit.annotations.filter { $0.id != original.id }.map(\.bounds)
-                    let placement = CaptureAnnotationPlacement.moved(original.bounds,
-                        by: CGSize(width: next.x - anchor.x, height: next.y - anchor.y), in: state.document.bounds,
+                    let targets =
+                        event.modifierFlags.contains(.option)
+                        ? []
+                        : [state.document.outputBounds]
+                            + state.document.edit.annotations.filter { $0.id != original.id }.map(\.bounds)
+                    let placement = CaptureAnnotationPlacement.moved(
+                        original.bounds,
+                        by: CGSize(width: next.x - anchor.x, height: next.y - anchor.y),
+                        in: state.document.bounds,
                         aligning: targets, tolerance: 6 / zoom)
                     draft?.move(by: placement.offset)
                     alignment = placement
@@ -599,10 +718,27 @@ struct CaptureCanvas: NSViewRepresentable {
                 return
             }
             var edit = state.document.edit
-            if let draft, draft.isValid {
-                edit.annotations.removeAll { $0.id == draft.id }
-                edit.annotations.append(draft)
+            if let draft, beforeDrag == nil, let highlights = state.snappedHighlights(draft) {
+                if highlights.isEmpty {
+                    state.notice = String(localized: "Drag across a recognized text line.")
+                } else if edit.annotations.count + highlights.count > 1000 {
+                    state.notice = String(
+                        localized: "Select fewer text lines to keep within the annotation limit.")
+                } else {
+                    edit.annotations += highlights
+                    state.selected = nil
+                    state.notice = nil
+                }
+            } else if let draft, draft.isValid {
+                if let index = edit.annotations.firstIndex(where: { $0.id == draft.id }) {
+                    edit.annotations[index] = draft
+                } else {
+                    edit.annotations.append(draft)
+                }
                 state.selected = draft.id
+                if draft.tool == .number, beforeDrag == nil {
+                    state.nextNumber = (draft.numberFormat?.value ?? state.nextNumber) + 1
+                }
                 if draft.tool == .emoji { state.emojiSize = draft.fontSize ?? 64 }
             }
             if let crop = crop.flatMap({ CaptureGeometry.integralCrop($0, in: state.document.bounds) }) {
@@ -610,7 +746,7 @@ struct CaptureCanvas: NSViewRepresentable {
                 state.fit()
             }
             state.commit(edit)
-            draft = nil; beforeDrag = nil; crop = nil
+            draft = nil; beforeDrag = nil; crop = nil; movingControl = false
             refresh()
         }
 
@@ -623,7 +759,8 @@ struct CaptureCanvas: NSViewRepresentable {
                 defer { self?.state.busy = false; self?.needsDisplay = true }
                 do {
                     let color = try await CaptureWork.run {
-                        try CaptureEraseService.color(document: snapshot, directory: source.directory, around: annotation.bounds)
+                        try CaptureEraseService.color(
+                            document: snapshot, directory: source.directory, around: annotation.bounds)
                     }
                     try Task.checkCancellation()
                     guard let self, self.state.document.revision == snapshot.revision else { return }
@@ -634,7 +771,10 @@ struct CaptureCanvas: NSViewRepresentable {
                     self.state.selected = replacement.id
                     self.state.notice = nil
                     self.refresh()
-                } catch is CancellationError { return } catch { self?.state.notice = error.localizedDescription }
+                } catch is CancellationError { return } catch {
+                    self?.state.notice = Bundle.main.localizedString(
+                        forKey: error.localizedDescription, value: nil, table: nil)
+                }
             }
         }
 
@@ -657,19 +797,23 @@ struct CaptureCanvas: NSViewRepresentable {
                     (state.document.outputBounds.maxY - point.y) * zoom))
             guard rect.width >= 4, rect.height >= 4 else { return }
             let editor = CaptureTextEditor(frame: rect)
-            editor.isRichText = false
-            editor.allowsUndo = true
-            editor.font = CaptureAnnotationRenderer.textFont(
-                existing?.font ?? state.font, size: (existing?.fontSize ?? state.fontSize) * zoom) as NSFont
-            editor.string = existing?.text ?? ""
+            editor.load(
+                existing?.text ?? "",
+                format: existing?.effectiveTextFormat ?? CaptureTextFormat(base: state.currentTextStyle),
+                scale: zoom)
             let ink = existing?.rgba ?? state.color?.rgba ?? state.ink.rgba
             let color = NSColor(srgbRed: ink[0], green: ink[1], blue: ink[2], alpha: ink[3])
-            editor.textColor = color
             editor.insertionPointColor = color
             editor.drawsBackground = false
             editor.textContainerInset = .zero
             editor.textContainer?.lineFragmentPadding = 0
             editor.onFinish = { [weak self] in self?.finishText() }
+            editor.onStyle = { [weak state] style in state?.adoptTextStyle(style) }
+            state.changeActiveText = { [weak editor] change in
+                guard let editor else { return false }
+                editor.apply(change)
+                return true
+            }
             addSubview(editor)
             textEditor = editor
             window?.makeFirstResponder(editor)
@@ -679,15 +823,27 @@ struct CaptureCanvas: NSViewRepresentable {
         private func finishText() {
             guard let editor = textEditor else { return }
             if editor.hasMarkedText() { editor.unmarkText() }
+            guard let (text, format) = editor.captured() else {
+                state.notice = String(localized: "Use fewer text styles before finishing this annotation.")
+                return
+            }
             var edit = state.document.edit
             if let existing = editingAnnotation { edit.annotations.removeAll { $0.id == existing.id } }
-            if !editor.string.isEmpty {
-                var annotation = editingAnnotation ?? CaptureAnnotation(
-                    id: UUID(), tool: .text, points: [], ink: state.ink, width: state.strokeWidth,
-                    rotation: state.rotation, font: state.font, fontSize: state.fontSize, color: state.color)
-                annotation.points = [anchor, CGPoint(x: anchor.x + editor.frame.width / zoom,
-                    y: anchor.y + editor.frame.height / zoom)]
-                annotation.text = String(editor.string.prefix(4000))
+            if !text.isEmpty {
+                var annotation =
+                    editingAnnotation
+                    ?? CaptureAnnotation(
+                        id: UUID(), tool: .text, points: [], ink: state.ink, width: state.strokeWidth,
+                        rotation: state.rotation, font: state.font, fontSize: state.fontSize,
+                        color: state.color)
+                annotation.points = [
+                    anchor,
+                    CGPoint(
+                        x: anchor.x + editor.frame.width / zoom,
+                        y: anchor.y + editor.frame.height / zoom)
+                ]
+                annotation.text = text
+                annotation.textFormat = format
                 edit.annotations.append(annotation)
                 state.selected = annotation.id
             }
@@ -695,6 +851,7 @@ struct CaptureCanvas: NSViewRepresentable {
             editor.undoManager?.removeAllActions()
             editor.removeFromSuperview()
             textEditor = nil
+            state.changeActiveText = nil
             editingAnnotation = nil
             window?.makeFirstResponder(self)
         }

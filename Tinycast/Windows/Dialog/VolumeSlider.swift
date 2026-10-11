@@ -14,7 +14,7 @@ struct VolumeSlider: View {
             Slider(value: level, in: 0...1)
                 .labelsHidden()
                 .tint(Theme.Colors.textPrimary)
-                .accessibilityLabel("Output volume")
+                .accessibilityLabel(String(localized: "Output volume"))
             Text(VolumeLevel.percentage(state.level))
                 .font(metrics.typography.rowTrailing)
                 .foregroundStyle(Theme.Colors.textSecondary)

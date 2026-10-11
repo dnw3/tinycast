@@ -16,8 +16,10 @@ extension CaptureCoordinator {
                 }
                 try Task.checkCancellation()
                 try self.settings.saveUpload(destination, credential: credential)
-            } catch is CancellationError { self.uploadNotice = "Sign-in cancelled" } catch {
-                self.uploadNotice = error.localizedDescription
+            } catch is CancellationError { self.uploadNotice = String(localized: "Sign-in cancelled") } catch
+            {
+                self.uploadNotice = Bundle.main.localizedString(
+                    forKey: error.localizedDescription, value: nil, table: nil)
             }
         }
     }

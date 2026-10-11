@@ -39,21 +39,19 @@ extension CaptureCoordinator {
             let target = try await CaptureScreenService.target(screen: current, scrolling: false)
             let estimated = target.screenFrame.width * target.screenFrame.height * target.scale * target.scale
             guard estimated <= Double(64_000_000 - pixels) else { throw CaptureRasterError.invalidSize }
-            let image = try await CaptureScreenService.image(target: target, cursor: settings.preferences.includesCursor)
+            let image = try await CaptureScreenService.image(
+                target: target, cursor: settings.preferences.includesCursor, presentation: true)
             let raster = UUID().uuidString
-            let (size, preview) = try await CaptureWork.run {
-                let size = try CaptureImageSource.store(image, at: source.directory.appendingPathComponent(raster))
-                return (size, try CaptureImageSource.preview(image))
-            }
+            let size = try CapturePixelSize(width: image.width, height: image.height)
             pixels += size.width * size.height
             snapshots.append(.init(display: .init(id: target.display.displayID,
-                frame: target.screenFrame, scale: target.scale), raster: raster, preview: preview))
+                frame: target.screenFrame, scale: target.scale), raster: raster, preview: image))
             if current == screen {
                 let document = CaptureDocument(id: id, createdAt: Date(), size: size,
                     pieces: [.init(raster: raster, source: CGRect(x: 0, y: 0, width: size.width, height: size.height),
                         origin: .zero)], captureScale: Double(target.scale))
                 primary = CaptureWorkspaceState(target: target, source: source, document: document,
-                    preview: preview, request: .init(action: action), axis: settings.preferences.axis)
+                    preview: image, request: .init(action: action), axis: settings.preferences.axis)
             }
         }
         try Task.checkCancellation()
@@ -62,13 +60,16 @@ extension CaptureCoordinator {
         else { throw CaptureScreenService.Failure.displayChanged }
         primary.displays = CaptureDisplaySelection(snapshots: snapshots)
         selectionSession?.advance(to: .selecting)
+        primary.preparation = CaptureSelectionPreparation()
         workspace = primary
         overlay.show(self, workspace: primary)
         presented = true
+        prepareSource(workspace: primary, images: snapshots.map { ($0.preview, $0.raster) })
     }
 
     func selectDisplaysRegion(_ region: CGRect) {
         guard let workspace, let selection = workspace.displays, !workspace.busy else { return }
+        if workspace.preparation.deferSelection(.displays(region)) { return }
         do {
             let document = try selection.document(region: region, id: workspace.document.id,
                 createdAt: workspace.document.createdAt)

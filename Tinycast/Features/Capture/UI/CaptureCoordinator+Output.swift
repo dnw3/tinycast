@@ -34,7 +34,9 @@ extension CaptureCoordinator {
         editor.publishedRevision = snapshot.revision
         let recorded = await recordHistory(document: snapshot, source: source, png: url)
         core.showMessage(
-            recorded != nil ? "Copied screenshot" : "Copied — history could not be saved",
+            recorded != nil
+                ? String(localized: "Copied screenshot")
+                : String(localized: "Copied — history could not be saved"),
             tone: recorded != nil ? .success : .neutral)
         if close, settings.preferences.closeAfterCopy, self.editor === editor,
             editor.document.revision == snapshot.revision
@@ -51,66 +53,85 @@ extension CaptureCoordinator {
         if let recorded { completionThumbnail.show(recorded, coordinator: self) }
     }
 
-    func save(_ snapshotState: CaptureEditorState? = nil) {
-        run { [weak self] in
-            guard let self, let editor = snapshotState ?? self.editor else { return }
-            editor.finishEditing()
-            let snapshot = editor.document, source = editor.source
-            editor.busy = true
-            self.overlay.suspend()
-            let panel = NSSavePanel()
-            defer {
-                editor.busy = false
-                panel.accessoryView = nil
-                self.savePanel = nil
-                self.overlay.resume()
-            }
-            panel.canCreateDirectories = true
-            self.savePanel = panel
-            var options = self.exportOptions
-            if let format = CaptureExportOptions.Format(rawValue: self.settings.preferences.format),
-                CaptureRenderer.exportFormats.contains(format)
-            { options.format = format }
-            let state = CaptureExportState(options: options, document: snapshot)
-            panel.delegate = state
-            panel.nameFieldStringValue = "Screenshot.\(options.format.rawValue)"
-            state.update(panel)
-            let controls = NSHostingView(rootView: CaptureExportControls(state: state, document: snapshot, panel: panel)
-                .environment(\.metrics, self.metrics))
-            controls.frame.size = controls.fittingSize
-            panel.accessoryView = controls
-            let response = await self.editorWindow.present(panel)
+    func saveAs(_ snapshotState: CaptureEditorState? = nil) {
+        run { [weak self] in try await self?.saveAsCurrent(snapshotState) }
+    }
+
+    func saveAsCurrent(_ snapshotState: CaptureEditorState? = nil) async throws {
+        guard let editor = snapshotState ?? self.editor, self.savePanel == nil, !editor.busy else { return }
+        editor.finishEditing()
+        let snapshot = editor.document, source = editor.source
+        editor.busy = true
+        self.overlay.suspend()
+        let panel = NSSavePanel()
+        defer {
+            editor.busy = false
+            panel.accessoryView = nil
             self.savePanel = nil
             self.overlay.resume()
-            guard response == .OK, let url = panel.url else { return }
-            try Task.checkCancellation()
-            let selected = state.options
-            if selected.format == .webp {
-                try await CaptureWebPWorker.export(document: snapshot, directory: source.directory,
-                    to: url, options: selected)
-            } else {
-                try await CaptureWork.run {
-                    try CaptureRenderer.export(
-                        document: snapshot, directory: source.directory, to: url, options: selected)
-                }
-            }
-            self.exportOptions = selected
-            self.settings.preferences.format = selected.format.rawValue
-            editor.publishedRevision = snapshot.revision
-            let historyPNG = source.directory.appendingPathComponent("output-\(UUID()).png")
-            defer { try? FileManager.default.removeItem(at: historyPNG) }
-            var recorded: CaptureHistoryEntry?
-            do {
-                try await CaptureWork.run {
-                    try CaptureRenderer.png(document: snapshot, directory: source.directory, to: historyPNG)
-                }
-                recorded = await self.recordHistory(document: snapshot, source: source, png: historyPNG)
-            } catch { editor.notice = "Saved — history could not be saved. Save again to retry." }
-            self.core.showMessage(
-                recorded != nil ? "Saved screenshot" : "Saved — history could not be saved",
-                tone: recorded != nil ? .success : .neutral)
-            if let recorded { self.completionThumbnail.show(recorded, coordinator: self) }
         }
+        panel.canCreateDirectories = true
+        self.savePanel = panel
+        var options = self.exportOptions
+        if let format = CaptureExportOptions.Format(rawValue: self.settings.preferences.format),
+            CaptureRenderer.exportFormats.contains(format)
+        {
+            options.format = format
+        }
+        let state = CaptureExportState(options: options, document: snapshot)
+        panel.delegate = state
+        panel.nameFieldStringValue = "Screenshot.\(options.format.rawValue)"
+        state.update(panel)
+        let controls = NSHostingView(
+            rootView: CaptureExportControls(state: state, document: snapshot, panel: panel)
+                .environment(\.metrics, self.metrics))
+        controls.frame.size = controls.fittingSize
+        panel.accessoryView = controls
+        let response = await self.editorWindow.present(panel)
+        self.savePanel = nil
+        self.overlay.resume()
+        guard response == .OK, let url = panel.url else { return }
+        try Task.checkCancellation()
+        let selected = state.options
+        try await self.exportScreenshot(
+            editor, snapshot: snapshot, source: source, to: url, options: selected)
+        self.exportOptions = selected
+        self.settings.preferences.format = selected.format.rawValue
+    }
+
+    func exportScreenshot(
+        _ editor: CaptureEditorState, snapshot: CaptureDocument, source: CaptureSource,
+        to url: URL, options: CaptureExportOptions, quickSave: CaptureQuickSave? = nil
+    ) async throws {
+        if options.format == .webp {
+            try await CaptureWebPWorker.export(
+                document: snapshot, directory: source.directory, to: url, options: options)
+        } else {
+            try await CaptureWork.run {
+                try CaptureRenderer.export(
+                    document: snapshot, directory: source.directory, to: url, options: options)
+            }
+        }
+        if let quickSave { try await CaptureWork.run { try quickSave.publish() } }
+        editor.publishedRevision = snapshot.revision
+        let historyPNG = source.directory.appendingPathComponent("output-\(UUID()).png")
+        defer { try? FileManager.default.removeItem(at: historyPNG) }
+        var recorded: CaptureHistoryEntry?
+        do {
+            try await CaptureWork.run {
+                try CaptureRenderer.png(document: snapshot, directory: source.directory, to: historyPNG)
+            }
+            recorded = await recordHistory(document: snapshot, source: source, png: historyPNG)
+        } catch {
+            editor.notice = String(localized: "Saved — history could not be saved. Save again to retry.")
+        }
+        let destination = quickSave == nil ? url.deletingLastPathComponent() : quickSaveDirectory
+        core.showMessage(
+            recorded != nil
+                ? String(localized: "Saved to \(destination.path)")
+                : String(localized: "Saved — history could not be saved"),
+            tone: recorded != nil ? .success : .neutral)
+        if let recorded { completionThumbnail.show(recorded, coordinator: self) }
     }
 
     func saveDraft() { run { [weak self] in try await self?.publishDraft() } }
@@ -129,10 +150,12 @@ extension CaptureCoordinator {
                 document: snapshot, directory: source.directory, png: url, editable: true, draft: true)
         }
         editor.publishedRevision = snapshot.revision
-        core.showMessage("Saved editable draft")
+        core.showMessage(String(localized: "Saved editable draft"))
     }
 
-    private func recordHistory(document: CaptureDocument, source: CaptureSource, png: URL) async -> CaptureHistoryEntry? {
+    private func recordHistory(
+        document: CaptureDocument, source: CaptureSource, png: URL
+    ) async -> CaptureHistoryEntry? {
         let repository = repository, editable = settings.keepsOriginals, preferences = settings.preferences
         do {
             return try await CaptureWork.run {
@@ -145,7 +168,8 @@ extension CaptureCoordinator {
                 return entry
             }
         } catch {
-            editor?.notice = "Output succeeded. History could not be saved; copy or save again to retry."
+            editor?.notice = String(
+                localized: "Output succeeded. History could not be saved; copy or save again to retry.")
             return nil
         }
     }
@@ -156,11 +180,17 @@ extension CaptureCoordinator {
         let size = try await loadClipboardImage(at: source.directory.appendingPathComponent(raster))
         let document = CaptureDocument(
             id: id, createdAt: Date(), size: size,
-            pieces: [.init(raster: raster, source: CGRect(x: 0, y: 0, width: size.width, height: size.height), origin: .zero)])
+            pieces: [
+                .init(
+                    raster: raster, source: CGRect(x: 0, y: 0, width: size.width, height: size.height),
+                    origin: .zero)
+            ])
         core.paletteCoordinator.hidePalette(restoreFocus: false)
         if pin {
             try await self.pin(document: document, source: source)
-        } else { show(document: document, source: source) }
+        } else {
+            show(document: document, source: source)
+        }
     }
 
     func loadClipboardImage(at destination: URL) async throws -> CapturePixelSize {
@@ -225,9 +255,13 @@ extension CaptureCoordinator {
         var errorDescription: String? {
             switch self {
             case .budget:
-                "This PNG is too large for safe copying. Save it as PNG to keep the original resolution."
-            case .failed: "The clipboard could not accept the image. Your screenshot is still open."
-            case .noImage: "Copy an image or a local image file first."
+                String(
+                    localized:
+                        "This PNG is too large for safe copying. Save it as PNG to keep the original resolution."
+                )
+            case .failed:
+                String(localized: "The clipboard could not accept the image. Your screenshot is still open.")
+            case .noImage: String(localized: "Copy an image or a local image file first.")
             }
         }
     }

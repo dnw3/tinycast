@@ -1,9 +1,11 @@
 import AppKit
 import Observation
+import OSLog
 
 @MainActor
 @Observable
 final class ScrollCaptureSession {
+    private static let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "Capture")
     var document: CaptureDocument
     let source: CaptureSource
     var directory: URL { source.directory }
@@ -13,9 +15,10 @@ final class ScrollCaptureSession {
     let targetPID: pid_t
     let targetFrame: CGRect
     let axis: CaptureDocument.Axis
-    var paused = false
+    private(set) var paused = false
+    @ObservationIgnored var onPauseChange: ((Bool) -> Void)?
     var automatic = false
-    var notice = "Scroll inside the selected region"
+    var notice = String(localized: "Scroll inside the selected region")
     var preview: CGImage?
     private var task: Task<Void, Never>?
     private var accepted: ScrollStitchPolicy.Frame?
@@ -47,7 +50,7 @@ final class ScrollCaptureSession {
                 do {
                     if !self.paused { try await self.sample() }
                     try await Task.sleep(for: .milliseconds(300))
-                } catch is CancellationError { return } catch { self.pause(error.localizedDescription) }
+                } catch is CancellationError { return } catch { self.pause(Bundle.main.localizedString(forKey: error.localizedDescription, value: nil, table: nil)) }
             }
         }
     }
@@ -55,6 +58,10 @@ final class ScrollCaptureSession {
     func stop() async {
         cancel()
         await task?.value
+        Self.logger.notice("""
+            Scroll stopped: pieces=\(self.document.pieces.count), \
+            width=\(self.document.size.width), height=\(self.document.size.height)
+            """)
         task = nil
         accepted = nil
         candidate = nil
@@ -67,19 +74,21 @@ final class ScrollCaptureSession {
         task?.cancel()
     }
 
-    func pause(_ reason: String = "Paused — captured content is kept") {
+    func pause(_ reason: String = String(localized: "Paused — captured content is kept")) {
         generation += 1
         paused = true
         automatic = false
         candidate = nil
         notice = reason
+        onPauseChange?(true)
     }
 
     func resume() {
         generation += 1
         paused = false
         candidate = nil
-        notice = "Scroll inside the selected region"
+        notice = String(localized: "Scroll inside the selected region")
+        onPauseChange?(false)
     }
 
     private func sample() async throws {
@@ -106,10 +115,11 @@ final class ScrollCaptureSession {
             }
             guard !paused, generation == self.generation else { return }
             switch decision {
-            case .duplicate: notice = "No new content found"
-            case .reverse: notice = "Scroll forward to add more content"
+            case .duplicate: notice = String(localized: "No new content found")
+            case .reverse: notice = String(localized: "Scroll forward to add more content")
             case .uncertain:
-                pause("Could not align. Scroll back slightly, or select a region without fixed sidebars or scrollbars")
+                Self.logger.notice("Scroll alignment uncertain: pieces=\(self.document.pieces.count)")
+                pause(String(localized: "Could not align. Scroll back slightly, or select a region without fixed sidebars or scrollbars"))
             case .append(let offset, _, let trailing):
                 guard try await append(temporary, offset: offset, trailing: trailing) else { return }
                 self.accepted = frame
@@ -150,18 +160,23 @@ final class ScrollCaptureSession {
         }
         document = plan.document
         preview = nextPreview
-        notice = "Scroll inside the selected region"
+        Self.logger.info("""
+            Scroll appended: pieces=\(self.document.pieces.count), \
+            width=\(self.document.size.width), height=\(self.document.size.height)
+            """)
+        notice = String(localized: "Scroll inside the selected region")
+        onPauseChange?(false)
         return true
     }
 
     private func validateTarget() -> Bool {
         guard !stopped else { return false }
         guard CGPreflightScreenCaptureAccess() else {
-            pause("Screen Recording permission changed. Finish this capture and grant permission again")
+            pause(String(localized: "Screen Recording permission changed. Finish this capture and grant permission again"))
             return false
         }
         guard NSScreen.screens.contains(where: { $0.frame == target.screenFrame }) else {
-            pause("The display changed. Select a region again")
+            pause(String(localized: "The display changed. Select a region again"))
             return false
         }
         let quartzRegion = CGRect(
@@ -177,7 +192,7 @@ final class ScrollCaptureSession {
     private func scrollTarget() {
         guard validateTarget() else { return }
         guard Permissions.isAccessibilityTrusted() else {
-            pause("Automatic scrolling needs Accessibility permission"); return
+            pause(String(localized: "Automatic scrolling needs Accessibility permission")); return
         }
         let amount = Int32(-max(30, min(120, 60 + speed * 30)))
         guard

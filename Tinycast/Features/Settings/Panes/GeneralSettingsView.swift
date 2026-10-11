@@ -26,8 +26,10 @@ struct GeneralSettingsView: View {
 
     /// The missing-permission half is its own row, so it can carry the button that fixes it.
     private var hyperSubtitle: String {
-        guard settings.hyperKey != .none else { return "Remap one key to \(hyperGlyphs) held together." }
-        return "\(settings.hyperKey.title) sends \(hyperGlyphs), shown as ✦ in shortcuts."
+        guard settings.hyperKey != .none else {
+            return String(localized: "Remap one key to \(hyperGlyphs) held together.")
+        }
+        return String(localized: "\(settings.hyperKey.title) sends \(hyperGlyphs), shown as ✦ in shortcuts.")
     }
 
     var body: some View {
@@ -63,7 +65,7 @@ struct GeneralSettingsView: View {
                 }
                 Picker(selection: $settings.escapeKeyBehavior) {
                     ForEach(EscapeKeyBehavior.allCases) { behavior in
-                        Text(behavior.title).tag(behavior)
+                        Text(LocalizedStringKey(behavior.title)).tag(behavior)
                     }
                 } label: {
                     SettingsRowTitle(.generalGeneral, "Escape Key Behavior")
@@ -72,7 +74,7 @@ struct GeneralSettingsView: View {
                 // Empty only when TIS fails; one layout still lists, so the row stays put.
                 if !inputSources.isEmpty {
                     Picker(selection: $settings.autoSwitchInputSourceID) {
-                        Text("None").tag(nil as String?)
+                        Text(String(localized: "None")).tag(nil as String?)
                         ForEach(inputSources) { source in
                             Text(source.title).tag(Optional(source.id))
                         }
@@ -114,7 +116,7 @@ struct GeneralSettingsView: View {
             Section {
                 Picker(selection: hyperKeySelection) {
                     ForEach(HyperKeyPhysicalKey.allCases) { key in
-                        Text(key.title).tag(key)
+                        Text(LocalizedStringKey(key.title)).tag(key)
                     }
                 } label: {
                     SettingsRowTitle(.generalHyperKey, "Hyper Key")
@@ -159,7 +161,8 @@ struct GeneralSettingsView: View {
                 Picker(selection: $settings.calcNumberStyle) {
                     ForEach(CalcNumberStyle.allCases) { style in
                         let sample = core.regionNumberFormat.format(for: style).localized("1,234,567.89")
-                        Text("\(style.title) (\(sample))").tag(style)
+                        Text("\(String(localized: String.LocalizationValue(style.title))) (\(sample))").tag(
+                            style)
                     }
                 } label: {
                     SettingsRowTitle(.generalCalculator, "Number format")
@@ -176,7 +179,7 @@ struct GeneralSettingsView: View {
                 }
                 Picker(selection: $settings.rootSearchSensitivity) {
                     ForEach(SearchSensitivity.allCases) { sensitivity in
-                        Text(sensitivity.title).tag(sensitivity)
+                        Text(LocalizedStringKey(sensitivity.title)).tag(sensitivity)
                     }
                 } label: {
                     SettingsRowTitle(.generalSearch, "Search sensitivity")
@@ -230,12 +233,16 @@ private struct WindowModeRow: View {
 
     var body: some View {
         SettingsRow(
-            title: "Window mode", subtitle: "Choose how the launcher opens.",
+            title: "Window mode", subtitle: String(localized: "Choose how the launcher opens."),
             subtitleLineLimit: 2, alignment: .top, anchor: .generalAppearance
         ) {
             HStack(spacing: Theme.Spacing.md) {
-                option("Compact", image: "WindowModeCompact", compact: true)
-                option("Expanded", image: "WindowModeExpanded", compact: false)
+                option(
+                    String(localized: "Compact"), image: "WindowModeCompact", compact: true
+                )
+                option(
+                    String(localized: "Expanded"), image: "WindowModeExpanded",
+                    compact: false)
             }
         }
     }
@@ -303,7 +310,7 @@ private struct InterfaceSizeRow: View {
     var body: some View {
         SettingsRow(
             title: "Interface size",
-            subtitle: "Scales the launcher and its panels, not Settings.",
+            subtitle: String(localized: "Scales the launcher and its panels, not Settings."),
             anchor: .generalAppearance
         ) {
             HStack(spacing: Theme.Spacing.xs) {

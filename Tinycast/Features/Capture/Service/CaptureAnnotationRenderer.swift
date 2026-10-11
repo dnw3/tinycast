@@ -5,7 +5,10 @@ import Foundation
 enum CaptureAnnotationRenderer {
     nonisolated static func draw(_ annotations: [CaptureAnnotation], in context: CGContext) {
         for annotation in annotations {
-            guard let first = annotation.points.first, let last = annotation.points.last else { continue }
+            guard let start = annotation.points.first, let end = annotation.points.last else { continue }
+            let reversed = [.arrow, .curvedArrow].contains(annotation.tool) && annotation.reversed == true
+            let first = reversed ? end : start
+            let last = reversed ? start : end
             context.saveGState()
             let color = CGColor(
                 colorSpace: CGColorSpace(name: CGColorSpace.sRGB)!,
@@ -16,16 +19,19 @@ enum CaptureAnnotationRenderer {
             context.setLineCap(.round)
             context.setLineJoin(.round)
             let bounds = annotation.drawingBounds
-            context.translateBy(x: bounds.midX, y: bounds.midY)
+            context.translateBy(x: annotation.transformCenter.x, y: annotation.transformCenter.y)
             context.rotate(by: (annotation.rotation ?? 0) * .pi / 180)
             context.scaleBy(x: annotation.reflection?.horizontal == true ? -1 : 1,
                 y: annotation.reflection?.vertical == true ? -1 : 1)
-            context.translateBy(x: -bounds.midX, y: -bounds.midY)
+            context.translateBy(x: -annotation.transformCenter.x, y: -annotation.transformCenter.y)
             switch annotation.tool {
             case .rectangle:
-                if annotation.filled == true { context.fill(bounds) } else { context.stroke(bounds) }
+                let radius = min(annotation.cornerRadius ?? 0, min(bounds.width, bounds.height) / 2)
+                context.addPath(CGPath(roundedRect: bounds, cornerWidth: radius, cornerHeight: radius, transform: nil))
+                drawShape(annotation, in: context)
             case .ellipse:
-                if annotation.filled == true { context.fillEllipse(in: bounds) } else { context.strokeEllipse(in: bounds) }
+                context.addEllipse(in: bounds)
+                drawShape(annotation, in: context)
             case .cover, .pixelate, .blur:
                 context.setFillColor(CGColor(gray: 0, alpha: 1))
                 context.fill(bounds)
@@ -41,17 +47,17 @@ enum CaptureAnnotationRenderer {
                 if annotation.tool == .curvedArrow {
                     context.addQuadCurve(to: last, control: annotation.curveControl)
                 } else { context.addLine(to: last) }
-                if annotation.tool == .arrow || annotation.tool == .curvedArrow {
-                    let tail = annotation.tool == .curvedArrow ? annotation.curveControl : first
-                    let angle = atan2(last.y - tail.y, last.x - tail.x)
-                    let length = max(12, annotation.width * 4)
-                    for turn in [-0.5, 0.5] {
-                        context.move(to: last)
-                        context.addLine(
-                            to: CGPoint(x: last.x - cos(angle + turn) * length, y: last.y - sin(angle + turn) * length))
+                let arrow = annotation.tool == .arrow || annotation.tool == .curvedArrow
+                if arrow, annotation.arrowStyle == .thick { context.setLineWidth(annotation.width * 3) }
+                context.strokePath()
+                if arrow {
+                    let control = annotation.tool == .curvedArrow ? annotation.curveControl : first
+                    drawHead(at: last, from: control, annotation: annotation, in: context)
+                    if annotation.arrowStyle == .double {
+                        drawHead(at: first, from: annotation.tool == .curvedArrow ? annotation.curveControl : last,
+                            annotation: annotation, in: context)
                     }
                 }
-                context.strokePath()
                 if annotation.tool == .ruler {
                     let label = "\(Int(hypot(last.x - first.x, last.y - first.y).rounded())) px"
                     let size = max(12, annotation.width * 4)
@@ -65,25 +71,84 @@ enum CaptureAnnotationRenderer {
                     context.setLineWidth(annotation.width * 5)
                     context.setLineCap(.butt)
                 }
-                context.addLines(between: annotation.points)
+                if annotation.smoothed == true, annotation.tool == .pen, annotation.points.count > 2 {
+                    context.move(to: first)
+                    for index in 1..<annotation.points.count - 1 {
+                        let point = annotation.points[index], next = annotation.points[index + 1]
+                        context.addQuadCurve(to: CGPoint(x: (point.x + next.x) / 2, y: (point.y + next.y) / 2),
+                            control: point)
+                    }
+                    context.addLine(to: last)
+                } else { context.addLines(between: annotation.points) }
                 context.strokePath()
             case .text, .emoji:
-                drawText(
+                if annotation.tool == .text, annotation.textFormat != nil {
+                    CaptureTextRenderer.draw(annotation, in: context)
+                } else { drawText(
                     annotation.text, rect: bounds,
                     font: textFont(annotation.font ?? .system, size: annotation.fontSize ?? annotation.width * 6),
-                    color: color, context: context)
+                    color: color, context: context) }
             case .number:
-                let diameter = max(28, annotation.width * 9)
-                let rect = CGRect(x: first.x, y: first.y, width: diameter, height: diameter)
+                let rect = annotation.numberBounds, diameter = rect.width
+                if annotation.numberLeader == true, annotation.points.count > 1 {
+                    context.move(to: CGPoint(x: rect.midX, y: rect.midY))
+                    context.addLine(to: last)
+                    context.strokePath()
+                    context.fillEllipse(in: CGRect(x: last.x - annotation.width / 2,
+                        y: last.y - annotation.width / 2, width: annotation.width, height: annotation.width))
+                }
                 context.fillEllipse(in: rect)
-                drawText(
-                    annotation.text, rect: rect.insetBy(dx: diameter * 0.25, dy: diameter * 0.1),
-                    font: textFont(.system, size: diameter * 0.65), color: CGColor(gray: 1, alpha: 1), context: context)
+                if annotation.numberFormat == nil {
+                    drawText(annotation.text, rect: rect.insetBy(dx: diameter * 0.25, dy: diameter * 0.1),
+                        font: textFont(.system, size: diameter * 0.65), color: CGColor(gray: 1, alpha: 1), context: context)
+                } else { drawNumber(annotation.numberLabel, rect: rect, context: context) }
             case .select, .crop, .spotlight: break
             }
             context.restoreGState()
         }
         spotlight(annotations, in: context)
+    }
+
+    nonisolated private static func drawNumber(_ label: String, rect: CGRect, context: CGContext) {
+        let font = textFont(.system, size: rect.width * 0.65)
+        let attributes = [kCTFontAttributeName: font, kCTForegroundColorAttributeName: CGColor(gray: 1, alpha: 1)]
+            as CFDictionary
+        let line = CTLineCreateWithAttributedString(CFAttributedStringCreate(nil, label as CFString, attributes)!)
+        let bounds = CTLineGetBoundsWithOptions(line, .useGlyphPathBounds)
+        let scale = min(1, rect.width * 0.78 / max(1, bounds.width))
+        context.saveGState()
+        context.translateBy(x: rect.midX, y: rect.midY)
+        context.scaleBy(x: scale, y: -scale)
+        context.textMatrix = .identity
+        context.textPosition = CGPoint(x: -bounds.midX, y: -bounds.midY)
+        CTLineDraw(line, context)
+        context.restoreGState()
+    }
+
+    nonisolated private static func drawShape(_ annotation: CaptureAnnotation, in context: CGContext) {
+        switch annotation.effectiveShapeStyle {
+        case .outline: context.strokePath()
+        case .fill: context.fillPath()
+        case .both: context.drawPath(using: .fillStroke)
+        }
+    }
+
+    nonisolated private static func drawHead(
+        at tip: CGPoint, from tail: CGPoint, annotation: CaptureAnnotation, in context: CGContext
+    ) {
+        let angle = atan2(tip.y - tail.y, tip.x - tail.x)
+        let length = max(12, annotation.width * (annotation.arrowStyle == .thick ? 6 : 4))
+        let edges = [-0.5, 0.5].map { turn in
+            CGPoint(x: tip.x - cos(angle + turn) * length, y: tip.y - sin(angle + turn) * length)
+        }
+        context.setLineWidth(annotation.width)
+        context.move(to: edges[0])
+        context.addLine(to: tip)
+        context.addLine(to: edges[1])
+        if (annotation.arrowStyle ?? .open) == .open { context.strokePath() } else {
+            context.closePath()
+            context.fillPath()
+        }
     }
 
     nonisolated static func spotlight(_ annotations: [CaptureAnnotation], in context: CGContext) {

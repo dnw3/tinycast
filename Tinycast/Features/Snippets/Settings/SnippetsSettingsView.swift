@@ -14,7 +14,7 @@ struct SnippetsSettingsView: View {
             FeatureSwitchSection(
                 anchor: .snippetsSnippets,
                 enableTitle: "Enable snippets",
-                enableSubtitle: "Expand templates from the launcher or by keyword.",
+                enableSubtitle: String(localized: "Expand templates from the launcher or by keyword."),
                 // Enabling is also keyword-expansion consent, so it uses the confirming setter.
                 isEnabled: Binding(
                     get: { settings.snippetsEnabled },
@@ -75,8 +75,11 @@ struct SnippetsSettingsView: View {
     private var library: some View {
         Section {
             if sortedSnippets.isEmpty {
-                Text(snippetsStore.state == .loading ? "Loading snippets…" : "No snippets yet.")
-                    .foregroundStyle(.secondary)
+                Text(
+                    snippetsStore.state == .loading
+                        ? String(localized: "Loading snippets…") : String(localized: "No snippets yet.")
+                )
+                .foregroundStyle(.secondary)
             } else {
                 ForEach(sortedSnippets) { record in
                     SnippetSettingsRow(
@@ -98,7 +101,7 @@ struct SnippetsSettingsView: View {
                 }
                 Button("Choose…", action: core.snippetCoordinator.chooseSnippetsFolder)
                 Button("Open Folder", action: core.snippetCoordinator.revealSnippetsInFinder)
-                    .accessibilityHint("Reveals the snippets folder in Finder.")
+                    .accessibilityHint(String(localized: "Reveals the snippets folder in Finder."))
             } label: {
                 SettingsRowTitle(.snippetsLibrary, "Snippets Folder")
                 Text((snippetsStore.snippetsDirectory.path as NSString).abbreviatingWithTildeInPath)
@@ -112,20 +115,20 @@ struct SnippetsSettingsView: View {
     private var libraryNotices: some View {
         if case .failed(let message) = snippetsStore.state {
             noticeSection(
-                "Couldn’t load the snippet library", message, tint: .orange,
-                retryHint: "Tries to load the snippet library again.")
+                String(localized: "Couldn’t load the snippet library"), message, tint: .orange,
+                retryHint: String(localized: "Tries to load the snippet library again."))
         }
 
         if !snippetsStore.issues.isEmpty {
             noticeSection(
                 snippetIssueTitle, snippetIssueMessage, tint: .orange,
-                retryHint: "Reloads snippet files after you fix them on disk.")
+                retryHint: String(localized: "Reloads snippet files after you fix them on disk."))
         }
 
         // The editor reports its own failures, so this covers the ones with no panel behind.
         if editor == nil, let operationError = snippetsStore.operationError {
             noticeSection(
-                "The snippet operation failed", operationError, tint: .red, retryHint: nil)
+                String(localized: "The snippet operation failed"), operationError, tint: .red, retryHint: nil)
         }
     }
 
@@ -156,7 +159,8 @@ struct SnippetsSettingsView: View {
     private var snippetIssueTitle: String {
         let count = snippetsStore.issues.count
         return count == 1
-            ? "1 snippet file couldn’t be loaded" : "\(count) snippet files couldn’t be loaded"
+            ? String(localized: "1 snippet file couldn’t be loaded")
+            : String(localized: "\(count) snippet files couldn’t be loaded")
     }
 
     private var snippetIssueMessage: String {
@@ -165,7 +169,10 @@ struct SnippetsSettingsView: View {
             return "\(first.fileURL.lastPathComponent): \(first.message)"
         }
         return
-            "\(first.fileURL.lastPathComponent): \(first.message) Plus \(snippetsStore.issues.count - 1) more."
+            String(
+                localized:
+                    "\(first.fileURL.lastPathComponent): \(first.message) Plus \(snippetsStore.issues.count - 1) more."
+            )
     }
 
     private func delete(_ record: StoredSnippet) {
@@ -198,16 +205,16 @@ private struct SnippetSettingsRow: View {
                 Image(systemName: "pencil")
             }
             .buttonStyle(.plain)
-            .help("Edit Snippet")
-            .accessibilityLabel("Edit \(record.snippet.name)")
+            .help(String(localized: "Edit Snippet"))
+            .accessibilityLabel(String(localized: "Edit \(record.snippet.name)"))
 
             Button(action: onDelete) {
                 Image(systemName: "trash")
                     .foregroundStyle(.red)
             }
             .buttonStyle(.plain)
-            .help("Delete Snippet")
-            .accessibilityLabel("Delete \(record.snippet.name)")
+            .help(String(localized: "Delete Snippet"))
+            .accessibilityLabel(String(localized: "Delete \(record.snippet.name)"))
         }
     }
 
@@ -248,24 +255,27 @@ private struct SnippetEditorPanel: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.xl) {
-            SettingsEditorHeader(title: record == nil ? "Add Snippet" : "Edit Snippet")
+            SettingsEditorHeader(
+                title: record == nil ? String(localized: "Add Snippet") : String(localized: "Edit Snippet"))
 
             field(
-                title: "Name", placeholder: "Email Sign-off", text: $name,
-                hint: "Required. Shown in the library and launcher.")
+                title: String(localized: "Name"), placeholder: String(localized: "Email Sign-off"),
+                text: $name,
+                hint: String(localized: "Required. Shown in the library and launcher."))
             field(
-                title: "Keyword", placeholder: "Optional, for example !notes", text: $keyword,
-                hint: "Optional. Type this to expand the snippet.")
+                title: String(localized: "Keyword"),
+                placeholder: String(localized: "Optional, for example !notes"), text: $keyword,
+                hint: String(localized: "Optional. Type this to expand the snippet."))
 
             templateEditor
 
             VStack(alignment: .leading, spacing: Theme.Spacing.lg) {
                 optionToggle(
-                    "Enabled", isOn: $isEnabled,
-                    detail: "Disabled snippets cannot be expanded.")
+                    String(localized: "Enabled"), isOn: $isEnabled,
+                    detail: String(localized: "Disabled snippets cannot be expanded."))
                 optionToggle(
-                    "Show confirmation", isOn: $showsConfirmation,
-                    detail: "Confirm on screen after this snippet is inserted.")
+                    String(localized: "Show confirmation"), isOn: $showsConfirmation,
+                    detail: String(localized: "Confirm on screen after this snippet is inserted."))
             }
 
             if let errorMessage {
@@ -303,8 +313,8 @@ private struct SnippetEditorPanel: View {
                 .font(.body.monospaced())
                 .settingsEditorTextArea(height: Theme.Size.editorTextHeight)
                 .focused($isTemplateFocused)
-                .accessibilityLabel("Snippet template")
-                .accessibilityHint("Enter the text Tinycast expands.")
+                .accessibilityLabel(String(localized: "Snippet template"))
+                .accessibilityHint(String(localized: "Enter the text Tinycast expands."))
         }
     }
 
@@ -332,7 +342,7 @@ private struct SnippetEditorPanel: View {
         }
         .menuStyle(.borderlessButton)
         .fixedSize()
-        .accessibilityLabel("Insert a placeholder")
+        .accessibilityLabel(String(localized: "Insert a placeholder"))
     }
 
     private func placeholderItem(_ token: String) -> some View {
@@ -361,7 +371,7 @@ private struct SnippetEditorPanel: View {
                 .font(.callout.weight(.medium))
             TextField(placeholder, text: text)
                 .settingsEditorTextField()
-                .accessibilityLabel("Snippet \(title.lowercased())")
+                .accessibilityLabel(String(localized: "Snippet \(title.lowercased())"))
                 .accessibilityHint(hint)
         }
     }

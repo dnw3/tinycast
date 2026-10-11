@@ -122,7 +122,7 @@ struct ExtensionAppearancePicker: View {
                 Spacer()
                 Button("Use Original Icon", action: onReset)
                     .disabled(!isCustom)
-                    .help("Go back to the icon the extension ships.")
+                    .help(String(localized: "Go back to the icon the extension ships."))
             }
         }
         .padding(Metrics.inset)
@@ -136,7 +136,9 @@ struct ExtensionAppearancePicker: View {
 
     private func footnote(_ count: Int) -> String {
         let noun = count == 1 ? "symbol" : "symbols"
-        return query.isEmpty ? "\(count) \(noun) in \(category.title)" : "\(count) \(noun) matching"
+        return query.isEmpty
+            ? String(localized: "\(count) \(noun) in \(category.title)")
+            : String(localized: "\(count) \(noun) matching")
     }
 }
 

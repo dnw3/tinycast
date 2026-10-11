@@ -26,7 +26,7 @@ struct CaptureVideoView: View {
                 Controls(state: state).disabled(state.busy)
                 HStack(spacing: metrics.spacing.md) {
                     if coordinator.otherResult != nil {
-                        CaptureIconButton(title: "Back to Screenshot", symbol: "camera") {
+                        CaptureIconButton(title: String(localized: "Back to Screenshot"), symbol: "camera") {
                             coordinator.showScreenshotResult()
                         }.disabled(state.busy)
                     }
@@ -34,14 +34,23 @@ struct CaptureVideoView: View {
                     Text(Duration.seconds(state.edit.duration).formatted(.time(pattern: .minuteSecond)))
                         .monospacedDigit()
                     Spacer()
-                    CaptureIconButton(title: "Undo Video Edit", symbol: "arrow.uturn.backward", shortcut: "⌘Z") {
+                    CaptureIconButton(
+                        title: String(localized: "Undo Video Edit"), symbol: "arrow.uturn.backward",
+                        shortcut: "⌘Z"
+                    ) {
                         state.undoEdit()
                     }.keyboardShortcut("z").disabled(state.busy || !state.undo.canUndo)
-                    CaptureIconButton(title: "Redo Video Edit", symbol: "arrow.uturn.forward", shortcut: "⇧⌘Z") {
+                    CaptureIconButton(
+                        title: String(localized: "Redo Video Edit"), symbol: "arrow.uturn.forward",
+                        shortcut: "⇧⌘Z"
+                    ) {
                         state.redoEdit()
-                    }.keyboardShortcut("z", modifiers: [.command, .shift]).disabled(state.busy || !state.undo.canRedo)
+                    }.keyboardShortcut("z", modifiers: [.command, .shift]).disabled(
+                        state.busy || !state.undo.canRedo)
                     if state.busy {
-                        if let progress = state.progress { Text(progress, format: .percent.precision(.fractionLength(0))) }
+                        if let progress = state.progress {
+                            Text(progress, format: .percent.precision(.fractionLength(0)))
+                        }
                         ProgressView().controlSize(.small)
                         Button("Cancel Export") { coordinator.cancelWork() }
                     } else {
@@ -52,15 +61,22 @@ struct CaptureVideoView: View {
                             CaptureUploadMenu(video: true)
                         } label: {
                             SymbolImage(name: "ellipsis", size: metrics.scaled(Theme.Size.captureGlyph))
-                                .frame(width: metrics.scaled(Theme.Size.captureTool),
+                                .frame(
+                                    width: metrics.scaled(Theme.Size.captureTool),
                                     height: metrics.scaled(Theme.Size.captureTool))
                         }
-                            .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
-                            .help("Video Actions").accessibilityLabel("Video Actions")
-                        CaptureIconButton(title: "Save Video", symbol: "square.and.arrow.down", shortcut: "⌘S") {
+                        .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
+                        .help(String(localized: "Video Actions")).accessibilityLabel(
+                            String(localized: "Video Actions"))
+                        CaptureIconButton(
+                            title: String(localized: "Save Video"), symbol: "square.and.arrow.down",
+                            shortcut: "⌘S"
+                        ) {
                             coordinator.saveVideo()
                         }.keyboardShortcut("s")
-                        CaptureIconButton(title: "Close Recording", symbol: "xmark", shortcut: "⌘W") {
+                        CaptureIconButton(
+                            title: String(localized: "Close Recording"), symbol: "xmark", shortcut: "⌘W"
+                        ) {
                             coordinator.requestClose()
                         }.keyboardShortcut("w")
                     }
@@ -89,22 +105,33 @@ struct CaptureVideoView: View {
                     Picker("Speed", selection: value(\.speed)) {
                         ForEach([0.25, 0.5, 1, 1.5, 2, 4], id: \.self) { Text("\($0.formatted())×").tag($0) }
                     }.fixedSize()
-                    CaptureIconButton(title: "Zoom Video Region", symbol: "plus.magnifyingglass") { state.addEffect(.zoom) }
-                    CaptureIconButton(title: "Cover Video Region", symbol: "square.fill") { state.addEffect(.cover) }
-                    CaptureIconButton(title: "Add Video Text", symbol: "textformat") { state.addEffect(.text) }
+                    CaptureIconButton(
+                        title: String(localized: "Zoom Video Region"), symbol: "plus.magnifyingglass"
+                    ) { state.addEffect(.zoom) }
+                    CaptureIconButton(title: String(localized: "Cover Video Region"), symbol: "square.fill") {
+                        state.addEffect(.cover)
+                    }
+                    CaptureIconButton(title: String(localized: "Add Video Text"), symbol: "textformat") {
+                        state.addEffect(.text)
+                    }
                     if !state.edit.effects.isEmpty {
                         Menu {
                             ForEach(state.edit.effects) { effect in
-                                Button("\(effect.kind.rawValue.capitalized) · "
-                                    + "\(effect.start.formatted())–\(effect.end.formatted()) s") {
+                                Button(
+                                    "\(effect.kind.rawValue.capitalized) · "
+                                        + "\(effect.start.formatted())–\(effect.end.formatted()) s"
+                                ) {
                                     state.player.pause()
                                     state.selectedEffectID = effect.id
                                     state.seek(to: effect.start)
                                 }
                             }
-                        } label: { Image(systemName: "square.3.layers.3d") }
-                            .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
-                            .help("Video Effects").accessibilityLabel("Video Effects")
+                        } label: {
+                            Image(systemName: "square.3.layers.3d")
+                        }
+                        .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
+                        .help(String(localized: "Video Effects")).accessibilityLabel(
+                            String(localized: "Video Effects"))
                     }
                     if state.info.audioTracks > 0 {
                         AudioControls(state: state)
@@ -135,7 +162,9 @@ struct CaptureVideoView: View {
                         HStack(spacing: metrics.spacing.md) {
                             Picker("Resolution", selection: $state.exportOptions.videoMaximumDimension) {
                                 Text("Original").tag(0)
-                                ForEach([640, 1280, 1920, 2560, 3840], id: \.self) { Text("\($0) px").tag($0) }
+                                ForEach([640, 1280, 1920, 2560, 3840], id: \.self) {
+                                    Text("\($0) px").tag($0)
+                                }
                             }.fixedSize()
                             Picker("Frame Rate", selection: $state.exportOptions.videoFramesPerSecond) {
                                 ForEach([15, 30, 60], id: \.self) { Text("\($0) fps").tag($0) }
@@ -145,7 +174,8 @@ struct CaptureVideoView: View {
                                     Text($0.rawValue.capitalized).tag($0)
                                 }
                             }.fixedSize()
-                            Text("Longest edge · original aspect ratio").foregroundStyle(Theme.Colors.textSecondary)
+                            Text("Longest edge · original aspect ratio").foregroundStyle(
+                                Theme.Colors.textSecondary)
                             Spacer()
                         }.padding(.top, metrics.spacing.sm)
                     }
@@ -154,7 +184,9 @@ struct CaptureVideoView: View {
         }
 
         private func value(_ key: WritableKeyPath<CaptureVideoEdit, Double>) -> Binding<Double> {
-            Binding(get: { state.edit[keyPath: key] }, set: { value in state.change { $0[keyPath: key] = value } })
+            Binding(
+                get: { state.edit[keyPath: key] }, set: { value in state.change { $0[keyPath: key] = value } }
+            )
         }
 
     }
@@ -168,13 +200,19 @@ struct CaptureVideoView: View {
                 VStack {
                     ForEach(0..<state.info.audioTracks, id: \.self) { index in
                         HStack {
-                            Text(state.info.audioNames.indices.contains(index)
-                                ? state.info.audioNames[index] : "Track \(index + 1)")
-                            Slider(value: Binding(get: { state.edit.trackVolumes[index] ?? 1 }, set: { value in
-                                state.change { $0.trackVolumes[index] = value }
-                            }), in: 0...1, onEditingChanged: {
-                                if $0 { state.beginEditing() } else { state.endEditing() }
-                            }).accessibilityLabel("Audio Track \(index + 1) Volume")
+                            Text(
+                                state.info.audioNames.indices.contains(index)
+                                    ? state.info.audioNames[index] : String(localized: "Track \(index + 1)"))
+                            Slider(
+                                value: Binding(
+                                    get: { state.edit.trackVolumes[index] ?? 1 },
+                                    set: { value in
+                                        state.change { $0.trackVolumes[index] = value }
+                                    }), in: 0...1,
+                                onEditingChanged: {
+                                    if $0 { state.beginEditing() } else { state.endEditing() }
+                                }
+                            ).accessibilityLabel(String(localized: "Audio Track \(index + 1) Volume"))
                         }
                     }
                 }

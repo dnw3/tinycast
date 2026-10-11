@@ -83,7 +83,31 @@ struct WindowLayoutTests {
         WindowLayout(name: name, usesPreferredGap: gap, entries: entries)
     }
 
+    static let resources = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    static let english: Bundle = loadEnglishResources()
+
+    static func loadEnglishResources() -> Bundle {
+        let scratch = resources
+        do {
+            try FileManager.default.createDirectory(at: scratch, withIntermediateDirectories: true)
+            let compiler = Process()
+            compiler.executableURL = URL(filePath: "/usr/bin/xcrun")
+            compiler.arguments = ["xcstringstool", "compile", "Tinycast/Resources/Localizable.xcstrings",
+                "--output-directory", scratch.path]
+            try compiler.run()
+            compiler.waitUntilExit()
+            guard compiler.terminationStatus == 0,
+                let bundle = Bundle(url: scratch.appendingPathComponent("en.lproj")) else {
+                throw CocoaError(.fileReadCorruptFile)
+            }
+            return bundle
+        } catch {
+            fatalError("English resources load: \(error)")
+        }
+    }
+
     static func main() {
+        defer { try? FileManager.default.removeItem(at: resources) }
         recordIdentity()
         anchorGrid()
         resolverExactFrames()
@@ -133,11 +157,11 @@ struct WindowLayoutTests {
         custom.iconSymbol = "star"
         expect(custom.symbol == "star", "a chosen glyph wins")
 
-        expect(layout(entries: [entry()]).summary == "1 window", "one entry reads singular")
+        expect(layout(entries: [entry()]).summary(in: english, locale: Locale(identifier: "en")) == "1 window", "one entry reads singular")
         let two = layout(entries: [entry(display: 1), entry(display: 2)])
-        expect(two.summary == "2 windows · 2 displays", "two displays are named")
+        expect(two.summary(in: english, locale: Locale(identifier: "en")) == "2 windows · 2 displays", "two displays are named")
         let same = layout(entries: [entry(display: 1), entry(display: 1)])
-        expect(same.summary == "2 windows", "one display is not worth naming")
+        expect(same.summary(in: english, locale: Locale(identifier: "en")) == "2 windows", "one display is not worth naming")
 
         let a = WindowLayout(name: "alpha", entries: [entry()])
         let b = WindowLayout(name: "Beta", entries: [entry()])
@@ -405,12 +429,12 @@ struct WindowLayoutTests {
         expect(
             plan.skipped.first?.reason == .displayDisconnected(name: "Display 2"),
             "the skip names the stored display")
-        expect(plan.skippedSummary == "1 display not connected", "the summary names the cause")
+        expect(plan.skippedSummary(in: english, locale: Locale(identifier: "en")) == "1 display not connected", "the summary names the cause")
 
         let none = WindowLayoutPlan.make(
             layout: value, screens: [], windows: [], preferredGap: 0)
         expect(none.placements.isEmpty, "no display places nothing")
-        expect(none.skippedSummary == "2 displays not connected", "both are counted")
+        expect(none.skippedSummary(in: english, locale: Locale(identifier: "en")) == "2 displays not connected", "both are counted")
     }
 
     static func planBindsWindows() {

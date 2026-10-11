@@ -13,7 +13,7 @@ struct ClipboardSettingsView: View {
                 Toggle(isOn: $settings.clipboardEnabled) {
                     SettingsFeatureToggleLabel(
                         anchor: .clipboardClipboard, title: "Enable Clipboard History",
-                        subtitle: "Keep copied items ready to reuse.")
+                        subtitle: String(localized: "Keep copied items ready to reuse."))
                 }
             }
             .settingsAnchor(.clipboardClipboard)
@@ -24,7 +24,7 @@ struct ClipboardSettingsView: View {
             Section {
                 Picker(selection: $settings.clipboardRetention) {
                     ForEach(ClipboardRetention.allCases) { retention in
-                        Text(retention.title).tag(retention)
+                        Text(LocalizedStringKey(retention.title)).tag(retention)
                     }
                 } label: {
                     SettingsRowTitle(.clipboardHistory, "Keep history for")
@@ -35,7 +35,7 @@ struct ClipboardSettingsView: View {
                 }
                 Picker(selection: $settings.clipboardDefaultAction) {
                     ForEach(ClipboardDefaultAction.allCases) { action in
-                        Text(action.title).tag(action)
+                        Text(LocalizedStringKey(action.title)).tag(action)
                     }
                 } label: {
                     SettingsRowTitle(.clipboardHistory, "Default action")
@@ -49,7 +49,7 @@ struct ClipboardSettingsView: View {
             DisabledApplicationsSection(
                 bundleIDs: $settings.clipboardDisabledApps,
                 anchor: .clipboardDisabledApplications,
-                footer: "Copies from these apps aren't recorded."
+                footer: String(localized: "Copies from these apps aren't recorded.")
             )
             .settingsEnabled(settings.clipboardEnabled)
 

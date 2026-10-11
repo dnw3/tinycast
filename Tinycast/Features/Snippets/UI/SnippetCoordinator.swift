@@ -53,7 +53,7 @@ final class SnippetCoordinator {
     func chooseSnippetsFolder() {
         guard
             let url = FolderPicker.choose(
-                message: "Choose the folder your snippets are kept in.",
+                message: String(localized: "Choose the folder your snippets are kept in."),
                 startingAt: store.snippetsDirectory)
         else { return }
         settings.snippetsFolder = AppPaths.contentFolderSetting(for: url, named: "Snippets")
@@ -75,10 +75,13 @@ final class SnippetCoordinator {
         Task {
             guard
                 await core.confirm(
-                    title: "Enable snippets?",
+                    title: String(localized: "Enable snippets?"),
                     message:
-                        "Keyword expansion requires the Accessibility permission. Keystrokes stay on this Mac.",
-                    symbol: "curlybraces", confirmTitle: "Continue", tone: .neutral,
+                        String(
+                            localized:
+                                "Keyword expansion requires the Accessibility permission. Keystrokes stay on this Mac."
+                        ),
+                    symbol: "curlybraces", confirmTitle: String(localized: "Continue"), tone: .neutral,
                     confirmRole: .standard)
             else { return }
 
@@ -188,7 +191,7 @@ final class SnippetCoordinator {
         }
         // A window of ours that isn't an editor, such as Settings, has no caret to type at.
         guard let target = InjectionTarget.current() else {
-            showMessage("Click into a text field first", .neutral)
+            showMessage(String(localized: "Click into a text field first"), .neutral)
             return
         }
         expandSnippet(id: id, target: target)
@@ -212,7 +215,7 @@ final class SnippetCoordinator {
         if automaticGeneration == nil {
             guard injector.prepareInteractiveExpansion(target: target) else { return }
         }
-        let confirmation = record.snippet.showsConfirmation ? "Inserted \(record.snippet.name)" : nil
+        let confirmation = record.snippet.showsConfirmation ? String(localized: "Inserted \(record.snippet.name)") : nil
         let context = injector.captureExpansionContext(
             target: target,
             clipboardHistory: clipboardHistoryForExpansion())

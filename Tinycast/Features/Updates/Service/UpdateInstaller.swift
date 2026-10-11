@@ -11,10 +11,10 @@ struct UpdateInstaller: Sendable {
         var message: String {
             switch self {
             case .downloading(let received, let expected):
-                return "Downloading… \(Self.size(received)) of \(Self.size(expected))"
+                return String(localized: "Downloading… \(Self.size(received)) of \(Self.size(expected))")
             case .extracting: return "Expanding…"
             case .verifying: return "Verifying…"
-            case .replacing: return "Replacing Tinycast…"
+            case .replacing: return String(localized: "Replacing Tinycast…")
             }
         }
 

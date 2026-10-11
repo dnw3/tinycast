@@ -1,0 +1,237 @@
+{
+  "date": "2026-10-11",
+  "change": "One-click Finish and Save As in scrolling controls, sharing the owned finishing and export task.",
+  "user_report": {
+    "editor_save_as_panel_opened": true,
+    "actual_export_confirmed": false,
+    "capture_panel_shortcut_previously_reached": "Preview document rename",
+    "user_closed_window": true
+  },
+  "debug": {
+    "exit_code": 0,
+    "log": "/private/tmp/tinycast-scroll-save-debug.log"
+  },
+  "full_suite": {
+    "exit_code": 0,
+    "passed": 114,
+    "total": 114,
+    "seconds": 206,
+    "log": "/private/tmp/tinycast-scroll-save-tests.log"
+  },
+  "lint": {
+    "first_restricted_attempt_exit_code": 1,
+    "first_attempt_error_diagnostic": null,
+    "retry_exit_code": 0,
+    "log": "/private/tmp/tinycast-scroll-save-lint-retry.log"
+  },
+  "model_purity": true,
+  "release": {
+    "exit_code": 0,
+    "log": "/private/tmp/tinycast-scroll-save-release.log"
+  },
+  "installed": true,
+  "native_direct_save": {
+    "pieces": 34,
+    "size": [
+      520,
+      6800
+    ],
+    "first_roi": [
+      950,
+      650,
+      2150,
+      1000
+    ],
+    "first_roi_failure": "Automation helper windows owner 14487 layers 1000/102 obscured region; zero accepted pieces. Finish returned to original screenshot without saving.",
+    "successful_roi": [
+      980,
+      640,
+      520,
+      860
+    ],
+    "input": "Automatic vertical scrolling; pause before Finish and Save As",
+    "direct_panel_opened": true,
+    "save_enabled": true,
+    "cancel_preserved_result": true,
+    "editor_shift_command_s_reopened_panel": true,
+    "export": "scroll-direct-save-native-20261011.png",
+    "full_decode": true,
+    "visual_rows": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14
+    ],
+    "ocr_limitation": "Narrow crop produced inaccurate automatic orientation/OCR for several row labels; visual inspection shows rows 001-014 in order.",
+    "heading_pixel_bands": [
+      [
+        100,
+        154,
+        54
+      ],
+      [
+        612,
+        666,
+        54
+      ],
+      [
+        1123,
+        1177,
+        54
+      ],
+      [
+        1634,
+        1688,
+        54
+      ],
+      [
+        2145,
+        2199,
+        54
+      ],
+      [
+        2656,
+        2710,
+        54
+      ],
+      [
+        3167,
+        3221,
+        54
+      ],
+      [
+        3678,
+        3732,
+        54
+      ],
+      [
+        4189,
+        4243,
+        54
+      ],
+      [
+        4700,
+        4754,
+        54
+      ],
+      [
+        5211,
+        5265,
+        54
+      ],
+      [
+        5723,
+        5777,
+        54
+      ],
+      [
+        6234,
+        6288,
+        54
+      ],
+      [
+        6745,
+        6799,
+        54
+      ]
+    ],
+    "heading_spacing": [
+      512,
+      511,
+      511,
+      511,
+      511,
+      511,
+      511,
+      511,
+      511,
+      511,
+      512,
+      511,
+      511
+    ],
+    "sha256": "56e6dfbd8310c1cd987d981a5aed0b1127e278deb4120471763c8beba260040f",
+    "saved_editor_closed": true,
+    "binary_sha256": "dea598e6d8488be2ca363d59f12caa1e16c9fd8e0accd791b48942d5ed0a7931",
+    "receipt": "/Users/bytedance/code/github/tinycast/build/install-backups/efficiency-install-2edf5ac168.json"
+  },
+  "installed_receipt": "/Users/bytedance/code/github/tinycast/build/install-backups/efficiency-install-1ccce67537.json",
+  "installed_sha256": "6854a6d21572a76fbfd65bc84af56ef8224fd5914c7ef36407f5b70f4aaa4d01",
+  "followup": {
+    "change": "Disable Finish and Save As until first accepted frame",
+    "debug_exit_code": 0,
+    "full_suite": {
+      "passed": 114,
+      "total": 114,
+      "seconds": 203,
+      "exit_code": 0,
+      "log": "/private/tmp/tinycast-scroll-save-ready-tests.log"
+    },
+    "installed": true,
+    "lint": {
+      "exit_code": 0,
+      "log": "/private/tmp/tinycast-scroll-save-ready-lint.log"
+    },
+    "debug": {
+      "exit_code": 0,
+      "log": "/private/tmp/tinycast-scroll-save-ready-debug.log"
+    },
+    "receipt": "/Users/bytedance/code/github/tinycast/build/install-backups/efficiency-install-1ccce67537.json",
+    "binary_sha256": "6854a6d21572a76fbfd65bc84af56ef8224fd5914c7ef36407f5b70f4aaa4d01",
+    "release": {
+      "exit_code": 0,
+      "log": "/private/tmp/tinycast-scroll-save-ready-release.log"
+    },
+    "native_first_frame_disabled": true,
+    "native_after_first_frame_enabled": true,
+    "native_direct_save": {
+      "pieces": 27,
+      "size": [
+        520,
+        5540
+      ],
+      "direct_panel_opened": true,
+      "save_enabled": true,
+      "export": "scroll-direct-save-ready-native-20261011.png",
+      "full_decode": true,
+      "visual_rows": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ],
+      "saved_editor_closed": true,
+      "sha256": "6fb879da579d701d0f0de44ddad9563c644a6ec4c01660e69fd6bea3e72c0838",
+      "log": "/private/tmp/tinycast-scroll-save-ready-native.log"
+    }
+  },
+  "known_remaining_layout_warning": {
+    "log": "/private/tmp/tinycast-scroll-save-layout.log",
+    "binary": "dea598e6d8488be2ca363d59f12caa1e16c9fd8e0accd791b48942d5ed0a7931",
+    "observed_times": [
+      "12:01:17.624",
+      "12:02:23.266",
+      "12:03:41.826"
+    ],
+    "message": "NSHostingView laid out reentrantly while rendering SwiftUI; layout pass skipped",
+    "cause": "Unconfirmed; synchronous setFrame(display: true) in expanded onChange is a candidate.",
+    "resolved": false
+  }
+}

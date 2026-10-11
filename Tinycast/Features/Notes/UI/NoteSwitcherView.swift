@@ -47,7 +47,7 @@ struct NoteSwitcherView: View {
                 .textFieldStyle(.plain)
                 .focused($searchFocused)
                 .onExitCommand { notes.closeSwitcher() }
-                .accessibilityLabel("Search Notes")
+                .accessibilityLabel(String(localized: "Search Notes"))
             if !notes.searchQueryBinding.wrappedValue.isEmpty {
                 Button {
                     notes.searchQueryBinding.wrappedValue = ""
@@ -56,7 +56,7 @@ struct NoteSwitcherView: View {
                         .foregroundStyle(Theme.Colors.textTertiary)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Clear Search")
+                .accessibilityLabel(String(localized: "Clear Search"))
             }
         }
         .padding(.horizontal, Theme.Spacing.xl)
@@ -72,8 +72,11 @@ struct NoteSwitcherView: View {
                     size: Theme.Size.noteGlyph
                 )
                 .foregroundStyle(Theme.Colors.textSecondary)
-                Text(notes.isSearching ? "Searching notes…" : "No notes found")
-                    .foregroundStyle(Theme.Colors.textSecondary)
+                Text(
+                    notes.isSearching
+                        ? String(localized: "Searching notes…") : String(localized: "No notes found")
+                )
+                .foregroundStyle(Theme.Colors.textSecondary)
             }
             .frame(maxWidth: .infinity)
             .frame(height: Theme.Size.noteSwitcherEmptyHeight)
@@ -167,9 +170,14 @@ private struct NoteSwitcherRow: View {
             }
             Spacer(minLength: Theme.Spacing.md)
             if !editing, selected || hovered {
-                rowButton(title: "Rename \(summary.displayTitle)", symbol: "pencil", action: onBeginRename)
-                rowButton(title: "Move \(summary.displayTitle) to Trash", symbol: "trash", action: onTrash)
-                    .foregroundStyle(Theme.Colors.destructive)
+                rowButton(
+                    title: String(localized: "Rename \(summary.displayTitle)"), symbol: "pencil",
+                    action: onBeginRename)
+                rowButton(
+                    title: String(localized: "Move \(summary.displayTitle) to Trash"), symbol: "trash",
+                    action: onTrash
+                )
+                .foregroundStyle(Theme.Colors.destructive)
             }
         }
         .padding(.horizontal, Theme.Spacing.md)

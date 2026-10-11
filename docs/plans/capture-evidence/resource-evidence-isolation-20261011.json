@@ -1,0 +1,41 @@
+{
+  "date": "2026-10-11",
+  "scope": "Measurement-tool correctness only, not resource acceptance",
+  "changes": [
+    "RSS includes all identified descendants and package-local helpers even when reparented; records helperPIDs",
+    "Native closure and latency events share PID/category/sample-time filtering and timestamp order",
+    "Latency messages must match the exact event shape; historical/foreign events cannot satisfy minimum samples"
+  ],
+  "regression_command": "python3 Scripts/test-capture-memory.py",
+  "regression_exit_code": 0,
+  "regression_tests": 2,
+  "regression_cases": [
+    "Reparented package XPC plus external child/grandchild count; unrelated process and similar prefix excluded",
+    "20 slow current events plus 400 fast foreign events must fail P95; old/future/wrong-category/prefixed events excluded; native closures ordered and filtered"
+  ],
+  "full_suite": {
+    "exit_code": 0,
+    "passed": 114,
+    "seconds": 203,
+    "log": "/private/tmp/tinycast-resource-evidence-tests.log"
+  },
+  "debug": {
+    "exit_code": 0,
+    "log": "/private/tmp/tinycast-resource-evidence-debug.log",
+    "new_warnings": false
+  },
+  "lint": {
+    "exit_code": 0,
+    "log": "/private/tmp/tinycast-resource-evidence-lint.log"
+  },
+  "runtime_install_unchanged": {
+    "receipt": "build/install-backups/efficiency-install-df68327e8e.json",
+    "sha256": "01b8b2a7d26b44ad32e6d5b399ae72fcf3dbe74dd3218d4adc49fbb0737b389b",
+    "rechecked_sha256": "01b8b2a7d26b44ad32e6d5b399ae72fcf3dbe74dd3218d4adc49fbb0737b389b"
+  },
+  "remaining": [
+    "Run current-checkout Dev native 20-cycle scenario and >=20 successful latency samples with valid close anchors",
+    "Prove and count any scenario-owned service outside package and process ancestry",
+    "Full product/resource gates remain open"
+  ]
+}

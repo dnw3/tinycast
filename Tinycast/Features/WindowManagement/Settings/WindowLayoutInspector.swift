@@ -68,7 +68,7 @@ struct WindowLayoutInspector: View {
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Choose an icon")
+                .accessibilityLabel(String(localized: "Choose an icon"))
                 .popover(isPresented: $showingIconPicker, arrowEdge: .bottom) {
                     SymbolPicker(
                         selection: $draft.iconSymbol, fallback: WindowLayout.sfSymbol,
@@ -85,8 +85,8 @@ struct WindowLayoutInspector: View {
     private var gapToggle: some View {
         @Bindable var draft = draft
         return switchRow(
-            "Use preferred gap",
-            detail: "Inset every window by the gap set above, as the tiling commands do.",
+            String(localized: "Use preferred gap"),
+            detail: String(localized: "Inset every window by the gap set above, as the tiling commands do."),
             isOn: $draft.usesPreferredGap)
     }
 
@@ -95,8 +95,9 @@ struct WindowLayoutInspector: View {
     private var frontmostToggle: some View {
         @Bindable var draft = draft
         return switchRow(
-            "Bring to front",
-            detail: "Focus this window once the layout finishes. Only one window per layout.",
+            String(localized: "Bring to front"),
+            detail: String(
+                localized: "Focus this window once the layout finishes. Only one window per layout."),
             isOn: $draft.isSelectedEntryFrontmost)
     }
 
@@ -105,12 +106,12 @@ struct WindowLayoutInspector: View {
             sectionLabel("Size")
             HStack(spacing: Theme.Spacing.md) {
                 WindowLayoutNumberField(
-                    label: "W", name: "Width", suffix: "%",
+                    label: String(localized: "W"), name: "Width", suffix: "%",
                     range: WindowLayoutDraft.percentRange,
                     value: WindowLayoutDraft.percent(entry.widthFraction),
                     onCommit: draft.setWidthPercent)
                 WindowLayoutNumberField(
-                    label: "H", name: "Height", suffix: "%",
+                    label: String(localized: "H"), name: "Height", suffix: "%",
                     range: WindowLayoutDraft.percentRange,
                     value: WindowLayoutDraft.percent(entry.heightFraction),
                     onCommit: draft.setHeightPercent)
@@ -123,11 +124,13 @@ struct WindowLayoutInspector: View {
             sectionLabel("Offset")
             HStack(spacing: Theme.Spacing.md) {
                 WindowLayoutNumberField(
-                    label: "X", name: "Horizontal offset", suffix: "pt",
+                    label: String(localized: "X"), name: String(localized: "Horizontal offset"),
+                    suffix: String(localized: "pt"),
                     range: WindowLayoutDraft.offsetRange, value: Int(entry.offset.x.rounded()),
                     onCommit: draft.setOffsetX)
                 WindowLayoutNumberField(
-                    label: "Y", name: "Vertical offset", suffix: "pt",
+                    label: String(localized: "Y"), name: String(localized: "Vertical offset"),
+                    suffix: String(localized: "pt"),
                     range: WindowLayoutDraft.offsetRange, value: Int(entry.offset.y.rounded()),
                     onCommit: draft.setOffsetY)
             }

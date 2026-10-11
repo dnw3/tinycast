@@ -48,12 +48,14 @@ final class ExtensionCoordinator {
         Task {
             guard
                 await core.confirm(
-                    title: "Enable extensions?",
+                    title: String(localized: "Enable extensions?"),
                     message:
-                        "Extensions are third-party JavaScript, run on this Mac. A running command "
-                        + "holds a JavaScript engine in memory until you leave it — expect Tinycast "
-                        + "to use noticeably more RAM while one is open.",
-                    symbol: "puzzlepiece.extension", confirmTitle: "Enable", tone: .neutral,
+                        String(
+                            localized:
+                                "Extensions are third-party JavaScript, run on this Mac. A running command holds a JavaScript engine in memory until you leave it — expect Tinycast to use noticeably more RAM while one is open."
+                        ),
+                    symbol: "puzzlepiece.extension", confirmTitle: String(localized: "Enable"),
+                    tone: .neutral,
                     confirmRole: .standard)
             else { return }
 
@@ -84,11 +86,13 @@ final class ExtensionCoordinator {
     /// A `raycast://extensions/…` link: the same command the launcher would run, by slug.
     func runDeepLink(_ link: ExtensionDeepLink) {
         guard settings.extensionsEnabled else {
-            core.showMessage("Extensions are disabled — enable them in Settings", tone: .danger)
+            core.showMessage(
+                String(localized: "Extensions are disabled — enable them in Settings"), tone: .danger)
             return
         }
         guard let (owner, command) = extensions.resolve(link) else {
-            core.showMessage("No installed extension provides '\(link.commandName)'", tone: .danger)
+            core.showMessage(
+                String(localized: "No installed extension provides '\(link.commandName)'"), tone: .danger)
             return
         }
         run(
@@ -103,7 +107,8 @@ final class ExtensionCoordinator {
         if settings.extensionsEnabled { core.pendingExtensionStoreInstall = install }
         settingsCoordinator.showSettings(tab: .extensions)
         if !settings.extensionsEnabled {
-            core.showMessage("Extensions are disabled — enable them in Settings", tone: .danger)
+            core.showMessage(
+                String(localized: "Extensions are disabled — enable them in Settings"), tone: .danger)
         }
     }
 
@@ -125,11 +130,13 @@ final class ExtensionCoordinator {
         Task {
             guard
                 await core.confirm(
-                    title: "Uninstall \(owner.title)?",
+                    title: String(localized: "Uninstall \(owner.title)?"),
                     message:
-                        "Removes the extension and everything it stored — its preferences, its cache "
-                        + "and its own files. Its commands leave the launcher.",
-                    symbol: "trash", confirmTitle: "Uninstall")
+                        String(
+                            localized:
+                                "Removes the extension and everything it stored — its preferences, its cache and its own files. Its commands leave the launcher."
+                        ),
+                    symbol: "trash", confirmTitle: String(localized: "Uninstall"))
             else { return }
             await extensions.uninstall(owner)
         }
@@ -141,11 +148,13 @@ final class ExtensionCoordinator {
         let size = ExtensionCleanup.formatted(bytes: report.bytes)
         guard
             await core.confirm(
-                title: "Clean up \(size)?",
+                title: String(localized: "Clean up \(size)?"),
                 message:
-                    "Removes build files left by an interrupted install, and the storage of "
-                    + "extensions that are no longer installed. Installed extensions are untouched.",
-                symbol: "trash", confirmTitle: "Clean Up")
+                    String(
+                        localized:
+                            "Removes build files left by an interrupted install, and the storage of extensions that are no longer installed. Installed extensions are untouched."
+                    ),
+                symbol: "trash", confirmTitle: String(localized: "Clean Up"))
         else { return }
 
         let installed = Set(extensions.installed.map(\.manifest.name))
@@ -155,7 +164,8 @@ final class ExtensionCoordinator {
         }.value
         core.showMessage(
             freed.isEmpty
-                ? "Nothing to clean up" : "Reclaimed \(ExtensionCleanup.formatted(bytes: freed.bytes))")
+                ? String(localized: "Nothing to clean up")
+                : String(localized: "Reclaimed \(ExtensionCleanup.formatted(bytes: freed.bytes))"))
     }
 
     /// What no index prunes: left behind, these key a shortcut or a rank to a vanished command.

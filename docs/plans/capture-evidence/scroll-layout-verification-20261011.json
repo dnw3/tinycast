@@ -1,0 +1,106 @@
+{
+  "date": "2026-10-11",
+  "baseline": {
+    "receipt": "build/install-backups/efficiency-install-1ccce67537.json",
+    "binary_sha256": "6854a6d21572a76fbfd65bc84af56ef8224fd5914c7ef36407f5b70f4aaa4d01",
+    "pid": 29160,
+    "warning_time": "12:12:25.936",
+    "log": "/private/tmp/tinycast-scroll-layout-baseline.log",
+    "warning": "NSHostingView laid out reentrantly during SwiftUI rendering; layout pass skipped."
+  },
+  "candidate_change": "Move panel resize out of SwiftUI onChange: synchronous session pause/resume callback and details Binding setter; callback released on close; no deferred tasks.",
+  "debug": {
+    "exit_code": 0,
+    "log": "/private/tmp/tinycast-scroll-layout-debug.log"
+  },
+  "lint": {
+    "exit_code": 0,
+    "log": "/private/tmp/tinycast-scroll-layout-lint.log"
+  },
+  "full_suite": {
+    "exit_code": 0,
+    "passed": 114,
+    "seconds": 199,
+    "log": "/private/tmp/tinycast-scroll-layout-tests.log"
+  },
+  "native_ab": "pause/resume, details expand/collapse and multi-piece Save As verified in anonymous PDF flow",
+  "resolved": true,
+  "first_candidate": {
+    "receipt": "build/install-backups/efficiency-install-5d813e59b3.json",
+    "pid": 38146,
+    "sha256": "36b4ea22eeb43f316293a6cdd5a4a9213460c2e8415e63a92ff86a6923269c9e",
+    "release_exit": 0,
+    "native_ab": {
+      "pause_resume_cycles": 3,
+      "visible_expanded_panel": "560 × 220 screenshot; pause status visible",
+      "warning_count": 6,
+      "log": "/private/tmp/tinycast-scroll-layout-native.log",
+      "passed": false
+    }
+  },
+  "second_candidate": {
+    "debug": {
+      "exit_code": 0,
+      "log": "/private/tmp/tinycast-scroll-layout-events-debug.log"
+    },
+    "lint": {
+      "exit_code": 0,
+      "log": "/private/tmp/tinycast-scroll-layout-events-lint.log"
+    },
+    "full_suite": {
+      "exit_code": 0,
+      "passed": 114,
+      "seconds": 211,
+      "log": "/private/tmp/tinycast-scroll-layout-events-tests.log"
+    },
+    "release": {
+      "exit_code": 0,
+      "log": "/private/tmp/tinycast-scroll-layout-events-release.log",
+      "new_warnings": false
+    },
+    "native": {
+      "pause_resume_cycles": 3,
+      "expanded_screenshot_pixels": [
+        560,
+        220
+      ],
+      "collapsed_screenshot_pixels": [
+        560,
+        76
+      ],
+      "first_frame_save_disabled": true,
+      "pause_status_visible": true,
+      "reentrant_warnings": 0,
+      "log": "/private/tmp/tinycast-scroll-layout-events-native.log",
+      "pieces": 10,
+      "output_pixels": [
+        520,
+        2480
+      ],
+      "actual_save_panel": true,
+      "actual_saved_png": "docs/plans/capture-evidence/scroll-layout-events-native-20261011.png",
+      "full_decode": true,
+      "visual": "Visible ROW 011–015 ordered in narrow body crop; partial start/end rows retained.",
+      "closed_saved_result": true,
+      "details_menu_toggle": "verified expanded preview/notice/axis and collapsed single row; see scroll-details-cancel-verification-20261011.json"
+    },
+    "install": {
+      "installed_at": "2026-10-11T04:35:52.982704+00:00",
+      "branch": "dnw/capture-workspace",
+      "source": "current working tree: scroll panel resizing owned by pause/resume events and details input, no window mutation in SwiftUI onChange; scrolling Finish and Save As with first-frame readiness, owned finishing/export task and post-await session/source validation; Capture S4.2 continuous screenshot-to-scroll handoff, shared frosted toolbar and icon cells, native customization drag sorting, Save As primary action, actual save shortcuts including text editing, discoverable quick save destination; fixed-header browser registration, dense candidate validation, local ambiguity checks and blank-margin rejection, including cropped body regions with original pixel export; preserves prior S4.1 and S6 work",
+      "bundle_id": "com.tinycast.app",
+      "version": "0.1.0",
+      "installed_path": "/Applications/Tinycast.app",
+      "backup_path": "/Users/bytedance/code/github/tinycast/build/install-backups/Tinycast-before-efficiency-df68327e8e.app",
+      "executable_sha256": "01b8b2a7d26b44ad32e6d5b399ae72fcf3dbe74dd3218d4adc49fbb0737b389b",
+      "pids": [
+        45246
+      ],
+      "signature_verified": true,
+      "native_ui_acceptance": "pending",
+      "receipt": "/Users/bytedance/code/github/tinycast/build/install-backups/efficiency-install-df68327e8e.json"
+    }
+  },
+  "pause_resume_warning_resolved_in_tested_flow": true,
+  "resolved_scope": "Tested pause/resume and details resizing only; full product matrix remains open."
+}

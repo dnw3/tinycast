@@ -5,6 +5,8 @@ options:
     macOS: "26.0"
   createIntermediateGroups: true
   groupSortPosition: top
+  developmentLanguage: en
+  knownRegions: [en, zh-Hans]
 
 settings:
   base:
@@ -17,6 +19,7 @@ settings:
     # Create it once — see docs/signing.md.
     CODE_SIGN_IDENTITY: "Tinycast Self-Signed"
     SWIFT_STRICT_CONCURRENCY: complete
+    SWIFT_EMIT_LOC_STRINGS: YES
     TINYCAST_BUNDLE_IDENTIFIER: com.tinycast.app
   configs:
     Debug:

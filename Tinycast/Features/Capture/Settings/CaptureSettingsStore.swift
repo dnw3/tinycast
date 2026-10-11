@@ -7,9 +7,17 @@ final class CaptureSettingsStore {
     private let defaults: UserDefaults
     private var regions: [CaptureSavedRegion]
     private(set) var uploadDestination: CaptureUploadDestination?
-    private(set) var toolbarItems: Set<CaptureToolbarItem> {
+    private(set) var presentationPresets: [CapturePresentationPreset] {
         didSet {
-            if let data = try? JSONEncoder().encode(toolbarItems) {
+            if let data = try? JSONEncoder().encode(presentationPresets) {
+                defaults.set(data, forKey: AppSettingsKey.capturePresentationPresets.rawValue)
+            }
+        }
+    }
+    var toolbarItems: Set<CaptureToolbarItem> { toolbarConfiguration.items }
+    private(set) var toolbarConfiguration: CaptureToolbarConfiguration {
+        didSet {
+            if let data = try? JSONEncoder().encode(toolbarConfiguration) {
                 defaults.set(data, forKey: AppSettingsKey.captureToolbarItems.rawValue)
             }
         }
@@ -30,9 +38,11 @@ final class CaptureSettingsStore {
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
-        toolbarItems = defaults.data(forKey: AppSettingsKey.captureToolbarItems.rawValue)
-            .flatMap { $0.count <= 8192 ? try? JSONDecoder().decode(Set<CaptureToolbarItem>.self, from: $0) : nil }
-            .map { $0.union([.annotation(.select)]) } ?? CaptureToolbarItem.standard
+        presentationPresets = defaults.data(forKey: AppSettingsKey.capturePresentationPresets.rawValue)
+            .flatMap { $0.count <= 32_768 ? try? JSONDecoder().decode([CapturePresentationPreset].self, from: $0) : nil }
+            .flatMap { CapturePresentationPreset.valid($0) ? $0 : nil } ?? []
+        toolbarConfiguration = CaptureToolbarConfiguration(
+            data: defaults.data(forKey: AppSettingsKey.captureToolbarItems.rawValue))
         showsCompletionThumbnail = defaults.bool(forKey: AppSettingsKey.captureCompletionThumbnail.rawValue)
         uploadDestination = defaults.data(forKey: AppSettingsKey.captureUploadDestination.rawValue)
             .flatMap { $0.count <= 16_384 ? try? JSONDecoder().decode(CaptureUploadDestination.self, from: $0) : nil }
@@ -48,10 +58,44 @@ final class CaptureSettingsStore {
 
     func setToolbarItem(_ item: CaptureToolbarItem, visible: Bool) {
         guard item != .annotation(.select) else { return }
-        if visible { toolbarItems.insert(item) } else { toolbarItems.remove(item) }
+        if visible { toolbarConfiguration.items.insert(item) } else { toolbarConfiguration.items.remove(item) }
     }
 
-    func resetToolbar() { toolbarItems = CaptureToolbarItem.standard }
+    func reorderToolbar(actions: Bool, from offsets: IndexSet, to destination: Int) {
+        toolbarConfiguration.reorder(actions: actions, from: offsets, to: destination)
+    }
+
+    func moveToolbarItem(_ item: CaptureToolbarItem, by offset: Int) { toolbarConfiguration.move(item, by: offset) }
+
+    func resetToolbar() { toolbarConfiguration = CaptureToolbarConfiguration(items: CaptureToolbarItem.standard) }
+
+    func replacePresentationPresets(_ presets: [CapturePresentationPreset]) -> Bool {
+        guard CapturePresentationPreset.valid(presets) else { return false }
+        if presentationPresets != presets { presentationPresets = presets }
+        return true
+    }
+
+    func savePresentationPreset(name: String, presentation: CapturePresentation, replacing id: UUID? = nil) throws {
+        guard presentation.isValid else { throw CapturePresentationPreset.Failure.style }
+        let preset = CapturePresentationPreset(id: id ?? UUID(),
+            name: name.trimmingCharacters(in: .whitespacesAndNewlines), presentation: presentation)
+        guard preset.isValid else { throw CapturePresentationPreset.Failure.name }
+        var next = presentationPresets
+        if let id {
+            guard let index = next.firstIndex(where: { $0.id == id }) else {
+                throw CapturePresentationPreset.Failure.missing
+            }
+            next[index] = preset
+        } else {
+            guard next.count < 20 else { throw CapturePresentationPreset.Failure.limit }
+            next.append(preset)
+        }
+        guard replacePresentationPresets(next) else { throw CapturePresentationPreset.Failure.duplicate }
+    }
+
+    func removePresentationPreset(_ id: UUID) {
+        presentationPresets.removeAll { $0.id == id }
+    }
 
     func saveUpload(_ destination: CaptureUploadDestination, credential: CaptureUploadCredential) throws {
         let destination = try destination.validated()

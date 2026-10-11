@@ -16,16 +16,21 @@ struct CaptureRedactionReview: View {
                     Text(state.redactionCandidates[state.redactionIndex].label).lineLimit(1)
                         .frame(maxWidth: .infinity, alignment: .leading)
                     Text("\(state.redactionIndex + 1)/\(state.redactionCandidates.count)").monospacedDigit()
-                    CaptureIconButton(title: "Previous Area", symbol: "chevron.left") {
-                        state.redactionIndex = (state.redactionIndex + state.redactionCandidates.count - 1)
+                    CaptureIconButton(title: String(localized: "Previous Area"), symbol: "chevron.left") {
+                        state.redactionIndex =
+                            (state.redactionIndex + state.redactionCandidates.count - 1)
                             % state.redactionCandidates.count
                     }
-                    CaptureIconButton(title: "Next Area", symbol: "chevron.right") {
+                    CaptureIconButton(title: String(localized: "Next Area"), symbol: "chevron.right") {
                         state.redactionIndex = (state.redactionIndex + 1) % state.redactionCandidates.count
                     }
-                    Button("Cover \(included) \(included == 1 ? "Area" : "Areas")") { state.applyRedactions() }
-                        .disabled(!state.redactionCandidates.contains(where: \.included))
-                    CaptureIconButton(title: "Dismiss Suggestions", symbol: "xmark") { state.redactionCandidates = [] }
+                    Button("Cover \(included) \(included == 1 ? "Area" : "Areas")") {
+                        state.applyRedactions()
+                    }
+                    .disabled(!state.redactionCandidates.contains(where: \.included))
+                    CaptureIconButton(title: String(localized: "Dismiss Suggestions"), symbol: "xmark") {
+                        state.redactionCandidates = []
+                    }
                 }
                 .font(metrics.typography.bar)
             }

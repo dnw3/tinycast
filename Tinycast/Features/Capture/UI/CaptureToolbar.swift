@@ -7,25 +7,20 @@ struct CaptureIconButton: View {
     var selected = false
     var hint = ""
     let action: () -> Void
-    @Environment(\.metrics) private var metrics
-    @State private var hovered = false
     private var help: String {
-        let title = shortcut.isEmpty ? title : "\(title)  \(shortcut)"
-        return hint.isEmpty ? title : "\(title)\n\(hint)"
+        let name = Bundle.main.localizedString(forKey: title, value: nil, table: nil)
+        let title = shortcut.isEmpty ? name : "\(name)  \(shortcut)"
+        return hint.isEmpty ? title : String(localized: "\(title)\n\(hint)")
     }
 
     var body: some View {
         Button(action: action) {
-            SymbolImage(name: symbol, size: metrics.scaled(Theme.Size.captureGlyph))
-                .frame(width: metrics.scaled(Theme.Size.captureTool), height: metrics.scaled(Theme.Size.captureTool))
-                .background(selected ? Theme.Colors.selection : hovered ? Theme.Colors.rowHover : .clear)
-                .clipShape(RoundedRectangle(cornerRadius: metrics.radius.barControl))
+            CaptureToolbarGlyph(symbol: symbol)
         }
-        .buttonStyle(.borderless)
+        .buttonStyle(CaptureToolbarButtonStyle(selected: selected))
         .focusable(false)
-        .onHover { hovered = $0 }
         .tooltip(help)
-        .accessibilityLabel(title)
+        .accessibilityLabel(Bundle.main.localizedString(forKey: title, value: nil, table: nil))
         .accessibilityAddTraits(selected ? .isSelected : [])
     }
 }
@@ -44,16 +39,26 @@ struct CaptureToolProperties: View {
         } else if tool == .emoji {
             CaptureEmojiControls(state: state)
         } else if tool == .magnifier {
-            Picker("Magnification", selection: Binding(get: { state.magnification }, set: {
-                state.magnification = $0
-                state.updateSelectedStyle()
-            })) {
+            Picker(
+                "Magnification",
+                selection: Binding(
+                    get: { state.magnification },
+                    set: {
+                        state.magnification = $0
+                        state.updateSelectedStyle()
+                    })
+            ) {
                 ForEach([2.0, 4, 8], id: \.self) { Text("\(Int($0))×").tag($0) }
             }.fixedSize().disabled(state.busy)
         } else if tool == .blur {
-            Picker("Blur", selection: Binding(get: { state.strokeWidth }, set: {
-                state.strokeWidth = $0; state.updateSelectedStyle()
-            })) {
+            Picker(
+                "Blur",
+                selection: Binding(
+                    get: { state.strokeWidth },
+                    set: {
+                        state.strokeWidth = $0; state.updateSelectedStyle()
+                    })
+            ) {
                 Text("Light").tag(4.0)
                 Text("Medium").tag(8.0)
                 Text("Strong").tag(12.0)
@@ -66,15 +71,22 @@ struct CaptureToolProperties: View {
                     Button {
                         state.ink = ink
                         state.color = nil
-                        state.updateSelectedStyle()
+                        if tool == .text {
+                            state.changeText(.color(state.currentTextStyle.color))
+                        } else {
+                            state.updateSelectedStyle()
+                        }
                     } label: {
                         Circle().fill(Color(red: rgba[0], green: rgba[1], blue: rgba[2]))
                             .frame(
                                 width: metrics.scaled(Theme.Size.captureGlyph),
-                                height: metrics.scaled(Theme.Size.captureGlyph))
+                                height: metrics.scaled(Theme.Size.captureGlyph)
+                            )
                             .padding(metrics.spacing.xs)
-                            .overlay(Circle().strokeBorder(
-                                state.ink == ink && state.color == nil ? Theme.Colors.textPrimary : .clear))
+                            .overlay(
+                                Circle().strokeBorder(
+                                    state.ink == ink && state.color == nil ? Theme.Colors.textPrimary : .clear
+                                ))
                     }
                     .buttonStyle(.borderless).focusable(false)
                     .accessibilityLabel(ink.rawValue.capitalized)
@@ -82,33 +94,105 @@ struct CaptureToolProperties: View {
                 }
                 if state.color != nil { CaptureColorField(state: state) }
                 if tool == .text {
-                    Picker("Font", selection: Binding(get: { state.font }, set: {
-                        state.font = $0; state.updateSelectedStyle()
-                    })) {
-                        ForEach(CaptureAnnotation.Font.allCases, id: \.self) { font in Text(font.title).tag(font) }
+                    Picker(
+                        "Font",
+                        selection: Binding(
+                            get: { state.font },
+                            set: {
+                                state.changeText(.font($0))
+                            })
+                    ) {
+                        ForEach(CaptureAnnotation.Font.allCases, id: \.self) { font in
+                            Text(LocalizedStringKey(font.title)).tag(font)
+                        }
                     }.fixedSize()
                     HStack(spacing: metrics.spacing.xxs) {
                         TextField("Size", value: $state.fontSize, format: .number)
                             .frame(width: metrics.scaled(Theme.Size.capturePropertyField))
                             .onSubmit {
-                                state.fontSize = state.fontSize.isFinite ? min(768, max(6, state.fontSize)) : 24
-                                state.updateSelectedStyle()
-                            }.accessibilityLabel("Font Size")
+                                state.fontSize =
+                                    state.fontSize.isFinite ? min(768, max(6, state.fontSize)) : 24
+                                state.changeText(.size(state.fontSize))
+                            }.accessibilityLabel(String(localized: "Font Size"))
                         Text("pt")
-                    }.fixedSize().tooltip("Font Size")
+                    }.fixedSize().tooltip(String(localized: "Font Size"))
+                    Menu("Text Style") { CaptureTextStyleControls(state: state) }
+                        .fixedSize().focusable(false)
                 } else {
-                    Picker("Stroke", selection: Binding(get: { state.strokeWidth }, set: {
-                        state.strokeWidth = $0; state.updateSelectedStyle()
-                    })) {
+                    Picker(
+                        "Stroke",
+                        selection: Binding(
+                            get: { state.strokeWidth },
+                            set: {
+                                state.strokeWidth = $0; state.updateSelectedStyle()
+                            })
+                    ) {
                         Text("Fine").tag(2.0)
                         Text("Medium").tag(4.0)
                         Text("Bold").tag(8.0)
                     }.fixedSize()
                 }
                 if tool == .rectangle || tool == .ellipse {
-                    Toggle("Fill", isOn: Binding(get: { state.filled }, set: {
-                        state.filled = $0; state.updateSelectedStyle()
-                    })).toggleStyle(.checkbox)
+                    Picker(
+                        "Shape",
+                        selection: Binding(
+                            get: { state.shapeStyle },
+                            set: {
+                                state.shapeStyle = $0; state.updateSelectedStyle()
+                            })
+                    ) {
+                        ForEach(CaptureAnnotation.ShapeStyle.allCases, id: \.self) {
+                            Text(LocalizedStringKey($0.title)).tag($0)
+                        }
+                    }.fixedSize()
+                    if tool == .rectangle {
+                        Picker(
+                            "Corners",
+                            selection: Binding(
+                                get: { state.cornerRadius },
+                                set: {
+                                    state.cornerRadius = $0; state.updateSelectedStyle()
+                                })
+                        ) {
+                            Text("Square").tag(0.0)
+                            Text("Rounded").tag(12.0)
+                            Text("Round").tag(32.0)
+                        }.fixedSize()
+                    }
+                }
+                if tool == .arrow || tool == .curvedArrow {
+                    Picker(
+                        "Arrow",
+                        selection: Binding(
+                            get: { state.arrowStyle },
+                            set: {
+                                state.arrowStyle = $0; state.updateSelectedStyle()
+                            })
+                    ) {
+                        ForEach(CaptureAnnotation.ArrowStyle.allCases, id: \.self) {
+                            Text(LocalizedStringKey($0.title)).tag($0)
+                        }
+                    }.fixedSize()
+                    Toggle(
+                        "Reverse",
+                        isOn: Binding(
+                            get: { state.reversed },
+                            set: {
+                                state.reversed = $0; state.updateSelectedStyle()
+                            })
+                    ).toggleStyle(.checkbox)
+                }
+                if tool == .number { CaptureNumberControls(state: state) }
+                if tool == .highlighter { CaptureHighlightControls(state: state) }
+                if tool == .pen {
+                    Toggle(
+                        "Smooth",
+                        isOn: Binding(
+                            get: { state.smoothPen },
+                            set: {
+                                state.smoothPen = $0; state.updateSelectedStyle()
+                            })
+                    ).toggleStyle(.checkbox)
                 }
                 HStack(spacing: metrics.spacing.xxs) {
                     TextField("Rotation", value: $state.rotation, format: .number)
@@ -116,9 +200,9 @@ struct CaptureToolProperties: View {
                         .onSubmit {
                             state.rotation = state.rotation.isFinite ? min(180, max(-180, state.rotation)) : 0
                             state.updateSelectedStyle()
-                        }.accessibilityLabel("Rotation in Degrees")
+                        }.accessibilityLabel(String(localized: "Rotation in Degrees"))
                     Text("°")
-                }.fixedSize().tooltip("Rotation")
+                }.fixedSize().tooltip(String(localized: "Rotation"))
             }
             .disabled(state.busy)
         }
@@ -128,28 +212,34 @@ struct CaptureToolProperties: View {
 struct CaptureOutputTools: View {
     @Environment(CaptureCoordinator.self) private var coordinator
     var inline = false
+    var maximumItems = CaptureToolbarAction.allCases.count
+
+    private var actions: [CaptureToolbarAction] {
+        coordinator.settings.toolbarConfiguration.orderedItems(actions: true).compactMap { item in
+            guard case let .action(action) = item, inline || !action.needsSelection else { return nil }
+            return action
+        }
+    }
 
     var body: some View {
-        CaptureIconButton(title: "Copy", symbol: "doc.on.doc", shortcut: "⌘C / Return", selected: true) {
-            coordinator.copy()
+        ForEach(Array(actions.prefix(maximumItems)), id: \.self) { action in
+            CaptureActionButton(action: action)
         }
-        CaptureIconButton(title: "Save", symbol: "square.and.arrow.down", shortcut: "⌘S") { coordinator.save() }
-        CaptureIconButton(title: "Pin", symbol: "pin") { coordinator.pin() }
-        CaptureIconButton(title: "Extract Text", symbol: "text.viewfinder") { coordinator.recognize(translate: false) }
-        Menu {
-            Button("Text Panel") { coordinator.recognize(translate: true) }
-            Button("Translate in Image…") { coordinator.prepareImageTranslation() }
-        } label: {
-            SymbolImage(name: "translate", size: coordinator.metrics.scaled(Theme.Size.captureGlyph))
-                .frame(width: coordinator.metrics.scaled(Theme.Size.captureTool),
-                    height: coordinator.metrics.scaled(Theme.Size.captureTool))
-        } primaryAction: {
-            coordinator.recognize(translate: true)
+        if actions.count > maximumItems {
+            Menu {
+                ForEach(Array(actions.dropFirst(maximumItems)), id: \.self) { action in
+                    CaptureActionButton(action: action, inMenu: true)
+                }
+            } label: {
+                CaptureToolbarGlyph(symbol: "ellipsis")
+            }
+            .menuStyle(CaptureToolbarMenuStyle()).accessibilityLabel(String(localized: "More Actions"))
+            .tooltip(String(localized: "More Actions"))
         }
-        .menuStyle(.borderlessButton).fixedSize().accessibilityLabel("Translate").tooltip("Translate")
-        CaptureIconButton(title: "Share", symbol: "square.and.arrow.up") { coordinator.shareImage() }
         if inline {
-            CaptureIconButton(title: "Expand Editor", symbol: "arrow.up.left.and.arrow.down.right") {
+            CaptureIconButton(
+                title: String(localized: "Expand Editor"), symbol: "arrow.up.left.and.arrow.down.right"
+            ) {
                 coordinator.expandCapture()
             }
         }

@@ -10,7 +10,7 @@ struct SystemSettingsSettingsView: View {
             LauncherItemsSection(
                 kind: .systemSettings,
                 anchor: .systemSettingsSystemSettings,
-                searchPrompt: "Search System Settings…")
+                searchPrompt: String(localized: "Search System Settings…"))
         }
         .formStyle(.grouped)
         .settingsScrollTarget(.systemSettings)

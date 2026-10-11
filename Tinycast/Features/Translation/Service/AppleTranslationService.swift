@@ -9,16 +9,23 @@ enum AppleTranslationService {
         var errorDescription: String? {
             switch self {
             case .needsLanguages:
-                "Download the source and target languages in System Settings → Language & Region → Translation Languages."
+                String(
+                    localized:
+                        "Download the source and target languages in System Settings → Language & Region → Translation Languages."
+                )
             case .unsupported:
-                "Apple does not support this language pair. Choose another language or the AI engine."
+                String(
+                    localized:
+                        "Apple does not support this language pair. Choose another language or the AI engine."
+                )
             }
         }
     }
 
     static func translate(_ request: TranslationRequest) async throws -> String {
-        let results = try await translate(TranslationBatchRequest(
-            texts: [request.text], source: request.source, target: request.target))
+        let results = try await translate(
+            TranslationBatchRequest(
+                texts: [request.text], source: request.source, target: request.target))
         return results[0]
     }
 
@@ -36,9 +43,10 @@ enum AppleTranslationService {
         @unknown default: throw Failure.unsupported
         }
         let session = TranslationSession(installedSource: source, target: target)
-        let result = try await session.translations(from: request.texts.enumerated().map {
-            .init(sourceText: $0.element, clientIdentifier: String($0.offset))
-        })
+        let result = try await session.translations(
+            from: request.texts.enumerated().map {
+                .init(sourceText: $0.element, clientIdentifier: String($0.offset))
+            })
         try Task.checkCancellation()
         let items = result.compactMap { response -> TranslationBatchRequest.Item? in
             guard let identifier = response.clientIdentifier, let id = Int(identifier) else { return nil }

@@ -6,7 +6,7 @@ struct WindowSwitchScreen: PaletteScreen {
 
     var rows: [WindowSwitchEntry] { session.filtered }
 
-    var primaryActionTitle: String { "Switch to Window" }
+    var primaryActionTitle: String { String(localized: "Switch to Window") }
 
     func hasActions(at selection: Int) -> Bool { false }
 
@@ -24,7 +24,9 @@ struct WindowSwitchScreen: PaletteScreen {
     @ViewBuilder
     private func content(selection: Int, scroll: ScrollIntent) -> some View {
         if rows.isEmpty {
-            EmptyResults(text: session.snapshot.isEmpty ? "No open windows" : "No windows found")
+            EmptyResults(
+                text: session.snapshot.isEmpty
+                    ? String(localized: "No open windows") : String(localized: "No windows found"))
         } else {
             WindowSwitchList(
                 entries: rows,

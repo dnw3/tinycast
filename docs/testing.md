@@ -89,7 +89,12 @@ If a change touches anything in the right column, the harness on the left is man
 
 | Harness | Guards |
 | --- | --- |
+| `localization-test` | Actual compiled English/Chinese catalogs, plural and positional formatting, unknown user-text fallback and stable bilingual Settings search |
+| `capture-quick-save-test` | Independently decoded final redaction, repeated saves, exclusive publication, cancellation cleanup and invalid destination folders in a private temporary tree |
 | `capture-workflow-test` | Capture geometry, cursor/occlusion and filter exclusions, session revisions, RGB registration, numbered text rows, vertical/horizontal strip pixels, PNG/JPEG/HEIC crop/cover output, copy limits and history recovery |
+| `capture-screen-sample-test` | Retina coordinate mapping, inverted Y, display edges and exact adjacent one-pixel sRGB samples |
+| `capture-toolbar-test` | Native button, menu and primary-action menu fitting sizes and glyph centers across all three interface sizes |
+| `capture-toolbar-configuration-test` | Existing annotation choices, initial action defaults, explicit hidden actions after persistence, corrupt/oversized layouts, complete catalog, persisted group order, search and capacity bounds |
 | `capture-editor-test` | Native TextKit composition, Unicode, multiline, commit keys, private-pasteboard copy and undo |
 | `capture-session-test` | Lock/sleep/session/display interruption routing on private centers and queued-event cancellation after observer release |
 | `capture-ocr-test` | Real Vision OCR on composited overlapping tiles, redaction, coordinate deduplication, bounded output, immediate process exits and helper cancellation/deadline reaping |

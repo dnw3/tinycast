@@ -96,7 +96,7 @@ struct ExtensionAlert: Sendable {
     var isDestructive: Bool
 
     init(payload: [String: RenderValue]) {
-        title = payload["title"]?.stringValue ?? "Are you sure?"
+        title = payload[String(localized: "title")]?.stringValue ?? String(localized: "Are you sure?")
         message = payload["message"]?.stringValue
         let primary = payload["primaryAction"]?.objectValue
         primaryTitle = primary?["title"]?.stringValue ?? "Confirm"
@@ -112,9 +112,10 @@ enum ExtensionHostError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .noActiveExtension: return "No extension command is running."
-        case .unknown(let what): return "Unknown host call '\(what)'."
-        case .unsupported(let what): return "\(what) is not supported in Tinycast extensions."
+        case .noActiveExtension: return String(localized: "No extension command is running.")
+        case .unknown(let what): return String(localized: "Unknown host call '\(what)'.")
+        case .unsupported(let what):
+            return String(localized: "\(what) is not supported in Tinycast extensions.")
         }
     }
 }
@@ -181,8 +182,9 @@ final class ExtensionHostBridge: ExtensionHostAPI {
             {
                 _ = context.present(
                     toast: ExtensionToast(
-                        style: .failure, title: "Connection failed",
-                        message: "Start the local service or check its socket path: \(path)"))
+                        style: .failure, title: String(localized: "Connection failed"),
+                        message: String(
+                            localized: "Start the local service or check its socket path: \(path)")))
             }
             throw error
         }

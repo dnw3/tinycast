@@ -2,6 +2,17 @@ import AppKit
 
 @MainActor
 enum CaptureWorkspaceKeys {
+    static func handleSave(_ event: NSEvent, coordinator: CaptureCoordinator) -> Bool {
+        guard event.modifierFlags.intersection([.command, .control, .option]) == .command,
+            event.keyCode == 1, coordinator.savePanel == nil, let editor = coordinator.editor,
+            !editor.busy, coordinator.workspace?.busy != true,
+            coordinator.pendingCapture == nil, coordinator.workspace?.selectingTarget != true,
+            coordinator.workspace == nil || coordinator.workspace?.request.mode == .screenshot
+        else { return false }
+        if event.modifierFlags.contains(.shift) { coordinator.saveAs() } else { coordinator.save() }
+        return true
+    }
+
     static func handle(_ event: NSEvent, coordinator: CaptureCoordinator) -> Bool {
         guard coordinator.savePanel == nil, let workspace = coordinator.workspace else { return false }
         if workspace.busy || coordinator.editor?.busy == true {
@@ -23,7 +34,9 @@ enum CaptureWorkspaceKeys {
                 if workspace.request.mode == .screenshot, !workspace.selectingTarget { coordinator.copy() }
                 return true
             case "s":
-                if workspace.request.mode == .screenshot, !workspace.selectingTarget { coordinator.save() }
+                if workspace.request.mode == .screenshot, !workspace.selectingTarget {
+                    if event.modifierFlags.contains(.shift) { coordinator.saveAs() } else { coordinator.save() }
+                }
                 return true
             case "v":
                 if workspace.request.mode == .screenshot, !workspace.selectingTarget { coordinator.addImage(clipboard: true) }

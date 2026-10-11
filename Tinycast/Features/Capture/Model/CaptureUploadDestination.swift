@@ -62,17 +62,7 @@ struct CaptureUploadCredential: Codable, Sendable {
     var clientSecret = ""
 }
 
-enum CaptureUploadError: LocalizedError {
+enum CaptureUploadError: Error {
     case configuration, credential, unsupported, response, responseLimit, authorization, http(Int)
-    var errorDescription: String? {
-        switch self {
-        case .configuration: "Check the destination settings. Google Drive needs a Desktop OAuth client ID."
-        case .credential: "Add an upload credential in Capture settings."
-        case .unsupported: "This destination does not accept the file type or size. imgbb accepts images up to 32 MB."
-        case .response: "The upload destination returned an invalid response. The local file is safe."
-        case .responseLimit: "The upload response exceeded its size limit. The local file is safe."
-        case .authorization: "Google Drive sign-in did not finish. Reconnect in Capture settings and retry."
-        case .http(let status): "Upload failed (HTTP \(status)). Check the destination and its credentials."
-        }
-    }
+
 }

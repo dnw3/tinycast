@@ -107,6 +107,8 @@ enum SettingsFileKey: String, CaseIterable, Sendable {
     case calendarMenuBarHidesWhenEmpty = "calendar.menuBarHidesWhenEmpty"
     case hideCurrentEvent = "calendar.hideCurrentEventAfterMinutes"
     case calendarCommands = "calendar.commands"
+    case captureQuickSaveFolder = "capture.quickSaveFolder"
+    case capturePresentationPresets = "capture.presentationPresets"
     case extensionsShowInLauncher = "extensions.showInLauncher"
 
     /// The top-level object the key sits in.

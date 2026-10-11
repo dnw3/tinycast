@@ -109,14 +109,14 @@ final class LauncherSettingsFile {
             read: { [self] in LauncherFileFormat.json(customized(items)) },
             write: { [self] json in
                 let spelling = shortcuts.spelling
-                let read = LauncherFileFormat.records(from: json) { name in
+                let read = LauncherFileFormat.records(from: json, locale: .current) { name in
                     byName[name].map { record(of: $0, spelling) } ?? Record()
                 }
                 guard let decoded = read else { return [.invalidValue(key)] }
                 let unknown = decoded.records.keys.filter { byName[$0] == nil }.sorted().map {
-                    SettingsFileIssue.invalidEntry(key, "no \(noun) in this section is called “\($0)”")
+                    SettingsFileIssue.invalidEntry(key, String(localized: "No \(Foundation.Bundle.main.localizedString(forKey: noun, value: nil, table: nil)) in this section is called “\($0)”."))
                 }
-                return decoded.problems.map { .invalidEntry(key, $0) } + unknown
+                return decoded.problems.map { .invalidEntry(key, String(localized: $0)) } + unknown
                     + apply(decoded.records, to: items, noun: noun, key: key)
             })
     }
@@ -136,7 +136,7 @@ final class LauncherSettingsFile {
             write: { [self] json in
                 let previous = bundleRecords[key]
                 let spelling = shortcuts.spelling
-                let read = LauncherFileFormat.records(from: json) { name in
+                let read = LauncherFileFormat.records(from: json, locale: .current) { name in
                     previous?.waiting[name] ?? record(of: item(name, bundle), spelling)
                 }
                 guard let decoded = read else { return [.invalidValue(key)] }
@@ -147,7 +147,7 @@ final class LauncherSettingsFile {
                     waiting: decoded.records.filter { !known.contains($0.key) })
                 let live = customized(known.map { item($0, bundle) }).map(\.name)
                 let items = Set(live).union(present.keys).sorted().map { item($0, bundle) }
-                return decoded.problems.map { .invalidEntry(key, $0) }
+                return decoded.problems.map { .invalidEntry(key, String(localized: $0)) }
                     + apply(present, to: items, noun: bundle.noun, key: key)
             })
     }
@@ -193,11 +193,12 @@ final class LauncherSettingsFile {
             let record = records[item.name] ?? Record()
             aliases.setAlias(record.alias ?? "", for: item.preferenceKey)
             visibility.setItemVisible(record.showInLauncher, forKey: item.preferenceKey)
+            let noun = Foundation.Bundle.main.localizedString(forKey: noun, value: nil, table: nil)
             let label = "\(noun) “\(item.name)”"
             if let action = item.action {
                 wanted.append(HotKeySettingsFile.Wanted(action: action, text: record.shortcut, label: label))
             } else if record.shortcut != nil {
-                issues.append(.invalidEntry(key, "\(label) can't have a shortcut"))
+                issues.append(.invalidEntry(key, String(localized: "\(label) can't have a shortcut")))
             }
         }
         return issues + shortcuts.apply(wanted, key: key)

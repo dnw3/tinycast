@@ -16,32 +16,49 @@ struct TranslationResultView: View {
                     .onGeometryChange(for: CGFloat.self, of: { $0.size.height }) { contentHeight = $0 }
             }
             .scrollBounceBehavior(.basedOnSize)
-            .frame(height: state.isExpanded ? nil : min(contentHeight, metrics.size.translationMiniResultHeight))
+            .frame(
+                height: state.isExpanded ? nil : min(contentHeight, metrics.size.translationMiniResultHeight))
         }
     }
 
     private var toolbar: some View {
         HStack(spacing: metrics.spacing.md) {
             if state.isRunning { ProgressView().controlSize(.small) }
-            Text(state.isRunning ? (state.phase == .detecting ? "Detecting language…" : "Translating…") : "Result")
-                .font(metrics.typography.rowTrailing)
-                .foregroundStyle(Theme.Colors.textSecondary)
+            Text(
+                state.isRunning
+                    ? (state.phase == .detecting
+                        ? String(localized: "Detecting language…") : String(localized: "Translating…"))
+                    : String(localized: "Result")
+            )
+            .font(metrics.typography.rowTrailing)
+            .foregroundStyle(Theme.Colors.textSecondary)
             Spacer()
             Button(action: coordinator.copy) {
-                SymbolImage(name: state.isCopied ? "checkmark" : "doc.on.doc", size: metrics.typography.bodyNSFont.pointSize)
+                SymbolImage(
+                    name: state.isCopied ? "checkmark" : "doc.on.doc",
+                    size: metrics.typography.bodyNSFont.pointSize)
             }
             .buttonStyle(.accessoryBar)
             .disabled(!state.canCopy)
-            .accessibilityLabel(state.isCopied ? "Translation copied" : "Copy translation")
-            .help(state.isCopied ? "Translation copied" : "Copy translation (⌘⇧C)")
+            .accessibilityLabel(
+                state.isCopied
+                    ? String(localized: "Translation copied") : String(localized: "Copy translation")
+            )
+            .help(
+                state.isCopied
+                    ? String(localized: "Translation copied") : String(localized: "Copy translation (⌘⇧C)"))
             Menu {
                 Button("Translate Again", systemImage: "arrow.clockwise", action: coordinator.submit)
                     .disabled(!state.canSubmit || state.isRunning || state.isDelivering)
                 if state.origin == .selection {
                     Divider()
-                    Button(state.deliveryTitle ?? "Replace selection", systemImage: "text.insert", action: coordinator.deliver)
-                        .keyboardShortcut(.return, modifiers: .command)
-                        .disabled(!coordinator.canDeliver)
+                    Button(
+                        state.deliveryTitle ?? String(localized: "Replace selection"),
+                        systemImage: "text.insert",
+                        action: coordinator.deliver
+                    )
+                    .keyboardShortcut(.return, modifiers: .command)
+                    .disabled(!coordinator.canDeliver)
                 }
             } label: {
                 SymbolImage(name: "ellipsis", size: metrics.typography.bodyNSFont.pointSize)
@@ -49,9 +66,11 @@ struct TranslationResultView: View {
             .menuStyle(.button)
             .menuIndicator(.hidden)
             .buttonStyle(.accessoryBar)
-            .accessibilityLabel("Translation actions")
-            .help(state.origin == .selection
-                ? "Translation actions · Apply to original field (⌘Return)" : "Translation actions")
+            .accessibilityLabel(String(localized: "Translation actions"))
+            .help(
+                state.origin == .selection
+                    ? String(localized: "Translation actions · Apply to original field (⌘Return)")
+                    : String(localized: "Translation actions"))
         }
     }
 

@@ -398,15 +398,19 @@ struct CaptureVideoTests {
         }
         precondition(bytes[1] > bytes[0] * 11 / 10 && bytes[2] > bytes[1] * 11 / 10,
             "quality must change actual encoded output: \(bytes)")
-        let (progress, updates) = AsyncStream<Double>.makeStream()
-        let cancelled = root.appendingPathComponent("quality-cancelled.mp4")
-        let worker = Task {
-            try await CaptureVideoService.render(url, edit: .init(end: 1), to: cancelled) { updates.yield($0) }
+        for attempt in 0..<12 {
+            let (progress, updates) = AsyncStream<Double>.makeStream()
+            let cancelled = root.appendingPathComponent("quality-cancelled-\(attempt).mp4")
+            let worker = Task {
+                try await CaptureVideoService.render(url, edit: .init(end: 1), to: cancelled) { updates.yield($0) }
+            }
+            for await value in progress where value > 0.05 { worker.cancel(); break }
+            let started = ContinuousClock.now
+            do { try await worker.value; preconditionFailure("cancelled encoding completed") } catch is CancellationError {}
+            updates.finish()
+            precondition(started.duration(to: .now) < .seconds(5), "Cancellation must drain sample tasks promptly")
+            precondition(!FileManager.default.fileExists(atPath: cancelled.path))
         }
-        for await value in progress where value > 0.05 { worker.cancel(); break }
-        do { try await worker.value; preconditionFailure("cancelled encoding completed") } catch is CancellationError {}
-        updates.finish()
-        precondition(!FileManager.default.fileExists(atPath: cancelled.path))
     }
 
     static func noise(_ url: URL) async throws {

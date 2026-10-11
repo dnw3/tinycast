@@ -63,6 +63,7 @@ final class CaptureCompositeReader {
             }
         }
         try CaptureImageLayerRenderer.composite(document.imageLayers, directory: directory, rect: rect, into: &data)
+        try CaptureCensorRenderer.mask(document.edit.annotations, rect: rect, pixels: &data)
         return data
     }
 }

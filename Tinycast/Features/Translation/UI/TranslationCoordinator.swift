@@ -11,7 +11,8 @@ final class TranslationCoordinator {
     private unowned let core: AppCore
     private let panels = TranslationPanelController()
     private let inputSession = TranslationInputSession()
-    private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.tinycast.app", category: "TranslationSelection")
+    private let logger = Logger(
+        subsystem: Bundle.main.bundleIdentifier ?? "com.tinycast.app", category: "TranslationSelection")
     private(set) var languages = ["zh-Hans", "zh-Hant", "en", "ja", "ko", "fr", "de", "es"]
     private(set) var isVisible = false
     private var settingsVisible = false
@@ -80,11 +81,16 @@ final class TranslationCoordinator {
         if translate { submit() }
     }
 
-    func copySource() { Paster.copyPlainText(state.selectedInput.isEmpty ? state.input : state.selectedInput) }
+    func copySource() {
+        Paster.copyPlainText(state.selectedInput.isEmpty ? state.input : state.selectedInput)
+    }
 
-    func translateImage(_ request: TranslationBatchRequest, engine: TranslationPreferences.Engine) async throws -> [String] {
+    func translateImage(
+        _ request: TranslationBatchRequest, engine: TranslationPreferences.Engine
+    ) async throws -> [String] {
         guard core.settings.translationEnabled else {
-            throw AIProviderError.unavailable("Enable Translation in Settings to translate this image.")
+            throw AIProviderError.unavailable(
+                String(localized: "Enable Translation in Settings to translate this image."))
         }
         if engine == .apple { return try await AppleTranslationService.translate(request) }
         imageTranslations += 1
@@ -97,16 +103,17 @@ final class TranslationCoordinator {
     private func capture(from app: NSRunningApplication?, revision: Int) async {
         guard isCurrent(revision) else { return }
         guard let app, app.processIdentifier != ProcessInfo.processInfo.processIdentifier else {
-            state.notice = "Type or paste text to translate."
+            state.notice = String(localized: "Type or paste text to translate.")
             return
         }
         guard Permissions.isAccessibilityTrusted() else {
             logger.info("Selection unavailable: Accessibility not granted")
-            state.notice = "Type or paste text. Selection and replacement need Accessibility permission."
+            state.notice = String(
+                localized: "Type or paste text. Selection and replacement need Accessibility permission.")
             return
         }
         guard !IsSecureEventInputEnabled() else {
-            state.notice = "Secure input is active. Type or paste text to translate."
+            state.notice = String(localized: "Secure input is active. Type or paste text to translate.")
             return
         }
         target = TranslationTarget.capture(in: app)
@@ -128,9 +135,10 @@ final class TranslationCoordinator {
             state.input = selection
         }
         if target == nil {
-            state.notice = selection == nil
-                ? "Type or paste text. No selection could be confirmed in this app."
-                : "This source cannot be safely replaced. You can copy the translation."
+            state.notice =
+                selection == nil
+                ? String(localized: "Type or paste text. No selection could be confirmed in this app.")
+                : String(localized: "This source cannot be safely replaced. You can copy the translation.")
         }
     }
 
@@ -193,12 +201,16 @@ final class TranslationCoordinator {
         invalidate()
         guard state.canSubmit else { return }
         guard core.settings.translationEnabled else {
-            state.notice = "Enable Translation in Settings to translate this text. You can still copy and edit it."
+            state.notice = String(
+                localized:
+                    "Enable Translation in Settings to translate this text. You can still copy and edit it.")
             return
         }
-        let input = state.origin != .selection && !state.selectedInput.isEmpty ? state.selectedInput : state.input
+        let input =
+            state.origin != .selection && !state.selectedInput.isEmpty ? state.selectedInput : state.input
         guard input.utf8.count <= TranslationRequest.maximumInputBytes else {
-            state.phase = .failed("Translate up to 12 KB at a time. Shorten the source text and retry.")
+            state.phase = .failed(
+                String(localized: "Translate up to 12 KB at a time. Shorten the source text and retry."))
             return
         }
         let revision = state.revision
@@ -213,11 +225,13 @@ final class TranslationCoordinator {
             self.state.detectedLanguage = detected
             guard TranslationLanguagePolicy.hasLetters(input) else {
                 self.state.finish(input, revision: revision)
-                self.state.notice = "No language to translate; numbers and symbols are unchanged."
+                self.state.notice = String(
+                    localized: "No language to translate; numbers and symbols are unchanged.")
                 return
             }
             guard let source = self.state.source else {
-                self.state.phase = .failed("Could not identify the language. Choose a source language.")
+                self.state.phase = .failed(
+                    String(localized: "Could not identify the language. Choose a source language."))
                 return
             }
             let request = TranslationRequest(text: input, source: source, target: self.targetLanguage)
@@ -236,7 +250,8 @@ final class TranslationCoordinator {
                 await core.applyInstalledAILifecycle().value
                 try Task.checkCancellation()
                 let provider = try core.translationProvider()
-                output = try await AITranslationService.translate(request, provider: provider) { [weak self] delta in
+                output = try await AITranslationService.translate(request, provider: provider) {
+                    [weak self] delta in
                     guard let self, self.isCurrent(revision) else { return }
                     self.state.append(delta, revision: revision)
                 }
@@ -247,7 +262,8 @@ final class TranslationCoordinator {
             guard isCurrent(revision) else { return }
             state.output = ""
             state.needsLanguages = (error as? AppleTranslationService.Failure) == .needsLanguages
-            state.phase = .failed(error.localizedDescription)
+            state.phase = .failed(
+                Bundle.main.localizedString(forKey: error.localizedDescription, value: nil, table: nil))
         }
     }
 
@@ -285,12 +301,14 @@ final class TranslationCoordinator {
             onDelivered: { [weak self] in
                 guard let self, self.state.revision == revision else { return }
                 self.cancel()
-                self.core.showMessage("Translation applied")
+                self.core.showMessage(String(localized: "Translation applied"))
             },
             onFailed: { [weak self] in
                 guard let self, self.state.revision == revision else { return }
                 self.state.isDelivering = false
-                self.state.notice = "The original field changed or could not accept text. Copy the translation instead."
+                self.state.notice = String(
+                    localized:
+                        "The original field changed or could not accept text. Copy the translation instead.")
                 self.target = nil
                 self.state.deliveryTitle = nil
                 self.panels.focus()

@@ -311,7 +311,7 @@ final class HotKeyManager {
         case .snippet:
             return displayName?(action) ?? "Snippet"
         case .extensionCommand:
-            return displayName?(action) ?? "Extension Command"
+            return displayName?(action) ?? String(localized: "Extension Command")
         }
     }
 

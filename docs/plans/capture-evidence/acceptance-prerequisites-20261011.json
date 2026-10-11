@@ -1,0 +1,13 @@
+{
+  "checked_at": "2026-10-11T00:03:34.957323+00:00",
+  "displays": [
+    {
+      "name": "Color LCD",
+      "online": "spdisplays_yes",
+      "built_in": true
+    }
+  ],
+  "upload_destination_present": false,
+  "upload_credentials_read": false,
+  "native_desktop_availability_reply": "user confirmed available; PDF native attempt performed"
+}

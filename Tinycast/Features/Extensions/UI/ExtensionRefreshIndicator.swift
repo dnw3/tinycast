@@ -9,11 +9,11 @@ struct ExtensionRefreshIndicator: View {
         case .active:
             Image(systemName: "antenna.radiowaves.left.and.right")
                 .foregroundStyle(.secondary)
-                .help("Refreshes in the background")
+                .help(String(localized: "Refreshes in the background"))
         case .idle:
             Image(systemName: "antenna.radiowaves.left.and.right.slash")
                 .foregroundStyle(.tertiary)
-                .help("Background refresh is off — enable it from Actions")
+                .help(String(localized: "Background refresh is off — enable it from Actions"))
         case .failed(let message):
             Image(systemName: "exclamationmark.triangle")
                 .foregroundStyle(.orange)

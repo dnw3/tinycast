@@ -43,10 +43,8 @@ struct CaptureVideoExportOptions: Equatable, Sendable {
         return frames
     }
 
-    enum Failure: Error, LocalizedError {
+    enum Failure: Error {
         case limit
-        var errorDescription: String? {
-            "GIF export is limited to 30 seconds and 64 million frame pixels. Trim the video or choose a smaller GIF size."
-        }
+
     }
 }

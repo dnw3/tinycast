@@ -1,7 +1,7 @@
 import Foundation
 
 enum MCPOAuth {
-    enum Failure: LocalizedError, Equatable {
+    enum Failure: Error, Equatable {
         case invalidMetadata
         case unsupportedPKCE
         case clientRequired
@@ -16,27 +16,6 @@ enum MCPOAuth {
         case signInInProgress
         case timedOut
 
-        var errorDescription: String? {
-            switch self {
-            case .invalidMetadata: return "The server's OAuth metadata is invalid."
-            case .unsupportedPKCE: return "The authorization server must advertise PKCE S256 support."
-            case .clientRequired:
-                return "Enter a registered client ID. This server cannot register Tinycast automatically."
-            case .issuerChanged:
-                return "The authorization server changed. Enter client credentials for the new server."
-            case .invalidCallback: return "The sign-in response could not be verified."
-            case .denied: return "Sign-in was declined."
-            case .invalidToken: return "The authorization server did not return a usable bearer token."
-            case .signInRequired: return "Sign-in required. Open this MCP server in Settings to sign in."
-            case .network: return "The OAuth request failed. Check the connection and try again."
-            case .registration:
-                return "Client registration failed. Enter a registered client ID and try again."
-            case .listenerUnavailable:
-                return "Sign-in could not open loopback port 4962. Close the app using it and retry."
-            case .signInInProgress: return "Another sign-in is still waiting. Finish it first."
-            case .timedOut: return "Sign-in timed out. Try again."
-            }
-        }
     }
 
     struct Credentials: Codable, Equatable, Sendable {
