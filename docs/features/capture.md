@@ -29,8 +29,8 @@
 - History is flattened by default. Editable originals and explicit drafts contain pre-redaction pixels;
   retaining originals is an explicit setting excluded from backup import. Missing or corrupt draft tiles
   fall back to the flattened result, not a partially recovered original.
-- A screenshot text session uses the existing Translation window. It survives focus loss, clears the
-  old delivery target and offers no Insert/Replace action. Selection-based Translation keeps its own behavior.
+- A screenshot text session uses the existing Translation window and its unpinned focus-loss dismissal.
+  Pin explicitly keeps it visible. It clears the old delivery target and offers no Insert/Replace action.
 - Work is cancellable and owned. File/render work uses `CaptureWork` off the main actor; Vision runs in
   the shared `TextRecognitionHelper`. WebP save uses a short-lived `CaptureWebPHelper`; its bounded input
   contains only final RGBA, ICC and encoding options. Cancellation/deadlines reap it before input cleanup,

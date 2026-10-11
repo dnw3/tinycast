@@ -7,7 +7,8 @@
 - `command:translate` is the stable launcher and hotkey entry. Translation has its own settings pane
   and enable switch. Manual input works without Accessibility; a hotkey never requests that grant.
 - Selection queries open in an unpinned Mini window. They close on focus loss, except during
-  validated delivery. Capture queries open expanded and survive focus loss until explicitly closed. Expanding changes presentation only; it does not pin or restart the query.
+  validated delivery. Capture queries open expanded and follow the same unpinned dismissal rule.
+  Expanding changes presentation only; it does not pin or restart the query.
 - Capture the external application and original editable field before presenting the window. Read
   selection through Accessibility or the captured text range. Empty or unconfirmed selection opens
   the editor. Secure input and missing permission leave manual input available.
@@ -150,9 +151,10 @@ Insert/Replace is absent for screenshots. Copy Source respects the selected inpu
 uses the existing engine configuration. Input above 12,000 UTF-8 bytes is preserved and cannot be silently
 truncated for a provider request. The user can select a smaller passage or edit it explicitly.
 
-Screenshot edits invalidate the old translation but wait for an explicit Translate action. Source text,
-results and an active request survive switching applications without pinning. Closing cancels the task
-and releases the image lease. Existing selection input keeps automatic debounce and focus-safe delivery.
+Screenshot edits invalidate the old translation but wait for an explicit Translate action. Unpinned
+screenshot sessions close on focus loss, cancelling the task and releasing the image lease just like
+explicit closing. Pin keeps the source, result and request available while switching applications.
+Existing selection input keeps automatic debounce and focus-safe delivery.
 
 Speech, translation history, mouse-selection popups and simultaneous engine comparisons remain outside
 this version. Capture's integration acceptance is tracked [separately](../plans/capture-acceptance.md).

@@ -1,0 +1,42 @@
+{
+  "date": "2026-10-11",
+  "scope": "Shared translation focus policy for selection and screenshot text",
+  "cause": "dismissesOnBlur excluded capture origins; capture also hid the shared pin button",
+  "changes": [
+    "Remove source-specific blur exemption",
+    "Expose the same pin control for screenshot text",
+    "Keep expanded screenshot layout, preview and delivery focus protection"
+  ],
+  "automated": {
+    "harnesses": 115,
+    "allPassed": true,
+    "seconds": 227,
+    "debug": "passed; existing AppIntents metadata message only",
+    "release": "signed build passed",
+    "lint": "passed; existing nonblocking warnings",
+    "modelFrameworkImports": "none",
+    "diffCheck": "passed"
+  },
+  "native": {
+    "captureOCRAndTranslation": "passed using generic application UI labels only",
+    "capturePinControl": "visible, initially unpinned",
+    "capturePinnedBlur": "query and completed translation retained after opening Settings and returning",
+    "captureUnpinnedBlur": "closed after unpinning and opening Settings; closing Settings returned launcher",
+    "selectionUnpinnedBlur": "closed after opening Settings; closing Settings left no windows",
+    "testCaptureExported": false,
+    "testBrowserClosed": true,
+    "crossApplicationSwitch": "not independently automated; native checks moved key focus to another Tinycast window"
+  },
+  "installation": {
+    "installedAt": "20261011-174130",
+    "branch": "dnw/capture-workspace",
+    "installedApp": "/Applications/Tinycast.app",
+    "backup": "/Users/bytedance/code/github/tinycast/build/install-backups/Tinycast-before-localization-20261011-164006.app",
+    "sourceSHA256": "a92f2e3d207a18f6fd1a1fb737cbf2730f23709a664e79f4cc3bf49c9859c520",
+    "installedSHA256": "a92f2e3d207a18f6fd1a1fb737cbf2730f23709a664e79f4cc3bf49c9859c520",
+    "languages": [
+      "en",
+      "zh-Hans"
+    ]
+  }
+}

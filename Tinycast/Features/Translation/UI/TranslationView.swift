@@ -70,21 +70,19 @@ struct TranslationView: View {
             .accessibilityLabel(String(localized: "Translation engine"))
             .accessibilityValue(state.engine.title)
             .help(String(localized: "Choose Apple or AI translation"))
-            if state.origin == .selection {
-                Button(action: coordinator.togglePinned) {
-                    Image(systemName: state.isPinned ? "pin.fill" : "pin")
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(
-                    state.isPinned
-                        ? String(localized: "Unpin Translation") : String(localized: "Pin Translation")
-                )
-                .accessibilityValue(state.isPinned ? String(localized: "Pinned") : String(localized: "Not pinned"))
-                .help(
-                    state.isPinned
-                        ? String(localized: "Unpin: close when focus leaves")
-                        : String(localized: "Pin: keep open when switching apps"))
+            Button(action: coordinator.togglePinned) {
+                Image(systemName: state.isPinned ? "pin.fill" : "pin")
             }
+            .buttonStyle(.plain)
+            .accessibilityLabel(
+                state.isPinned
+                    ? String(localized: "Unpin Translation") : String(localized: "Pin Translation")
+            )
+            .accessibilityValue(state.isPinned ? String(localized: "Pinned") : String(localized: "Not pinned"))
+            .help(
+                state.isPinned
+                    ? String(localized: "Unpin: close when focus leaves")
+                    : String(localized: "Pin: keep open when switching apps"))
             Button(action: coordinator.toggleExpanded) {
                 Image(
                     systemName: state.isExpanded

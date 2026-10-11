@@ -35,7 +35,7 @@ final class TranslationState {
     var isRunning: Bool { phase == .detecting || phase == .translating }
     var canCopy: Bool { phase == .finished && !output.isEmpty }
     var canSubmit: Bool { !isComposing && !input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
-    var dismissesOnBlur: Bool { origin == .selection && !isPinned && !isDelivering }
+    var dismissesOnBlur: Bool { !isPinned && !isDelivering }
 
     func append(_ delta: String, revision: Int) {
         guard revision == self.revision, phase == .translating else { return }

@@ -232,6 +232,13 @@ struct TranslationTests {
             "changing window presentation preserves the query and in-flight response")
         state.reset(preferences: TranslationPreferences())
         expect(!state.isExpanded && !state.isPinned && !state.isDelivering, "a new query resets temporary window modes")
+        state.origin = .capture(documentID: UUID(), revision: 3)
+        state.isExpanded = true
+        expect(state.dismissesOnBlur, "screenshot translation uses the same unpinned focus behavior")
+        state.isPinned = true
+        expect(!state.dismissesOnBlur, "explicit pinning keeps screenshot translation visible")
+        state.isPinned = false
+        expect(state.dismissesOnBlur, "unpinning restores screenshot translation dismissal")
     }
 
     static func windowPlacement() {

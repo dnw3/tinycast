@@ -106,4 +106,19 @@ Codex Run 按钮或 `./Scripts/build-and-run.sh` 启动本地 `Tinycast Dev.app`
 `Translate`，或在 Settings → Translation 配置自己的快捷键。Apple 在系统 Language & Region
 下载语言；AI 在 Settings → AI 配置 provider 后，到 Translation 选择独立模型。
 
-当前未提交、未发布。生成的 Xcode 工程保留本次开始前已有的本机签名与产物引用改动。
+实现已提交到维护分支；尚未发布独立 Release。
+
+### 2026-10-11 截图入口失焦规则统一
+
+截图入口与划词入口复用 TranslationView、TranslationPanelController 和 TranslationCoordinator。
+移除 TranslationState 对 `.capture` 的失焦豁免；两种入口均未固定时关闭，固定后保留。
+截图入口仍默认展开，回填期间的焦点保护不变。translation-test 增加截图来源的默认、固定和取消固定回归。
+
+截图来源也显示共享的固定按钮，便于跨应用对照。完整 115 项测试一次通过（227 秒），
+Debug 和 lint 通过。原生截图文字成功识别并翻译，未固定时打开设置触发关闭；
+最终安装及固定/取消固定复验见 `translation-blur-evidence-20261011.json`。
+
+最终修正版已安装：`build/install-backups/translation-blur-20261011-174130.json`。
+原生固定后打开设置再返回，原文和完整译文保留；取消固定后再次打开设置，翻译面板关闭。
+独立入口默认未固定，打开设置后同样关闭。原生检查验证同应用窗口间的 key focus 切换，
+不扩写为独立跨应用矩阵验收。

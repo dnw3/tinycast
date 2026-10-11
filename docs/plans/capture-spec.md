@@ -81,7 +81,7 @@ Macshot 是算法、交互与回归样本的参考；移入代码时保留来源
 | `ScrollCapturePanelController` | CaptureCoordinator 的会话 | 控制条在选区外；滚动区域鼠标穿透；点击目标应用不取消 |
 | `CaptureEditorController` | CaptureCoordinator | 一次一个文档；独立可调整 NSWindow；失焦保留；关闭处理未保存内容 |
 | `CapturePinController` | CaptureCoordinator 的有限集合 | 非激活浮窗；失焦保留；关闭释放该贴图的图像和文档租约 |
-| Translation 文本面板的 Capture 会话 | TranslationCoordinator；CaptureCoordinator 保留来源 | 取字/修正原文/翻译共用同一面板；失焦保留，显式关闭才释放 |
+| Translation 文本面板的 Capture 会话 | TranslationCoordinator；CaptureCoordinator 保留来源 | 取字/修正原文/翻译共用同一面板；未固定时失焦关闭并释放，固定后保留 |
 | 截图历史 | CaptureCoordinator / palette | 复用 palette 列表语言；选择条目后在独立编辑器打开 |
 
 所有长期状态从 AppCore 持有。编辑器使用现有 ActivationPolicy 的 windowDidOpen/Close；不自行切换 Dock 策略。
@@ -182,7 +182,7 @@ WebP 的透明度、色彩、尺寸和构建约束见 [独立决策](capture-web
 - 新会话、修订、关闭使旧结果失效；先取消并回收 helper，再释放输入租约。helper 崩溃可重试，错误不写正文。
 - Translation 增加 `open(text:source:)`，source 标识 `.capture(documentID, revision)`；进入时清空旧回填 target，不再次读取前台选区。
 - 原选区翻译的 `open()` 保持既有语义。截图来源只复制译文，默认没有 Insert/Replace。
-- `.capture` 的取字/翻译属于同一稳定文本会话，失焦不取消、不清空原文或结果；无需先置顶。显式关闭才取消任务并释放。取字阶段允许复制和修正，点击翻译后在同一面板呈现结果。
+- `.capture` 的取字/翻译共用 Translation 的窗口规则：未固定时失焦关闭、取消任务并释放来源，固定后跨应用保留。显式关闭始终取消任务并释放。取字阶段允许复制和修正，点击翻译后在同一面板呈现结果。
 - 继续使用现有默认 Apple 和独立 AI route，无自动 provider fallback，不重复保存 API key。
 - 现有翻译输入上限为 12,000 UTF-8 bytes。长图 OCR 超限时先打开取字面板，允许选择/编辑到上限内后翻译，不静默截断或自动拆多次计费请求。
 - Apple 缺语言包、Translation 关闭、AI 未配置/失败/截断均有现有恢复入口；保留本次原文。
