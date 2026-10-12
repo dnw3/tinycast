@@ -12,8 +12,8 @@ struct AvailableRelease: Codable, Hashable, Sendable {
 
 /// Nothing throws: an unusable body means nothing to install, and the pump retries.
 enum ReleaseFeed {
-    /// Where releases come from, and what every `@handle` and `#304` in their notes points at.
-    static let repository = "abue-ammar/tinycast"
+    /// The fork's own releases — upstream's lack Capture — and where `#304` in their notes points.
+    static let repository = "dnw3/tinycast"
 
     /// The only artifact with an x86_64 slice, so the only one an Intel Mac can install.
     private static let universalMarker = "-Universal-"

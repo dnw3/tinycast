@@ -36,7 +36,7 @@ Apple / AI 引擎、选中文字回填及原有翻译测试均已整合；集成
 这条 merge 记录也是集成分支改用 merge 同步上游的原因，见下文。
 
 本地 Release 安装从 `main` 构建，使用同一个自签名身份，替换前保留旧应用备份。
-当前 Release 更新源仍指向上游，不能用应用内更新保留 fork 功能；后续更新此安装需重新构建。
+应用内更新指向 fork 自己的 Releases，见"给熟人分发"。
 
 本次本机验证：101 个 harness 全部通过（174 秒），Debug / Release 构建通过，
 无 Swift 编译警告，仅有 AppIntents 元数据提取提示；lint 检查通过并保留既有警告，
@@ -128,7 +128,7 @@ Read and write，然后存入仓库 Settings → Secrets and variables → Actio
      本地化缺中文、旧编译器不兼容等在本地 `main` 上合并 `origin/upstream-main` 后修复，按"同步全部更新"验证并推送。
    - **有冲突**：按下一节"同步全部更新"在本地 merge、解决并推送 `main`；PR 会自动标为已合并。
 4. 上游改动涉及接入点（AppCore、命令/热键、设置、剪贴板、TextInjector、权限等）时，把影响告诉用户；
-   合并后需要用新版本时按"本机安装"重新构建安装。
+   合并后需要用新版本时按"本机安装"重新构建安装；要让熟人也拿到，经用户同意后按"给熟人分发"发版。
 5. 更新文末"最近一次源码同步"：日期、上游 SHA、改动摘要、验证结果。只合并了无关改动（如 CI 配置）可略过。
 
 ## 同步全部更新
@@ -236,6 +236,7 @@ codesign --verify --deep --strict /Applications/Tinycast.app && open /Applicatio
    ```sh
    git clone git@github.com:dnw3/tinycast.git && cd tinycast
    git remote add upstream https://github.com/abue-ammar/tinycast.git
+   git config remote.upstream.tagOpt --no-tags
    git fetch upstream
    ```
 3. 签名证书：从备份导入 `Tinycast Self-Signed` 的 `.p12`（导出、导入命令见 [signing.md](signing.md)）。
@@ -243,17 +244,47 @@ codesign --verify --deep --strict /Applications/Tinycast.app && open /Applicatio
    证书目前只在原机器的钥匙串里，重装前先按 signing.md 导出 `.p12`，连同密码存进密码管理器。
 4. 验证：`./Scripts/run-tests.sh`、`./Scripts/lint.sh`，然后按"本机安装"构建安装。
 
+## 给熟人分发
+
+面向少数熟人，不申请 Apple Developer ID、不做公证。机制只有三点：
+
+- **更新源是 fork**：`ReleaseFeed.repository` 为 `dnw3/tinycast`，应用只看本仓库的 Releases。
+  指回上游会让熟人的副本被"更新"成不含 Capture / Translation 的上游版，CI 的
+  *Updates come from the fork* 步骤会拦下这种改动；同步上游时若此处冲突，保留 `dnw3/tinycast`。
+- **签名是信任根**：更新器接受与运行中副本叶证书相同的包，所以每个版本都必须由本机钥匙串里的
+  `Tinycast Self-Signed` 签名。证书丢失后，所有熟人都要手动重装新签名的版本并重新授权，
+  按"新机器或新会话"备份 `.p12`。
+- **通道是 `com.tinycast.app` 正式版**：版本号独立编号、只用 `X.Y.Z`，从 1.0.0 起，每次发版递增；
+  一般每合并一轮上游加次版本号，仅修复加修订号。不能和上游安装并存，安装说明会提示先卸载上游版。
+
+发版在本机运行，证书不离开本机：
+
+```sh
+git switch main && git pull --ff-only
+./Scripts/release-fork.sh 1.2.0             # 构建、校验、打包，生成 build/dist/ 下的 zip 和说明
+./Scripts/release-fork.sh 1.2.0 --publish   # 检查无误后发布 GitHub Release v1.2.0
+```
+
+脚本要求 `main` 干净且与 `origin/main` 一致，版本号大于上一个 Release；构建只含 arm64，并核对版本、
+bundle ID、各可执行文件架构和签名叶证书。说明以 `<!-- tinycast:install -->` 分隔：上半部分是更新内容，
+显示在应用的更新窗口；下半部分是首次安装步骤（卸载上游版、解压拖入、系统设置里"仍要打开"）和源码链接，
+满足 AGPL 提供源码的要求。发布是公开操作，执行 `--publish` 前须经用户确认。
+
+熟人首次安装需要手动放行一次；之后应用自己下载的更新不带隔离标记，不会再被 Gatekeeper 拦下，
+签名不变，已授权限保留。发布后可按"本机安装"或直接用应用内更新升级本机。
+
+`upstream` remote 设置了 `tagOpt = --no-tags`（`git config remote.upstream.tagOpt --no-tags`），
+避免上游将来的 `vX.Y.Z` 标签与 fork 的发布标签在本地冲突。
+
 ## 源码同步与应用更新
 
-当前 README 的 Homebrew、Release 链接以及代码里的 `ReleaseFeed.repository` 都指向原仓库。
-这些安装入口提供上游构建，尚无独立的 fork 发布链路。
+README 的 Homebrew 与下载链接仍是上游的官方构建，不含 fork 功能；fork 的构建只经 fork Releases 分发。
 
 本地使用 `main` 时，按 [development.md](development.md) 配置签名后运行
 `./Scripts/build-and-run.sh`，构建并启动该 checkout 的 `Tinycast Dev.app`（`com.tinycast.app.dev`）。
 Dev 不通过应用内更新器更新，继续使用本分支的新代码需要重新构建。
 
-如果以后正式分发 fork，再统一处理应用名称、bundle ID、签名、更新源、发布资源和安装说明；
-源码同步或推送成功不代表这条发布链路已经完成。现有机制见 [updates](features/updates.md) 与 [release](release.md)。
+面向更多人的正式分发还需要 Developer ID 签名与公证、独立的应用名和 bundle ID，目前不做；现有机制见 [updates](features/updates.md) 与 [release](release.md)。
 
 ## 最近一次源码同步
 

@@ -52,6 +52,14 @@ jobs:
             exit 1
           fi
 
+      - name: Updates come from the fork
+        run: |
+          # An upstream merge that re-points the feed would update friends' copies to upstream builds.
+          if ! grep -q 'static let repository = "dnw3/tinycast"' Tinycast/Features/Updates/Model/ReleaseFeed.swift; then
+            echo "::error::ReleaseFeed.repository must stay dnw3/tinycast — see docs/fork-maintenance.md."
+            exit 1
+          fi
+
       - name: Lint and localization
         run: ./Scripts/lint.sh
 

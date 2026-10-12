@@ -4,8 +4,9 @@
 
 This fork maintains Capture and Translation on `main`, which merges upstream through a daily sync PR.
 See the [fork maintenance guide](docs/fork-maintenance.md) for local changes, upstream synchronization
-and verification. The install and release links below serve upstream builds; use
-[Building from source](#building-from-source) to run this branch.
+and verification. Builds with these features are on this fork's
+[Releases](https://github.com/dnw3/tinycast/releases) (self-signed, not notarized; install notes are
+in each release). The install links below serve upstream builds without them.
 
 <p align="center">
   <a href="https://github.com/abue-ammar/tinycast/releases/latest">
