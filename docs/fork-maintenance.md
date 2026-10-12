@@ -239,9 +239,16 @@ codesign --verify --deep --strict /Applications/Tinycast.app && open /Applicatio
    git config remote.upstream.tagOpt --no-tags
    git fetch upstream
    ```
-3. 签名证书：从备份导入 `Tinycast Self-Signed` 的 `.p12`（导出、导入命令见 [signing.md](signing.md)）。
-   **不要重新生成**：新证书的签名与已安装应用不同，所有系统授权都要重新给。
-   证书目前只在原机器的钥匙串里，重装前先按 signing.md 导出 `.p12`，连同密码存进密码管理器。
+3. 签名证书：从备份导入 `Tinycast Self-Signed`（SHA-1 `CCC45372…D170`，有效期至 2036-10）：
+   ```sh
+   security import Tinycast-Self-Signed.p12 -k ~/Library/Keychains/login.keychain-db \
+     -P '<备份密码>' -T /usr/bin/codesign
+   security find-identity -p codesigning | grep "Tinycast Self-Signed"
+   ```
+   **不要重新生成**：新证书的签名与已安装应用不同，所有系统授权都要重新给，熟人也收不到应用内更新。
+   2026-10-12 已导出 `.p12` 并演练过导入，由用户保管在密码管理器。重新备份时在"钥匙串访问 → 我的证书"里
+   右键这一项单独导出；不要用 signing.md 的 `security export -t identities`，它会导出钥匙串里的全部身份，
+   包括公司设备证书。
 4. 验证：`./Scripts/run-tests.sh`、`./Scripts/lint.sh`，然后按"本机安装"构建安装。
 
 ## 给熟人分发
