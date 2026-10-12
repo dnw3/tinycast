@@ -304,5 +304,6 @@ Dev 不通过应用内更新器更新，继续使用本分支的新代码需要�
 | 自动检查 | 119 个 harness、Debug / Release 通过；Swift 警告 0；lint 153 项与合并前相同，新增 0（上游自身 66 项） |
 | 原生验收 | 本轮未执行；启动器新表单、Hyper Key 设置与诊断、翻译取词的中文界面和行为尚未在安装版复验 |
 | 证据 | 合并提交说明；此前的[机器可读检查](plans/capture-evidence/rebase-checks-20261010.json)、[Capture 交付状态](plans/capture-delivery-status.md)保留 |
+| 后续 | 同日改用自动同步：PR #1 合入上游 `9a9739bf`（仅 `.coderabbit.yaml`），CI 首次在 Xcode 26.6 上全绿；修复两处 Swift 6.3 编译问题。首个熟人版本 [v1.0.0](https://github.com/dnw3/tinycast/releases/tag/v1.0.0) 基于此发布，本机已安装 |
 
 下次同步时更新本节的日期、上游 SHA、改动摘要、验证范围与证据链接；旧证据文件保留，便于回溯。
