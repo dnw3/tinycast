@@ -133,7 +133,7 @@ jobs:
             if [ "$RESULT" = success ]; then
               echo "CI 通过，可以用 merge commit 合并。"
             else
-              echo "CI 未通过（$RESULT），需要处理后再合并。"
+              echo "CI 未通过（${RESULT}），需要处理后再合并。"
             fi
             if [ -n "${HOST_WARNINGS:-}" ]; then echo "合并前请在本机复验：${HOST_WARNINGS}"; fi
           } | ./Scripts/notify-lark.sh "Tinycast · 同步 PR 的 CI 结果" "$PR_URL"

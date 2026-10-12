@@ -105,7 +105,7 @@ jobs:
           # The PR is opened with the owner's token, so GitHub never notifies the owner about it.
           if [ -n "$number" ] && [ "$MIRROR_BEFORE" = "$(git rev-parse upstream/main)" ]; then exit 0; fi
           {
-            echo "main 落后上游 $count 个提交，最新 $head。"
+            echo "main 落后上游 $count 个提交，最新 ${head}。"
             if [ "$conflicted" = true ]; then echo "有冲突，需要在本地合并。"; else echo "无冲突，CI 通过后用 merge commit 合并。"; fi
             git log --reverse --format='· %s' origin/main..upstream/main | head -n 10
           } | ./Scripts/notify-lark.sh "Tinycast · $event" "$url"

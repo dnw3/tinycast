@@ -67,7 +67,7 @@ ditto -c -k --keepParent --sequesterRsrc "$APP" "$ZIP"
 
 upstream=$(git log -1 --format='%h（%cs）' "$(git merge-base HEAD origin/upstream-main)")
 {
-    echo "基于上游 Tinycast main $upstream，包含 Capture（截图、贴图、录屏、OCR）与 Translation（划词与截图翻译）。"
+    echo "基于上游 Tinycast main ${upstream}，包含 Capture（截图、贴图、录屏、OCR）与 Translation（划词与截图翻译）。"
     echo
     if [ -n "$previous" ]; then
         echo "### 自 $previous 以来"
