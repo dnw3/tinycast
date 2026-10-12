@@ -34,6 +34,16 @@ TINYCAST_TEST_APPLE_INTELLIGENCE=1 ./Scripts/run-tests.sh apple-intelligence-tes
 
 The opt-in check still skips with a reason if the Mac cannot run the on-device model.
 
+Runtime dependency resolution also has standalone checks:
+
+```sh
+node Scripts/raycast-runtime/modules-fixtures.mjs
+```
+
+They cover shipped CommonJS packages, exports maps, relative directories, nested dependencies,
+cycles, failed-load retries and the extension-root boundary. The runtime fixture suite includes the
+same checks.
+
 The suite runs four harnesses at a time by default to reduce CPU usage. `TINYCAST_TEST_JOBS` overrides
 that limit; `TINYCAST_TEST_JOBS=1` runs one at a time. Each result is numbered
 against the total and shows its run and compile time, a quiet stretch names the harnesses still running, and a harness that runs longer
@@ -112,7 +122,7 @@ If a change touches anything in the right column, the harness on the left is man
 | `scopes-test` | `Launcher/Model/SearchScopes.swift` |
 | `app-name-test` | `Platform/AppDisplayName.swift` — every path that names a scanned bundle |
 | `calc-test` | all of `Calculator/Model/` |
-| `calendar-test` | all of `Calendar/Model/` — link detection, the join window, the day buckets |
+| `calendar-test` | all of `Calendar/Model/` plus `EventEditorSession` — links, join window, day buckets, draft and form focus |
 | `clipboard-search-test` | Ordinary and OCR result ordering, opt-in lifecycle, cancellation, pins and type filters |
 | `clipboard-text-test` | Apple Vision/PDF extraction, scheduling, retry backoff and recovery |
 | `paste-sequence-test` | `Clipboard/Model/PasteSequence.swift` — the walk's order, its end, and what starts it over |
@@ -123,9 +133,12 @@ If a change touches anything in the right column, the harness on the left is man
 | `palette-navigation-test` | `Palette/PaletteState.swift`'s screen motions — `prepare`, `replace`, `push`, `pop` — and hover arming, pointer drift, scroll disarming and highlight tokens |
 | `palette-selection-test` | `Features/PaletteRowIndex.swift` |
 | `interface-size-test` | `DesignSystem/InterfaceMetrics.swift`, `Features/Settings/InterfaceSize.swift`, `Extensions/Model/ExtensionFormMetrics.swift` |
+| `form-input-test` | Native field/textarea sizing, editing alignment, placeholders, Tab, Unicode selection, undo and code fonts |
 | `palette-placement-test` | `DesignSystem/Theme.swift`, `Palette/PalettePlacement.swift` |
 | `palette-menu-click-test` | `Palette/PalettePanel.swift` — complete click-away presses and subsequent control activation |
-| `hotkey-test` | `HotKeys/Model/DoubleTapModifier.swift`, `DoubleTapDetector.swift`, `ModifierKey.swift`, `ModifierKeyDetector.swift`, `HotKeyBinding.swift`, `HotKeySpelling.swift`, `HyperKey.swift`, `HotKeyAction.swift`, `Service/KeyShortcut.swift`, and the command→action mapping in `Launcher/Model/CommandID.swift` |
+| `hotkey-test` | `HotKeys/Model/DoubleTapModifier.swift`, `DoubleTapDetector.swift`, `ModifierKey.swift`, `ModifierKeyDetector.swift`, `HotKeyBinding.swift`, `HotKeySpelling.swift`, `HyperKey.swift`, `HIDKeyMapping.swift`, `HotKeyAction.swift`, `Service/KeyShortcut.swift`, and the command→action mapping in `Launcher/Model/CommandID.swift` |
+| `hyper-key-test` | `HotKeys/Model/HIDKeyMapping.swift`, `HyperKeyConflictPolicy.swift`, `Service/KeyboardRemapper.swift` — mapping ownership, refused writes, crash recovery, device reconnection, conflict severities, Modifier Keys and Karabiner parsing |
+| `hotkey-dispatch-test` | `HotKeys/Service/HotKeyManager.swift` — Secure Input side isolation, shared Control registrations, press/release routing, recording and cancellation; isolated preferences and simulated Carbon registration |
 | `dictation-test` | `Dictation/Model/DictationModel.swift`, `DictationTextFormatter.swift` — model paths and text formatting |
 | `dictation-field-test` | Composer rebinding and teardown, field-scoped dictation cancellation, and queued insertion validity; synthetic capture and real AppKit editors |
 | `dictation-volume-test` | Volume recovery across fade steps, user changes, output switching, failed writes and cancellation; injected audio controls only |
@@ -140,12 +153,13 @@ If a change touches anything in the right column, the harness on the left is man
 | `window-command-test` | `WindowManagement/WindowCommand.swift`, `WindowPlacementEngine.swift`, `WindowActionMemory.swift` |
 | `window-layout-test` | `WindowManagement/Model/WindowLayout*.swift` and `CustomWindowSize*.swift` — the layout record, its geometry and its inverse, the plan and the store; custom sizes' units, frames and store |
 | `window-room-test` | `WindowManagement/Model/Room*.swift` — every room layout and its minimum sizes, the grid, arrangement reading, window matching, parking, the plan, Tab's choices and the three stores |
-| `custom-command-test` | `CustomCommands/Model/CustomCommand.swift`, `Service/ShellCommandRunner.swift` |
+| `custom-command-test` | Command storage and execution, editor drafts, argument identities and dynamic keyboard focus |
+| `custom-command-list-test` | Browser result snapshots, observation, row actions and empty-library messages |
 | `uninstall-test` | all five pure files in `Uninstall/Model/` |
-| `quicklink-test` | all of `Quicklinks/Model/` |
-| `quicklink-coordinator-test` | Quicklink opening and requested argument field — missing selection, manual input, clipboard fallback and default-app overrides; no platform effects or on-screen focus checks |
+| `quicklink-test` | all of `Quicklinks/Model/`, plus editor drafts and placeholder selection |
+| `quicklink-coordinator-test` | Opening and requested arguments, launcher editing, current enabled-state preservation, deletion during editing and feature gates; no platform effects or on-screen focus checks |
 | `apple-shortcut-test` | all of `AppleShortcuts/Model/` — the `shortcuts list` parser and entry ids |
-| `snippets-test` | all of `Snippets/Model/` and `Snippets/Service/`, plus `Platform/HealthTicker.swift` |
+| `snippets-test` | all of `Snippets/Model/` and `Snippets/Service/`, plus editor drafts, placeholder selection and `Platform/HealthTicker.swift` |
 | `notes-test` | all of `Notes/Model/` and `Notes/Service/`, including the Markdown parser, edit plans and reveal policy, plus the real fuzzy matcher and signposts |
 | `notes-editor-test` | the Notes editor, rendered and literal, with real TextKit 2 and AppKit editing objects: styling, reveal, layout fragments, keys, chords, checkboxes and links |
 | `raycast-test` | `Backup/Service/RaycastDecoder.swift`, `Scrypt.swift`, `Platform/Compression/Zlib.swift`, `Clipboard/Model/RaycastClipboardImport.swift` and import-time clipboard retention |
@@ -314,8 +328,12 @@ swiftc -O -swift-version 6 Tinycast/Features/Emoji/Model/{EmojiCatalog,EmojiData
 
 `Tests/notes-editor-performance.swift` installs a 100,000-character note in a real rendered editor and
 prints, as JSON, the median over 30 runs of the install with its full restyle, one typed character at
-the end, middle and start, and a caret move between distant lines. The budget is 150 ms, 8 ms (end and
-middle) and 4 ms:
+the end, middle and start, the window fit's height read after an install and after each of those
+characters, and a caret move between distant lines. The budget is 150 ms, 8 ms (end and middle) and
+4 ms, and the fit's read gets 10 ms after an install and 1 ms after a character. The read after a
+character runs once the edit has laid out the caret's screen, so it is the fit's cost on top of the
+keystroke. Inside `didChange`, near the top of the note, the read does that layout itself, in about
+2 ms:
 
 ```sh
 N=Tinycast/Features/Notes
@@ -478,6 +496,19 @@ caches, TCC grants and login item, so this cannot disturb an installed copy.
 - Recording captures a shortcut, and the old binding does not fire while recording
 - A conflicting binding is rejected and names its current owner
 - A double-tap binding fires; Hyper Key remaps and its status dot is green
+- Each Hyper Key choice — Caps Lock and all eight Left/Right modifiers — sends the chord, and Quick
+  Press is offered for Caps Lock only. Plug in a second keyboard: Caps Lock is Hyper on it too
+- Lock the screen: Caps Lock types capitals in the password field; unlocking restores Hyper. Sleep
+  and wake do the same
+- With Hyperkey running, the status reads Blocked and a HUD names it; quitting Hyperkey restores
+  Hyper without a relaunch. Diagnostics… lists BetterTouchTool as a warning when it runs
+- Remap Caps Lock in Keyboard ▸ Modifier Keys: Diagnostics… reports it with the keyboard's name
+- In a password field, Hyper with Caps Lock shows the Secure Input HUD. Turn on Secure Input
+  Compatibility: a Hyper shortcut now fires there, and Diagnostics… names the Secure Input holder
+- Quit Tinycast: Caps Lock types capitals again on every keyboard, the built-in one included
+- With Karabiner-Elements running and Caps Lock left alone there, Hyper with Caps Lock still works;
+  quit Tinycast and Karabiner's own remaps keep working. Remap Caps Lock in Karabiner instead:
+  Diagnostics… reports a Karabiner conflict
 - Every binding survives quit and relaunch
 - `Enable Commands` off leaves every pane-owned command listed, searchable and firing — Notes,
   Clipboard, Emoji, File Search, Snippets, Quicklinks, Calendar, AI and the two layout commands
@@ -494,12 +525,16 @@ caches, TCC grants and login item, so this cannot disturb an installed copy.
 ### Quicklinks
 
 - A quicklink opens its destination; `{argument}` prompts in order and Backspace steps back
-- `{selection}` falls back per the Settings choice
-- With "Ask for it" and no selection, a quicklink's hotkey focuses "Selected Text": typing fills that
-  field and Return opens the link. Check the first palette opening after launch, reopening, and an
-  already-open palette; repeat with a required `{argument}` and confirm the first missing field wins
-- Opening Search Quicklinks normally focuses search; a readable selection and clipboard fallback open
-  directly. Custom-command argument prompts still focus their first missing field
+- `{selection}` with nothing selected opens nothing and shows "Couldn’t get the selected text". With
+  a required `{argument}` too, the argument is asked for first
+- In an app Accessibility can't read (a terminal, an Electron app), a `{selection}` quicklink still
+  opens with the selected text, the clipboard holds what it held before, and Clipboard History gains
+  no entry for the selection. Repeat it ten times to be sure
+- With **Pass selected text as argument** on, select text and press a quicklink's shortcut: its first
+  free-text argument is filled and the link opens. Blank selection or an `options=` first argument still
+  prompts; Return on the row in the launcher never fills from the selection
+- Opening Search Quicklinks normally focuses search; a readable selection opens directly.
+  Custom-command argument prompts still focus their first missing field
 - In the launcher and Search Quicklinks, open Actions with ⌘K and close with ⌘K or Escape. Immediately
   type a query, use the arrows and press Return; the palette must accept keyboard input again
 - Pin, duplicate, delete and Open with Default all behave; import and export round-trip
@@ -582,12 +617,17 @@ caches, TCC grants and login item, so this cannot disturb an installed copy.
   rendered note and is styled at once
 - The derived title of an Untitled note shows no Markdown markers
 - A narrow window wraps list items under their text, not under the marker
+- A bullet, task or numbered item whose first word is wider than the window keeps a whole marker on
+  its first line of text, and its checkbox toggles where it is drawn
 - Typing new lines, wrapping text, and pasting grow the note vertically without changing its width,
   and deleting shrinks it back to the 180pt floor; the top edge stays put until growth reaches the
   screen's bottom, then the window moves up. It stops at 860pt or the screen's usable height and
   scrolls. A dragged height holds until the next keystroke, which fits the window again. Switching
   to a shorter note shrinks it. Repeat with rendering on and off, Find and the formatting bar open,
   and on a secondary display
+- Typing, Return and Delete in a bulleted list, in its last item and in the middle, grow or shrink the
+  window by whole rows and never shrink it for a frame, scroll the first line away or flash the
+  scrollbar
 - With Render Markdown **off**, the note is fully literal (markers visible, links inert, task syntax
   plain) and Return, Tab, Delete, and formatting-looking shortcuts keep native plain-text behavior;
   flipping it back re-renders without dirtying the note or touching undo
@@ -648,6 +688,8 @@ caches, TCC grants and login item, so this cannot disturb an installed copy.
 - Enabling shows the consent dialog **before** the Accessibility prompt
 - Declining leaves the feature off and prompts for nothing
 - After enabling, a keyword expands in a text field; an argument-bearing snippet prompts then delivers
+- A `{selection}` snippet inserted from Search Snippets or its shortcut wraps text selected in an app
+  Accessibility can't read, and the clipboard is restored afterwards
 - Editing a snippet file externally reloads it
 
 ### Calculator and currency
@@ -707,9 +749,14 @@ caches, TCC grants and login item, so this cannot disturb an installed copy.
   card still offers both
 - Sleeping over a meeting's start and waking past it reloads the events; one still inside the window
   joins, one long past does not
+- Create Event opens the launcher form with only Title, Start and Duration, defaulting to Now and
+  30 min. Blank and whitespace-only titles disable the action, including ⌘↵. Tab/Shift-Tab cycle the
+  fields; Return/Space/Down open a focused choice, and Escape closes that menu before the form.
+- Back or Escape restores the search and selection that opened Create Event; a hotkey-opened form
+  closes instead. Disabling Calendar closes the editor, and revoked permission cannot write an event.
 - Create Event writes to the default calendar and shows up on the card, the schedule and the launcher
-  without a relaunch; a blank title leaves the dialog up on ↵ and on a click
-- Arrow keys move the caret in the New Event title field, and still step the Set Volume slider
+  without a relaunch; start offsets are measured at save, not when the editor opens.
+- Arrow keys move the caret in the event title field, and still step the Set Volume slider.
 - Every command row of Settings ▸ Calendar has Add Alias, Record Hotkey and a checkbox, and none of
   the five appears in Settings ▸ Commands
 - Export with auto join and camera preview on, import onto a clean profile: both come back **off**,

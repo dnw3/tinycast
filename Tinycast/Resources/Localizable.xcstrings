@@ -175,6 +175,16 @@
         }
       }
     },
+    "%@ (optional)": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@（可选）"
+          }
+        }
+      }
+    },
     "%@ Required.": {
       "localizations": {
         "zh-Hans": {
@@ -527,6 +537,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ 返回的响应过大。"
+          }
+        }
+      }
+    },
+    "%@ runs its own Hyper Key. Quit it to use this one.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ 正在使用自己的 Hyper 键，退出它后才能使用此功能。"
           }
         }
       }
@@ -2851,6 +2871,26 @@
         }
       }
     },
+    "Active": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已启用"
+          }
+        }
+      }
+    },
+    "Active Key": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "当前按键"
+          }
+        }
+      }
+    },
     "Activity": {
       "extractionState": "manual",
       "localizations": {
@@ -2929,6 +2969,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "添加应用…"
+          }
+        }
+      }
+    },
+    "Add Argument": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "添加参数"
           }
         }
       }
@@ -3024,16 +3074,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "添加快捷链接"
-          }
-        }
-      }
-    },
-    "Add Snippet": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "添加文本片段"
           }
         }
       }
@@ -3509,6 +3549,16 @@
         }
       }
     },
+    "Allow Tinycast to use Accessibility in System Settings": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请在系统设置中允许 Tinycast 使用辅助功能"
+          }
+        }
+      }
+    },
     "Allow Tinycast to use the microphone in System Settings": {
       "localizations": {
         "zh-Hans": {
@@ -3977,6 +4027,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "应用视频效果"
+          }
+        }
+      }
+    },
+    "Apps running now that also remap keys.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "当前正在运行、同样会重映射按键的应用。"
           }
         }
       }
@@ -4692,6 +4752,16 @@
         }
       }
     },
+    "Blocked": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "被占用"
+          }
+        }
+      }
+    },
     "BlueJeans": {
       "extractionState": "manual",
       "shouldTranslate": false
@@ -5247,6 +5317,16 @@
         }
       }
     },
+    "Can't attach .%@ files — only images, PDFs and text.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法添加 .%@ 文件，仅支持图片、PDF 和文本。"
+          }
+        }
+      }
+    },
     "Cancel": {
       "localizations": {
         "zh-Hans": {
@@ -5396,6 +5476,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "大写锁定（⇪）"
+          }
+        }
+      }
+    },
+    "Caps Lock Mapping Conflicts": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "大写锁定映射冲突"
           }
         }
       }
@@ -5977,6 +6067,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "正在检查…"
+          }
+        }
+      }
+    },
+    "Choose": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择"
           }
         }
       }
@@ -6814,6 +6914,16 @@
         }
       }
     },
+    "Closing that app turns it off.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "关闭该应用即可解除。"
+          }
+        }
+      }
+    },
     "Code Block": {
       "localizations": {
         "zh-Hans": {
@@ -7082,6 +7192,36 @@
         }
       }
     },
+    "Command editor": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "命令编辑器"
+          }
+        }
+      }
+    },
+    "Command icon": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "命令图标"
+          }
+        }
+      }
+    },
+    "Command name": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "命令名称"
+          }
+        }
+      }
+    },
     "Command path": {
       "localizations": {
         "zh-Hans": {
@@ -7242,6 +7382,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "插入此文本片段后显示确认提示。"
+          }
+        }
+      }
+    },
+    "Confirmation": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "确认"
+          }
+        }
+      }
+    },
+    "Conflicting Apps": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "冲突应用"
           }
         }
       }
@@ -8149,6 +8309,16 @@
         }
       }
     },
+    "Couldn’t get the selected text": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法获取选中的文本"
+          }
+        }
+      }
+    },
     "Couldn’t import quicklinks: %@": {
       "localizations": {
         "zh-Hans": {
@@ -8209,12 +8379,12 @@
         }
       }
     },
-    "Create": {
+    "Create Custom Command": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "创建"
+            "value": "创建自定义命令"
           }
         }
       }
@@ -8880,7 +9050,7 @@
         }
       }
     },
-    "Delete Command": {
+    "Delete Custom Command": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
@@ -9020,6 +9190,16 @@
         }
       }
     },
+    "Detected": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已检测到"
+          }
+        }
+      }
+    },
     "Detecting language…": {
       "localizations": {
         "zh-Hans": {
@@ -9036,6 +9216,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "设备"
+          }
+        }
+      }
+    },
+    "Diagnostics…": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "诊断…"
           }
         }
       }
@@ -9555,6 +9745,16 @@
         }
       }
     },
+    "Duration": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "时长"
+          }
+        }
+      }
+    },
     "Earlier": {
       "extractionState": "manual",
       "localizations": {
@@ -9603,16 +9803,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "编辑剪贴板图片"
-          }
-        }
-      }
-    },
-    "Edit Command": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "编辑自定义命令"
           }
         }
       }
@@ -9790,16 +9980,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "电子邮件"
-          }
-        }
-      }
-    },
-    "Email Sign-off": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "邮件落款"
           }
         }
       }
@@ -10568,12 +10748,32 @@
         }
       }
     },
+    "Event Tap": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "事件监听"
+          }
+        }
+      }
+    },
     "Event created": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
             "value": "已创建日程"
+          }
+        }
+      }
+    },
+    "Event editor": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "日程编辑器"
           }
         }
       }
@@ -11114,6 +11314,16 @@
         }
       }
     },
+    "Fills the first argument when a shortcut opens the quicklink.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "通过快捷键打开快捷链接时，填入第一个参数。"
+          }
+        }
+      }
+    },
     "Filter by category  ⌘P": {
       "localizations": {
         "zh-Hans": {
@@ -11579,16 +11789,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "用于"
-          }
-        }
-      }
-    },
-    "For links that use {selection}.": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "用于含有 {selection} 的链接。"
           }
         }
       }
@@ -12092,6 +12292,16 @@
         }
       }
     },
+    "Handed back while the Mac sleeps, locks or switches user.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mac 睡眠、锁定或切换用户时会暂时交还按键。"
+          }
+        }
+      }
+    },
     "Header": {
       "localizations": {
         "zh-Hans": {
@@ -12323,6 +12533,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "隐藏当前日程"
+          }
+        }
+      }
+    },
+    "Hide Diagnostics": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "隐藏诊断"
           }
         }
       }
@@ -12581,6 +12801,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Hyper 键"
+          }
+        }
+      }
+    },
+    "Hyper Key Diagnostics": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hyper 键诊断"
           }
         }
       }
@@ -13157,6 +13387,16 @@
         }
       }
     },
+    "Insert a dynamic placeholder": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "插入动态占位符"
+          }
+        }
+      }
+    },
     "Insert a placeholder": {
       "localizations": {
         "zh-Hans": {
@@ -13461,16 +13701,6 @@
         }
       }
     },
-    "Its global shortcut and launcher references will also be removed.": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "其全局快捷键和启动器引用也会删除。"
-          }
-        }
-      }
-    },
     "Its instructions, shortcut and learned ranking go with it.": {
       "localizations": {
         "zh-Hans": {
@@ -13658,6 +13888,26 @@
         }
       }
     },
+    "Karabiner Conflict": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Karabiner 冲突"
+          }
+        }
+      }
+    },
+    "Karabiner keyboards: %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Karabiner 键盘：%@"
+          }
+        }
+      }
+    },
     "Keep Result": {
       "localizations": {
         "zh-Hans": {
@@ -13829,6 +14079,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "缺少密钥"
+          }
+        }
+      }
+    },
+    "Key presses can't reach the Hyper Key while Secure Input is on.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "安全输入开启时，按键无法传到 Hyper 键。"
           }
         }
       }
@@ -14193,6 +14453,28 @@
         }
       }
     },
+    "Left Command (⌘)": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "左 Command（⌘）"
+          }
+        }
+      }
+    },
+    "Left Control (⌃)": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "左 Control（⌃）"
+          }
+        }
+      }
+    },
     "Left Half": {
       "extractionState": "manual",
       "localizations": {
@@ -14200,6 +14482,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "左半屏"
+          }
+        }
+      }
+    },
+    "Left Option (⌥)": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "左 Option（⌥）"
+          }
+        }
+      }
+    },
+    "Left Shift (⇧)": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "左 Shift（⇧）"
           }
         }
       }
@@ -14513,6 +14817,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "立即退出登录？"
+          }
+        }
+      }
+    },
+    "Logging out and back in turns it off.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "注销后重新登录即可解除。"
           }
         }
       }
@@ -15189,6 +15503,16 @@
         }
       }
     },
+    "Modifier Keys in System Settings remaps Caps Lock, which blocks the Hyper Key.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "系统设置的“修饰键”重映射了大写锁定，导致 Hyper 键无法使用。"
+          }
+        }
+      }
+    },
     "Modifier-only hotkeys need Accessibility access. Click to grant it.": {
       "localizations": {
         "zh-Hans": {
@@ -15517,6 +15841,16 @@
         }
       }
     },
+    "N/A": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "不适用"
+          }
+        }
+      }
+    },
     "NAME": {
       "localizations": {
         "zh-Hans": {
@@ -15533,6 +15867,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "名称"
+          }
+        }
+      }
+    },
+    "Name & Icon": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "名称和图标"
           }
         }
       }
@@ -15643,6 +15987,16 @@
         }
       }
     },
+    "Needs Accessibility": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "需要辅助功能权限"
+          }
+        }
+      }
+    },
     "Needs Full Disk Access, which Tinycast doesn’t request. Grant it in System Settings › Privacy & Security to include this item.": {
       "extractionState": "manual",
       "localizations": {
@@ -15713,16 +16067,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "新建自定义尺寸"
-          }
-        }
-      }
-    },
-    "New Event": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "新建日程"
           }
         }
       }
@@ -15883,6 +16227,16 @@
         }
       }
     },
+    "No": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "否"
+          }
+        }
+      }
+    },
     "No %@ in this section is called “%@”.": {
       "localizations": {
         "en": {
@@ -15956,6 +16310,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "没有可推出的磁盘"
+          }
+        }
+      }
+    },
+    "No Karabiner keyboard found.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未发现 Karabiner 键盘。"
           }
         }
       }
@@ -16231,6 +16595,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "没有已完成的录制片段，请继续录制后重试。"
+          }
+        }
+      }
+    },
+    "No custom commands yet": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "还没有自定义命令"
           }
         }
       }
@@ -16511,6 +16885,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "没有匹配的对话"
+          }
+        }
+      }
+    },
+    "No matching commands": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "没有匹配的命令"
           }
         }
       }
@@ -17812,6 +18196,16 @@
         }
       }
     },
+    "Open Keyboard Settings…": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开键盘设置…"
+          }
+        }
+      }
+    },
     "Open Language & Region": {
       "localizations": {
         "zh-Hans": {
@@ -17994,12 +18388,12 @@
         }
       }
     },
-    "Open a window with everything the command printed when it finishes.": {
+    "Open a window with everything the command prints.": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "命令结束时打开窗口显示全部输出。"
+            "value": "在窗口中显示命令的全部输出。"
           }
         }
       }
@@ -18443,6 +18837,17 @@
         }
       }
     },
+    "Pass selected text as argument": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "将选中文本作为参数"
+          }
+        }
+      }
+    },
     "Passed to the command in order as $1, $2 …": {
       "localizations": {
         "zh-Hans": {
@@ -18625,6 +19030,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "暂停录制"
+          }
+        }
+      }
+    },
+    "Paused": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已暂停"
           }
         }
       }
@@ -19245,6 +19660,16 @@
         }
       }
     },
+    "Probably %@.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "可能是 %@。"
+          }
+        }
+      }
+    },
     "Provider": {
       "localizations": {
         "zh-Hans": {
@@ -19446,6 +19871,46 @@
           "stringUnit": {
             "state": "translated",
             "value": "快捷链接命令"
+          }
+        }
+      }
+    },
+    "Quicklink editor": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "快捷链接编辑器"
+          }
+        }
+      }
+    },
+    "Quicklink icon": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "快捷链接图标"
+          }
+        }
+      }
+    },
+    "Quicklink link": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "快捷链接地址"
+          }
+        }
+      }
+    },
+    "Quicklink name": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "快捷链接名称"
           }
         }
       }
@@ -20166,12 +20631,12 @@
         }
       }
     },
-    "Remapping needs Accessibility access.": {
+    "Remapped Keyboards": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "重映射需要辅助功能权限。"
+            "value": "已重映射的键盘"
           }
         }
       }
@@ -20367,6 +20832,16 @@
         }
       }
     },
+    "Remove argument": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移除参数"
+          }
+        }
+      }
+    },
     "Remove connection?": {
       "localizations": {
         "zh-Hans": {
@@ -20393,16 +20868,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "从收藏中移除"
-          }
-        }
-      }
-    },
-    "Remove this argument": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "移除此参数"
           }
         }
       }
@@ -20643,6 +21108,16 @@
         }
       }
     },
+    "Required before running": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "运行前需确认"
+          }
+        }
+      }
+    },
     "Required.": {
       "localizations": {
         "zh-Hans": {
@@ -20831,6 +21306,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "重新启动应用"
+          }
+        }
+      }
+    },
+    "Restart Hyper Key": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重启 Hyper 键"
           }
         }
       }
@@ -21227,6 +21712,16 @@
         }
       }
     },
+    "Run Loop Source": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "运行循环源"
+          }
+        }
+      }
+    },
     "Run Quick Action": {
       "localizations": {
         "zh-Hans": {
@@ -21382,6 +21877,16 @@
         }
       }
     },
+    "Save Command": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保存命令"
+          }
+        }
+      }
+    },
     "Save Current Style…": {
       "localizations": {
         "zh-Hans": {
@@ -21442,12 +21947,32 @@
         }
       }
     },
+    "Save Quicklink": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保存快捷链接"
+          }
+        }
+      }
+    },
     "Save Room": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
             "value": "保存空间"
+          }
+        }
+      }
+    },
+    "Save Snippet": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保存文本片段"
           }
         }
       }
@@ -21578,6 +22103,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "已保存，但历史记录未保存。请再次保存以重试。"
+          }
+        }
+      }
+    },
+    "Saving…": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在保存…"
           }
         }
       }
@@ -21799,6 +22334,17 @@
         }
       }
     },
+    "Search Custom Commands": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索自定义命令"
+          }
+        }
+      }
+    },
     "Search Emoji & Symbols": {
       "extractionState": "manual",
       "localizations": {
@@ -22013,6 +22559,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "搜索命令…"
+          }
+        }
+      }
+    },
+    "Search custom commands…": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索自定义命令…"
           }
         }
       }
@@ -22356,6 +22912,27 @@
           "stringUnit": {
             "state": "translated",
             "value": "秘密访问密钥"
+          }
+        }
+      }
+    },
+    "Secure Input": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "安全输入"
+          }
+        }
+      }
+    },
+    "Secure Input Compatibility": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "安全输入兼容"
           }
         }
       }
@@ -22892,6 +23469,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "锐度"
+          }
+        }
+      }
+    },
+    "Shell command": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shell 命令"
           }
         }
       }
@@ -23549,6 +24136,16 @@
         }
       }
     },
+    "Silent": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "不显示"
+          }
+        }
+      }
+    },
     "Single Display": {
       "localizations": {
         "zh-Hans": {
@@ -23612,16 +24209,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "睡眠"
-          }
-        }
-      }
-    },
-    "Sleep Displays": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "使显示器休眠"
           }
         }
       }
@@ -23735,6 +24322,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "文本片段命令"
+          }
+        }
+      }
+    },
+    "Snippet editor": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文本片段编辑器"
+          }
+        }
+      }
+    },
+    "Snippet name": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "片段名称"
           }
         }
       }
@@ -24096,16 +24703,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "开始书写…"
-          }
-        }
-      }
-    },
-    "Starts": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "开始"
           }
         }
       }
@@ -24733,16 +25330,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "温度"
-          }
-        }
-      }
-    },
-    "Template": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "模板"
           }
         }
       }
@@ -26353,6 +26940,16 @@
         }
       }
     },
+    "This command was deleted. Copy your changes before closing.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此命令已被删除。关闭前请先复制你的修改。"
+          }
+        }
+      }
+    },
     "This conversation is longer than the on-device model can hold. Start a new chat.": {
       "localizations": {
         "zh-Hans": {
@@ -26563,7 +27160,7 @@
         }
       }
     },
-    "This model can't read PDFs. Switch model, or paste the text instead.": {
+    "This model can't read PDFs. Switch model or paste the text.": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
@@ -26610,6 +27207,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "此预设已删除，请将当前样式保存为新预设。"
+          }
+        }
+      }
+    },
+    "This quicklink was deleted. Copy your changes before closing.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此快捷链接已被删除。关闭前请先复制你的修改。"
           }
         }
       }
@@ -26786,16 +27393,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tinycast 始终要求模型只返回处理后的文本，并将选中文本视为待处理材料，而不是指令。"
-          }
-        }
-      }
-    },
-    "Tinycast can attach images, PDFs and text files, not .%@ files.": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tinycast 支持添加图片、PDF 和文本文件，不支持 .%@ 文件。"
           }
         }
       }
@@ -27039,6 +27636,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "使用启动器时，Tinycast 会重新学习你偏好的结果。"
+          }
+        }
+      }
+    },
+    "Tinycast's Hyper shortcuts use Right Control while Secure Input is on.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "安全输入开启时，Tinycast 的 Hyper 快捷键改用右 Control。"
+          }
+        }
+      }
+    },
+    "Title": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "标题"
           }
         }
       }
@@ -27920,9 +28537,6 @@
     "URL": {
       "shouldTranslate": false
     },
-    "UUID": {
-      "shouldTranslate": false
-    },
     "Unavailable": {
       "localizations": {
         "zh-Hans": {
@@ -28478,6 +29092,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "完成此标注前，请减少文字样式的数量。"
+          }
+        }
+      }
+    },
+    "Use placeholders for the clipboard, current date, arguments and more.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "可使用剪贴板、当前日期、参数等占位符。"
           }
         }
       }
@@ -29275,6 +29899,16 @@
         }
       }
     },
+    "Yes": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "是"
+          }
+        }
+      }
+    },
     "Yesterday": {
       "extractionState": "manual",
       "localizations": {
@@ -29598,9 +30232,6 @@
     "https://example.com/mcp": {
       "shouldTranslate": false
     },
-    "https://github.com/search?q={argument}": {
-      "shouldTranslate": false
-    },
     "https://…": {
       "shouldTranslate": false
     },
@@ -29733,6 +30364,16 @@
         }
       }
     },
+    "macOS names %@, which isn't always right.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS 报告的是 %@，但不一定准确。"
+          }
+        }
+      }
+    },
     "macOS quarantined the downloaded app and Tinycast could not clear the flag.": {
       "extractionState": "manual",
       "localizations": {
@@ -29740,6 +30381,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "macOS 隔离了下载的应用，Tinycast 无法清除该标记。"
+          }
+        }
+      }
+    },
+    "macOS refused to remap the keyboard.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS 拒绝了键盘重映射。"
           }
         }
       }

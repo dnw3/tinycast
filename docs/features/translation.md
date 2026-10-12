@@ -106,7 +106,9 @@ read-only content in applications such as ChatGPT that may not expose their sele
 It does not synthesize Command-C or copy from a confirmed empty editable target.
 
 The shared `TextInjector` snapshots the clipboard, waits for its change count to advance and restores
-all original formats after reading. Old clipboard content is never used as selected text. The Copy
+all original formats after reading. Old clipboard content is never used as selected text. Only one
+copy borrow runs at a time — a translation read refuses while a quicklink or snippet holds one — and
+clipboard history is paused for its duration, so the borrowed copy is never recorded. The Copy
 command is revalidated against the original foreground application immediately before execution;
 switching applications or cancelling invalidates pending selection work. The translation panel is
 presented only after selection reading, so its editor cannot steal the source's focus. Missing

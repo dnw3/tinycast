@@ -166,6 +166,19 @@ bottom with the model picker. ⌘J hands a Quick AI conversation to the window.
   search, so `boundedContext` can never separate a stored call from its result.
 - **Every HTTP request uses a private ephemeral `URLSession` with no URL cache.** Provider traffic must
   not create a second credential or response cache on disk.
+- **A refusal shows what the provider said.** `HTTPAIProvider` reads a non-200 body before the turn
+  fails, up to `AIProviderFailure.bodyLimit` (8,000 bytes) and for at most five seconds, and the
+  failed reply is the status's own line with the provider's message under it.
+  `AIProviderFailure.providerMessage` finds that message in OpenAI's shape and its copies',
+  Anthropic's, Gemini's array, vLLM's and OpenRouter's nested `metadata.raw`; a plain-text body is
+  shown as sent, an HTML error page is left out wherever it sits, and a JSON body the cap cut gives up
+  only a message that is still whole. The connection's key, bearer tokens and key-shaped strings are
+  replaced with `[redacted]`, and then the message is cut at `messageLimit` (600 characters). A key
+  under eight characters is redacted only as a whole word, so it cannot eat into a longer one; a
+  local server's placeholder key is redacted like any other. A mid-stream error is
+  treated the same way: the decoder is handed the key, an Anthropic `error` event shows its message
+  under its line, and an OpenAI-compatible one reads through `metadata.raw` too, or says the provider
+  stopped the response when there is no sentence to show.
 - **`Model/` stays Foundation-only.** `ai-provider-test` compiles the shipped provider models and pins
   endpoints, request bodies, stream parsing, persistence repair, Codex protocol framing and both
   CLI routes' MCP launch encodings. Request
@@ -397,8 +410,8 @@ again when it is already key, the way Escape does. It is built the way Settings 
 `AIChatSplitViewController` with a native sidebar item, here collapsible, and a unified toolbar whose title is the open chat's — so it takes the system's own sidebar, toolbar and
 menus rather than the palette's scrim. `AIChatWindowChrome` owns the toolbar — the sidebar toggle
 and New Chat as two round buttons at the sidebar's trailing edge, then Find in Chat and Actions
-alone at the window's — the title, and one key monitor for ⌘V, ⌘F, ⌘G / ⇧⌘G, ⌘K and the Actions
-menu's own chords, and dies with the window.
+alone at the window's — the title, and one key monitor for ⌘V, ⌘B, ⌃⇥ / ⌃⇧⇥, ⌘F, ⌘G / ⇧⌘G, ⌘K
+and the Actions menu's own chords, and dies with the window.
 
 - **Find in Chat** (⌘F): the system's `NSSearchToolbarItem`, as is. `ChatFindState` is one per
   window and steps match by match, not message by message:
@@ -447,9 +460,10 @@ menu's own chords, and dies with the window.
   and leaves a reply streaming.
 
 - **Sidebar** (`AIChatSidebarView`): a filter field over a `List` of every saved chat, Pinned
-  first and then bucketed by day like Clipboard. The open chat is the selected row. A new chat has
-  none until its first message saves it, so starting one or leaving an empty one never adds or
-  drops a row under the pointer. A row shows a spinner while its reply streams, else a pin when
+  first and then bucketed by day like Clipboard. The open chat is the selected row; ⌃⇥ / ⌃⇧⇥ open
+  the next or previous one, wrapping, over every saved chat whatever the filter shows. ⌘B shows or
+  hides the sidebar. A new chat has none until its first message saves it, so starting one or
+  leaving an empty one never adds or drops a row under the pointer. A row shows a spinner while its reply streams, else a pin when
   pinned. Its content fills the whole cell, so hover — a fainter fill in the selection's own
   shape — never blinks off crossing between rows.
   The context menu pins, renames in place, copies or exports the chat as Markdown
@@ -599,7 +613,7 @@ window, and every chat action either surface sends — is the nineteenth feature
   long equation shrinks to fit rather than running off the edge.
 - Return sends, ⇧↩ breaks the line, and a Japanese IME's Return confirms its text without sending.
 - Drop a PDF on the pane with a text-only model selected: the HUD refuses it, as a paste would.
-- Collapse the sidebar with the toolbar button; ⌘N and ⌘Q (Close Window) still work, and ⌘Q with
+- Collapse the sidebar with the toolbar button or ⌘B; ⌘N and ⌘Q (Close Window) still work, and ⌘Q with
   Settings in front closes Settings instead.
 - Escape closes AI Chat with the composer focused, preserving its draft and any streaming reply.
   Menus and rename fields cancel first; the sidebar clears a nonempty filter, then closes on the

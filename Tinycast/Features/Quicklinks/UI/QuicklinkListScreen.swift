@@ -34,14 +34,14 @@ struct QuicklinkListScreen: PaletteScreen {
         guard let quicklink = quicklink(at: selection) else { return nil }
         return QuicklinkActionsMenu.content(
             quicklink: quicklink, core: core,
-            values: QuicklinkArgumentsAccessory.values(for: quicklink, core: core, vm: vm))
+            values: QuicklinkArgumentsAccessory.values(for: quicklink, vm: vm))
     }
 
     func activate(at selection: Int) {
         guard let quicklink = quicklink(at: selection) else { return }
         core.quicklinkCoordinator.openQuicklink(
             id: quicklink.id,
-            values: QuicklinkArgumentsAccessory.values(for: quicklink, core: core, vm: vm))
+            values: QuicklinkArgumentsAccessory.values(for: quicklink, vm: vm))
     }
 
     /// The header's argument fields, which is where a templated link collects its values.
@@ -61,11 +61,15 @@ struct QuicklinkListScreen: PaletteScreen {
         }
         core.quicklinkCoordinator.openQuicklink(
             id: quicklink.id, forcingDefaultApp: true,
-            values: QuicklinkArgumentsAccessory.values(for: quicklink, core: core, vm: vm))
+            values: QuicklinkArgumentsAccessory.values(for: quicklink, vm: vm))
         return true
     }
 
     func perform(_ shortcut: PaletteShortcut, at selection: Int) -> Bool {
+        if shortcut == .newItem {
+            core.quicklinkCoordinator.editQuicklink(nil)
+            return true
+        }
         guard let quicklink = quicklink(at: selection) else { return false }
         let coordinator = core.quicklinkCoordinator
         switch shortcut {
@@ -74,8 +78,7 @@ struct QuicklinkListScreen: PaletteScreen {
         case .copyPath: coordinator.copyQuicklink(id: quicklink.id)
         case .pin: coordinator.toggleQuicklinkPinned(id: quicklink.id)
         case .showInFinder: return coordinator.showQuicklinkInFinder(quicklink)
-        // Deletion honours the "confirm before deleting" setting inside `AppCore`.
-        case .commandDelete: Task { await coordinator.deleteQuicklink(id: quicklink.id) }
+        case .delete: Task { await coordinator.deleteQuicklink(id: quicklink.id) }
         default: return false
         }
         return true
@@ -153,6 +156,10 @@ enum QuicklinkActionsMenu {
                 core.quicklinkCoordinator.editQuicklink(quicklink)
             })
         items.append(
+            PopoverMenuItem(title: "Create Quicklink", systemImage: "plus", shortcut: "⌘N") {
+                core.quicklinkCoordinator.editQuicklink(nil)
+            })
+        items.append(
             PopoverMenuItem(
                 title: String(localized: "Duplicate Quicklink"), systemImage: "plus.square.on.square",
                 shortcut: "⌘D"
@@ -186,7 +193,7 @@ enum QuicklinkActionsMenu {
         items.append(
             PopoverMenuItem(
                 title: String(localized: "Delete Quicklink"), systemImage: "trash", startsSection: true,
-                shortcut: "⌘⌫",
+                shortcut: "⌃X",
                 isDestructive: true
             ) {
                 Task { await core.quicklinkCoordinator.deleteQuicklink(id: quicklink.id) }

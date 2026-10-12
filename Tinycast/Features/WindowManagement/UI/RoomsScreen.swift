@@ -48,7 +48,7 @@ struct RoomsScreen: PaletteScreen {
 
     func perform(_ shortcut: PaletteShortcut, at selection: Int) -> Bool {
         switch shortcut {
-        case .commandDelete:
+        case .delete:
             guard let room = room(at: selection) else { return false }
             coordinator.deleteRoom(room)
             return true
@@ -89,7 +89,7 @@ struct RoomsScreen: PaletteScreen {
                 },
                 PopoverMenuItem(
                     title: String(localized: "Delete Room"), systemImage: "trash", startsSection: true,
-                    shortcut: "⌘⌫",
+                    shortcut: "⌃X",
                     isDestructive: true
                 ) {
                     coordinator.deleteRoom(room)

@@ -5,17 +5,17 @@
 
 ## 仓库与分支
 
-以下是 2026-10-10 核对的配置。remote 名称属于本地 checkout；换机器或新 clone 后先运行
+以下是 2026-10-12 核对的配置。remote 名称属于本地 checkout；换机器或新 clone 后先运行
 `git remote -v` 和 `git branch -vv`，按实际 URL 确认，不能只凭 `origin` 这个名字判断角色。
 
 | 角色 | 仓库 / ref | 用途 |
 | --- | --- | --- |
-| 原仓库 | [abue-ammar/tinycast](https://github.com/abue-ammar/tinycast)，本地 `origin` | 从 `origin/main` 获取上游源码 |
-| 我们的 fork | [dnw3/tinycast](https://github.com/dnw3/tinycast)，本地 `dnw3` | 推送维护结果 |
+| 原仓库 | [abue-ammar/tinycast](https://github.com/abue-ammar/tinycast)，本地 `upstream` | 从 `upstream/main` 获取上游源码 |
+| 我们的 fork | [dnw3/tinycast](https://github.com/dnw3/tinycast)，本地 `origin` | 推送维护结果 |
 | 当前维护分支 | [`dnw/capture-workspace`](https://github.com/dnw3/tinycast/tree/dnw/capture-workspace) | Capture / Translation 的集成分支，跟踪 `dnw3/dnw/capture-workspace` |
-| fork 的 `main` | `dnw3/main` | 尚未包含本轮集成；当前功能入口是上面的维护分支 |
+| fork 的 `main` | `origin/main` | 尚未包含本轮集成；当前功能入口是上面的维护分支 |
 
-本 checkout 没有名为 `upstream` 的 remote。其他教程中的 `upstream/main` 在这里对应 `origin/main`。
+下文命令按这套 remote 名称书写；其他 checkout 的名称不同时，按 URL 替换。
 GitHub 的 Sync fork 操作或更新 fork 的 `main`，不能代替维护分支上的冲突处理与验证。
 
 ## 翻译分支统一维护
@@ -30,8 +30,7 @@ Apple / AI 引擎、选中文字回填及原有翻译测试均已整合；集成
 
 这次整合以集成分支的现有源码为准，使用保留当前树的 merge 记录旧翻译分支已被吸收，
 避免重新引入旧上游实现。两个远程分支均保留，fork `main` 不变。
-本机 checkout 的 `origin` 指向 `dnw3/tinycast`，`upstream` 指向原仓库；上表记录的是
-此前 checkout 的配置，执行同步时仍须按 URL 确认角色。
+这条 merge 记录也是维护分支改用 merge 同步上游的原因，见下文。
 
 无需合入 `main` 就能从维护分支构建安装。本地 Release 安装使用同一个自签名身份，
 替换前保留旧应用备份。当前 Release 更新源仍指向上游，不能用应用内更新保留 fork 功能；
@@ -65,7 +64,7 @@ Capture 仍有原生验收未关闭。以[交付状态](plans/capture-delivery-s
 | 请求示例 | 执行范围 |
 | --- | --- |
 | “看看上游最近有哪些值得同步的改动，先给我摘要。” | 拉取并比较当前基线、上游提交及相关 PR，说明影响，保留维护分支内容 |
-| “同步上游最新 main，保留 Capture/Translation，测试后推送。” | 完整 rebase、处理冲突、验证并推送到 fork 的维护分支 |
+| “同步上游最新 main，保留 Capture/Translation，测试后推送。” | merge 上游、处理冲突与本地化、验证并推送到 fork 的维护分支 |
 | “把上游这个 PR/commit 的 fix 同步过来。”附链接 | 核对改动及依赖，选择必要提交，验证后推送 |
 
 优先关注与我们接入点重叠的变更：AppCore 生命周期、命令/热键、AI provider、设置及备份、
@@ -73,47 +72,37 @@ Capture 仍有原生验收未关闭。以[交付状态](plans/capture-delivery-s
 
 ## 同步全部更新
 
-命令均从仓库根目录运行。先检查未提交改动并提交或单独备份，再切到维护分支；不要把未确认的工作混入 rebase。
+维护分支用 merge 吸收 `upstream/main`，不再 rebase。分支里有记录旧翻译分支已被吸收的 merge；
+线性 rebase 会把旧分支提交重新放回维护分支，而本地化等大范围提交每次 rebase 都要重解同样的冲突。
+merge 只解决新增冲突，也不改写已发布的历史。
+
+命令均从仓库根目录运行。先检查未提交改动并提交或单独备份，再切到维护分支；不要把未确认的工作混入合并。
 
 ```sh
 git status --short --branch
 git remote -v
+git fetch upstream --prune
 git fetch origin --prune
-git fetch dnw3 --prune
 git switch dnw/capture-workspace
-git log --oneline HEAD..origin/main
-git log --oneline origin/main..HEAD
+git log --oneline HEAD..upstream/main
+git merge-base --is-ancestor origin/dnw/capture-workspace HEAD
+git branch "dnw/backup-capture-$(date +%Y%m%d-%H%M%S)" HEAD
+git merge --no-ff --no-commit upstream/main
 ```
 
-确认本地已包含 fork 远端现有提交；若双方各有提交，先检查并整合差异。记录远端原值和本地备份，
-既用于复核，也用于最后的推送保护。下列变量在同一个 shell 会话中保留到推送结束。
+祖先检查返回 0 才继续；否则先整合 fork 远端的新提交。遇到冲突，按职责合并：保留上游演进，
+给本地功能适配新接口；逐项检查命令、设置与备份、权限描述、AppCore 初始化/关闭、OCR 和打包，
+不能整文件选一边覆盖另一边。上游删除了我们只做过本地化的文件时，接受删除，再把文案本地化
+移到上游的替代实现里。`project.pbxproj` 冲突取上游版本后运行 `xcodegen generate`；
+其他生成文件也通过各自生成器更新。`Vendor/libwebp/` 保持官方源码，按其 README 更新。
+需要放弃本次合并时用 `git merge --abort`。
 
-```sh
-capture_remote_before=$(git rev-parse dnw3/dnw/capture-workspace)
-git merge-base --is-ancestor "$capture_remote_before" HEAD
-```
-
-只有祖先检查返回 0 才继续：
-
-```sh
-capture_before=$(git rev-parse HEAD)
-capture_base_before=$(git merge-base HEAD origin/main)
-git branch "dnw/backup-capture-$(date +%Y%m%d-%H%M%S)" "$capture_before"
-git rebase origin/main
-```
-
-遇到冲突，按职责合并：保留上游演进，给本地功能适配新接口；
-逐项检查命令、设置与备份、权限描述、AppCore 初始化/关闭、OCR 和打包，不能整文件选一边覆盖另一边。
-`project.yml` 冲突解决后运行 `xcodegen generate`，提交生成的 project；其他生成文件也通过各自生成器更新。
-`Vendor/libwebp/` 保持官方源码，按其 README 更新。
-
-冲突处理后用 `git add` 和 `git rebase --continue`；需要取消本次尚未结束的 rebase 时用 `git rebase --abort`。
-完成后复核本地补丁的变化，确认没有漏掉功能：
-
-```sh
-git range-diff "$capture_base_before..$capture_before" "origin/main..HEAD"
-git diff --check
-```
+上游新增的界面文案需要单独补本地化：`String` 参数（`FormRow`、`SettingsRow(title:)`、
+`primaryActionTitle`、`.tooltip`、`PopoverMenuItem` 等）在调用处改为 `String(localized:)`，
+Model 层不本地化。用 `SWIFT_EMIT_LOC_STRINGS=YES` 构建后运行
+`./Scripts/sync-localization.sh build/UpstreamCheck`，补齐它报告缺少的中文，删除 `stale` 条目。
+运行时才拼出键的显示名（如 `HyperKeyPhysicalKey.title`、命令标题、设置搜索条目）不会被提取，
+需在目录里以 `manual` 条目补齐。
 
 ## 只同步一个 feature 或 fix
 
@@ -121,7 +110,7 @@ git diff --check
 检查当前分支是否已经包含等价修复，再按依赖顺序 `git cherry-pick -x <commit-sha>`，让提交保留来源。
 merge commit 需先检查父提交与差异，不能直接猜 `-m` 的值。未合并 PR 的代码需明确记录其未合并状态。
 
-同样先备份、解决冲突、验证并推送。以后完整 rebase 时复核这些提交是否已被上游覆盖，避免重复补丁。
+同样先备份、解决冲突、验证并推送。以后合并上游时复核这些提交是否已被上游覆盖，避免重复补丁。
 
 ## 验证与推送
 
@@ -133,27 +122,20 @@ merge commit 需先检查父提交与差异，不能直接猜 `-m` 的值。未�
 
 ```sh
 xcodebuild -project Tinycast.xcodeproj -scheme Tinycast -configuration Debug \
-  -derivedDataPath build/UpstreamCheck CODE_SIGNING_ALLOWED=NO build
+  -derivedDataPath build/UpstreamCheck CODE_SIGNING_ALLOWED=NO SWIFT_EMIT_LOC_STRINGS=YES build
 ```
 
 该命令只验证编译。影响截图输出、翻译回填、焦点、权限或资源释放的改动，再验证对应的原生路径；
 历史证据保留原日期和源码范围，未执行或未关闭的验收项继续标明。将验证结果及本次上游 SHA 写回文档后提交。
 
-普通新增提交使用：
+merge 同步与普通提交都是快进推送：
 
 ```sh
-git push dnw3 HEAD:refs/heads/dnw/capture-workspace
+git push origin HEAD:refs/heads/dnw/capture-workspace
 ```
 
-已发布的维护分支经过 rebase 后需要改写历史，使用开始前记录的远端 SHA：
-
-```sh
-git push --force-with-lease=refs/heads/dnw/capture-workspace:"$capture_remote_before" \
-  dnw3 HEAD:refs/heads/dnw/capture-workspace
-```
-
-lease 被拒绝说明远端有变化，先读取和整合差异，不能只替换期望 SHA 后重试。推送后用
-`git ls-remote dnw3 refs/heads/dnw/capture-workspace` 与 `git rev-parse HEAD` 核对，再检查工作区状态。
+推送被拒绝说明远端有新提交，先 fetch 并整合，不能改用强推覆盖。推送后用
+`git ls-remote origin refs/heads/dnw/capture-workspace` 与 `git rev-parse HEAD` 核对，再检查工作区状态。
 
 日常源码同步的推送目标是 fork 的维护分支。合入 fork `main`、提交上游 PR 和发布应用分别按对应任务执行；
 向上游贡献时遵循 [CONTRIBUTING.md](../CONTRIBUTING.md) 的 issue / `approved` 约定。
@@ -168,17 +150,18 @@ lease 被拒绝说明远端有变化，先读取和整合差异，不能只替�
 Dev 不通过应用内更新器更新，继续使用本分支的新代码需要重新构建。
 
 如果以后正式分发 fork，再统一处理应用名称、bundle ID、签名、更新源、发布资源和安装说明；
-源码 rebase 或推送成功不代表这条发布链路已经完成。现有机制见 [updates](features/updates.md) 与 [release](release.md)。
+源码同步或推送成功不代表这条发布链路已经完成。现有机制见 [updates](features/updates.md) 与 [release](release.md)。
 
 ## 最近一次源码同步
 
-| 项目 | 2026-10-10 记录 |
+| 项目 | 2026-10-12 记录 |
 | --- | --- |
-| 上游基线 | `da2c4e44238b166f774bd3d63e37d12b0616af94` |
-| 初次整理快照 | [`38c29fda`](https://github.com/dnw3/tinycast/commit/38c29fdadcc6353df36d094c345e803406b5406b)，三个提交分别为官方 libwebp、Capture/Translation、设计与验收证据 |
-| 主要适配 | 上游 AI Chat / Dictation / settings-file / Clipboard、命令别名、玻璃背景 API；修复 Drive 授权取消竞态 |
-| 自动检查 | 101 个 harness、Debug / Release 通过；Swift 警告 0；lint 与上游同为 66 项，新增 0 |
-| 原生验收 | 本轮未重新执行；2026-09-29 历史证据及未关闭项保留 |
-| 证据 | [机器可读检查](plans/capture-evidence/rebase-checks-20261010.json)、[Capture 交付状态](plans/capture-delivery-status.md) |
+| 上游基线 | `888b5e59fc39f62c7c42ad6ab42f689e6b233eeb`（上一轮 `da2c4e44`） |
+| 同步方式 | merge `upstream/main` 到维护分支，合并前备份为 `dnw/backup-capture-20261012-185805` |
+| 吸收的上游改动 | 启动器表单（Snippets / Quicklinks / 自定义命令 / 日程）、Hyper Key 扩展与诊断、⌘C 选区兜底及借用互斥、AI 拒绝原因、AI Chat 快捷键、扩展依赖、Notes 列表、应用扫描符号链接、UTF-8 解码 |
+| 主要适配 | `TextInjector.copySelection` 同时保留上游借用互斥/暂停记录与翻译的菜单 Copy、取消校验；AI 状态提示改由 Service 本地化后交给 `AIProviderFailure`；上游删除的编辑面板改为本地化新表单；补 81 条中文、删 18 条失效键 |
+| 自动检查 | 119 个 harness、Debug / Release 通过；Swift 警告 0；lint 153 项与合并前相同，新增 0（上游自身 66 项） |
+| 原生验收 | 本轮未执行；启动器新表单、Hyper Key 设置与诊断、翻译取词的中文界面和行为尚未在安装版复验 |
+| 证据 | 合并提交说明；此前的[机器可读检查](plans/capture-evidence/rebase-checks-20261010.json)、[Capture 交付状态](plans/capture-delivery-status.md)保留 |
 
 下次同步时更新本节的日期、上游 SHA、改动摘要、验证范围与证据链接；旧证据文件保留，便于回溯。

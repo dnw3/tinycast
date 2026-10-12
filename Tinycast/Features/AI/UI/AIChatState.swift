@@ -399,11 +399,11 @@ enum ChatAttachmentRefusal: Equatable, Sendable {
         case .undecodable: return String(localized: "That file isn't text Tinycast can read.")
         case .unreadable: return String(localized: "That file could not be read.")
         case .unsupported(let ext):
-            return String(localized: "Tinycast can attach images, PDFs and text files, not .\(ext) files.")
+            return String(localized: "Can't attach .\(ext) files — only images, PDFs and text.")
         case .imagesUnsupported:
             return String(localized: "This model can't read images. Switch model to attach one.")
         case .documentsUnsupported:
-            return String(localized: "This model can't read PDFs. Switch model, or paste the text instead.")
+            return String(localized: "This model can't read PDFs. Switch model or paste the text.")
         }
     }
 }

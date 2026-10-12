@@ -176,6 +176,7 @@ run launcher-settings-file-test \
                            Tinycast/Features/HotKeys/Model/DoubleTapModifier.swift \
                            Tinycast/Features/HotKeys/Model/ModifierKey.swift \
                            Tinycast/Features/HotKeys/Model/HyperKey.swift \
+                           Tinycast/Features/HotKeys/Model/HIDKeyMapping.swift \
                            Tinycast/Platform/ASCIIKeyboardLayout.swift \
                            Tinycast/Features/QuickActions/Model/BuiltInQuickAction.swift \
                            Tinycast/Features/Quicklinks/Model/Quicklink.swift \
@@ -189,7 +190,8 @@ run calc-test              Tinycast/Features/Calculator/Model/*.swift \
                            Tinycast/Features/Calculator/Service/CalcFailure+Localization.swift
 run index calc-performance Tinycast/Features/Calculator/Model/*.swift
 run calendar-test          Tinycast/Features/Calendar/Model/*.swift \
-                           Tinycast/Features/Calendar/Service/UpcomingWindow+Localization.swift
+                           Tinycast/Features/Calendar/Service/UpcomingWindow+Localization.swift \
+                           Tinycast/Features/Calendar/UI/EventEditorSession.swift
 CAPTURE=Tinycast/Features/Capture
 run -O capture-webp-test $CAPTURE/Model/*.swift $CAPTURE/Service/*.swift Tinycast/Platform/TextRecognition/TextRecognitionResult.swift \
                            Tinycast/Platform/ScreenTarget.swift Tinycast/Platform/Compression/Zlib.swift Tests/CaptureFixture.swift
@@ -338,6 +340,11 @@ run palette-menu-click-test Tinycast/Platform/Appearance.swift \
                            Tinycast/Platform/NotificationToken.swift \
                            Tinycast/DesignSystem/Interaction/KeyboardFocus.swift \
                            Tinycast/Palette/PalettePanel.swift
+run form-input-test        Tinycast/Platform/Appearance.swift \
+                           Tinycast/DesignSystem/Theme.swift \
+                           Tinycast/DesignSystem/InterfaceMetrics.swift \
+                           Tinycast/DesignSystem/FormTextInput.swift \
+                           Tinycast/DesignSystem/FormTextArea.swift
 run scroll-reveal-test     Tinycast/DesignSystem/Scrolling/SelectionReveal.swift
 run redaction-test         Tinycast/DesignSystem/RedactedPlaceholder.swift
 run keyboard-focus-test    Tinycast/DesignSystem/Interaction/KeyboardFocus.swift
@@ -439,6 +446,7 @@ run hotkey-test            Tinycast/Features/HotKeys/Model/DoubleTapModifier.swi
                            Tinycast/Features/HotKeys/Model/HotKeyBinding.swift \
                            Tinycast/Features/HotKeys/Model/HotKeySpelling.swift \
                            Tinycast/Features/HotKeys/Model/HyperKey.swift \
+                           Tinycast/Features/HotKeys/Model/HIDKeyMapping.swift \
                            Tinycast/Platform/ASCIIKeyboardLayout.swift \
                            Tinycast/Features/HotKeys/Service/KeyShortcut.swift \
                            Tinycast/Features/HotKeys/Model/HotKeyAction.swift \
@@ -499,6 +507,7 @@ run window-preset-test     Tinycast/Features/WindowManagement/Model/WindowComman
                            Tinycast/Features/HotKeys/Model/ModifierKey.swift \
                            Tinycast/Features/HotKeys/Model/HotKeyBinding.swift \
                            Tinycast/Features/HotKeys/Model/HyperKey.swift \
+                           Tinycast/Features/HotKeys/Model/HIDKeyMapping.swift \
                            Tinycast/Platform/ASCIIKeyboardLayout.swift \
                            Tinycast/Features/HotKeys/Service/KeyShortcut.swift
 run space-gesture-test     Tinycast/Features/WindowManagement/Model/WindowCommand.swift \
@@ -568,8 +577,11 @@ run custom-command-test    Tinycast/Platform/PseudoTerminal.swift \
                            Tinycast/Platform/ProcessExit.swift \
                            Tinycast/Features/CustomCommands/Model/CustomCommand.swift \
                            Tinycast/Features/CustomCommands/Model/RaycastScriptImport.swift \
+                           Tinycast/Features/CustomCommands/UI/CustomCommandEditorSession.swift \
                            Tinycast/Features/CustomCommands/Service/ShellCommandRunner.swift \
                            Tinycast/Features/CustomCommands/Service/CustomCommandValidationError+Localization.swift
+run custom-command-list-test Tinycast/Features/CustomCommands/Model/CustomCommand.swift \
+                             Tinycast/Features/CustomCommands/UI/CustomCommandListScreen.swift
 run uninstall-test         Tinycast/Features/Uninstall/Model/UninstallTarget.swift \
                            Tinycast/Features/Uninstall/Model/UninstallSearchRoot.swift \
                            Tinycast/Features/Uninstall/Model/UninstallRules.swift \
@@ -581,12 +593,14 @@ run quicklink-test         Tinycast/Features/Quicklinks/Model/Quicklink.swift \
                            Tinycast/Features/Quicklinks/Model/QuicklinkArchive.swift \
                            Tinycast/Features/Quicklinks/Model/RaycastQuicklinkImport.swift \
                            Tinycast/Features/Quicklinks/Service/QuicklinkArchive-ArchiveError+Localization.swift \
-                           Tinycast/Features/Quicklinks/Service/QuicklinkError+Localization.swift
+                           Tinycast/Features/Quicklinks/Service/QuicklinkError+Localization.swift \
+                           Tinycast/Features/Quicklinks/UI/QuicklinkEditorSession.swift
 run quicklink-coordinator-test Tinycast/Features/Quicklinks/Model/Quicklink.swift \
                            Tinycast/Features/Quicklinks/Model/QuicklinkDestination.swift \
                            Tinycast/Features/Quicklinks/Model/QuicklinkStore.swift \
                            Tinycast/Features/Quicklinks/Model/QuicklinkArchive.swift \
                            Tinycast/Features/Quicklinks/UI/QuicklinkCoordinator.swift \
+                           Tinycast/Features/Quicklinks/UI/QuicklinkEditorSession.swift \
                            Tinycast/Features/Quicklinks/UI/QuicklinkArgumentsAccessory.swift \
                            Tinycast/Features/Snippets/Model/Snippet.swift \
                            Tinycast/Features/Snippets/Model/SnippetTemplateEngine.swift \
@@ -597,6 +611,7 @@ run slow snippets-test     Tinycast/Platform/NotificationToken.swift \
                            Tinycast/Platform/AccessibilityText.swift \
                            Tinycast/Features/Snippets/Model/*.swift \
                            Tinycast/Features/Snippets/Service/*.swift \
+                           Tinycast/Features/Snippets/UI/SnippetEditorSession.swift \
                            Tinycast/Features/TextInjection/Service/*.swift
 run notes-test             Tinycast/Platform/Signposts.swift \
                            $L/SearchRelevance.swift \
@@ -667,6 +682,20 @@ run slow -O raycast-test   Tinycast/Features/Backup/Model/RaycastImportError.swi
                            Tinycast/Features/Backup/Service/RaycastImportError+Localization.swift
 run settings-backup-test   Tinycast/Features/Settings/AppSettingsKey.swift \
                            Tinycast/Features/Backup/Model/SettingsBackupCoverage.swift
+run hyper-key-test         Tinycast/Features/HotKeys/Model/HIDKeyMapping.swift \
+                           Tinycast/Features/HotKeys/Model/HyperKeyConflictPolicy.swift \
+                           Tinycast/Features/HotKeys/Service/KeyboardRemapper.swift \
+                           Tests/hyper-key-fixtures.swift
+run hotkey-dispatch-test   Tinycast/Features/HotKeys/Model/DoubleTapModifier.swift \
+                           Tinycast/Features/HotKeys/Model/ModifierKey.swift \
+                           Tinycast/Features/HotKeys/Model/HotKeyBinding.swift \
+                           Tinycast/Features/HotKeys/Model/HyperKey.swift \
+                           Tinycast/Features/HotKeys/Model/HIDKeyMapping.swift \
+                           Tinycast/Features/HotKeys/Model/HotKeyAction.swift \
+                           Tinycast/Features/HotKeys/Service/KeyShortcut.swift \
+                           Tinycast/Features/HotKeys/Service/HotKeyManager.swift \
+                           Tinycast/Platform/ASCIIKeyboardLayout.swift \
+                           Tests/hotkey-dispatch-fixtures.swift
 run settings-file-test     Tinycast/Features/Settings/Model/*.swift \
                            Tinycast/Features/Settings/Service/SettingsFileIssue+Localization.swift \
                            Tinycast/Features/Settings/Service/SettingsFileMonitor.swift \
@@ -787,7 +816,8 @@ run ai-provider-test       Tinycast/Features/Settings/AppSettingsKey.swift \
                            Tinycast/Features/AI/Model/*.swift \
                            Tinycast/Features/AI/Settings/AISettingsStore.swift \
                            Tinycast/Features/AI/Service/AIEndpointPolicy-ValidationError+Localization.swift \
-                           Tinycast/Features/AI/Service/AIModelDiscovery-DiscoveryError+Localization.swift
+                           Tinycast/Features/AI/Service/AIModelDiscovery-DiscoveryError+Localization.swift \
+                           Tinycast/Features/AI/Service/AIProviderError+Localization.swift
 run ai-chat-test           Tinycast/Features/AI/Model/AIRequest.swift \
                            Tinycast/Features/AI/Service/AIProviderError+Localization.swift \
                            Tinycast/Features/AI/Model/AIConnection.swift \
@@ -899,6 +929,7 @@ run mcp-oauth-test         Tinycast/Platform/ExecutableLocator.swift \
                            Tinycast/Features/AI/Model/AITool.swift \
                            Tinycast/Features/AI/Model/AIToolServer.swift \
                            Tinycast/Features/AI/Model/AIStreamDecoder.swift \
+                           Tinycast/Features/AI/Model/AIProviderFailure.swift \
                            Tinycast/Features/AI/Model/AIThinkTagDecoder.swift \
                            Tinycast/Features/AI/Model/AIRequest.swift \
                            Tinycast/Features/AI/Service/AIProviderError+Localization.swift \
@@ -915,6 +946,7 @@ run slow mcp-stdio-test    Tinycast/Platform/ExecutableLocator.swift \
                            Tinycast/Features/AI/Model/AITool.swift \
                            Tinycast/Features/AI/Model/AIToolServer.swift \
                            Tinycast/Features/AI/Model/AIStreamDecoder.swift \
+                           Tinycast/Features/AI/Model/AIProviderFailure.swift \
                            Tinycast/Features/AI/Model/AIThinkTagDecoder.swift \
                            Tinycast/Features/AI/Model/AIRequest.swift \
                            Tinycast/Features/AI/Service/AIProviderError+Localization.swift \

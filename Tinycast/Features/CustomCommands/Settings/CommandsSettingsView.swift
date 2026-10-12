@@ -3,10 +3,8 @@ import SwiftUI
 /// Both flavours in one pane: the built-ins, then the user's own shell commands.
 struct CommandsSettingsView: View {
     @Environment(CustomCommandStore.self) private var store
-    @Environment(AppCore.self) private var core
+    @Environment(CustomCommandCoordinator.self) private var coordinator
     @Environment(AppSettings.self) private var settings
-    @State private var editor: EditorTarget?
-    @State private var pendingDeletion: CustomCommand?
 
     var body: some View {
         @Bindable var settings = settings
@@ -30,6 +28,9 @@ struct CommandsSettingsView: View {
                 showsInLauncher: $settings.customCommandsShowInLauncher)
 
             Section {
+                ForEach(CommandCatalog.entries(ownedBy: .commands)) { entry in
+                    FeatureCommandRow(entry: entry)
+                }
                 if store.commands.isEmpty {
                     Text("No custom commands yet.")
                         .foregroundStyle(.secondary)
@@ -41,20 +42,20 @@ struct CommandsSettingsView: View {
                             isEnabled: Binding(
                                 get: { command.isEnabled },
                                 set: {
-                                    core.customCommandCoordinator.setCustomCommandEnabled(
+                                    coordinator.setCustomCommandEnabled(
                                         $0, id: command.id)
                                 }),
-                            onEdit: { editor = EditorTarget(command: command) },
-                            onDelete: { pendingDeletion = command })
+                            onEdit: { coordinator.editCustomCommand(command) },
+                            onDelete: { Task { await coordinator.deleteCustomCommand(id: command.id) } })
                     }
                 }
                 Button {
-                    editor = EditorTarget(command: nil)
+                    coordinator.editCustomCommand(nil)
                 } label: {
                     SettingsRowTitle(.commandsCustomCommands, "Add Custom Command")
                 }
                 Button {
-                    Task { await core.customCommandCoordinator.importScriptDirectory() }
+                    Task { await coordinator.importScriptDirectory() }
                 } label: {
                     SettingsRowTitle(.commandsCustomCommands, "Import Raycast Scripts")
                 }
@@ -68,18 +69,6 @@ struct CommandsSettingsView: View {
         .formStyle(.grouped)
         .settingsScrollTarget(.commands)
         .releasesFocusOnOutsideClick()
-        .settingsEditorPanel(item: $editor) { target in
-            CustomCommandEditorPanel(command: target.command)
-        }
-        .alert(item: $pendingDeletion) { command in
-            Alert(
-                title: Text("Delete “\(command.name)”?"),
-                message: Text("Its global shortcut and launcher references will also be removed."),
-                primaryButton: .destructive(Text("Delete")) {
-                    core.customCommandCoordinator.deleteCustomCommand(id: command.id)
-                },
-                secondaryButton: .cancel())
-        }
     }
 
     private var sortedCommands: [CustomCommand] {
@@ -87,11 +76,6 @@ struct CommandsSettingsView: View {
             $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
         }
     }
-}
-
-private struct EditorTarget: Identifiable {
-    let id = UUID()
-    let command: CustomCommand?
 }
 
 private struct CustomCommandSettingsRow: View {
@@ -123,7 +107,7 @@ private struct CustomCommandSettingsRow: View {
                 Image(systemName: "pencil")
             }
             .buttonStyle(.plain)
-            .help(String(localized: "Edit Command"))
+            .help(String(localized: "Edit Custom Command"))
             .accessibilityLabel(String(localized: "Edit \(command.name)"))
 
             Button(action: onDelete) {
@@ -131,7 +115,7 @@ private struct CustomCommandSettingsRow: View {
                     .foregroundStyle(.red)
             }
             .buttonStyle(.plain)
-            .help(String(localized: "Delete Command"))
+            .help(String(localized: "Delete Custom Command"))
             .accessibilityLabel(String(localized: "Delete \(command.name)"))
 
             Toggle("", isOn: $isEnabled)

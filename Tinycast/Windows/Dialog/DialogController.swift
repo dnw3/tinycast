@@ -78,21 +78,6 @@ final class DialogController: NSObject, NSWindowDelegate {
         return Float32(volume.level)
     }
 
-    func createEvent() async -> EventDraft? {
-        let state = EventDraftState()
-        let request = DialogRequest(
-            title: String(localized: "New Event"),
-            message: String(localized: "It goes on the calendar new events go to."),
-            symbol: "calendar.badge.plus", tone: .neutral,
-            actions: [
-                DialogAction(title: String(localized: "Create")),
-                DialogAction(title: String(localized: "Cancel"), role: .cancel)
-            ],
-            defaultIndex: 0, cancelIndex: 1, accessory: .eventDraft(state))
-        guard await present(request) == 0, state.draft.isValid else { return nil }
-        return state.draft
-    }
-
     func fillSnippetArguments(
         snippetName: String, arguments: [SnippetTemplateEngine.MissingArgument]
     ) async -> [String: String]? {
@@ -119,13 +104,12 @@ final class DialogController: NSObject, NSWindowDelegate {
             let width =
                 switch request.accessory {
                 case nil, .volume: metrics.size.dialogCompactWidth
-                case .eventDraft, .snippetArguments: metrics.size.dialogWidth
+                case .snippetArguments: metrics.size.dialogWidth
                 }
             let content = hostingView(
                 DialogView(
                     request: request, width: width,
                     onChoose: { [weak self] index in
-                        guard Self.accepts(index, for: request) else { return }
                         self?.finish(index)
                     }),
                 width: width, minHeight: 0)
@@ -138,7 +122,6 @@ final class DialogController: NSObject, NSWindowDelegate {
                 case .cancel:
                     finish(request.cancelIndex)
                 case .confirm:
-                    guard Self.accepts(request.defaultIndex, for: request) else { return }
                     finish(request.defaultIndex)
                 case .increment, .decrement:
                     // Keying the slider lands on the same values Volume Up/Down produce.
@@ -169,14 +152,6 @@ final class DialogController: NSObject, NSWindowDelegate {
             panel.animator().setFrame(destination, display: false)
             panel.animator().alphaValue = 1
         }
-    }
-
-    /// A refused primary action leaves the dialog up, as a greyed-out button would.
-    private static func accepts(_ index: Int, for request: DialogRequest) -> Bool {
-        guard index == request.defaultIndex, case .eventDraft(let state) = request.accessory else {
-            return true
-        }
-        return state.draft.isValid
     }
 
     /// Resumes before the fade finishes, so a confirmation isn't held up by animation.

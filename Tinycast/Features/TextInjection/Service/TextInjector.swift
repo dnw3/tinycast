@@ -238,7 +238,8 @@ final class TextInjector {
                     promptForInteractiveAccessibility: true)
             else { return nil }
         }
-        return await copySelection(from: targetApp, pasteboard: NSPasteboard.general, performCopy: performCopy)
+        return await copySelection(
+            from: targetApp, pasteboard: NSPasteboard.general, performCopy: performCopy)
     }
 
     /// Split for the harness, which drives a stub pasteboard rather than another app.
@@ -246,10 +247,17 @@ final class TextInjector {
         from targetApp: NSRunningApplication?, pasteboard: any PasteboardAccess,
         performCopy: (@MainActor () -> Bool)? = nil
     ) async -> String? {
-        guard !Task.isCancelled else { return nil }
-        clipboardManager.prepareForTinycastPasteboardMutation()
-        guard let original = PasteboardSnapshot(pasteboard: pasteboard) else { return nil }
-        defer { restore(original, to: pasteboard) }
+        // A second borrow would snapshot the first's copy and read its restore as a selection.
+        guard !Task.isCancelled, !isBorrowingCopy,
+            let original = PasteboardSnapshot(pasteboard: pasteboard)
+        else { return nil }
+        isBorrowingCopy = true
+        clipboardManager.pauseCapture()
+        defer {
+            restore(original, to: pasteboard)
+            clipboardManager.resumeCapture()
+            isBorrowingCopy = false
+        }
 
         if let performCopy {
             guard performCopy() else { return nil }
@@ -274,6 +282,8 @@ final class TextInjector {
         clipboardManager.synchronizeAfterTinycastPasteboardMutation(
             changeCount: pasteboard.changeCount)
     }
+
+    private var isBorrowingCopy = false
 
     /// A copy lands well inside a second; past that the app was never going to answer.
     private static let copyPollAttempts = 40
