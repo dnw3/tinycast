@@ -53,7 +53,7 @@ struct TranslationView: View {
             Menu(state.engine.title) {
                 Picker(
                     "Translation engine",
-                    selection: Binding(get: { state.engine }, set: coordinator.changeEngine)
+                    selection: Binding(get: { state.engine }, set: { coordinator.changeEngine($0) })
                 ) {
                     ForEach(TranslationPreferences.Engine.allCases, id: \.self) { engine in
                         Text(engine.title).tag(engine)

@@ -8,7 +8,9 @@ struct CaptureSettingsView: View {
         @Bindable var store = coordinator.settings
         Form {
             Section {
-                Toggle(isOn: Binding(get: { store.preferences.enabled }, set: coordinator.setEnabled)) {
+                Toggle(
+                    isOn: Binding(get: { store.preferences.enabled }, set: { coordinator.setEnabled($0) })
+                ) {
                     SettingsRowTitle(.captureCapture, "Enable Capture")
                     Text("Capture, annotate, pin and extract text from screenshots.")
                 }
