@@ -110,7 +110,8 @@ Read and write，然后存入仓库 Settings → Secrets and variables → Actio
 （[`Scripts/notify-lark.sh`](../Scripts/notify-lark.sh)）：新开同步 PR 或上游有新提交、同步 PR 的 CI
 跑完、同步 workflow 失败时各发一条；上游没动不重复发。在飞书群的群机器人里添加自定义机器人并开启签名校验，
 把 webhook 地址和密钥存为仓库 secret `LARK_WEBHOOK_URL`、`LARK_WEBHOOK_SECRET`。未配置时跳过通知，
-飞书拒收只记警告，都不影响同步与 CI。
+飞书拒收只记警告，都不影响同步与 CI。配置或更换后，在 Actions 页手动运行 Upstream sync 并勾选
+*Also send a test message* 验证。
 
 ## 同步全部更新
 

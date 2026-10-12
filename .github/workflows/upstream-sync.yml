@@ -8,6 +8,11 @@ on:
     # 09:17 Beijing time; off the hour, when scheduled runs queue up.
     - cron: "17 1 * * *"
   workflow_dispatch:
+    inputs:
+      test_notification:
+        description: "Also send a test message to the Feishu group"
+        type: boolean
+        default: false
 
 permissions: {}
 
@@ -38,6 +43,12 @@ jobs:
           ref: main
           fetch-depth: 0
           token: ${{ secrets.UPSTREAM_SYNC_TOKEN }}
+
+      - name: Send a test notification
+        if: inputs.test_notification
+        run: |
+          echo "飞书通知配置正常，之后同步 PR 的消息会发到这里。" |
+            ./Scripts/notify-lark.sh "Tinycast · 测试消息" "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/pulls"
 
       - name: Mirror upstream main
         run: |
