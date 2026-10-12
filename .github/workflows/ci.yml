@@ -63,6 +63,7 @@ jobs:
               -configuration "$configuration" -derivedDataPath "$RUNNER_TEMP/DerivedData" \
               CODE_SIGNING_ALLOWED=NO > "$log" 2>&1; then
               grep -E 'error:' "$log" | sort -u | head -50
+              tail -n 80 "$log"
               exit 1
             fi
             warnings=$(grep -E '\.swift:[0-9]+:[0-9]+: warning:' "$log" | sort -u)
@@ -72,3 +73,11 @@ jobs:
 
       - name: Harnesses
         run: ./Scripts/run-tests.sh
+
+      - name: Keep build logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs
+          path: ${{ runner.temp }}/build-*.log
+          if-no-files-found: ignore
