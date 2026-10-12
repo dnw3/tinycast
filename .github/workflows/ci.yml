@@ -74,10 +74,18 @@ jobs:
       - name: Harnesses
         run: ./Scripts/run-tests.sh
 
-      - name: Keep build logs
+      - name: Collect failure logs
+        if: failure()
+        run: |
+          mkdir -p "$RUNNER_TEMP/failure-logs"
+          cp "$RUNNER_TEMP"/build-*.log "$RUNNER_TEMP/failure-logs/" 2>/dev/null || true
+          cp "${TMPDIR:-/tmp}"/tinycast-harness/*.log "$RUNNER_TEMP/failure-logs/" 2>/dev/null || true
+          cp ~/Library/Logs/DiagnosticReports/*.ips "$RUNNER_TEMP/failure-logs/" 2>/dev/null || true
+
+      - name: Keep failure logs
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: build-logs
-          path: ${{ runner.temp }}/build-*.log
+          name: failure-logs
+          path: ${{ runner.temp }}/failure-logs
           if-no-files-found: ignore

@@ -80,8 +80,9 @@ struct CaptureTextFormatTests {
                     styled[$0] > 240 && styled[$0 + 1] > 240 && styled[$0 + 2] < 10
                 })
             case .outline:
-                precondition(stride(from: 0, to: styled.count, by: 4).contains {
-                    Int(styled[$0]) > Int(styled[$0 + 1]) + 20 && styled[$0 + 1] < 100
+                precondition(stride(from: 0, to: styled.count, by: 4).contains { (offset: Int) -> Bool in
+                    let red = Int(styled[offset]), green = Int(styled[offset + 1])
+                    return red > green + 20 && green < 100
                 })
             case .alignment:
                 precondition((20..<60).allSatisfy { x in (20..<60).allSatisfy { styled[($0 * 320 + x) * 4] == 255 } })
