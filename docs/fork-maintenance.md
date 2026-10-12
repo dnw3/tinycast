@@ -113,6 +113,24 @@ Read and write，然后存入仓库 Settings → Secrets and variables → Actio
 飞书拒收只记警告，都不影响同步与 CI。配置或更换后，在 Actions 页手动运行 Upstream sync 并勾选
 *Also send a test message* 验证。
 
+## 处理同步 PR
+
+收到飞书"新的同步 PR"或"同步 PR 的 CI 结果"后，或被要求"处理一下同步 PR"时，按顺序：
+
+1. 读 PR：`gh pr list -R dnw3/tinycast --head upstream-main`，再 `gh pr view <号> -R dnw3/tinycast`。
+   正文列出上游提交和预演出的冲突文件。
+2. 看 CI：`gh pr checks <号> -R dnw3/tinycast`；排队较久时等它结束，不在 CI 未完成时合并。
+3. 按情况处理：
+   - **无冲突、CI 绿**：运行摘要里有 `capture-ocr-test` / `form-input-test` 的警告时，先在本机
+     `./Scripts/run-tests.sh <名字>` 跑通；再 `gh pr merge <号> -R dnw3/tinycast --merge`。
+     只能用 `--merge`，不加 `--delete-branch`。
+   - **无冲突、CI 红**：读失败步骤的日志（`gh run view <run> -R dnw3/tinycast --log-failed`）。
+     本地化缺中文、旧编译器不兼容等在本地 `main` 上合并 `origin/upstream-main` 后修复，按"同步全部更新"验证并推送。
+   - **有冲突**：按下一节"同步全部更新"在本地 merge、解决并推送 `main`；PR 会自动标为已合并。
+4. 上游改动涉及接入点（AppCore、命令/热键、设置、剪贴板、TextInjector、权限等）时，把影响告诉用户；
+   合并后需要用新版本时按"本机安装"重新构建安装。
+5. 更新文末"最近一次源码同步"：日期、上游 SHA、改动摘要、验证结果。只合并了无关改动（如 CI 配置）可略过。
+
 ## 同步全部更新
 
 同步 PR 有冲突、或需要手动同步时使用。`main` 用 merge 吸收上游，不再 rebase。分支里有记录旧翻译分支
@@ -183,6 +201,47 @@ git push origin main
 
 日常源码同步的推送目标是 fork 的 `main`。合入 fork `main`、提交上游 PR 和发布应用分别按对应任务执行；
 向上游贡献时遵循 [CONTRIBUTING.md](../CONTRIBUTING.md) 的 issue / `approved` 约定。
+
+## 本机安装
+
+本机使用的是 `/Applications/Tinycast.app`（`com.tinycast.app`），由 `main` 构建的签名 Release，
+与 Dev 版并存。签名身份必须是钥匙串里的 `Tinycast Self-Signed`，否则辅助功能、屏幕录制等授权会失效。
+
+```sh
+git switch main && git pull --ff-only
+xcodebuild -project Tinycast.xcodeproj -scheme Tinycast -configuration Release \
+  -derivedDataPath build/InstallRelease build
+APP=build/InstallRelease/Build/Products/Release/Tinycast.app
+codesign --verify --deep --strict "$APP"
+# 两条输出的 designated requirement 必须一致，否则停下检查签名证书。
+codesign -d -r- "$APP"; codesign -d -r- /Applications/Tinycast.app
+ditto /Applications/Tinycast.app "build/install-backups/Tinycast-before-$(date +%Y%m%d-%H%M%S).app"
+osascript -e 'tell application id "com.tinycast.app" to quit'; sleep 2
+rm -rf /Applications/Tinycast.app && ditto "$APP" /Applications/Tinycast.app
+codesign --verify --deep --strict /Applications/Tinycast.app && open /Applications/Tinycast.app
+```
+
+`build/` 不进 git。确认新版正常后删除 `build/install-backups/` 里的旧应用备份，它们每份约 20 MB。
+
+## 新机器或新会话
+
+**新会话**：`AGENTS.md` 指向本文件，直接说"处理一下同步 PR""同步上游""重新安装"即可；
+不依赖任何会话记忆。GitHub 上的 workflow、secret（`UPSTREAM_SYNC_TOKEN`、`LARK_WEBHOOK_URL`、
+`LARK_WEBHOOK_SECRET`）和飞书机器人都在线上，重装系统不受影响。
+
+**新机器或重装系统**：
+
+1. 工具：Xcode、`brew install xcodegen swiftlint`、Node、`gh`（`gh auth login`）。
+2. 代码与 remote：
+   ```sh
+   git clone git@github.com:dnw3/tinycast.git && cd tinycast
+   git remote add upstream https://github.com/abue-ammar/tinycast.git
+   git fetch upstream
+   ```
+3. 签名证书：从备份导入 `Tinycast Self-Signed` 的 `.p12`（导出、导入命令见 [signing.md](signing.md)）。
+   **不要重新生成**：新证书的签名与已安装应用不同，所有系统授权都要重新给。
+   证书目前只在原机器的钥匙串里，重装前先按 signing.md 导出 `.p12`，连同密码存进密码管理器。
+4. 验证：`./Scripts/run-tests.sh`、`./Scripts/lint.sh`，然后按"本机安装"构建安装。
 
 ## 源码同步与应用更新
 

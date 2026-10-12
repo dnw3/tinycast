@@ -52,7 +52,7 @@ system-wide chord, and HIToolbox's TIS APIs remain the public input-source mecha
 | write Swift — naming, style, concurrency, budgets, comments | [standards.md](docs/standards.md)                            |
 | claim a change is done                                      | [testing.md](docs/testing.md)                                |
 | build, run or regenerate data                               | [development.md](docs/development.md)                        |
-| sync this fork with upstream or select an upstream fix      | [fork-maintenance.md](docs/fork-maintenance.md)               |
+| sync upstream, handle a sync PR, install locally, set up a new Mac | [fork-maintenance.md](docs/fork-maintenance.md)        |
 | add or restyle any view                                     | [ui.md](docs/ui.md)                                          |
 | touch one feature's internals                               | [features/](docs/features/) — each opens with its invariants |
 | package or ship a build                                     | [release.md](docs/release.md)                                |
