@@ -24,6 +24,7 @@ response=$(curl -sS --max-time 15 -H 'Content-Type: application/json' -d "$paylo
     echo "::warning::The Lark notification could not be sent."
     exit 0
 }
+echo "Lark replied: $response"
 # A rejected message is a warning, never a failed sync: the PR itself is the record.
 if [ "$(jq -r '.code // .StatusCode // 0' <<< "$response")" != "0" ]; then
     echo "::warning::Lark rejected the notification: $response"
