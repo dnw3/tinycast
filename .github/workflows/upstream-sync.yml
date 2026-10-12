@@ -23,6 +23,8 @@ jobs:
       # A PAT, not GITHUB_TOKEN: that one can neither push upstream workflow edits nor start CI on its PRs.
       GH_TOKEN: ${{ secrets.UPSTREAM_SYNC_TOKEN }}
       UPSTREAM: https://github.com/abue-ammar/tinycast.git
+      LARK_WEBHOOK_URL: ${{ secrets.LARK_WEBHOOK_URL }}
+      LARK_WEBHOOK_SECRET: ${{ secrets.LARK_WEBHOOK_SECRET }}
     steps:
       - name: Require the sync token
         run: |
@@ -41,6 +43,7 @@ jobs:
         run: |
           git fetch --no-tags "$UPSTREAM" main
           git update-ref refs/remotes/upstream/main FETCH_HEAD
+          echo "MIRROR_BEFORE=$(git rev-parse -q --verify origin/upstream-main || true)" >> "$GITHUB_ENV"
           # Never forced: the mirror holds no commit of ours, so anything but a fast-forward is a red flag.
           git push origin refs/remotes/upstream/main:refs/heads/upstream-main
           git fetch --no-tags origin main upstream-main
@@ -55,10 +58,12 @@ jobs:
           head=$(git rev-parse --short upstream/main)
           count=$(git rev-list --count origin/main..upstream/main)
           title="Sync upstream: $count commits up to $head"
+          conflicted=false
+          conflicts=$(git merge-tree --write-tree --name-only origin/main upstream/main) || conflicted=true
           {
             echo "Upstream \`abue-ammar/tinycast\` main is at \`$head\`; \`main\` is $count commits behind."
             echo
-            if conflicts=$(git merge-tree --write-tree --name-only origin/main upstream/main); then
+            if [ "$conflicted" = false ]; then
               echo "**No conflicts.** Merge with **Create a merge commit** once CI is green."
             else
               echo "**Conflicts** — resolve locally (docs/fork-maintenance.md), then push \`main\`;"
@@ -78,7 +83,25 @@ jobs:
             --state open --json number --jq '.[0].number // empty')
           if [ -n "$number" ]; then
             gh pr edit "$number" --repo "$GITHUB_REPOSITORY" --title "$title" --body-file "$RUNNER_TEMP/body.md"
+            url=$(gh pr view "$number" --repo "$GITHUB_REPOSITORY" --json url --jq .url)
+            event="同步 PR 已更新"
           else
-            gh pr create --repo "$GITHUB_REPOSITORY" --head upstream-main --base main \
-              --title "$title" --body-file "$RUNNER_TEMP/body.md"
+            url=$(gh pr create --repo "$GITHUB_REPOSITORY" --head upstream-main --base main \
+              --title "$title" --body-file "$RUNNER_TEMP/body.md")
+            event="新的同步 PR"
           fi
+
+          # The PR is opened with the owner's token, so GitHub never notifies the owner about it.
+          if [ -n "$number" ] && [ "$MIRROR_BEFORE" = "$(git rev-parse upstream/main)" ]; then exit 0; fi
+          {
+            echo "main 落后上游 $count 个提交，最新 $head。"
+            if [ "$conflicted" = true ]; then echo "有冲突，需要在本地合并。"; else echo "无冲突，CI 通过后用 merge commit 合并。"; fi
+            git log --reverse --format='· %s' origin/main..upstream/main | head -n 10
+          } | ./Scripts/notify-lark.sh "Tinycast · $event" "$url"
+
+      - name: Report a failed sync
+        if: failure()
+        run: |
+          echo "同步 workflow 失败：令牌可能过期，或 upstream-main 无法快进。" |
+            ./Scripts/notify-lark.sh "Tinycast · 上游同步失败" \
+              "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"

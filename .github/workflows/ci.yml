@@ -86,6 +86,8 @@ jobs:
             if [[ " $HOST_DEPENDENT " == *" $name "* ]]; then
               echo "::warning::$name failed on this runner; it is host-dependent, so re-run it locally."
               echo "Host-dependent failure, verify locally: \`$name\`" >> "$GITHUB_STEP_SUMMARY"
+              echo "HOST_WARNINGS=${HOST_WARNINGS:-}$name " >> "$GITHUB_ENV"
+              HOST_WARNINGS="${HOST_WARNINGS:-}$name "
             else
               blocking="$blocking $name"
             fi
@@ -110,3 +112,20 @@ jobs:
           name: failure-logs
           path: ${{ runner.temp }}/failure-logs
           if-no-files-found: ignore
+
+      - name: Report the sync PR's result
+        if: always() && github.event_name == 'pull_request' && github.head_ref == 'upstream-main'
+        env:
+          LARK_WEBHOOK_URL: ${{ secrets.LARK_WEBHOOK_URL }}
+          LARK_WEBHOOK_SECRET: ${{ secrets.LARK_WEBHOOK_SECRET }}
+          RESULT: ${{ job.status }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: |
+          {
+            if [ "$RESULT" = success ]; then
+              echo "CI 通过，可以用 merge commit 合并。"
+            else
+              echo "CI 未通过（$RESULT），需要处理后再合并。"
+            fi
+            if [ -n "${HOST_WARNINGS:-}" ]; then echo "合并前请在本机复验：${HOST_WARNINGS}"; fi
+          } | ./Scripts/notify-lark.sh "Tinycast · 同步 PR 的 CI 结果" "$PR_URL"

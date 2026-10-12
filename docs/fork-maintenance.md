@@ -106,6 +106,12 @@ Fine-grained tokens 创建令牌，仓库只选 `dnw3/tinycast`，权限 Content
 Read and write，然后存入仓库 Settings → Secrets and variables → Actions。令牌过期后同步任务会失败，届时更换。
 公开仓库 60 天没有提交时 GitHub 会停用定时任务，需在 Actions 页重新启用。
 
+同步 PR 用仓库所有者的令牌创建，GitHub 不会为此通知所有者本人，所以提醒走飞书自定义机器人
+（[`Scripts/notify-lark.sh`](../Scripts/notify-lark.sh)）：新开同步 PR 或上游有新提交、同步 PR 的 CI
+跑完、同步 workflow 失败时各发一条；上游没动不重复发。在飞书群的群机器人里添加自定义机器人并开启签名校验，
+把 webhook 地址和密钥存为仓库 secret `LARK_WEBHOOK_URL`、`LARK_WEBHOOK_SECRET`。未配置时跳过通知，
+飞书拒收只记警告，都不影响同步与 CI。
+
 ## 同步全部更新
 
 同步 PR 有冲突、或需要手动同步时使用。`main` 用 merge 吸收上游，不再 rebase。分支里有记录旧翻译分支
