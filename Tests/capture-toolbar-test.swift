@@ -9,9 +9,14 @@ struct CaptureToolbarTests {
 
     @MainActor static func main() {
         NSApplication.shared.setActivationPolicy(.prohibited)
+        let englishText = textGlyphPixels(language: "en")
+        precondition(englishText == textGlyphPixels(language: "zh-Hans"),
+            "Text tool glyph must remain Aa in both interface languages")
         for size in InterfaceSize.allCases {
             let metrics = size.metrics, side = metrics.scaled(Theme.Size.captureTool)
-            for symbol in ["camera", "textformat", "rectangle", "square.and.arrow.down", "ellipsis", "arrow.up.right", "xmark"] {
+            let symbols = ["camera", "textformat", "rectangle", "square.and.arrow.down", "ellipsis",
+                "arrow.up.right", "arrow.turn.up.right", "1.circle", "xmark"]
+            for symbol in symbols {
                 for kind in 0..<3 {
                     let measured = Measurement()
                     let glyph = CaptureToolbarGlyph(symbol: symbol)
@@ -46,5 +51,19 @@ struct CaptureToolbarTests {
             }
         }
         print("Capture toolbar: equal cells and centered glyphs for buttons, menus and primary actions at all sizes")
+    }
+
+    @MainActor private static func textGlyphPixels(language: String) -> Data {
+        let view = CaptureToolbarGlyph(symbol: "textformat")
+            .environment(\.locale, Locale(identifier: language))
+            .foregroundStyle(.black)
+            .padding(8)
+            .background(.white)
+        let renderer = ImageRenderer(content: view)
+        renderer.scale = 2
+        guard let image = renderer.cgImage, let data = image.dataProvider?.data else {
+            preconditionFailure("Text tool glyph did not render")
+        }
+        return data as Data
     }
 }

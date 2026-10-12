@@ -4,7 +4,8 @@
 
 - `AppCore` owns one `CaptureCoordinator`; views call the coordinator through their environment.
   Commands, settings and clipboard image actions share that owner. Startup never starts capture or requests permission.
-- Screen capture uses macOS 26+ ScreenCaptureKit. Tinycast's windows are excluded. Permission is requested
+- Screen capture uses macOS 26+ ScreenCaptureKit. Tinycast's controls are excluded; ordinary display/region
+  screenshots include existing pins as frozen desktop pixels. Scrolling and recording exclude pins. Permission is requested
   only after a capture command; granting it does not automatically retry an earlier capture.
 - Model contains Foundation value types only. Documents, annotations, geometry, registration decisions,
   revisions and undo contain no decoded images or environment access.
@@ -148,13 +149,25 @@ new window content. No decoded images are stored in undo.
 
 The editor's native text view has its own undo and input-method composition. Editing uses the
 annotation's ink and hides the prior text until commit. Selection supports
-movement, resizing and style changes. Normal images fit the window, vertical images fit its width and
+movement, resizing and style changes. New annotations show only their artwork while drawing; Select
+shows editing controls. Arrows, curved arrows, lines and rulers expose endpoint handles rather than
+rectangular boxes; endpoint movement preserves the other endpoint through rotation/reflection.
+Line tools ignore clicks without drawable extent, and filled arrow shafts stop beneath the head. Normal images fit the window, vertical images fit its width and
 horizontal images fit its height; Entire Image and 100% remain explicit choices. Command-C/S/Z/W and
 Escape are handled after text input. Controls use `InterfaceMetrics`; pixels and annotation geometry do not scale with preferences.
 
-Pins retain a document snapshot and a bounded 720-pixel preview. There may be three. They float across
-Spaces without closing on blur, support drag/scroll/magnify and expose Copy, Edit, Opacity, Save and Close.
-Native multi-Space, keyboard and VoiceOver behavior remains in the acceptance checklist.
+Pins retain a document snapshot and a bounded 2400-pixel preview. There may be three. They float across
+Spaces without closing on blur. Dragging the image moves the panel with an open-hand cursor; scroll and
+magnify resize around the pointer while preserving aspect ratio. Hover uses the same frosted surface as the capture toolbars, with More and Close plus a
+zoom percentage that resets to the initial fitted size. More and the context menu provide Copy, Save As,
+Quick Save, Show Quick Save Folder, Edit, Reset Zoom, Opacity and Close. Opacity affects only the image.
+With a pin focused, Command-C copies, Command-S quick-saves, Shift-Command-S opens Save As,
+Command-0 resets zoom, and Escape/Command-W close that pin. Editing transfers its snapshot/source to
+the editor and removes the old pin only after closure is allowed. New pins start slightly offset.
+Ordinary capture preserves pins in the frozen desktop and output, while its controls remain excluded;
+existing panels stay beneath the selection overlay and reappear unchanged when selection ends.
+Scrolling and recording retain their clean-source exclusions. Native drag, menu/gesture routing,
+multi-Space, keyboard, Retina quality and VoiceOver behavior remain in the acceptance checklist.
 
 ## Scrolling capture
 

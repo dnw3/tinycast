@@ -101,6 +101,7 @@ struct CaptureCanvas: NSViewRepresentable {
         private var editingAnnotation: CaptureAnnotation?
         private var resizing = false
         private var movingControl = false
+        private var movingEndpoint: Int?
         private var alignment: CaptureAnnotationPlacement.Result?
 
         init(state: CaptureEditorState) {
@@ -364,20 +365,28 @@ struct CaptureCanvas: NSViewRepresentable {
             }
             if let selected = draft
                 ?? state.document.edit.annotations.first(where: { $0.id == state.selected }),
-                !(draft != nil && beforeDrag == nil && state.snappedHighlights(selected) != nil)
+                state.tool == .select, draft == nil || beforeDrag != nil
             {
                 context.setStrokeColor(NSColor.controlAccentColor.cgColor)
                 context.setLineWidth(1 / zoom)
-                context.stroke(selected.bounds.insetBy(dx: -4 / zoom, dy: -4 / zoom))
                 let side = Theme.Size.captureHandle / zoom
-                context.stroke(
-                    CGRect(
-                        x: selected.bounds.maxX - side / 2, y: selected.bounds.maxY - side / 2,
+                if !selected.displayedEndpoints.isEmpty {
+                    for point in selected.displayedEndpoints {
+                        let rect = CGRect(x: point.x - side / 2, y: point.y - side / 2, width: side, height: side)
+                        context.setFillColor(NSColor.controlAccentColor.cgColor)
+                        context.fillEllipse(in: rect)
+                        context.setStrokeColor(NSColor.white.cgColor)
+                        context.strokeEllipse(in: rect)
+                    }
+                } else {
+                    context.stroke(selected.bounds.insetBy(dx: -4 / zoom, dy: -4 / zoom))
+                    context.stroke(CGRect(x: selected.bounds.maxX - side / 2, y: selected.bounds.maxY - side / 2,
                         width: side, height: side))
+                }
             }
             if let selected =
                 (draft ?? state.document.edit.annotations.first(where: { $0.id == state.selected })),
-                let point = selected.displayedControl
+                let point = selected.displayedControl, state.tool == .select, draft == nil || beforeDrag != nil
             {
                 let side = Theme.Size.captureHandle / zoom
                 context.setStrokeColor(NSColor.controlAccentColor.cgColor)
@@ -479,6 +488,13 @@ struct CaptureCanvas: NSViewRepresentable {
             movingSelection = false
             if state.tool == .select {
                 if let selected = state.document.edit.annotations.first(where: { $0.id == state.selected }),
+                    let endpoint = selected.displayedEndpoints.firstIndex(where: {
+                        hypot(anchor.x - $0.x, anchor.y - $0.y) < 12 / zoom
+                    })
+                {
+                    beforeDrag = selected; draft = selected; movingEndpoint = endpoint; return
+                }
+                if let selected = state.document.edit.annotations.first(where: { $0.id == state.selected }),
                     let control = selected.displayedControl,
                     hypot(anchor.x - control.x, anchor.y - control.y) < 12 / zoom
                 {
@@ -490,6 +506,7 @@ struct CaptureCanvas: NSViewRepresentable {
                     beforeImage = image; resizing = true; state.undo.begin(state.document); return
                 }
                 if let selected = state.document.edit.annotations.first(where: { $0.id == state.selected }),
+                    selected.displayedEndpoints.isEmpty,
                     hypot(anchor.x - selected.bounds.maxX, anchor.y - selected.bounds.maxY) < 12 / zoom
                 {
                     beforeDrag = selected; draft = selected; resizing = true; return
@@ -635,7 +652,9 @@ struct CaptureCanvas: NSViewRepresentable {
             }
             if let original = beforeDrag {
                 draft = original
-                if movingControl {
+                if let movingEndpoint {
+                    draft?.moveEndpoint(movingEndpoint, to: next)
+                } else if movingControl {
                     draft?.controlCenter = original.transformCenter
                     if original.tool == .number {
                         draft?.points[original.points.count - 1] = original.untransformed(next)
@@ -729,7 +748,7 @@ struct CaptureCanvas: NSViewRepresentable {
                     state.selected = nil
                     state.notice = nil
                 }
-            } else if let draft, draft.isValid {
+            } else if let draft, draft.isValid, draft.hasDrawableExtent {
                 if let index = edit.annotations.firstIndex(where: { $0.id == draft.id }) {
                     edit.annotations[index] = draft
                 } else {
@@ -746,7 +765,7 @@ struct CaptureCanvas: NSViewRepresentable {
                 state.fit()
             }
             state.commit(edit)
-            draft = nil; beforeDrag = nil; crop = nil; movingControl = false
+            draft = nil; beforeDrag = nil; crop = nil; movingControl = false; movingEndpoint = nil
             refresh()
         }
 

@@ -40,12 +40,12 @@ struct CaptureAnnotation: Codable, Equatable, Sendable, Identifiable {
             case .ellipse: "circle"
             case .text: "textformat"
             case .pen: "pencil.tip"
-            case .number: "number.circle"
+            case .number: "1.circle"
             case .cover: "square.fill"
             case .pixelate: "square.grid.3x3.fill"
             case .crop: "crop"
             case .line: "line.diagonal"
-            case .curvedArrow: "arrow.up.right"
+            case .curvedArrow: "arrow.turn.up.right"
             case .highlighter: "highlighter"
             case .ruler: "ruler"
             case .spotlight: "light.beacon.max"
@@ -140,6 +140,27 @@ struct CaptureAnnotation: Codable, Equatable, Sendable, Identifiable {
         guard let first = points.first, let last = points.last else { return .zero }
         return CGPoint(x: (first.x + last.x) / 2 - (last.y - first.y) / 4,
             y: (first.y + last.y) / 2 + (last.x - first.x) / 4)
+    }
+
+    var displayedEndpoints: [CGPoint] {
+        guard [.arrow, .curvedArrow, .line, .ruler].contains(tool),
+            let first = points.first, let last = points.last else { return [] }
+        return [transformed(first), transformed(last)]
+    }
+
+    var hasDrawableExtent: Bool {
+        guard [.arrow, .curvedArrow, .line, .ruler].contains(tool) else { return true }
+        guard let first = points.first, let last = points.last else { return false }
+        return hypot(last.x - first.x, last.y - first.y) > 2
+            || tool == .curvedArrow && hypot(curveControl.x - first.x, curveControl.y - first.y) > 2
+    }
+
+    mutating func moveEndpoint(_ index: Int, to point: CGPoint) {
+        guard displayedEndpoints.count == 2, index == 0 || index == 1 else { return }
+        let center = transformCenter
+        let local = untransformed(point)
+        controlCenter = center
+        points[index == 0 ? 0 : points.count - 1] = local
     }
 
     var displayedControl: CGPoint? {

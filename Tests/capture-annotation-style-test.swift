@@ -26,6 +26,25 @@ struct CaptureAnnotationStyleTests {
             points: [CGPoint(x: 30, y: 64), CGPoint(x: 130, y: 64)], ink: .black)
         let decoded = try JSONDecoder().decode(CaptureAnnotation.self, from: JSONEncoder().encode(legacy))
         precondition(decoded.arrowStyle == nil && decoded.controlPoint == nil)
+        var degenerate = legacy
+        degenerate.points = [CGPoint(x: 80, y: 64), CGPoint(x: 80, y: 64)]
+        for tool in [CaptureAnnotation.Tool.arrow, .curvedArrow, .line, .ruler] {
+            degenerate.tool = tool
+            precondition(!degenerate.hasDrawableExtent)
+            document.edit.annotations = [degenerate]
+            let empty = try pixels(document, directory: directory)
+            precondition(empty.allSatisfy { $0 == 255 })
+        }
+        var rotated = legacy
+        rotated.rotation = 45
+        rotated.reflection = CaptureReflection(horizontal: true, vertical: false)
+        let fixedEndpoint = rotated.displayedEndpoints[1]
+        let destination = CGPoint(x: 20, y: 30)
+        rotated.moveEndpoint(0, to: destination)
+        precondition(hypot(rotated.displayedEndpoints[0].x - destination.x,
+            rotated.displayedEndpoints[0].y - destination.y) < 0.001)
+        precondition(hypot(rotated.displayedEndpoints[1].x - fixedEndpoint.x,
+            rotated.displayedEndpoints[1].y - fixedEndpoint.y) < 0.001)
         var filled = CaptureAnnotation(id: UUID(), tool: .rectangle,
             points: [CGPoint(x: 30, y: 24), CGPoint(x: 130, y: 104)], ink: .black, filled: true)
         precondition(filled.effectiveShapeStyle == .fill)
@@ -38,13 +57,20 @@ struct CaptureAnnotationStyleTests {
             document.edit.annotations = [arrow]
             let forward = try pixels(document, directory: directory)
             coverage[style] = forward.filter { $0 < 128 }.count
-            if style == .single { precondition(forward[(67 * 160 + 117) * 4] < 10) }
+            if style == .single {
+                precondition(forward[(67 * 160 + 117) * 4] < 10)
+                precondition(forward[(64 * 160 + 131) * 4] == 255,
+                    "A filled arrow shaft must not protrude beyond its tip")
+            }
             if style == .open { precondition(forward[(67 * 160 + 117) * 4] > 240) }
             arrow.reversed = true
             document.edit.annotations = [arrow]
             let backward = try pixels(document, directory: directory)
-            precondition(region(forward, x: 112..<135) > region(forward, x: 25..<48) || style == .double)
-            precondition(region(backward, x: 25..<48) > region(backward, x: 112..<135) || style == .double)
+            let shaftWidth = Int(arrow.width * (style == .thick ? 3 : 1))
+            precondition(region(forward, x: 112..<135, shaftWidth: shaftWidth)
+                > region(forward, x: 25..<48, shaftWidth: shaftWidth) || style == .double)
+            precondition(region(backward, x: 25..<48, shaftWidth: shaftWidth)
+                > region(backward, x: 112..<135, shaftWidth: shaftWidth) || style == .double)
             arrow.tool = .curvedArrow
             arrow.controlPoint = CGPoint(x: 80, y: 10)
             document.edit.annotations = [arrow]
@@ -119,8 +145,8 @@ struct CaptureAnnotationStyleTests {
         print("Arrow heads/reversal, rounded shape pixels, curve transforms, archive and undo passed")
     }
 
-    static func region(_ data: [UInt8], x: Range<Int>) -> Int {
-        (40..<88).reduce(0) { total, y in
+    static func region(_ data: [UInt8], x: Range<Int>, shaftWidth: Int) -> Int {
+        (40..<88).filter { abs($0 - 64) > shaftWidth / 2 + 1 }.reduce(0) { total, y in
             total + x.filter { data[(y * 160 + $0) * 4] < 128 }.count
         }
     }

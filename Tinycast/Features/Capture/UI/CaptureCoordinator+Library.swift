@@ -25,7 +25,12 @@ extension CaptureCoordinator {
             return
         }
         let preview = try await CaptureWork.run {
-            try CaptureRenderer.preview(document: document, directory: source.directory, maximum: 720)
+            try CaptureRenderer.preview(document: document, directory: source.directory, maximum: 2400)
+        }
+        try Task.checkCancellation()
+        guard pins.count < 3 else {
+            core.showMessage(String(localized: "Close a pinned image first (maximum 3)"), tone: .neutral)
+            return
         }
         let pin = CapturePinController(document: document, source: source)
         pins.append(pin)
@@ -41,7 +46,9 @@ extension CaptureCoordinator {
     func editPin(_ pin: CapturePinController) {
         run { [weak self] in
             guard let self, await self.mayClose() else { return }
+            guard self.pins.contains(where: { $0.id == pin.id }) else { return }
             self.show(document: pin.document, source: pin.source)
+            self.closePin(pin)
         }
     }
 

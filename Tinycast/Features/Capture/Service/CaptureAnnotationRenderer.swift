@@ -5,7 +5,8 @@ import Foundation
 enum CaptureAnnotationRenderer {
     nonisolated static func draw(_ annotations: [CaptureAnnotation], in context: CGContext) {
         for annotation in annotations {
-            guard let start = annotation.points.first, let end = annotation.points.last else { continue }
+            guard annotation.hasDrawableExtent, let start = annotation.points.first,
+                let end = annotation.points.last else { continue }
             let reversed = [.arrow, .curvedArrow].contains(annotation.tool) && annotation.reversed == true
             let first = reversed ? end : start
             let last = reversed ? start : end
@@ -43,15 +44,21 @@ enum CaptureAnnotationRenderer {
                 if annotation.color == nil { context.setFillColor(CGColor(gray: 0, alpha: 1)) }
                 context.fill(bounds)
             case .arrow, .curvedArrow, .line, .ruler:
-                context.move(to: first)
-                if annotation.tool == .curvedArrow {
-                    context.addQuadCurve(to: last, control: annotation.curveControl)
-                } else { context.addLine(to: last) }
                 let arrow = annotation.tool == .arrow || annotation.tool == .curvedArrow
+                let filledHead = arrow && (annotation.arrowStyle ?? .open) != .open
+                let control = annotation.tool == .curvedArrow ? annotation.curveControl : first
+                let shaftEnd = filledHead ? headBase(at: last, from: control, annotation: annotation) : last
+                let shaftStart = annotation.arrowStyle == .double
+                    ? headBase(at: first, from: annotation.tool == .curvedArrow ? annotation.curveControl : last,
+                        annotation: annotation) : first
+                if filledHead { context.setLineCap(.butt) }
+                context.move(to: shaftStart)
+                if annotation.tool == .curvedArrow {
+                    context.addQuadCurve(to: shaftEnd, control: annotation.curveControl)
+                } else { context.addLine(to: shaftEnd) }
                 if arrow, annotation.arrowStyle == .thick { context.setLineWidth(annotation.width * 3) }
                 context.strokePath()
                 if arrow {
-                    let control = annotation.tool == .curvedArrow ? annotation.curveControl : first
                     drawHead(at: last, from: control, annotation: annotation, in: context)
                     if annotation.arrowStyle == .double {
                         drawHead(at: first, from: annotation.tool == .curvedArrow ? annotation.curveControl : last,
@@ -133,11 +140,26 @@ enum CaptureAnnotationRenderer {
         }
     }
 
+    nonisolated private static func headLength(
+        at tip: CGPoint, from tail: CGPoint, annotation: CaptureAnnotation
+    ) -> CGFloat {
+        min(hypot(tip.x - tail.x, tip.y - tail.y) * 0.45,
+            max(12, annotation.width * (annotation.arrowStyle == .thick ? 6 : 4)))
+    }
+
+    nonisolated private static func headBase(
+        at tip: CGPoint, from tail: CGPoint, annotation: CaptureAnnotation
+    ) -> CGPoint {
+        let angle = atan2(tip.y - tail.y, tip.x - tail.x)
+        let length = headLength(at: tip, from: tail, annotation: annotation) * cos(0.5)
+        return CGPoint(x: tip.x - cos(angle) * length, y: tip.y - sin(angle) * length)
+    }
+
     nonisolated private static func drawHead(
         at tip: CGPoint, from tail: CGPoint, annotation: CaptureAnnotation, in context: CGContext
     ) {
         let angle = atan2(tip.y - tail.y, tip.x - tail.x)
-        let length = max(12, annotation.width * (annotation.arrowStyle == .thick ? 6 : 4))
+        let length = headLength(at: tip, from: tail, annotation: annotation)
         let edges = [-0.5, 0.5].map { turn in
             CGPoint(x: tip.x - cos(angle + turn) * length, y: tip.y - sin(angle + turn) * length)
         }

@@ -31,7 +31,8 @@ extension CaptureCoordinator {
                 })
             else { throw CaptureScreenService.Failure.displayChanged }
             return try await CaptureScreenService.target(
-                screen: screen, scrolling: request.mode == .scrolling)
+                screen: screen, scrolling: request.mode == .scrolling,
+                includedWindowIDs: request.mode == .screenshot ? Set(self.pins.compactMap(\.windowID)) : [])
         }()
         await Task.yield()
         let paletteStarted = ContinuousClock.now

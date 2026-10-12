@@ -9,6 +9,7 @@ struct CaptureWorkflowTests {
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: root) }
         geometry()
+        pinGeometry()
         selectionConstraints()
         alignment()
         redactionCandidates()
@@ -30,6 +31,23 @@ struct CaptureWorkflowTests {
         print(
             "Capture geometry, stitch confidence, revision undo, import, cropped redaction and history passed"
         )
+    }
+
+    static func pinGeometry() {
+        let fitted = CapturePinGeometry.fitted(CGSize(width: 3000, height: 150), maximum: 600)
+        precondition(fitted == CGSize(width: 600, height: 30))
+        let frame = CGRect(x: 40, y: 50, width: fitted.width, height: fitted.height)
+        let anchor = CGPoint(x: 120, y: 15)
+        let zoomed = CapturePinGeometry.resized(frame, factor: 4, anchor: anchor, minimum: 80, maximum: 1200)
+        precondition(zoomed.size == CGSize(width: 1200, height: 60))
+        precondition(zoomed.minX + anchor.x * 2 == frame.minX + anchor.x)
+        precondition(zoomed.minY + anchor.y * 2 == frame.minY + anchor.y)
+        let small = CapturePinGeometry.resized(frame, factor: 0.01, anchor: .zero, minimum: 80, maximum: 1200)
+        precondition(abs(small.width - 80) < 0.001 && abs(small.height - 4) < 0.001)
+        for factor in [CGFloat.nan, .infinity, 0, -1] {
+            precondition(CapturePinGeometry.resized(frame, factor: factor, anchor: anchor,
+                minimum: 80, maximum: 1200) == frame)
+        }
     }
 
     static func censorIsolation(in root: URL) throws {

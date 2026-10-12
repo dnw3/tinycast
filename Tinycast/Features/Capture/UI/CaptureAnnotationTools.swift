@@ -65,7 +65,11 @@ struct CaptureAnnotationTools: View {
             Button {
                 perform(item)
             } label: {
-                Label(LocalizedStringKey(item.title), systemImage: selected(item) ? "checkmark" : item.symbol)
+                Label {
+                    Text(LocalizedStringKey(item.title))
+                } icon: {
+                    CaptureToolbarGlyph(symbol: selected(item) ? "checkmark" : item.symbol)
+                }
             }
         }
     }

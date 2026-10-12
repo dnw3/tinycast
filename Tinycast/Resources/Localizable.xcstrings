@@ -20703,6 +20703,16 @@
         }
       }
     },
+    "Reset Zoom": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "还原缩放"
+          }
+        }
+      }
+    },
     "Reset learned launcher ranking?": {
       "localizations": {
         "zh-Hans": {

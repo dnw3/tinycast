@@ -14,7 +14,9 @@ enum CaptureScreenService {
         let scale: CGFloat
     }
 
-    static func target(screen: NSScreen, scrolling: Bool) async throws -> Target {
+    static func target(
+        screen: NSScreen, scrolling: Bool, includedWindowIDs: Set<CGWindowID> = []
+    ) async throws -> Target {
         let content = try await SCShareableContent.excludingDesktopWindows(true, onScreenWindowsOnly: false)
         let displayID =
             screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? CGDirectDisplayID
@@ -31,7 +33,7 @@ enum CaptureScreenService {
         let excludedPIDs = Set(excluded.map(\.processID))
         let filter = SCContentFilter(
             display: display, excludingApplications: excluded,
-            exceptingWindows: [])
+            exceptingWindows: scrolling ? [] : content.windows.filter { includedWindowIDs.contains($0.windowID) })
         filter.includeMenuBar = true
         return Target(
             display: display, filter: filter,
