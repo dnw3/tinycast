@@ -1,0 +1,74 @@
+name: CI
+
+# Fork-only. The definition of done from docs/testing.md, run on every PR into `main` — the upstream
+# sync PR included — and on `main` itself. Native acceptance stays manual.
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    if: github.repository == 'dnw3/tinycast'
+    runs-on: macos-26
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Select the newest Xcode
+        run: |
+          XCODE_PATH="$(ls -d /Applications/Xcode_*.app 2>/dev/null | sort -V | tail -n1)"
+          if [ -z "$XCODE_PATH" ]; then
+            echo "::error::No Xcode found on this runner."
+            exit 1
+          fi
+          echo "Using $XCODE_PATH"
+          echo "DEVELOPER_DIR=$XCODE_PATH/Contents/Developer" >> "$GITHUB_ENV"
+
+      - name: Install tools
+        run: |
+          for tool in swiftlint xcodegen; do
+            command -v "$tool" >/dev/null || brew install "$tool"
+          done
+
+      - name: Generated project matches project.yml
+        run: |
+          xcodegen generate
+          git diff --exit-code -- Tinycast.xcodeproj
+
+      - name: Model files import no UI framework
+        run: |
+          if grep -rln 'import AppKit\|import SwiftUI\|import Cocoa' Tinycast/Features/*/Model/; then
+            echo "::error::A Features/*/Model file imports AppKit, SwiftUI or Cocoa."
+            exit 1
+          fi
+
+      - name: Lint and localization
+        run: ./Scripts/lint.sh
+
+      - name: Debug and Release builds
+        run: |
+          for configuration in Debug Release; do
+            log="$RUNNER_TEMP/build-$configuration.log"
+            if ! xcodebuild build -project Tinycast.xcodeproj -scheme Tinycast \
+              -configuration "$configuration" -derivedDataPath "$RUNNER_TEMP/DerivedData" \
+              CODE_SIGNING_ALLOWED=NO > "$log" 2>&1; then
+              grep -E 'error:' "$log" | sort -u | head -50
+              exit 1
+            fi
+            warnings=$(grep -E '\.swift:[0-9]+:[0-9]+: warning:' "$log" | sort -u)
+            echo "$configuration: $(printf '%s' "$warnings" | grep -c . || true) Swift warnings" >> "$GITHUB_STEP_SUMMARY"
+            if [ -n "$warnings" ]; then echo "$warnings" | sed 's/^/::warning::/'; fi
+          done
+
+      - name: Harnesses
+        run: ./Scripts/run-tests.sh

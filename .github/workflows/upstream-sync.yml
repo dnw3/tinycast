@@ -1,0 +1,84 @@
+name: Upstream sync
+
+# Fork-only. Mirrors abue-ammar/tinycast `main` into `upstream-main`, then opens or refreshes one PR
+# merging it into our `main`. Merging stays a person's call: conflicts and new strings need hands.
+# Process: docs/fork-maintenance.md.
+on:
+  schedule:
+    # 09:17 Beijing time; off the hour, when scheduled runs queue up.
+    - cron: "17 1 * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: upstream-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    if: github.repository == 'dnw3/tinycast'
+    runs-on: ubuntu-latest
+    env:
+      # A PAT, not GITHUB_TOKEN: that one can neither push upstream workflow edits nor start CI on its PRs.
+      GH_TOKEN: ${{ secrets.UPSTREAM_SYNC_TOKEN }}
+      UPSTREAM: https://github.com/abue-ammar/tinycast.git
+    steps:
+      - name: Require the sync token
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::error::Add the UPSTREAM_SYNC_TOKEN secret — see docs/fork-maintenance.md."
+            exit 1
+          fi
+
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.UPSTREAM_SYNC_TOKEN }}
+
+      - name: Mirror upstream main
+        run: |
+          git fetch --no-tags "$UPSTREAM" main
+          git update-ref refs/remotes/upstream/main FETCH_HEAD
+          # Never forced: the mirror holds no commit of ours, so anything but a fast-forward is a red flag.
+          git push origin refs/remotes/upstream/main:refs/heads/upstream-main
+          git fetch --no-tags origin main upstream-main
+
+      - name: Open or refresh the sync PR
+        run: |
+          if git merge-base --is-ancestor upstream/main origin/main; then
+            echo "main already contains upstream $(git rev-parse --short upstream/main)."
+            exit 0
+          fi
+
+          head=$(git rev-parse --short upstream/main)
+          count=$(git rev-list --count origin/main..upstream/main)
+          title="Sync upstream: $count commits up to $head"
+          {
+            echo "Upstream \`abue-ammar/tinycast\` main is at \`$head\`; \`main\` is $count commits behind."
+            echo
+            if conflicts=$(git merge-tree --write-tree --name-only origin/main upstream/main); then
+              echo "**No conflicts.** Merge with **Create a merge commit** once CI is green."
+            else
+              echo "**Conflicts** — resolve locally (docs/fork-maintenance.md), then push \`main\`;"
+              echo "this PR closes as merged by itself."
+              echo
+              echo "$conflicts" | sed -n '2,/^$/p' | sed '/^$/d; s/^/- `/; s/$/`/'
+            fi
+            echo
+            echo "Never squash or rebase this PR, and never delete \`upstream-main\`."
+            echo
+            echo "### Upstream commits"
+            echo
+            git log --reverse --format='- %h %s' origin/main..upstream/main
+          } > "$RUNNER_TEMP/body.md"
+
+          number=$(gh pr list --repo "$GITHUB_REPOSITORY" --head upstream-main --base main \
+            --state open --json number --jq '.[0].number // empty')
+          if [ -n "$number" ]; then
+            gh pr edit "$number" --repo "$GITHUB_REPOSITORY" --title "$title" --body-file "$RUNNER_TEMP/body.md"
+          else
+            gh pr create --repo "$GITHUB_REPOSITORY" --head upstream-main --base main \
+              --title "$title" --body-file "$RUNNER_TEMP/body.md"
+          fi

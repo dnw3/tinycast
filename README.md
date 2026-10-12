@@ -2,8 +2,7 @@
 
 **A tiny, fully native macOS launcher. One hotkey, everything you reach for all day.**
 
-This fork maintains Capture and Translation on
-[`dnw/capture-workspace`](https://github.com/dnw3/tinycast/tree/dnw/capture-workspace).
+This fork maintains Capture and Translation on `main`, which merges upstream through a daily sync PR.
 See the [fork maintenance guide](docs/fork-maintenance.md) for local changes, upstream synchronization
 and verification. The install and release links below serve upstream builds; use
 [Building from source](#building-from-source) to run this branch.

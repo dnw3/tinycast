@@ -12,15 +12,18 @@
 | --- | --- | --- |
 | 原仓库 | [abue-ammar/tinycast](https://github.com/abue-ammar/tinycast)，本地 `upstream` | 从 `upstream/main` 获取上游源码 |
 | 我们的 fork | [dnw3/tinycast](https://github.com/dnw3/tinycast)，本地 `origin` | 推送维护结果 |
-| 当前维护分支 | [`dnw/capture-workspace`](https://github.com/dnw3/tinycast/tree/dnw/capture-workspace) | Capture / Translation 的集成分支，跟踪 `dnw3/dnw/capture-workspace` |
-| fork 的 `main` | `origin/main` | 尚未包含本轮集成；当前功能入口是上面的维护分支 |
+| 集成分支 | fork 的 `main`（默认分支） | 上游加 Capture / Translation；构建安装从这里出，只用 merge 吸收上游 |
+| 上游镜像 | fork 的 `upstream-main` | 上游 `main` 的纯拷贝，由同步 workflow 快进，不放我们的提交 |
+| 功能分支 | `dnw/<功能名>` | 从 `main` 切出，做完合回 `main` |
 
 下文命令按这套 remote 名称书写；其他 checkout 的名称不同时，按 URL 替换。
-GitHub 的 Sync fork 操作或更新 fork 的 `main`，不能代替维护分支上的冲突处理与验证。
+2026-10-12 起集成分支由 `dnw/capture-workspace` 改为 `main`；之前的记录和证据里出现的
+`dnw/capture-workspace` 指同一条历史。不要点 GitHub 页面的 Sync fork：它作用于默认分支，
+`main` 与上游分叉后它提供的 Discard commits 会丢掉我们的提交。
 
 ## 翻译分支统一维护
 
-`dnw/capture-workspace` 是 Capture 与 Translation 的统一维护入口。
+集成分支是 Capture 与 Translation 的统一维护入口。
 `dnw/translation-panel` 保留为早期实现的历史参考，不再单独维护同一套翻译功能。
 
 2026-10-10 对比 `17580527` 与集成分支 `e37f3d9f`：独立翻译窗口、自动语言方向、
@@ -30,11 +33,10 @@ Apple / AI 引擎、选中文字回填及原有翻译测试均已整合；集成
 
 这次整合以集成分支的现有源码为准，使用保留当前树的 merge 记录旧翻译分支已被吸收，
 避免重新引入旧上游实现。两个远程分支均保留，fork `main` 不变。
-这条 merge 记录也是维护分支改用 merge 同步上游的原因，见下文。
+这条 merge 记录也是集成分支改用 merge 同步上游的原因，见下文。
 
-无需合入 `main` 就能从维护分支构建安装。本地 Release 安装使用同一个自签名身份，
-替换前保留旧应用备份。当前 Release 更新源仍指向上游，不能用应用内更新保留 fork 功能；
-后续更新此安装需继续从维护分支重新构建。
+本地 Release 安装从 `main` 构建，使用同一个自签名身份，替换前保留旧应用备份。
+当前 Release 更新源仍指向上游，不能用应用内更新保留 fork 功能；后续更新此安装需重新构建。
 
 本次本机验证：101 个 harness 全部通过（174 秒），Debug / Release 构建通过，
 无 Swift 编译警告，仅有 AppIntents 元数据提取提示；lint 检查通过并保留既有警告，
@@ -59,38 +61,66 @@ Capture 仍有原生验收未关闭。以[交付状态](plans/capture-delivery-s
 [Pull requests](https://github.com/abue-ammar/tinycast/pulls)、
 [Releases](https://github.com/abue-ammar/tinycast/releases)。合入 `main` 的修复可能尚未发布到 Release。
 
-可以直接把下面这些请求交给 Codex；仓库内的 [AGENTS.md](../AGENTS.md) 和本文件提供上下文。
+可以直接把下面这些请求交给 Codex 或 Claude Code；仓库内的 [AGENTS.md](../AGENTS.md) 和本文件提供上下文。
 
 | 请求示例 | 执行范围 |
 | --- | --- |
-| “看看上游最近有哪些值得同步的改动，先给我摘要。” | 拉取并比较当前基线、上游提交及相关 PR，说明影响，保留维护分支内容 |
-| “同步上游最新 main，保留 Capture/Translation，测试后推送。” | merge 上游、处理冲突与本地化、验证并推送到 fork 的维护分支 |
+| “看看上游最近有哪些值得同步的改动，先给我摘要。” | 拉取并比较当前基线、上游提交及相关 PR，说明影响，保留 `main` 内容 |
+| “同步上游最新 main，保留 Capture/Translation，测试后推送。” | merge 上游、处理冲突与本地化、验证并推送到 fork 的 `main` |
+| “处理一下同步 PR。” | 读同步 PR 和 CI 结果，解决冲突或补本地化后推送 `main` |
 | “把上游这个 PR/commit 的 fix 同步过来。”附链接 | 核对改动及依赖，选择必要提交，验证后推送 |
 
 优先关注与我们接入点重叠的变更：AppCore 生命周期、命令/热键、AI provider、设置及备份、
 剪贴板/OCR、TextInjector、窗口焦点、权限、helper 打包、签名和更新源。上游新增功能也应保留其自身约束。
 
+## 自动同步
+
+两个 fork 专用 workflow 负责发现上游更新和跑检查，合并仍由人决定：
+
+| Workflow | 触发 | 做什么 |
+| --- | --- | --- |
+| [`upstream-sync.yml`](../.github/workflows/upstream-sync.yml) | 每天北京时间约 09:17，或 Actions 页手动 | 把上游 `main` 快进到 `upstream-main`；`main` 落后时开或更新 PR `upstream-main → main`，正文列出上游提交和预演出的冲突文件 |
+| [`ci.yml`](../.github/workflows/ci.yml) | 指向 `main` 的 PR、`main` 的推送、手动 | `macos-26` 上检查生成的工程、Model 纯度、lint 与本地化、Debug / Release 构建、全量 harness |
+
+同步 PR 的三种结果：
+
+- **无冲突、CI 绿**：用 **Create a merge commit** 合并。不能 squash 或 rebase，也不能删除 `upstream-main`
+  （仓库设置的 *Automatically delete head branches* 保持关闭）。
+- **无冲突、CI 红**：多数是上游新增文案缺中文，或上游改动碰到我们的接入点。在本地 `main` 上补齐后推送，CI 重跑。
+- **有冲突**：按下一节在本地 merge `origin/upstream-main` 并推送 `main`。PR 的提交进入 `main` 后会自动标为已合并。
+
+CI 只覆盖自动检查。合并后按需从 `main` 重新构建安装，原生验收仍手动进行。
+
+上游的 `release.yml`、`triage.yml`、`coauthors.yml`、`website.yml` 在 fork 里已停用
+（`gh workflow disable`，不改文件，避免与上游冲突）。上游以后新增 workflow 时，同步后在 Actions 页确认并停用。
+
+`upstream-sync.yml` 需要仓库 secret `UPSTREAM_SYNC_TOKEN`：默认 `GITHUB_TOKEN` 推不了上游对
+`.github/workflows/` 的修改，它开的 PR 也不会触发 CI。在 GitHub → Settings → Developer settings →
+Fine-grained tokens 创建令牌，仓库只选 `dnw3/tinycast`，权限 Contents、Pull requests、Workflows 设为
+Read and write，然后存入仓库 Settings → Secrets and variables → Actions。令牌过期后同步任务会失败，届时更换。
+公开仓库 60 天没有提交时 GitHub 会停用定时任务，需在 Actions 页重新启用。
+
 ## 同步全部更新
 
-维护分支用 merge 吸收 `upstream/main`，不再 rebase。分支里有记录旧翻译分支已被吸收的 merge；
-线性 rebase 会把旧分支提交重新放回维护分支，而本地化等大范围提交每次 rebase 都要重解同样的冲突。
+同步 PR 有冲突、或需要手动同步时使用。`main` 用 merge 吸收上游，不再 rebase。分支里有记录旧翻译分支
+已被吸收的 merge；线性 rebase 会把旧分支提交重新放回，而本地化等大范围提交每次 rebase 都要重解同样的冲突。
 merge 只解决新增冲突，也不改写已发布的历史。
 
-命令均从仓库根目录运行。先检查未提交改动并提交或单独备份，再切到维护分支；不要把未确认的工作混入合并。
+命令均从仓库根目录运行。先检查未提交改动并提交或单独备份，再切到 `main`；不要把未确认的工作混入合并。
+合并对象用 `origin/upstream-main`，与同步 PR 一致；它落后于上游时先在 Actions 页手动跑一次同步。
 
 ```sh
 git status --short --branch
 git remote -v
-git fetch upstream --prune
 git fetch origin --prune
-git switch dnw/capture-workspace
-git log --oneline HEAD..upstream/main
-git merge-base --is-ancestor origin/dnw/capture-workspace HEAD
-git branch "dnw/backup-capture-$(date +%Y%m%d-%H%M%S)" HEAD
-git merge --no-ff --no-commit upstream/main
+git switch main
+git merge --ff-only origin/main
+git log --oneline HEAD..origin/upstream-main
+git branch "dnw/backup-main-$(date +%Y%m%d-%H%M%S)" HEAD
+git merge --no-ff --no-commit origin/upstream-main
 ```
 
-祖先检查返回 0 才继续；否则先整合 fork 远端的新提交。遇到冲突，按职责合并：保留上游演进，
+`--ff-only` 失败说明本地 `main` 有未推送的提交，先整理清楚再合并。遇到冲突，按职责合并：保留上游演进，
 给本地功能适配新接口；逐项检查命令、设置与备份、权限描述、AppCore 初始化/关闭、OCR 和打包，
 不能整文件选一边覆盖另一边。上游删除了我们只做过本地化的文件时，接受删除，再把文案本地化
 移到上游的替代实现里。`project.pbxproj` 冲突取上游版本后运行 `xcodegen generate`；
@@ -131,13 +161,14 @@ xcodebuild -project Tinycast.xcodeproj -scheme Tinycast -configuration Debug \
 merge 同步与普通提交都是快进推送：
 
 ```sh
-git push origin HEAD:refs/heads/dnw/capture-workspace
+git push origin main
 ```
 
 推送被拒绝说明远端有新提交，先 fetch 并整合，不能改用强推覆盖。推送后用
-`git ls-remote origin refs/heads/dnw/capture-workspace` 与 `git rev-parse HEAD` 核对，再检查工作区状态。
+`git ls-remote origin refs/heads/main` 与 `git rev-parse HEAD` 核对，再检查工作区状态，并确认 CI 结果。
+确认无误后删除本地备份分支。
 
-日常源码同步的推送目标是 fork 的维护分支。合入 fork `main`、提交上游 PR 和发布应用分别按对应任务执行；
+日常源码同步的推送目标是 fork 的 `main`。合入 fork `main`、提交上游 PR 和发布应用分别按对应任务执行；
 向上游贡献时遵循 [CONTRIBUTING.md](../CONTRIBUTING.md) 的 issue / `approved` 约定。
 
 ## 源码同步与应用更新
@@ -145,7 +176,7 @@ git push origin HEAD:refs/heads/dnw/capture-workspace
 当前 README 的 Homebrew、Release 链接以及代码里的 `ReleaseFeed.repository` 都指向原仓库。
 这些安装入口提供上游构建，尚无独立的 fork 发布链路。
 
-本地使用维护分支时，按 [development.md](development.md) 配置签名后运行
+本地使用 `main` 时，按 [development.md](development.md) 配置签名后运行
 `./Scripts/build-and-run.sh`，构建并启动该 checkout 的 `Tinycast Dev.app`（`com.tinycast.app.dev`）。
 Dev 不通过应用内更新器更新，继续使用本分支的新代码需要重新构建。
 
@@ -157,7 +188,7 @@ Dev 不通过应用内更新器更新，继续使用本分支的新代码需要�
 | 项目 | 2026-10-12 记录 |
 | --- | --- |
 | 上游基线 | `888b5e59fc39f62c7c42ad6ab42f689e6b233eeb`（上一轮 `da2c4e44`） |
-| 同步方式 | merge `upstream/main` 到维护分支，合并前备份为 `dnw/backup-capture-20261012-185805` |
+| 同步方式 | merge `upstream/main` 到集成分支（当时名为 `dnw/capture-workspace`），备份分支确认后已删除 |
 | 吸收的上游改动 | 启动器表单（Snippets / Quicklinks / 自定义命令 / 日程）、Hyper Key 扩展与诊断、⌘C 选区兜底及借用互斥、AI 拒绝原因、AI Chat 快捷键、扩展依赖、Notes 列表、应用扫描符号链接、UTF-8 解码 |
 | 主要适配 | `TextInjector.copySelection` 同时保留上游借用互斥/暂停记录与翻译的菜单 Copy、取消校验；AI 状态提示改由 Service 本地化后交给 `AIProviderFailure`；上游删除的编辑面板改为本地化新表单；补 81 条中文、删 18 条失效键 |
 | 自动检查 | 119 个 harness、Debug / Release 通过；Swift 警告 0；lint 153 项与合并前相同，新增 0（上游自身 66 项） |
