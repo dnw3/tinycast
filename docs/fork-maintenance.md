@@ -94,7 +94,8 @@ CI 只覆盖自动检查。合并后按需从 `main` 重新构建安装，原生
 CI runner 使用它上面最新的 Xcode（2026-10 为 Xcode 26.6 / Swift 6.3），比本机的 Xcode 27 旧，
 也与上游 release 构建一致；本机能编过、CI 编不过时，按旧编译器的限制改写代码，不要在 CI 里换版本绕过。
 `ci.yml` 的 `HOST_DEPENDENT` 列出结果取决于主机的 harness：`capture-ocr-test` 逐字比对小字 OCR，
-Vision 识别器随 macOS 版本变化；`form-input-test` 检查离屏渲染的字形像素，runner 上画不出来。
+Vision 识别器随 macOS 版本变化；`form-input-test` 检查离屏渲染的字形像素，runner 上画不出来；
+`capture-video-test` 依赖视频编码，runner 虚拟机的虚拟化编码器偶尔挂住直到 300 秒超时。
 它们在 CI 失败只记警告并写进运行摘要，合并前须在本机跑通；其他 harness 失败一律判红。
 
 上游的 `release.yml`、`triage.yml`、`coauthors.yml`、`website.yml` 在 fork 里已停用

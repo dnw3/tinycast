@@ -84,7 +84,8 @@ jobs:
           # Their results depend on the host, not the code: re-run them locally before merging.
           # capture-ocr-test: exact small-text OCR, and Vision's recognizer differs by macOS version.
           # form-input-test: measures offscreen-rendered glyph pixels, which this runner does not draw.
-          HOST_DEPENDENT: capture-ocr-test form-input-test
+          # capture-video-test: the VM's paravirtualized video encoder sometimes never returns.
+          HOST_DEPENDENT: capture-ocr-test form-input-test capture-video-test
         run: |
           if ./Scripts/run-tests.sh; then exit 0; fi
           failed=$(cd "${TMPDIR:-/tmp}/tinycast-harness" && ls *.failed 2>/dev/null | sed 's/\.failed$//')
@@ -115,7 +116,7 @@ jobs:
 
       - name: Keep failure logs
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: failure-logs
           path: ${{ runner.temp }}/failure-logs
