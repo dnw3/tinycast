@@ -1,6 +1,5 @@
 import SwiftUI
 
-/// The Raycast Store's search, and an install button per result.
 struct ExtensionStorePanel: View {
     let storeInstall: ExtensionDeepLink.StoreInstall?
     let onClose: () -> Void
@@ -200,7 +199,6 @@ struct ExtensionStorePanel: View {
     }
 }
 
-/// One search result: what it is, who made it, how many use it, and the button that installs it.
 private struct StoreRow: View {
     enum InstallState: Equatable {
         case idle
@@ -301,7 +299,6 @@ private struct StoreRow: View {
     }
 }
 
-/// One fact under a result, behind the glyph that says what kind of fact it is.
 private struct StoreFact: View {
     let symbol: String
     let text: String

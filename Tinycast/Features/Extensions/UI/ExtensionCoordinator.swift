@@ -112,7 +112,6 @@ final class ExtensionCoordinator {
         }
     }
 
-    /// Opens Settings on the extension a launcher row belongs to.
     func showExtensionSettings(for app: AppEntry) {
         guard let (owner, _) = extensions.resolve(app) else { return }
         showExtensionSettings(for: owner)
@@ -226,7 +225,6 @@ final class ExtensionCoordinator {
         extensions.setMenuBarEnabled(enabled, reference: reference)
     }
 
-    /// The arguments a row declares, or nil — what decides whether the header shows inline fields.
     func commandArguments(for entry: AppEntry?) -> [ExtensionCommandArgument]? {
         guard let entry, entry.kind == .extensionCommand,
             let (_, command) = extensions.resolve(entry), !command.arguments.isEmpty

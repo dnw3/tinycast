@@ -1,5 +1,3 @@
-// Standalone contract tests for the real pure snippet sources and main-actor store watcher.
-
 import AppKit
 import Foundation
 import SwiftUI
@@ -1365,13 +1363,11 @@ struct SnippetsTests {
                 subject, snippets: [subject], context: context, userArguments: arguments)
         }
 
-        // New date/time tokens.
         check(
             "datetime combines the date and time styles",
             expand("{datetime}").text == "Jul 24, 2026 at 1:05\u{202F}PM")
         check("day renders the weekday name", expand("{day}").text == "Friday")
 
-        // Offsets: signed, multi-unit, and every documented unit.
         check(
             "a single signed offset shifts the date",
             expand("{date offset=\"+1d\"}").text == "Jul 25, 2026")
@@ -1389,7 +1385,6 @@ struct SnippetsTests {
             "an offset without an amount leaves the token literal",
             expand("{date offset=\"d\"}").text == "{date offset=\"d\"}")
 
-        // Locale and format.
         check(
             "locale overrides the context locale",
             expand("{date locale=\"fr-FR\"}").text == "24 juil. 2026")
@@ -1419,7 +1414,6 @@ struct SnippetsTests {
         // UUID comes from the injected source, once per token.
         check("each uuid token draws a fresh value", expand("{uuid}|{uuid}").text == "uuid-1|uuid-2")
 
-        // Clipboard history.
         check(
             "clipboard offset zero is the current clipboard",
             expand("{clipboard}").text == "  newest  ")
@@ -1433,7 +1427,6 @@ struct SnippetsTests {
             "a negative clipboard offset leaves the token literal",
             expand("{clipboard offset=-1}").text == "{clipboard offset=-1}")
 
-        // Modifier pipeline.
         check(
             "uppercase and lowercase modifiers apply",
             expand("{selection | uppercase}|{selection | lowercase}").text == "PICKED|picked")
@@ -1462,7 +1455,6 @@ struct SnippetsTests {
             "a pipe inside a quoted value is not a modifier separator",
             expand("{date format=\"yyyy|MM\"}").text == "2026|07")
 
-        // Arguments: defaults and options.
         let defaulted = expand("{argument name=\"Tone\" default=\"happy\"}")
         check(
             "an argument default expands without prompting",
@@ -1582,7 +1574,6 @@ struct SnippetsTests {
                 text: text, context: context, userArguments: arguments, encoding: encoding)
         }
 
-        // The text entry point.
         check(
             "a bare template expands without a snippet record",
             expand("q={clipboard}").text == "q=a b&c")
@@ -1594,7 +1585,6 @@ struct SnippetsTests {
             expand("{argument name=\"Repository\"}").missingArguments
                 == [.init(name: "Repository", options: [])])
 
-        // Percent encoding of produced values.
         check(
             "percent encoding escapes a value substituted into a URL",
             expand("https://x.com/?q={clipboard}", encoding: .percentEncoding).text
@@ -1621,7 +1611,6 @@ struct SnippetsTests {
             "snippets ask for no encoding, so their expansion is unchanged",
             expand("{clipboard}").text == "a b&c")
 
-        // {selectedText} is an accepted spelling of {selection}.
         check(
             "selectedText resolves to the selection",
             expand("{selectedText}").text == expand("{selection}").text)

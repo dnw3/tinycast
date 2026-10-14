@@ -296,14 +296,14 @@ Dev 不通过应用内更新器更新，继续使用本分支的新代码需要�
 
 ## 最近一次源码同步
 
-| 项目 | 2026-10-14 记录 |
+| 项目 | 2026-10-14 记录（第二轮） |
 | --- | --- |
-| 上游基线 | `1c3c2572`（上一轮 `9a9739bf`，经 PR #1） |
-| 同步方式 | 同步 PR #2 有冲突，按"同步全部更新"在本地 merge `origin/upstream-main` 后推送 `main` |
-| 吸收的上游改动 | 文件搜索改为自建磁盘索引（新 `FileIndexHelper`，需完全磁盘访问权限）、扩展 OAuth 登录、听写键触发快捷键、已启用的 MCP 工具可执行命令和读文件、计算器 `/单位` 与油耗单位、`fs.stat` 时间、Bring! 表单、About 版本号可复制 |
-| 主要适配 | 9 处冲突均为本地化包装与上游文案/接口叠加：`InfoRow(keycaps:)`、Onboarding 改 `Text`、文件搜索文案；`file-search.md` 与 `project.pbxproj` 取上游；新增文件搜索界面文案改为 `String(localized:)`；补 34 条中文与 6 条 `manual` 键（设置锚点、搜索条目、油耗类别），删 9 条失效键 |
-| 自动检查 | 120 个 harness 中 119 个通过；`form-input-test` 在合并前的 `main` 上同样失败（本机离屏渲染），与本次无关；Debug / Release 通过，Swift 警告 0；lint 165 项，新增 12 项均为上游代码 |
-| 原生验收 | 本轮未执行；文件搜索的完全磁盘访问授权、索引构建与中文界面，扩展 OAuth、听写键尚未在安装版复验 |
+| 上游基线 | `57e29b49`（上一轮同日 `1c3c2572`，经 PR #2） |
+| 同步方式 | 同步 PR #3 有冲突，本地 merge `origin/upstream-main` 后推送 `main` |
+| 吸收的上游改动 | 听写边录边插入、AI Chat 窗口打磨（长对话快速打开、代码块圆角、单栏）、OpenCode v2 与图片发送、模型发现容错与手动模型 ID、Secure Input 下录 Hyper 键、笔记不再抢粘贴、自定义快捷操作渲染 Markdown、全仓库删减注释 |
+| 主要适配 | 17 处冲突：10 处为本地化与删注释叠加；`SettingsFileIssue.message`、`CustomWindowSize.summary`、`WindowLayout.summary` 保留本地删除（已移出 Model 本地化）；听写结束流程、`interruptedNote`、Grok 提示文件报错、`ChatSuggestionChip` 采用上游重构后重新本地化；`QuickAction` 保留本地删除的 `usesTranslationFramework`，加上游 `rendersMarkdown`；`project.yml` / `run-tests.sh` 保留 `TextRecognitionHelper` 与 Capture 链接；补 5 条中文与 2 条 `manual` 键 |
+| 自动检查 | 121 个 harness 中 120 个通过，`form-input-test` 同上一轮为本机已知失败；Debug / Release 通过，Swift 警告 0；lint 165 项，与合并前相同 |
+| 原生验收 | 本轮未执行；听写边录边插入、AI Chat 新界面、OpenCode v2，以及上一轮的文件搜索、扩展 OAuth、听写键均未在安装版复验 |
 | 证据 | 合并提交说明 |
 | 后续 | 安装版需重新构建；发版时确认 `Contents/Helpers/FileIndexHelper` 已签名 |
 

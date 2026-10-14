@@ -8,7 +8,6 @@ enum SettingsFileIssue: Error, Equatable, Sendable {
     case notAnObject(String?)
     case unknownSetting(String)
     case invalidValue(SettingsFileKey)
-    /// One record or entry inside a list or map, described for the person who wrote it.
     case invalidEntry(SettingsFileKey, String)
     case unreadable
     case unwritable

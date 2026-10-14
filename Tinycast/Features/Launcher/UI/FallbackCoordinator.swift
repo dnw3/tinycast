@@ -43,7 +43,6 @@ final class FallbackCoordinator {
         }
     }
 
-    /// The one funnel; each destination takes the query as the input it was already asking for.
     func run(_ fallback: Fallback, query: String) {
         switch fallback {
         case .builtin(.quickAI): core.quickAICoordinator.ask(query)

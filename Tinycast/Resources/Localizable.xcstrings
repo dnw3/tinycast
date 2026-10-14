@@ -8206,6 +8206,16 @@
         }
       }
     },
+    "Couldn't paste some dictation into this app": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "部分听写内容无法粘贴到此应用"
+          }
+        }
+      }
+    },
     "Couldn't read %@.": {
       "localizations": {
         "zh-Hans": {
@@ -11329,6 +11339,17 @@
         }
       }
     },
+    "File index": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件索引"
+          }
+        }
+      }
+    },
     "File is no longer available": {
       "localizations": {
         "zh-Hans": {
@@ -12110,6 +12131,39 @@
           "stringUnit": {
             "state": "translated",
             "value": "通过启动器的操作菜单。"
+          }
+        }
+      }
+    },
+    "Fuel Consumption": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "油耗"
+          }
+        }
+      }
+    },
+    "Fuel Economy": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "燃油经济性"
+          }
+        }
+      }
+    },
+    "Full Disk Access": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "完全磁盘访问权限"
           }
         }
       }
@@ -13435,12 +13489,34 @@
         }
       }
     },
+    "Index": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "索引"
+          }
+        }
+      }
+    },
     "Index the whole disk.": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
             "value": "索引整个磁盘。"
+          }
+        }
+      }
+    },
+    "Indexed Items": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已索引项目"
           }
         }
       }
@@ -19147,6 +19223,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "粘贴为纯文本"
+          }
+        }
+      }
+    },
+    "Paste each chunk as you speak, instead of only when finished.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "边说边粘贴每段内容，而不是结束后才粘贴。"
           }
         }
       }
@@ -27717,6 +27803,16 @@
         }
       }
     },
+    "Tinycast could not write its private image attachments.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tinycast 无法写入专用图片附件。"
+          }
+        }
+      }
+    },
     "Tinycast couldn't save to its actions file.": {
       "extractionState": "manual",
       "localizations": {
@@ -27794,6 +27890,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tinycast 不会修改它，其模型也不会显示在模型选择器中。"
+          }
+        }
+      }
+    },
+    "Tinycast needs OpenCode 2. Update OpenCode, then Check Again.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tinycast 需要 OpenCode 2。请更新 OpenCode，然后点按“重新检查”。"
           }
         }
       }
@@ -29792,6 +29898,16 @@
         }
       }
     },
+    "What Quick AI and the AI Chat window show when you open them.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开快捷 AI 和 AI 对话窗口时显示的内容。"
+          }
+        }
+      }
+    },
     "What doesn't, yet": {
       "localizations": {
         "zh-Hans": {
@@ -31156,71 +31272,27 @@
     "✕": {
       "shouldTranslate": false
     },
-    "Full Disk Access": {
+    "Opens to": {
+      "extractionState": "manual",
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "完全磁盘访问权限"
+            "value": "打开时显示"
           }
         }
-      },
-      "extractionState": "manual"
+      }
     },
-    "Index": {
+    "Insert while recording": {
+      "extractionState": "manual",
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "索引"
+            "value": "录音时插入"
           }
         }
-      },
-      "extractionState": "manual"
-    },
-    "Indexed Items": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "已索引项目"
-          }
-        }
-      },
-      "extractionState": "manual"
-    },
-    "File index": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "文件索引"
-          }
-        }
-      },
-      "extractionState": "manual"
-    },
-    "Fuel Economy": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "燃油经济性"
-          }
-        }
-      },
-      "extractionState": "manual"
-    },
-    "Fuel Consumption": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "油耗"
-          }
-        }
-      },
-      "extractionState": "manual"
+      }
     }
   },
   "version": "1.0"

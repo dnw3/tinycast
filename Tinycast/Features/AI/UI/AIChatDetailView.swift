@@ -1,7 +1,6 @@
 import AppKit
 import SwiftUI
 
-/// The window's right-hand side: the open conversation, and its composer beneath it.
 struct AIChatDetailView: View {
     @Environment(AIChatCoordinator.self) private var coordinator
     @Environment(ChatFindState.self) private var find
@@ -119,7 +118,6 @@ struct AIChatDetailView: View {
     }
 }
 
-/// Staged files, the text, then the chat's options and Send, on one pane of Liquid Glass.
 private struct AIChatComposer: View {
     let chat: AIChatState
     let coordinator: AIChatCoordinator
@@ -242,7 +240,6 @@ private struct AIChatComposer: View {
         .accessibilityLabel(chat.isStreaming ? String(localized: "Stop Response") : String(localized: "Send"))
     }
 
-    /// Return and the button are one action: Send, or Stop while a reply streams.
     private func submit() {
         if chat.isStreaming {
             coordinator.stopResponse(in: chat)
@@ -252,7 +249,6 @@ private struct AIChatComposer: View {
     }
 }
 
-/// A composer control's face: one glyph slot, the callout title, then the menu's chevron.
 private struct ComposerControlLabel<Icon: View>: View {
     var title: String?
     var showsChevron = true
@@ -409,7 +405,6 @@ private struct DictationButton: View {
     }
 }
 
-/// Web search is on beside the +; a click turns it off, the + menu turns it back on.
 private struct WebSearchPill: View {
     let settings: AISettingsStore
     let isCompact: Bool
@@ -559,7 +554,6 @@ private struct AIToolsMenu: View {
     }
 }
 
-/// Where find is in the open chat, with the same steps ⌘G and ⇧⌘G take.
 private struct FindCounter: View {
     let position: Int
     let count: Int
@@ -593,7 +587,6 @@ private struct FindCounter: View {
     }
 }
 
-/// A ring for the share of the context in use; hovering it raises the composer's context card.
 private struct ContextGauge: View {
     let report: ChatContextReport
     @Binding var hovered: Bool

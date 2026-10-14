@@ -87,7 +87,6 @@ struct WindowLayoutEntry: Codable, Hashable, Identifiable, Sendable {
     }
 }
 
-/// A saved arrangement: these apps, at these sizes, at these positions, on these displays.
 struct WindowLayout: Codable, Hashable, Identifiable, Sendable {
     static let entryIDPrefix = "window-layout:"
     /// One glyph for every layout, and never the menu bar's own, which reads as the app itself.
@@ -115,12 +114,10 @@ struct WindowLayout: Codable, Hashable, Identifiable, Sendable {
         self.frontmostEntryID = frontmostEntryID
     }
 
-    /// The glyph every surface draws for this layout.
     var symbol: String { iconSymbol ?? Self.sfSymbol }
 
     var entryID: String { Self.entryIDPrefix + id.uuidString.lowercased() }
 
-    /// Cleans every entry, then drops a frontmost mark whose entry did not survive.
     mutating func sanitizeEntries() {
         entries = WindowLayoutEntry.sanitized(entries)
         if !entries.contains(where: { $0.id == frontmostEntryID }) { frontmostEntryID = nil }
