@@ -303,8 +303,8 @@ Dev 不通过应用内更新器更新，继续使用本分支的新代码需要�
 | 吸收的上游改动 | 听写边录边插入、AI Chat 窗口打磨（长对话快速打开、代码块圆角、单栏）、OpenCode v2 与图片发送、模型发现容错与手动模型 ID、Secure Input 下录 Hyper 键、笔记不再抢粘贴、自定义快捷操作渲染 Markdown、全仓库删减注释 |
 | 主要适配 | 17 处冲突：10 处为本地化与删注释叠加；`SettingsFileIssue.message`、`CustomWindowSize.summary`、`WindowLayout.summary` 保留本地删除（已移出 Model 本地化）；听写结束流程、`interruptedNote`、Grok 提示文件报错、`ChatSuggestionChip` 采用上游重构后重新本地化；`QuickAction` 保留本地删除的 `usesTranslationFramework`，加上游 `rendersMarkdown`；`project.yml` / `run-tests.sh` 保留 `TextRecognitionHelper` 与 Capture 链接；补 5 条中文与 2 条 `manual` 键 |
 | 自动检查 | 121 个 harness 中 120 个通过，`form-input-test` 同上一轮为本机已知失败；Debug / Release 通过，Swift 警告 0；lint 165 项，与合并前相同 |
-| 原生验收 | 本轮未执行；听写边录边插入、AI Chat 新界面、OpenCode v2，以及上一轮的文件搜索、扩展 OAuth、听写键均未在安装版复验 |
+| 原生验收 | 应用内更新 1.0.0 → 1.1.0 已在本机验证，粘贴、截图等已授权限保留；听写边录边插入、AI Chat 新界面、OpenCode v2、文件搜索、扩展 OAuth、听写键尚未逐项复验 |
 | 证据 | 合并提交说明 |
-| 后续 | 安装版需重新构建；发版时确认 `Contents/Helpers/FileIndexHelper` 已签名 |
+| 后续 | 同日发布 [v1.1.0](https://github.com/dnw3/tinycast/releases/tag/v1.1.0)（`68813796`，arm64 zip 11 MB，CI 通过）：主程序与 4 个 helper（含 `FileIndexHelper`）均由 `Tinycast Self-Signed` 签名并启用 hardened runtime；本机经应用内更新升级到 1.1.0，签名叶证书不变、无隔离标记 |
 
 下次同步时更新本节的日期、上游 SHA、改动摘要、验证范围与证据链接；旧证据文件保留，便于回溯。
