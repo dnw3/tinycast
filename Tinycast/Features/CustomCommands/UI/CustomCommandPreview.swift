@@ -7,8 +7,18 @@ struct CustomCommandPreview: View {
 
     private struct InfoRow: Identifiable {
         let label: String
-        let value: String
+        let value: Text
         var id: String { label }
+
+        init(label: String, value: String) {
+            self.label = label
+            self.value = Text(value)
+        }
+
+        init(label: String, keycaps: [String]) {
+            self.label = label
+            value = KeyCapChip.inlineText(keycaps)
+        }
     }
 
     private func information(for command: CustomCommand) -> [InfoRow] {
@@ -35,7 +45,7 @@ struct CustomCommandPreview: View {
                     value: String(localized: "Required before running")))
         }
         if let keycaps = hotKeys.binding(for: .customCommand(id: command.id))?.keycaps {
-            rows.append(InfoRow(label: String(localized: "Shortcut"), value: keycaps.joined()))
+            rows.append(InfoRow(label: String(localized: "Shortcut"), keycaps: keycaps))
         }
         return rows
     }
@@ -64,7 +74,7 @@ struct CustomCommandPreview: View {
                             HStack(spacing: metrics.spacing.sm) {
                                 Text(row.label).foregroundStyle(Theme.Colors.textSecondary)
                                 Spacer(minLength: metrics.spacing.lg)
-                                Text(row.value).lineLimit(1).truncationMode(.middle)
+                                row.value.lineLimit(1).truncationMode(.middle)
                             }
                             .font(metrics.typography.keyCap)
                             .padding(.vertical, metrics.spacing.xs)

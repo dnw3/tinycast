@@ -296,15 +296,15 @@ Dev 不通过应用内更新器更新，继续使用本分支的新代码需要�
 
 ## 最近一次源码同步
 
-| 项目 | 2026-10-12 记录 |
+| 项目 | 2026-10-14 记录 |
 | --- | --- |
-| 上游基线 | `888b5e59fc39f62c7c42ad6ab42f689e6b233eeb`（上一轮 `da2c4e44`） |
-| 同步方式 | merge `upstream/main` 到集成分支（当时名为 `dnw/capture-workspace`），备份分支确认后已删除 |
-| 吸收的上游改动 | 启动器表单（Snippets / Quicklinks / 自定义命令 / 日程）、Hyper Key 扩展与诊断、⌘C 选区兜底及借用互斥、AI 拒绝原因、AI Chat 快捷键、扩展依赖、Notes 列表、应用扫描符号链接、UTF-8 解码 |
-| 主要适配 | `TextInjector.copySelection` 同时保留上游借用互斥/暂停记录与翻译的菜单 Copy、取消校验；AI 状态提示改由 Service 本地化后交给 `AIProviderFailure`；上游删除的编辑面板改为本地化新表单；补 81 条中文、删 18 条失效键 |
-| 自动检查 | 119 个 harness、Debug / Release 通过；Swift 警告 0；lint 153 项与合并前相同，新增 0（上游自身 66 项） |
-| 原生验收 | 本轮未执行；启动器新表单、Hyper Key 设置与诊断、翻译取词的中文界面和行为尚未在安装版复验 |
-| 证据 | 合并提交说明；此前的[机器可读检查](plans/capture-evidence/rebase-checks-20261010.json)、[Capture 交付状态](plans/capture-delivery-status.md)保留 |
-| 后续 | 同日改用自动同步：PR #1 合入上游 `9a9739bf`（仅 `.coderabbit.yaml`），CI 首次在 Xcode 26.6 上全绿；修复两处 Swift 6.3 编译问题。首个熟人版本 [v1.0.0](https://github.com/dnw3/tinycast/releases/tag/v1.0.0) 基于此发布，本机已安装 |
+| 上游基线 | `1c3c2572`（上一轮 `9a9739bf`，经 PR #1） |
+| 同步方式 | 同步 PR #2 有冲突，按"同步全部更新"在本地 merge `origin/upstream-main` 后推送 `main` |
+| 吸收的上游改动 | 文件搜索改为自建磁盘索引（新 `FileIndexHelper`，需完全磁盘访问权限）、扩展 OAuth 登录、听写键触发快捷键、已启用的 MCP 工具可执行命令和读文件、计算器 `/单位` 与油耗单位、`fs.stat` 时间、Bring! 表单、About 版本号可复制 |
+| 主要适配 | 9 处冲突均为本地化包装与上游文案/接口叠加：`InfoRow(keycaps:)`、Onboarding 改 `Text`、文件搜索文案；`file-search.md` 与 `project.pbxproj` 取上游；新增文件搜索界面文案改为 `String(localized:)`；补 34 条中文与 6 条 `manual` 键（设置锚点、搜索条目、油耗类别），删 9 条失效键 |
+| 自动检查 | 120 个 harness 中 119 个通过；`form-input-test` 在合并前的 `main` 上同样失败（本机离屏渲染），与本次无关；Debug / Release 通过，Swift 警告 0；lint 165 项，新增 12 项均为上游代码 |
+| 原生验收 | 本轮未执行；文件搜索的完全磁盘访问授权、索引构建与中文界面，扩展 OAuth、听写键尚未在安装版复验 |
+| 证据 | 合并提交说明 |
+| 后续 | 安装版需重新构建；发版时确认 `Contents/Helpers/FileIndexHelper` 已签名 |
 
 下次同步时更新本节的日期、上游 SHA、改动摘要、验证范围与证据链接；旧证据文件保留，便于回溯。

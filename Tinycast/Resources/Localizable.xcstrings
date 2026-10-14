@@ -481,6 +481,32 @@
         }
       }
     },
+    "%@ items so far. Results appear when it finishes.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已索引 %@ 项，完成后显示结果。"
+          }
+        }
+      }
+    },
+    "%@ items · Built %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@ items · Built %2$@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ 项 · %@构建"
+          }
+        }
+      }
+    },
     "%@ left": {
       "localizations": {
         "zh-Hans": {
@@ -913,6 +939,9 @@
           }
         }
       }
+    },
+    "%@%@%@": {
+      "shouldTranslate": false
     },
     "%@, %@ layout": {
       "localizations": {
@@ -3014,6 +3043,16 @@
         }
       }
     },
+    "Add Folder…": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "添加文件夹…"
+          }
+        }
+      }
+    },
     "Add Freeze Frame": {
       "localizations": {
         "zh-Hans": {
@@ -3118,12 +3157,12 @@
         }
       }
     },
-    "Add a folder to search.": {
+    "Add a folder to index and search.": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "添加需要搜索的文件夹。"
+            "value": "添加要索引和搜索的文件夹。"
           }
         }
       }
@@ -3197,16 +3236,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "从文件夹添加"
-          }
-        }
-      }
-    },
-    "Add pattern…": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "添加规则…"
           }
         }
       }
@@ -5001,6 +5030,16 @@
         }
       }
     },
+    "Built once, then kept current as files change. Indexing uses extra memory only while it runs.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "只构建一次，之后随文件变化保持最新。仅在索引进行时占用额外内存。"
+          }
+        }
+      }
+    },
     "Built with love.": {
       "localizations": {
         "zh-Hans": {
@@ -6314,12 +6353,22 @@
         }
       }
     },
-    "Choose folders to include when searching for files.": {
+    "Choose folders to index and search.": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "选择搜索文件时包含的文件夹。"
+            "value": "选择要索引和搜索的文件夹。"
+          }
+        }
+      }
+    },
+    "Choose folders to leave out of the index.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择要排除在索引之外的文件夹。"
           }
         }
       }
@@ -8299,6 +8348,16 @@
         }
       }
     },
+    "Couldn’t build the file index": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法构建文件索引"
+          }
+        }
+      }
+    },
     "Couldn’t copy link": {
       "localizations": {
         "zh-Hans": {
@@ -8375,6 +8434,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "遮盖视频区域"
+          }
+        }
+      }
+    },
+    "Crawls every scope again from scratch.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "从头重新扫描所有范围。"
           }
         }
       }
@@ -11230,6 +11299,36 @@
         }
       }
     },
+    "File Search can’t index without it.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "没有此权限，文件搜索无法建立索引。"
+          }
+        }
+      }
+    },
+    "File Search indexes your whole disk. Press ↵ to open Privacy & Security, then turn on Tinycast under Full Disk Access.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件搜索会索引整个磁盘。按 ↵ 打开“隐私与安全性”，然后在“完全磁盘访问权限”中打开 Tinycast。"
+          }
+        }
+      }
+    },
+    "File Search reads your disk directly to build a private index on this Mac. In System Settings › Privacy & Security › Full Disk Access, turn on Tinycast. If it isn’t listed, click + and choose Tinycast from Applications. If access still shows as required, quit and reopen Tinycast.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件搜索直接读取磁盘，在这台 Mac 上构建私有索引。请在“系统设置 › 隐私与安全性 › 完全磁盘访问权限”中打开 Tinycast。如果列表中没有它，点按 + 并从“应用程序”中选择 Tinycast。如果仍显示需要权限，请退出并重新打开 Tinycast。"
+          }
+        }
+      }
+    },
     "File is no longer available": {
       "localizations": {
         "zh-Hans": {
@@ -11247,16 +11346,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "文件搜索命令"
-          }
-        }
-      }
-    },
-    "File search is unavailable": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "文件搜索不可用"
           }
         }
       }
@@ -12025,6 +12114,16 @@
         }
       }
     },
+    "Full Disk Access required": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "需要完全磁盘访问权限"
+          }
+        }
+      }
+    },
     "Fullscreen": {
       "extractionState": "manual",
       "localizations": {
@@ -12754,16 +12853,6 @@
         }
       }
     },
-    "Home covers its visible folders and cloud drives, never Library.": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "个人文件夹包含可见文件夹与云盘，不搜索资源库。"
-          }
-        }
-      }
-    },
     "Home folder": {
       "localizations": {
         "zh-Hans": {
@@ -13342,6 +13431,46 @@
           "stringUnit": {
             "state": "translated",
             "value": "口令不正确，或文件已损坏。"
+          }
+        }
+      }
+    },
+    "Index the whole disk.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "索引整个磁盘。"
+          }
+        }
+      }
+    },
+    "Indexes your disk for instant results. Needs Full Disk Access.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "索引磁盘以即时显示结果。需要完全磁盘访问权限。"
+          }
+        }
+      }
+    },
+    "Indexing your disk…": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在索引磁盘…"
+          }
+        }
+      }
+    },
+    "Indexing… %@ items": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在索引… %@ 项"
           }
         }
       }
@@ -14687,12 +14816,12 @@
         }
       }
     },
-    "List, detail, form, grid, no-view and menu-bar commands, plus preferences and storage.": {
+    "List, detail, form, grid, no-view and menu-bar commands, preferences, storage and OAuth.": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "支持列表、详情、表单、网格、无界面与菜单栏命令，以及偏好设置和存储。"
+            "value": "支持列表、详情、表单、网格、无界面与菜单栏命令，以及偏好设置、存储和 OAuth。"
           }
         }
       }
@@ -15041,6 +15170,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "根据光标前的文字匹配首字母大小写。"
+          }
+        }
+      }
+    },
+    "Matching folders are skipped while indexing. A name like node_modules or *.tmp matches anywhere; a path like ~/Movies skips that folder.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "索引时跳过匹配的文件夹。node_modules 或 *.tmp 这样的名称在任何位置都会匹配；~/Movies 这样的路径只跳过该文件夹。"
           }
         }
       }
@@ -17104,16 +17243,6 @@
         }
       }
     },
-    "No slash matches a name, like *.tmp. A slash matches the path, like **/[Cc]ache/**.": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "不含斜杠时匹配名称，例如 *.tmp；含斜杠时匹配路径，例如 **/[Cc]ache/**。"
-          }
-        }
-      }
-    },
     "No snippets yet": {
       "localizations": {
         "zh-Hans": {
@@ -17373,6 +17502,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "未授权"
+          }
+        }
+      }
+    },
+    "Not indexed": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未索引"
           }
         }
       }
@@ -18074,6 +18213,16 @@
         }
       }
     },
+    "Only these folders are indexed and searched. A folder inside another is merged into it.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "只索引和搜索这些文件夹。位于另一个文件夹内的文件夹会并入其中。"
+          }
+        }
+      }
+    },
     "Opacity": {
       "extractionState": "manual",
       "localizations": {
@@ -18273,6 +18422,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "打开预览"
+          }
+        }
+      }
+    },
+    "Open Privacy Settings": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开隐私设置"
+          }
+        }
+      }
+    },
+    "Open Privacy Settings…": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开隐私设置…"
           }
         }
       }
@@ -18519,6 +18688,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "打开“隐私与安全性 › 日历”。"
+          }
+        }
+      }
+    },
+    "Opens Privacy & Security › Full Disk Access.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开“隐私与安全性 › 完全磁盘访问权限”。"
           }
         }
       }
@@ -19009,6 +19188,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "路径"
+          }
+        }
+      }
+    },
+    "Pattern": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "规则"
           }
         }
       }
@@ -20253,6 +20442,26 @@
         }
       }
     },
+    "Rebuild Index": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重建索引"
+          }
+        }
+      }
+    },
+    "Recent": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "最近"
+          }
+        }
+      }
+    },
     "Recent Conversation": {
       "extractionState": "manual",
       "localizations": {
@@ -20260,16 +20469,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "最近的对话"
-          }
-        }
-      }
-    },
-    "Recently Used": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "最近使用"
           }
         }
       }
@@ -24187,6 +24386,16 @@
         }
       }
     },
+    "Skip a folder and everything in it.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "跳过某个文件夹及其中的所有内容。"
+          }
+        }
+      }
+    },
     "Skype": {
       "extractionState": "manual",
       "shouldTranslate": false
@@ -26069,6 +26278,16 @@
         }
       }
     },
+    "The last build failed": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "上次构建失败"
+          }
+        }
+      }
+    },
     "The layout could not be saved.": {
       "localizations": {
         "zh-Hans": {
@@ -27397,6 +27616,16 @@
         }
       }
     },
+    "Tinycast can index every folder.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tinycast 可以索引所有文件夹。"
+          }
+        }
+      }
+    },
     "Tinycast can’t uninstall this app.": {
       "extractionState": "manual",
       "localizations": {
@@ -28300,6 +28529,16 @@
         }
       }
     },
+    "Try Rebuild Index in Settings ▸ File Search.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请在“设置 ▸ 文件搜索”中尝试重建索引。"
+          }
+        }
+      }
+    },
     "Turn Calendar on in Settings first": {
       "localizations": {
         "zh-Hans": {
@@ -29193,16 +29432,6 @@
         }
       }
     },
-    "Uses the Spotlight index, only when you search.": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "仅在搜索时使用 Spotlight 索引。"
-          }
-        }
-      }
-    },
     "V": {
       "extractionState": "manual",
       "shouldTranslate": false
@@ -29427,6 +29656,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "请等待当前听写完成。"
+          }
+        }
+      }
+    },
+    "Waiting for Full Disk Access": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在等待完全磁盘访问权限"
           }
         }
       }
@@ -30457,6 +30696,16 @@
         }
       }
     },
+    "node_modules, *.tmp or ~/Movies": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "node_modules、*.tmp 或 ~/Movies"
+          }
+        }
+      }
+    },
     "not valid JSON — %@": {
       "localizations": {
         "zh-Hans": {
@@ -30906,6 +31155,72 @@
     },
     "✕": {
       "shouldTranslate": false
+    },
+    "Full Disk Access": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "完全磁盘访问权限"
+          }
+        }
+      },
+      "extractionState": "manual"
+    },
+    "Index": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "索引"
+          }
+        }
+      },
+      "extractionState": "manual"
+    },
+    "Indexed Items": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已索引项目"
+          }
+        }
+      },
+      "extractionState": "manual"
+    },
+    "File index": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件索引"
+          }
+        }
+      },
+      "extractionState": "manual"
+    },
+    "Fuel Economy": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "燃油经济性"
+          }
+        }
+      },
+      "extractionState": "manual"
+    },
+    "Fuel Consumption": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "油耗"
+          }
+        }
+      },
+      "extractionState": "manual"
     }
   },
   "version": "1.0"

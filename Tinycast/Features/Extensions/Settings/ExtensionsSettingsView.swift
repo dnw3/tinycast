@@ -97,7 +97,7 @@ struct ExtensionsSettingsView: View {
                 subtitle:
                     String(
                         localized:
-                            "List, detail, form, grid, no-view and menu-bar commands, plus preferences and storage."
+                            "List, detail, form, grid, no-view and menu-bar commands, preferences, storage and OAuth."
                     ),
                 subtitleLineLimit: 2
             ) {
