@@ -465,7 +465,11 @@ private struct ClipboardInfoSection: View {
         switch item.kind {
         case .text:
             let isColor = item.colorValue != nil
-            rows.append(InfoRow(label: String(localized: "Type"), value: isColor ? String(localized: "Color") : String(localized: "Text")))
+            let type =
+                isColor
+                ? String(localized: "Color")
+                : item.hasRichText ? String(localized: "Rich Text") : String(localized: "Text")
+            rows.append(InfoRow(label: String(localized: "Type"), value: type))
             // A colour's own notations are the pane above; its length is not what you came for.
             if !isColor {
                 if let characters = details.characters {

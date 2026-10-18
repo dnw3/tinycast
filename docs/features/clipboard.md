@@ -1,6 +1,6 @@
 # Clipboard history
 
-Improvements adopted from a Maccy comparison, and the deferred rich-text plan: [Plan](../plans/clipboard-plan.md).
+Improvements adopted from a Maccy comparison, and the rich-text batch: [Plan](../plans/clipboard-plan.md).
 
 ## Invariants
 
@@ -16,8 +16,8 @@ Improvements adopted from a Maccy comparison, and the deferred rich-text plan: [
   through the same call, so no surface can drift from the setting; ⌥↵ pastes regardless, since
   keeping the window open is a paste-only idea. The ⌘K menu lists the three in chord order, which
   puts the default first with the ↵ chip.
-- **Paste as Plain Text writes `ClipboardItem.plainText` and nothing else**: the text itself, or a
-  file entry's path without its `public.file-url`. An image has none, so it gets no plain row, a
+- **Paste as Plain Text writes `ClipboardItem.plainText` and nothing else**: the text itself
+  without its RTF, or a file entry's path without its `public.file-url`. An image has none, so it gets no plain row, a
   plain-text default pastes it as it is, and ⌃⌘↵ on it falls back to ⌘↵ as on every other screen.
 - **Clipboard writes stamp a private `internalType` marker** so the poller skips Tinycast's own writes.
   If the writer and the poller ever disagree, the app re-captures its own pastes in a loop.
@@ -31,7 +31,9 @@ Improvements adopted from a Maccy comparison, and the deferred rich-text plan: [
   and file rows match on a SHA-256 of their `text`, images on one of their PNG, stored in the
   indexed `content_hash` column. The match is moved by the same rowid update `promote` uses, so its
   UUID, blob and recognized text survive; a pin keeps its stamp and place and only its timestamp
-  moves. Rows written before the column existed carry no hash and are never matched.
+  moves. Rows written before the column existed carry no hash and are never matched. Rich text
+  hashes its plain text, and the surfaced row's RTF sidecar follows the newest copy: replaced by
+  new RTF, deleted when the repeat had none.
 - A database that cannot be opened is deleted and recreated. That is sound because a history is
   captured rather than authored, and there is no UI for an unavailable clipboard — `QuicklinkStore`
   deliberately does the opposite. It is **not** a licence to treat the file as disposable: it lives in
@@ -39,7 +41,8 @@ Improvements adopted from a Maccy comparison, and the deferred rich-text plan: [
 - **A link or an address is derived from the text, never persisted.** `ClipboardItem.Kind` holds
   only what capture can tell apart on the pasteboard — `text`, `image`, `file` — so improving the
   *classifier* stays a code change rather than a database migration plus a backfill, while a new
-  kind needs a new pasteboard type to justify it. `textForm` is nil for anything but `.text`, which
+  kind needs a new pasteboard type to justify it. Rich text is still `.text`: its RTF is a
+  `rich_path` sidecar, never a kind. `textForm` is nil for anything but `.text`, which
   is what keeps a path shaped like `apple.com/report.pdf` out of the links.
 - **A `.file` entry references the file where it lies and never copies it.** Its absolute path is
   the `text` column, so the trigram index finds it by name or by folder for free, and `imagePath`
@@ -72,6 +75,11 @@ untouched.
 `com.apple.is-sensitive`, and the private markers 1Password, KeeWeb, TypeIt4Me and Peter Maurer's
 tools put on their own writes. The image branch takes PNG as it is and re-encodes TIFF, JPEG and
 HEIC to PNG through ImageIO off the main actor, so the history keeps one image format.
+
+**Rich text is RTF and only RTF, read beside a text copy.** `ClipboardManager.richText(on:)` takes
+`public.rtf` when the text branch records, and nothing else: HTML can name remote resources, and RTFD
+or a web archive carries whole attachments. RTF over `ClipboardStore.maxRichTextBytes` (2 MB) is
+dropped and the text recorded alone. Files, images and colours never look at it.
 
 **Text up to `maxTextLength` (1,000,000 characters) is kept whole**; a bigger copy is skipped
 rather than truncated, since a tail-less copy pastes wrong. `fitsTextLimit` refuses on the O(1)
@@ -147,6 +155,14 @@ place by `ALTER TABLE`; only a failure there falls back to recreating the file.
 
 Image copy uses Foundation’s `mappedIfSafe` hint before publishing the original PNG and marker.
 
+**An RTF sidecar is a `.rtf` file in `imagesDir`, named by the `rich_path` column.** The text row is
+inserted at once and the RTF written off the main actor, then landed with an image's checks plus a
+per-entry token, so a later copy of the same text outranks an earlier write still in flight. A
+losing write deletes its file. Living under `imagesDir` makes it owned, so `remove`, Clear History
+and retention delete it with the row — each reads both paths back from the delete itself — and disk
+usage counts it. FTS never sees it. A paste declares `.rtf` beside `.string`; a sidecar gone from
+disk pastes the text alone. Backups and imports carry no RTF, so a restored row is plain text.
+
 **A backup reads the whole table, not `items`.** `forEachStoredItem(inDatabaseAt:)` is `nonisolated`
 and opens a second connection, because the resident window stops at 1000 rows while the table is
 capped only by age — an export that read `items` would silently drop the rest of someone's history,
@@ -181,7 +197,8 @@ rather than deleting and re-inserting it, because a delete would take the row's 
 it; an update trigger moves the original-text FTS entry to the new rowid. The UUID and the image blob
 are untouched.
 
-Files under the store's own `imagesDir` are **owned**: pruned and deleted with their row. External
+Files under the store's own `imagesDir` are **owned**: pruned and deleted with their row, RTF
+sidecars included. External
 references — an image imported from another app's cache — are left on disk when the row goes. A
 retention cut can strand hundreds of files, so those deletions run off the main actor to keep
 capture-time pruning from hitching.

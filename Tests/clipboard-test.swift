@@ -43,6 +43,11 @@ struct ClipboardTests {
         diskUsageCountsTheDatabaseAndBlobs()
         try await imagesDedupeByContent()
         try await staleImagesLeaveNoTrace()
+        try await richTextIsAnOwnedSidecar()
+        try await richTextLeavesWithItsRow()
+        try await richTextFollowsTheNewestCopy()
+        try await staleRichTextLeavesNoTrace()
+        try await databasesWithoutTheSidecarColumnMigrate()
 
         print("\(passes)/\(passes + failures) passed")
         if failures > 0 { exit(1) }
@@ -875,6 +880,135 @@ struct ClipboardTests {
         let blobs = (try? FileManager.default.contentsOfDirectory(atPath: store.imagesDir.path)) ?? []
         expect(store.items.isEmpty, "neither stale image is inserted")
         expect(blobs.isEmpty, "and neither leaves a blob behind")
+    }
+
+    static let rtf = Data(#"{\rtf1\ansi{\fonttbl\f0 Helvetica;}\f0\b hello\b0 world}"#.utf8)
+    static let otherRTF = Data(#"{\rtf1\ansi{\fonttbl\f0 Times;}\f0\i hello\i0 world}"#.utf8)
+
+    /// RTF rides beside the text as a file under `imagesDir`, and search still reads the text.
+    static func richTextIsAnOwnedSidecar() async throws {
+        let dir = scratchDirectory()
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let store = ClipboardStore(directory: dir)
+        store.addText("hello world", richText: rtf, sourceBundleID: nil)
+        expect(store.items.count == 1 && store.items[0].kind == .text, "the row is text at once")
+        try await settle { store.items.first?.hasRichText == true }
+        let path = store.items.first?.richTextPath ?? ""
+        expect(path.hasPrefix(store.imagesDir.path + "/"), "the sidecar lives under imagesDir")
+        expect(FileManager.default.contents(atPath: path) == rtf, "and holds the copied RTF")
+        expect(store.search("hello world", filter: .all).count == 1, "FTS still finds the text")
+        expect(store.richTextURL(for: store.items[0])?.path == path, "the store resolves the sidecar")
+
+        let reopened = ClipboardStore(directory: dir)
+        reopened.load()
+        expect(reopened.items.first?.richTextPath == path, "the sidecar survives a relaunch")
+        reopened.remove(reopened.items[0])
+        expect(!FileManager.default.fileExists(atPath: path), "deleting the entry deletes it")
+        expect(rtfFiles(reopened).isEmpty, "and leaves no orphan")
+    }
+
+    /// Clear History and a retention cut take the sidecar with the row; a pin keeps its own.
+    static func richTextLeavesWithItsRow() async throws {
+        let dir = scratchDirectory()
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let store = ClipboardStore(directory: dir)
+        store.addText("pinned", richText: rtf, sourceBundleID: nil)
+        store.addText("cleared", richText: otherRTF, sourceBundleID: nil)
+        try await settle { store.items.allSatisfy(\.hasRichText) }
+        store.togglePinned(item(store, "pinned"))
+        let pinnedPath = item(store, "pinned").richTextPath ?? ""
+        store.clearAll()
+        try await settle { rtfFiles(store).count == 1 }
+        expect(rtfFiles(store).count == 1, "clearing deletes the unpinned sidecar")
+        expect(FileManager.default.fileExists(atPath: pinnedPath), "and keeps the pin's")
+
+        store.addText("expired", richText: otherRTF, sourceBundleID: nil)
+        try await settle { item(store, "expired").hasRichText }
+        // A negative age puts the cutoff in the future, so every unpinned row is past it.
+        store.maxAge = -60
+        store.enforceLimits()
+        try await settle { rtfFiles(store).count == 1 }
+        expect(texts(store) == ["pinned"], "retention takes the unpinned row")
+        expect(rtfFiles(store).count == 1, "and its sidecar with it")
+    }
+
+    /// A repeat keeps its row, and its sidecar always follows the newest copy.
+    static func richTextFollowsTheNewestCopy() async throws {
+        let dir = scratchDirectory()
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let store = ClipboardStore(directory: dir)
+        store.addText("doc", sourceBundleID: nil)
+        store.addText("other", sourceBundleID: nil)
+        store.addText("doc", richText: rtf, sourceBundleID: nil)
+        try await settle { item(store, "doc").hasRichText }
+        expect(texts(store) == ["doc", "other"], "a rich repeat surfaces the plain row")
+        expect(item(store, "doc").hasRichText, "and gives it the RTF")
+
+        store.addText("doc", richText: rtf, sourceBundleID: nil)
+        try await Task.sleep(for: .milliseconds(100))
+        expect(rtfFiles(store).count == 1, "identical RTF writes no second file")
+
+        store.addText("doc", richText: otherRTF, sourceBundleID: nil)
+        try await settle {
+            item(store, "doc").richTextPath.flatMap(FileManager.default.contents(atPath:)) == otherRTF
+        }
+        expect(rtfFiles(store).count == 1, "different RTF replaces the old file")
+
+        store.addText("other", sourceBundleID: nil)
+        store.addText("doc", sourceBundleID: nil)
+        expect(texts(store) == ["doc", "other"], "a plain repeat surfaces the rich row")
+        expect(!item(store, "doc").hasRichText, "and drops the RTF it no longer has")
+        expect(rtfFiles(store).isEmpty, "deleting the sidecar file")
+    }
+
+    /// A refused, cleared or deleted capture keeps no RTF; the text itself still lands.
+    static func staleRichTextLeavesNoTrace() async throws {
+        let dir = scratchDirectory()
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let store = ClipboardStore(directory: dir)
+        store.addText("refused", richText: rtf, sourceBundleID: nil) { false }
+        expect(texts(store) == ["refused"], "a refused RTF still records its text")
+        store.addText("cleared", richText: rtf, sourceBundleID: nil)
+        store.clearAll()
+        store.addText("deleted", richText: otherRTF, sourceBundleID: nil)
+        store.remove(item(store, "deleted"))
+        store.addText("superseded", richText: rtf, sourceBundleID: nil)
+        store.addText("superseded", sourceBundleID: nil)
+        try await Task.sleep(for: .milliseconds(300))
+        expect(texts(store) == ["superseded"], "only the live row remains")
+        expect(!item(store, "superseded").hasRichText, "a later plain copy outranks a pending RTF")
+        expect(rtfFiles(store).isEmpty, "and no stale write strands a file")
+    }
+
+    /// The previous batch's file has `content_hash` but no sidecar column; it opens in place.
+    static func databasesWithoutTheSidecarColumnMigrate() async throws {
+        let dir = scratchDirectory()
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let now = Date().timeIntervalSince1970
+        var db: OpaquePointer?
+        sqlite3_open(dir.appendingPathComponent("clipboard.sqlite3").path, &db)
+        sqlite3_exec(
+            db,
+            """
+            CREATE TABLE items(id TEXT NOT NULL UNIQUE, kind TEXT NOT NULL, text TEXT,
+              image_path TEXT, created_at REAL NOT NULL, source_app TEXT, pinned_at REAL,
+              content_hash TEXT);
+            INSERT INTO items VALUES('\(UUID())', 'text', 'kept row', NULL, \(now), NULL, NULL, NULL);
+            """, nil, nil, nil)
+        sqlite3_close(db)
+
+        let store = ClipboardStore(directory: dir)
+        store.load()
+        expect(texts(store) == ["kept row"], "the old row survives")
+        expect(!item(store, "kept row").hasRichText, "with no sidecar")
+        store.addText("new rich", richText: rtf, sourceBundleID: nil)
+        try await settle { item(store, "new rich").hasRichText }
+        expect(item(store, "new rich").hasRichText, "and the new column takes a sidecar")
+    }
+
+    static func rtfFiles(_ store: ClipboardStore) -> [String] {
+        ((try? FileManager.default.contentsOfDirectory(atPath: store.imagesDir.path)) ?? [])
+            .filter { $0.hasSuffix(".rtf") }
     }
 
     // MARK: - Harness

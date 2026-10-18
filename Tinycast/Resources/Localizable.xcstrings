@@ -716,7 +716,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@ 至 %@"
+            "value": "%@至 %@"
           }
         }
       }
@@ -23673,6 +23673,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "正在改写…"
+          }
+        }
+      }
+    },
+    "Rich Text": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "富文本"
           }
         }
       }

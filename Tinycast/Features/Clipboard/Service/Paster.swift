@@ -25,14 +25,24 @@ enum Paster {
         return true
     }
 
-    /// Paste only the item's text, so a file arrives as its path and the receiver's style applies.
+    /// Only `.string`: rich text drops its RTF, a file arrives as its path, the receiver styles it.
     @MainActor @discardableResult
     static func pastePlainText(
         _ item: ClipboardItem, store: ClipboardStore, previousApp: NSRunningApplication?
     ) -> Bool {
-        guard let text = item.plainText else { return false }
-        pasteString(text, previousApp: previousApp)
+        guard writePlainText(item) else { return false }
+        previousApp?.activate()
+        DispatchQueue.main.asyncAfter(deadline: .now() + activationDelay) {
+            postCommandV()
+        }
         store.promote(item)
+        return true
+    }
+
+    @MainActor @discardableResult
+    static func writePlainText(_ item: ClipboardItem, to pb: NSPasteboard = .general) -> Bool {
+        guard let text = item.plainText else { return false }
+        writeString(text, to: pb)
         return true
     }
 
@@ -88,8 +98,7 @@ enum Paster {
     }
 
     @MainActor
-    private static func writeString(_ text: String) {
-        let pb = NSPasteboard.general
+    private static func writeString(_ text: String, to pb: NSPasteboard = .general) {
         pb.clearContents()
         pb.declareTypes([.string, ClipboardManager.internalType], owner: nil)
         pb.setString(text, forType: .string)
@@ -118,8 +127,12 @@ enum Paster {
         switch item.kind {
         case .text:
             guard let text = item.text else { return false }
+            // A sidecar gone from disk still pastes its text rather than nothing.
+            let rich = store.richTextURL(for: item).flatMap { try? Data(contentsOf: $0) }
             pb.clearContents()
-            pb.declareTypes([.string, ClipboardManager.internalType], owner: nil)
+            pb.declareTypes(
+                (rich == nil ? [] : [.rtf]) + [.string, ClipboardManager.internalType], owner: nil)
+            if let rich { pb.setData(rich, forType: .rtf) }
             pb.setString(text, forType: .string)
         case .image:
             guard let url = store.imageURL(for: item),

@@ -293,6 +293,7 @@ enum ClipboardActionsMenu {
 
 extension ClipboardDefaultAction {
     func title(pastingInto target: PasteTarget?) -> String {
+        let title = Bundle.main.localizedString(forKey: self.title, value: nil, table: nil)
         guard let target, self != .copy else { return title }
         return String(localized: "\(title) to \(target.name)")
     }

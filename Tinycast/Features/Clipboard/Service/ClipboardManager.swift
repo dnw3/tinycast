@@ -211,7 +211,11 @@ final class ClipboardManager {
             !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         {
             guard Self.fitsTextLimit(text) else { return }
-            store.addText(text, sourceBundleID: sourceBundleID)
+            store.addText(
+                text, richText: Self.richText(on: pb), sourceBundleID: sourceBundleID
+            ) { [weak self] in
+                self?.accepts(sourceBundleID) == true
+            }
             return
         }
 
@@ -223,6 +227,15 @@ final class ClipboardManager {
                 await self?.recordCapture(png, sourceBundleID: sourceBundleID)
             }
         }
+    }
+
+    /// RTF only: HTML can pull remote resources, and RTFD or web archives carry whole attachments.
+    nonisolated static func richText(on pasteboard: NSPasteboard) -> Data? {
+        guard pasteboard.types?.contains(.rtf) == true,
+            let data = pasteboard.data(forType: .rtf), !data.isEmpty,
+            data.count <= ClipboardStore.maxRichTextBytes
+        else { return nil }
+        return data
     }
 
     /// `utf8.count` is O(1), so a giant copy is refused before any character walk begins.

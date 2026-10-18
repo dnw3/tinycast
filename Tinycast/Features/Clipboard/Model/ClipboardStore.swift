@@ -14,6 +14,8 @@ struct ClipboardItem: Identifiable, Hashable, Sendable {
     let text: String?
     /// Absolute path on disk; only files under `imagesDir` are ours to delete.
     let imagePath: String?
+    /// A `.text` entry's RTF sidecar under `imagesDir`; search and plain paste still use `text`.
+    let richTextPath: String?
     let createdAt: Date
     /// Bundle ID of the app frontmost when the copy was captured (see `ClipboardManager.poll`).
     let sourceBundleID: String?
@@ -21,6 +23,8 @@ struct ClipboardItem: Identifiable, Hashable, Sendable {
     let pinnedAt: Date?
 
     var isPinned: Bool { pinnedAt != nil }
+
+    var hasRichText: Bool { richTextPath != nil }
 
     /// The referenced path, so no call site re-derives a file entry's meaning from `text`.
     var filePath: String? { kind == .file ? text : nil }
@@ -58,12 +62,13 @@ struct ClipboardItem: Identifiable, Hashable, Sendable {
 
     init(
         id: UUID, kind: Kind, text: String?, imagePath: String?, createdAt: Date,
-        sourceBundleID: String?, pinnedAt: Date? = nil
+        sourceBundleID: String?, pinnedAt: Date? = nil, richTextPath: String? = nil
     ) {
         self.id = id
         self.kind = kind
         self.text = text
         self.imagePath = imagePath
+        self.richTextPath = richTextPath
         self.createdAt = createdAt
         self.sourceBundleID = sourceBundleID
         self.pinnedAt = pinnedAt
@@ -74,7 +79,13 @@ struct ClipboardItem: Identifiable, Hashable, Sendable {
         ClipboardItem(
             id: id, kind: kind, text: text, imagePath: imagePath,
             createdAt: createdAt ?? self.createdAt, sourceBundleID: sourceBundleID,
-            pinnedAt: pinnedAt)
+            pinnedAt: pinnedAt, richTextPath: richTextPath)
+    }
+
+    func with(richTextPath: String?) -> ClipboardItem {
+        ClipboardItem(
+            id: id, kind: kind, text: text, imagePath: imagePath, createdAt: createdAt,
+            sourceBundleID: sourceBundleID, pinnedAt: pinnedAt, richTextPath: richTextPath)
     }
 
     /// Case-insensitive substring match: how the store filters without FTS.
@@ -188,6 +199,8 @@ final class ClipboardStore {
     @ObservationIgnored private(set) var extractionGeneration = UUID()
     /// Bumped by a clear or a close, so an image written across one is discarded, not inserted.
     @ObservationIgnored private var historyGeneration = 0
+    /// The latest sidecar write per entry, so an earlier copy landing late cannot win.
+    @ObservationIgnored private var richTextWrites: [UUID: UUID] = [:]
     /// The only thing a view observes for search freshness; `items` cannot speak for OCR.
     private var searchRevision = 0
     @ObservationIgnored private(set) var textSearchEnabled = false
@@ -214,9 +227,17 @@ final class ClipboardStore {
     /// Characters the trigram index holds per row; a long copy is stored whole, found by its head.
     nonisolated static let indexedTextLength = 32_000
 
+    /// RTF past this is left out and the copy is kept as plain text.
+    nonisolated static let maxRichTextBytes = 2 * 1024 * 1024
+
+    /// The order `row` decodes; the sidecar is last so the OCR query can append its own column.
+    nonisolated private static let columns =
+        "id, kind, text, image_path, created_at, source_app, pinned_at, rich_path"
+
     nonisolated private static let insertSQL = """
-        INSERT INTO items(id, kind, text, image_path, created_at, source_app, pinned_at, content_hash)
-        VALUES(?,?,?,?,?,?,?,?)
+        INSERT INTO items(
+          id, kind, text, image_path, created_at, source_app, pinned_at, content_hash, rich_path)
+        VALUES(?,?,?,?,?,?,?,?,?)
         """
 
     /// A delete must name exactly what the insert indexed, so every trigger takes the same prefix.
@@ -246,7 +267,8 @@ final class ClipboardStore {
           created_at REAL NOT NULL,
           source_app TEXT,
           pinned_at REAL,
-          content_hash TEXT
+          content_hash TEXT,
+          rich_path TEXT
         );
         CREATE INDEX IF NOT EXISTS items_created_at ON items(created_at);
         CREATE INDEX IF NOT EXISTS items_pinned_at ON items(pinned_at) WHERE pinned_at IS NOT NULL;
@@ -338,6 +360,7 @@ final class ClipboardStore {
         setTextSearchEnabled(false)
         extractionGeneration = UUID()
         historyGeneration += 1
+        richTextWrites = [:]
         closeDatabase()
         items = []
     }
@@ -387,12 +410,96 @@ final class ClipboardStore {
         return sqlite3_step(stmt) == SQLITE_ROW ? sqlite3_column_int64(stmt, 0) : 0
     }
 
-    func addText(_ text: String, sourceBundleID: String?) {
-        if items.first?.kind == .text, items.first?.text == text { return }
-        let item = ClipboardItem(text: text, sourceBundleID: sourceBundleID)
-        let hash = Self.contentHash(of: item)
-        if let hash, surfaceDuplicate(hash) { return }
-        insert(item, hash: hash)
+    /// A repeat keeps its row and takes the newest copy's RTF, or loses a sidecar it no longer has.
+    func addText(
+        _ text: String, richText: Data? = nil, sourceBundleID: String?,
+        isWanted: @escaping @MainActor @Sendable () -> Bool = { true }
+    ) {
+        let entry: ClipboardItem
+        if let first = items.first, first.kind == .text, first.text == text {
+            entry = first
+        } else {
+            let item = ClipboardItem(text: text, sourceBundleID: sourceBundleID)
+            let hash = Self.contentHash(of: item)
+            if let hash, let existing = surfaceDuplicate(hash) {
+                entry = existing
+            } else {
+                insert(item, hash: hash)
+                entry = item
+            }
+        }
+        setRichText(richText, of: entry, isWanted: isWanted)
+    }
+
+    private func setRichText(
+        _ data: Data?, of item: ClipboardItem, isWanted: @escaping @MainActor @Sendable () -> Bool
+    ) {
+        guard let data else {
+            richTextWrites[item.id] = nil
+            if item.richTextPath != nil { attachRichText(nil, to: item.id) }
+            return
+        }
+        let token = UUID()
+        richTextWrites[item.id] = token
+        let url = imagesDir.appendingPathComponent(UUID().uuidString + ".rtf")
+        let previous = item.richTextPath
+        let generation = historyGeneration
+        Task.detached(priority: .utility) { [weak self] in
+            if let previous, (try? Data(contentsOf: URL(fileURLWithPath: previous))) == data {
+                await self?.finishRichTextWrite(token, for: item.id)
+                return
+            }
+            guard (try? data.write(to: url, options: .atomic)) != nil else { return }
+            guard let self else {
+                try? FileManager.default.removeItem(at: url)
+                return
+            }
+            await self.landRichText(
+                at: url, on: item.id, token: token, generation: generation, isWanted: isWanted)
+        }
+    }
+
+    private func finishRichTextWrite(_ token: UUID, for id: UUID) {
+        if richTextWrites[id] == token { richTextWrites[id] = nil }
+    }
+
+    /// The same staleness checks an image takes, and the sidecar is deleted when it loses.
+    private func landRichText(
+        at url: URL, on id: UUID, token: UUID, generation: Int, isWanted: @MainActor () -> Bool
+    ) {
+        let current = richTextWrites[id] == token
+        finishRichTextWrite(token, for: id)
+        let landed =
+            current && isWanted() && generation == historyGeneration && insertStmt != nil
+            && attachRichText(url.path, to: id)
+        if !landed { try? FileManager.default.removeItem(at: url) }
+    }
+
+    /// Points the row at `path` and deletes the sidecar it replaces; false when the row is gone.
+    @discardableResult
+    private func attachRichText(_ path: String?, to id: UUID) -> Bool {
+        guard let select = prepare("SELECT rich_path FROM items WHERE id = ?1") else { return false }
+        sqlite3_bind_text(select, 1, id.uuidString, -1, SQLITE_TRANSIENT)
+        let found = sqlite3_step(select) == SQLITE_ROW
+        let replaced = found ? Self.columnString(select, 0) : nil
+        sqlite3_finalize(select)
+        guard found, replaced != path,
+            let update = prepare("UPDATE items SET rich_path = ?2 WHERE id = ?1")
+        else { return found }
+        sqlite3_bind_text(update, 1, id.uuidString, -1, SQLITE_TRANSIENT)
+        if let path {
+            sqlite3_bind_text(update, 2, path, -1, SQLITE_TRANSIENT)
+        } else {
+            sqlite3_bind_null(update, 2)
+        }
+        let updated = sqlite3_step(update) == SQLITE_DONE
+        sqlite3_finalize(update)
+        guard updated else { return false }
+        if let index = items.firstIndex(where: { $0.id == id }) {
+            items[index] = items[index].with(richTextPath: path)
+        }
+        deleteOwned([replaced])
+        return true
     }
 
     /// One row per file. Batched, so a multi-file copy prunes once rather than once per file.
@@ -402,7 +509,7 @@ final class ClipboardStore {
         for path in paths {
             let item = ClipboardItem(filePath: path, sourceBundleID: sourceBundleID)
             let hash = Self.contentHash(of: item)
-            if let hash, surfaceDuplicate(hash) { continue }
+            if let hash, surfaceDuplicate(hash) != nil { continue }
             if let stmt = insertStmt { Self.bindAndInsert(stmt, item, hash: hash) }
             items.insert(item, at: 0)
         }
@@ -440,7 +547,7 @@ final class ClipboardStore {
         _ hash: String, generation: Int, isWanted: @MainActor () -> Bool
     ) -> Bool {
         guard isWanted(), generation == historyGeneration, insertStmt != nil else { return true }
-        return surfaceDuplicate(hash)
+        return surfaceDuplicate(hash) != nil
     }
 
     /// A blob with no row is never pruned, so a stale or duplicate write is deleted here.
@@ -456,18 +563,18 @@ final class ClipboardStore {
     }
 
     /// Moves an existing copy of the content to the top; a pin keeps its place and gains a stamp.
-    private func surfaceDuplicate(_ hash: String) -> Bool {
-        guard let stmt = duplicateStmt else { return false }
+    private func surfaceDuplicate(_ hash: String) -> ClipboardItem? {
+        guard let stmt = duplicateStmt else { return nil }
         sqlite3_bind_text(stmt, 1, hash, -1, SQLITE_TRANSIENT)
         let stored = sqlite3_step(stmt) == SQLITE_ROW ? Self.row(stmt) : nil
         sqlite3_reset(stmt)
         sqlite3_clear_bindings(stmt)
-        guard let stored else { return false }
+        guard let stored else { return nil }
         let existing = items.first { $0.id == stored.id } ?? stored
-        if items.first?.id != existing.id {
-            reinsert(existing.with(createdAt: Date(), pinnedAt: existing.pinnedAt))
-        }
-        return true
+        guard items.first?.id != existing.id else { return existing }
+        let surfaced = existing.with(createdAt: Date(), pinnedAt: existing.pinnedAt)
+        reinsert(surfaced)
+        return surfaced
     }
 
     /// Bulk-insert from an import: original timestamps, external image paths, deduped.
@@ -492,14 +599,19 @@ final class ClipboardStore {
 
     func remove(_ item: ClipboardItem) {
         textSearchMatches.removeAll { $0.id == item.id }
+        richTextWrites[item.id] = nil
+        // The row's own paths: a sidecar can land after the caller's copy of the item was taken.
+        var blobs = [item.imagePath, item.richTextPath]
         if let stmt = deleteByIDStmt {
             sqlite3_bind_text(stmt, 1, item.id.uuidString, -1, SQLITE_TRANSIENT)
-            sqlite3_step(stmt)
+            if sqlite3_step(stmt) == SQLITE_ROW {
+                blobs = [Self.columnString(stmt, 0), Self.columnString(stmt, 1)]
+            }
             sqlite3_reset(stmt)
             sqlite3_clear_bindings(stmt)
         }
         items.removeAll { $0.id == item.id }
-        deleteBlob(item)
+        deleteOwned(blobs)
     }
 
     /// A pin is a deliberate keep, so it outlives the bulk clear; `remove` is the way to drop one.
@@ -507,13 +619,17 @@ final class ClipboardStore {
         invalidateSearch()
         extractionGeneration = UUID()
         historyGeneration += 1
+        richTextWrites = [:]
         // RETURNING hands back the deleted blobs in the same pass, so no separate SELECT is needed.
         if db != nil,
-            let stmt = prepare("DELETE FROM items WHERE pinned_at IS NULL RETURNING image_path")
+            let stmt = prepare(
+                "DELETE FROM items WHERE pinned_at IS NULL RETURNING image_path, rich_path")
         {
             var orphaned: [String] = []
             while sqlite3_step(stmt) == SQLITE_ROW {
-                if let path = Self.columnString(stmt, 0), owns(path) { orphaned.append(path) }
+                for column in Int32(0)...1 {
+                    if let path = Self.columnString(stmt, column), owns(path) { orphaned.append(path) }
+                }
             }
             sqlite3_finalize(stmt)
             if !orphaned.isEmpty {
@@ -548,7 +664,7 @@ final class ClipboardStore {
         guard
             let stmt = prepare(
                 """
-                SELECT id, kind, text, image_path, created_at, source_app, pinned_at
+                SELECT \(Self.columns)
                 FROM items WHERE kind IN ('image', 'file')
                   AND id NOT IN (SELECT item_id FROM item_text)
                   AND id NOT IN (SELECT item_id FROM item_text_failures
@@ -616,6 +732,13 @@ final class ClipboardStore {
     func imageURL(for item: ClipboardItem) -> URL? {
         guard let path = item.imagePath else { return nil }
         return URL(filePath: path, directoryHint: .inferFromPath)
+    }
+
+    /// Read from the resident row, since the sidecar lands after the capture that made the item.
+    func richTextURL(for item: ClipboardItem) -> URL? {
+        let resident = items.first { $0.id == item.id } ?? item
+        guard let path = resident.richTextPath else { return nil }
+        return URL(filePath: path, directoryHint: .notDirectory)
     }
 
     func fileURL(for item: ClipboardItem) -> URL? {
@@ -762,7 +885,8 @@ final class ClipboardStore {
         sqlite3_progress_handler(db, 1000, { _ in Task.isCancelled ? 1 : 0 }, nil)
         let isShort = query.count < 3
         let kind = filter == .image ? "i.kind = 'image'" : filter == .file ? "i.kind = 'file'" : "1"
-        let columns = "i.id, i.kind, i.text, i.image_path, i.created_at, i.source_app, i.pinned_at"
+        let columns = "i.id, i.kind, i.text, i.image_path, i.created_at, i.source_app, i.pinned_at, "
+            + "i.rich_path"
         let sql =
             isShort
             ? """
@@ -800,7 +924,7 @@ final class ClipboardStore {
             guard let item = row(stmt) else { continue }
             if let residentIDs, !residentIDs.contains(item.id) { continue }
             if isShort || item.isPinned,
-                columnString(stmt, 7)?.localizedCaseInsensitiveContains(query) != true
+                columnString(stmt, 8)?.localizedCaseInsensitiveContains(query) != true
             {
                 continue
             }
@@ -859,7 +983,10 @@ final class ClipboardStore {
     }
 
     /// Rewrites the row under the same id so it leads; a delete would take its derived text too.
-    private func reinsert(_ updated: ClipboardItem) {
+    private func reinsert(_ stale: ClipboardItem) {
+        // A sidecar may have landed after the caller took its copy of the item.
+        let resident = items.first { $0.id == stale.id }
+        let updated = resident.map { stale.with(richTextPath: $0.richTextPath) } ?? stale
         if let stmt = prepare(
             """
             UPDATE items SET rowid = (SELECT COALESCE(MAX(rowid), 0) + 1 FROM items),
@@ -956,6 +1083,11 @@ final class ClipboardStore {
         } else {
             sqlite3_bind_null(stmt, 8)
         }
+        if let path = item.richTextPath {
+            sqlite3_bind_text(stmt, 9, path, -1, SQLITE_TRANSIENT)
+        } else {
+            sqlite3_bind_null(stmt, 9)
+        }
         sqlite3_step(stmt)
         sqlite3_reset(stmt)
         sqlite3_clear_bindings(stmt)
@@ -974,8 +1106,10 @@ final class ClipboardStore {
             var staleOwnedPaths: [String] = []
             while sqlite3_step(imagesStmt) == SQLITE_ROW {
                 // Only delete files we own; an external reference just loses its row.
-                if let path = Self.columnString(imagesStmt, 0), owns(path) {
-                    staleOwnedPaths.append(path)
+                for column in Int32(0)...1 {
+                    if let path = Self.columnString(imagesStmt, column), owns(path) {
+                        staleOwnedPaths.append(path)
+                    }
                 }
             }
             sqlite3_reset(imagesStmt)
@@ -1003,9 +1137,10 @@ final class ClipboardStore {
         }
     }
 
-    private func deleteBlob(_ item: ClipboardItem) {
-        guard let path = item.imagePath, owns(path) else { return }
-        try? FileManager.default.removeItem(atPath: path)
+    private func deleteOwned(_ paths: [String?]) {
+        for case let path? in paths where owns(path) {
+            try? FileManager.default.removeItem(atPath: path)
+        }
     }
 
     private func openDatabase() -> Bool {
@@ -1021,7 +1156,7 @@ final class ClipboardStore {
         // Two indexed branches, deliberately not one OR. See docs/features/clipboard.md#store.
         loadStmt = prepare(
             """
-            SELECT id, kind, text, image_path, created_at, source_app, pinned_at FROM (
+            SELECT \(Self.columns) FROM (
               SELECT rowid AS rid, * FROM items WHERE rowid >= ?1
               UNION ALL
               SELECT rowid AS rid, * FROM items WHERE pinned_at IS NOT NULL AND rowid < ?1
@@ -1031,24 +1166,26 @@ final class ClipboardStore {
             "SELECT rowid FROM items WHERE pinned_at IS NULL ORDER BY rowid DESC LIMIT 1 OFFSET ?")
         searchStmt = prepare(
             """
-            SELECT i.id, i.kind, i.text, i.image_path, i.created_at, i.source_app, i.pinned_at
+            SELECT i.id, i.kind, i.text, i.image_path, i.created_at, i.source_app, i.pinned_at,
+              i.rich_path
             FROM (
               SELECT rowid FROM items_fts WHERE items_fts MATCH ?
               ORDER BY rowid DESC LIMIT \(Self.searchLimit)
             ) f JOIN items i ON i.rowid = f.rowid ORDER BY f.rowid DESC
             """)
-        deleteByIDStmt = prepare("DELETE FROM items WHERE id = ?")
+        deleteByIDStmt = prepare("DELETE FROM items WHERE id = ? RETURNING image_path, rich_path")
         // Only ever sets a stamp: unpinning rewrites the whole row so it leads the history again.
         pinStmt = prepare("UPDATE items SET pinned_at = ? WHERE id = ?")
         staleImagesStmt = prepare(
             """
-            SELECT image_path FROM items
-            WHERE created_at < ? AND pinned_at IS NULL AND image_path IS NOT NULL
+            SELECT image_path, rich_path FROM items
+            WHERE created_at < ? AND pinned_at IS NULL
+              AND (image_path IS NOT NULL OR rich_path IS NOT NULL)
             """)
         deleteStaleStmt = prepare("DELETE FROM items WHERE created_at < ? AND pinned_at IS NULL")
         duplicateStmt = prepare(
             """
-            SELECT id, kind, text, image_path, created_at, source_app, pinned_at
+            SELECT \(Self.columns)
             FROM items WHERE content_hash = ? ORDER BY rowid DESC LIMIT 1
             """)
         return insertStmt != nil && loadStmt != nil && windowFloorStmt != nil && searchStmt != nil
@@ -1059,11 +1196,12 @@ final class ClipboardStore {
     /// Brings an older build's file forward; only a missing column is fatal, never the index.
     private func migrate() -> Bool {
         guard let db else { return false }
-        if !exists("SELECT 1 FROM pragma_table_info('items') WHERE name = 'content_hash'"),
-            sqlite3_exec(db, "ALTER TABLE items ADD COLUMN content_hash TEXT", nil, nil, nil)
-                != SQLITE_OK
-        {
-            return false
+        for column in ["content_hash", "rich_path"]
+        where !exists("SELECT 1 FROM pragma_table_info('items') WHERE name = '\(column)'") {
+            guard
+                sqlite3_exec(db, "ALTER TABLE items ADD COLUMN \(column) TEXT", nil, nil, nil)
+                    == SQLITE_OK
+            else { return false }
         }
         guard
             sqlite3_exec(
@@ -1192,10 +1330,7 @@ final class ClipboardStore {
         }
         defer { sqlite3_close_v2(db) }
         var stmt: OpaquePointer?
-        let sql = """
-            SELECT id, kind, text, image_path, created_at, source_app, pinned_at
-            FROM items ORDER BY rowid
-            """
+        let sql = "SELECT \(columns) FROM items ORDER BY rowid"
         guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK else { return }
         defer { sqlite3_finalize(stmt) }
         while sqlite3_step(stmt) == SQLITE_ROW {
@@ -1211,7 +1346,8 @@ final class ClipboardStore {
         return ClipboardItem(
             id: id, kind: kind, text: columnString(stmt, 2), imagePath: columnString(stmt, 3),
             createdAt: Date(timeIntervalSince1970: sqlite3_column_double(stmt, 4)),
-            sourceBundleID: columnString(stmt, 5), pinnedAt: columnDate(stmt, 6))
+            sourceBundleID: columnString(stmt, 5), pinnedAt: columnDate(stmt, 6),
+            richTextPath: columnString(stmt, 7))
     }
 
     nonisolated private static func columnDate(_ stmt: OpaquePointer?, _ index: Int32) -> Date? {

@@ -28,6 +28,8 @@ struct PasteboardTests {
         everyImageFlavourBecomesPNG()
         longTextFitsUnderTheCap()
         secretMarkersAreSkipped()
+        richTextIsReadOnlyWithinTheCap()
+        try await richEntriesPasteBothFlavours()
 
         print("\(passes)/\(passes + failures) passed")
         if failures > 0 { exit(1) }
@@ -430,6 +432,66 @@ struct PasteboardTests {
         ] {
             expect(ClipboardManager.sensitiveTypes.contains(.init(type)), "\(type) is never recorded")
         }
+    }
+
+    static let rtf = Data(#"{\rtf1\ansi{\fonttbl\f0 Helvetica;}\f0\b bold\b0 text}"#.utf8)
+
+    static func richTextIsReadOnlyWithinTheCap() {
+        let rich = board()
+        rich.declareTypes([.rtf, .string], owner: nil)
+        rich.setData(rtf, forType: .rtf)
+        rich.setString("bold text", forType: .string)
+        expect(ClipboardManager.richText(on: rich) == rtf, "RTF beside the text is read")
+
+        let plain = board()
+        plain.declareTypes([.string], owner: nil)
+        plain.setString("bold text", forType: .string)
+        expect(ClipboardManager.richText(on: plain) == nil, "plain text carries no RTF")
+
+        let html = board()
+        html.declareTypes([.html, .string], owner: nil)
+        html.setString("<b>bold</b>", forType: .html)
+        html.setString("bold", forType: .string)
+        expect(ClipboardManager.richText(on: html) == nil, "HTML is never taken for rich text")
+
+        let huge = board()
+        huge.declareTypes([.rtf, .string], owner: nil)
+        huge.setData(Data(count: ClipboardStore.maxRichTextBytes + 1), forType: .rtf)
+        huge.setString("huge", forType: .string)
+        expect(ClipboardManager.richText(on: huge) == nil, "oversized RTF is skipped")
+        expect(huge.string(forType: .string) == "huge", "while its text is still there to record")
+    }
+
+    /// Paste declares RTF and text together; Paste as Plain Text writes the text alone.
+    static func richEntriesPasteBothFlavours() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(
+            "rich-paste-\(UUID())")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = ClipboardStore(directory: directory)
+        store.addText("bold text", richText: rtf, sourceBundleID: nil)
+        let captured = store.items[0]
+        for _ in 0..<200 where store.items.first?.hasRichText != true {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+
+        let pasted = board()
+        expect(Paster.write(captured, store: store, to: pasted), "a rich entry writes")
+        let types = pasted.types ?? []
+        expect(types.contains(.rtf) && types.contains(.string), "as RTF and text together")
+        expect(types.contains(ClipboardManager.internalType), "stamped so it is not re-captured")
+        expect(pasted.data(forType: .rtf) == rtf, "carrying the stored RTF")
+        expect(pasted.string(forType: .string) == "bold text", "and the plain text beside it")
+
+        let plain = board()
+        expect(Paster.writePlainText(store.items[0], to: plain), "plain paste writes")
+        expect(!(plain.types ?? []).contains(.rtf), "without the RTF")
+        expect(plain.string(forType: .string) == "bold text", "only the text")
+
+        try? FileManager.default.removeItem(atPath: store.items[0].richTextPath ?? "")
+        let fallback = board()
+        expect(Paster.write(store.items[0], store: store, to: fallback), "a lost sidecar still pastes")
+        expect(fallback.types?.contains(.rtf) == false, "as text alone")
     }
 
     // MARK: - Harness
