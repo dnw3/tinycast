@@ -66,12 +66,12 @@ final class CaptureRecordingController {
 
         private var status: String {
             switch session.phase {
-            case .starting: "Starting"
+            case .starting: String(localized: "Starting…")
             case .recording: String(localized: "Recording")
-            case .pausing: "Pausing"
-            case .paused: "Paused"
-            case .stopping: "Finishing"
-            case .finished: "Recorded"
+            case .pausing: String(localized: "Pausing…")
+            case .paused: String(localized: "Paused")
+            case .stopping: String(localized: "Finishing…")
+            case .finished: String(localized: "Recorded")
             }
         }
 
@@ -86,7 +86,12 @@ final class CaptureRecordingController {
                             )
                             .clipShape(Circle()).accessibilityLabel(String(localized: "Live Camera Preview"))
                     }
-                    Text(status)
+                    if session.phase == .recording {
+                        SymbolImage(name: "circle.fill", size: metrics.scaled(Theme.Size.captureCompactGlyph))
+                            .foregroundStyle(Theme.Colors.destructive).accessibilityLabel(status)
+                    } else {
+                        Text(status)
+                    }
                     Text(Duration.seconds(session.elapsed).formatted(.time(pattern: .minuteSecond)))
                         .monospacedDigit()
                     Spacer()
@@ -129,8 +134,7 @@ final class CaptureRecordingController {
             }
             .font(metrics.typography.bar).padding(metrics.spacing.lg)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Theme.Colors.panelScrim).background(GlassEffectView())
-            .clipShape(RoundedRectangle(cornerRadius: metrics.radius.row))
+            .captureGlass(metrics)
         }
     }
 

@@ -22,7 +22,7 @@ final class CaptureVideoController: NSObject, NSWindowDelegate {
         window.title = String(localized: "Recording")
         window.isReleasedWhenClosed = false
         window.isRestorable = false
-        window.titlebarAppearsTransparent = true
+        CaptureChrome.adopt(window)
         window.contentMinSize = Theme.Size.captureEditorMinimum
         window.delegate = self
         let hosting = NSHostingController(

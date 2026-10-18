@@ -7,6 +7,7 @@ import SwiftUI
 final class TranslationPanelController: NSObject, NSWindowDelegate {
     private var panel: TranslationPanel?
     private weak var coordinator: TranslationCoordinator?
+    private let menu = TranslationMenuWindowController()
     private let logger = Logger(
         subsystem: Bundle.main.bundleIdentifier ?? "com.tinycast.app", category: "TranslationWindow")
     var isKey: Bool { panel?.isKeyWindow == true }
@@ -21,7 +22,11 @@ final class TranslationPanelController: NSObject, NSWindowDelegate {
         hosting.setFrameSize(metrics.size.translationMiniPanel)
         let panel = TranslationPanel(content: hosting)
         panel.delegate = self
-        panel.onClose = { [weak coordinator] in coordinator?.cancel() }
+        panel.onClose = { [weak coordinator] in
+            guard let coordinator else { return }
+            if coordinator.openMenu != nil { coordinator.closeMenu() } else { coordinator.cancel() }
+        }
+        panel.onMouseDown = { [weak coordinator] in coordinator?.panelMouseDown() }
         panel.onCopy = { [weak coordinator] in coordinator?.copy() }
         panel.onDeliver = { [weak coordinator] in coordinator?.deliver() }
         self.panel = panel
@@ -46,7 +51,20 @@ final class TranslationPanelController: NSObject, NSWindowDelegate {
         }
     }
 
+    func presentMenu(
+        _ kind: TranslationMenuKind, rows: Int, groups: Int, anchor: CGRect, coordinator: TranslationCoordinator,
+        metrics: InterfaceMetrics
+    ) {
+        guard let panel, panel.isVisible else { return }
+        menu.show(
+            kind, rows: rows, groups: groups, anchor: anchor, above: panel, coordinator: coordinator,
+            metrics: metrics)
+    }
+
+    func hideMenu() { menu.hide() }
+
     func dismiss() {
+        menu.hide()
         guard let closing = panel else { return }
         panel = nil
         coordinator = nil
@@ -54,6 +72,7 @@ final class TranslationPanelController: NSObject, NSWindowDelegate {
         closing.onClose = nil
         closing.onCopy = nil
         closing.onDeliver = nil
+        closing.onMouseDown = nil
         logger.info("Dismiss translation window")
         closing.fadeOut(duration: Theme.Duration.exit)
     }
@@ -67,6 +86,8 @@ final class TranslationPanelController: NSObject, NSWindowDelegate {
             topRight: CGPoint(x: panel.frame.maxX, y: panel.frame.maxY),
             visibleFrame: visible, margin: Theme.Size.translationScreenMargin)
         guard frame != panel.frame else { return }
+        // A child window follows the panel's origin, which moves as the panel grows downward.
+        coordinator?.closeMenu()
         if frame.width != panel.frame.width {
             logger.debug("Resize frame=\(String(describing: frame), privacy: .public)")
         }
@@ -96,6 +117,7 @@ final class TranslationPanel: NSPanel {
     var onClose: (() -> Void)?
     var onCopy: (() -> Void)?
     var onDeliver: (() -> Void)?
+    var onMouseDown: (() -> Void)?
 
     init(content: NSView) {
         super.init(
@@ -151,6 +173,7 @@ final class TranslationPanel: NSPanel {
     }
 
     override func sendEvent(_ event: NSEvent) {
+        if event.type == .leftMouseDown || event.type == .rightMouseDown { onMouseDown?() }
         if event.type == .keyDown, handleChord(event) { return }
         if event.type == .keyDown, Int(event.keyCode) == kVK_Escape,
             (firstResponder as? NSTextView)?.hasMarkedText() != true

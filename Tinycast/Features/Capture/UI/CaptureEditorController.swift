@@ -22,7 +22,7 @@ final class CaptureEditorController: NSObject, NSWindowDelegate {
         window.title = String(localized: "Capture")
         window.isReleasedWhenClosed = false
         window.isRestorable = false
-        window.titlebarAppearsTransparent = true
+        CaptureChrome.adopt(window)
         window.contentMinSize = CGSize(
             width: metrics.scaled(Theme.Size.captureEditorMinimum.width),
             height: metrics.scaled(Theme.Size.captureEditorMinimum.height))

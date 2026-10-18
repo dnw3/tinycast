@@ -62,8 +62,7 @@ final class CaptureCountdownController {
             }
             .font(metrics.typography.bar).padding(.horizontal, metrics.spacing.lg)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Theme.Colors.panelScrim).background(GlassEffectView())
-            .clipShape(RoundedRectangle(cornerRadius: metrics.radius.row))
+            .captureGlass(metrics)
         }
     }
 }

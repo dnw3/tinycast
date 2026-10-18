@@ -93,8 +93,8 @@ final class CaptureCompletionController {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel(String(localized: "Reopen capture, \(entry.title), \(entry.subtitle)"))
-            .help(String(localized: "Click to reopen · Drag to copy the final file"))
+            .accessibilityLabel(String(localized: "Reopen capture, \(entry.title), \(entry.displaySubtitle)"))
+            .tooltip(String(localized: "Click to reopen · Drag to copy the final file"))
             .onDrag { CaptureFileProvider.make(entry, repository: coordinator.repository) }
             .overlay(alignment: .topTrailing) {
                 CaptureIconButton(
@@ -102,8 +102,7 @@ final class CaptureCompletionController {
                 )
                 .padding(metrics.spacing.xxs)
             }
-            .background(Theme.Colors.panelScrim).background(GlassEffectView())
-            .clipShape(RoundedRectangle(cornerRadius: metrics.radius.row))
+            .captureGlass(metrics)
             .onHover(perform: onHover)
             .task {
                 let url = coordinator.repository.history.appendingPathComponent("\(entry.id)/thumbnail.png")

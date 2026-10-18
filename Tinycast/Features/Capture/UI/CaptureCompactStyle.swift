@@ -25,7 +25,7 @@ struct CaptureCompactStyle: View {
                             }
                         } label: {
                             Label(
-                                ink.rawValue.capitalized,
+                                LocalizedStringKey(ink.title),
                                 systemImage: state.ink == ink && state.color == nil ? "checkmark" : "circle")
                         }
                     }
@@ -136,9 +136,11 @@ struct CaptureCompactStyle: View {
                 }
                 if tool == .highlighter { CaptureHighlightControls(state: state) }
             } else if tool == .blur {
-                Button("Light Blur") { setStroke(4) }
-                Button("Medium Blur") { setStroke(8) }
-                Button("Strong Blur") { setStroke(12) }
+                Menu("Blur") {
+                    Button("Soft") { setStroke(4) }
+                    Button("Medium") { setStroke(8) }
+                    Button("Strong") { setStroke(12) }
+                }
             } else if tool == .magnifier {
                 ForEach([2.0, 4, 8], id: \.self) { scale in
                     Button("\(Int(scale))×") {

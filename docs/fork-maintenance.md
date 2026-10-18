@@ -50,6 +50,7 @@ Model import 纯度及严格签名检查通过。未重新执行截图、翻译�
 | Capture | 截图、长截图、编辑、贴图、OCR、录制、导出与历史；源码在 `Tinycast/Features/Capture/`，约束见 [Capture](features/capture.md) |
 | Translation | 独立翻译窗口、Apple / AI 引擎、划词及截图文本、受校验的回填；源码在 `Tinycast/Features/Translation/`，约束见 [Translation](features/translation.md) |
 | 共享接入 | `AppCore` 所有权、命令与热键、设置、剪贴板、`Platform/TextRecognition/` 和 `TextInjector`；同步时适配上游的新 API，保留双方行为 |
+| Disk Cleanup | 磁盘清理（部分改编自 Purge，MIT，见 `NOTICE.md`）；源码在 `Tinycast/Features/Cleanup/`，约束见 [Disk Cleanup](features/cleanup.md)。动过的上游文件：`AppCore`、`PaletteMode`、`PaletteScreen`、`RootPaletteView`、`UninstallScreen`、`UpdateReadiness`、`CommandID`、`CommandCatalog`、`LauncherCoordinator`、`SettingsTab`、`SettingsAnchor`、`SettingsSearchCatalog`、`SettingsDetailView`、`SettingsFileKey`、`SettingsFileSchema`、`AppSettingsKey`、`SettingsBackupCoverage`、`MenuBarItem`（低空间时的「释放空间」行）、`ToolRunner`（新增环境变量、工作目录、关闭 stdin 与取消终止）、`DialogController`（确认框的「取消」默认值改为本地化，由 `AppCore.confirm` 提供）。设置页的完全磁盘访问权限行是有意从 File Search 复制的 |
 | WebP | 用户批准的官方 libwebp 依赖及短生命周期 helper；版本、校验和、更新规则见 [Vendor/README.md](../Vendor/README.md) |
 
 Capture 仍有原生验收未关闭。以[交付状态](plans/capture-delivery-status.md)和
@@ -210,8 +211,11 @@ git push origin main
 
 ```sh
 git switch main && git pull --ff-only
+# 不注入版本号会构建成 project.yml 的 0.1.0，应用内更新随即提示用 Releases 覆盖本地构建。
+VERSION=$(git describe --tags --abbrev=0 --match 'v[0-9]*' | sed 's/^v//')
 xcodebuild -project Tinycast.xcodeproj -scheme Tinycast -configuration Release \
-  -derivedDataPath build/InstallRelease build
+  -derivedDataPath build/InstallRelease \
+  MARKETING_VERSION="$VERSION" CURRENT_PROJECT_VERSION="$(git rev-list --count HEAD)" build
 APP=build/InstallRelease/Build/Products/Release/Tinycast.app
 codesign --verify --deep --strict "$APP"
 # 两条输出的 designated requirement 必须一致，否则停下检查签名证书。

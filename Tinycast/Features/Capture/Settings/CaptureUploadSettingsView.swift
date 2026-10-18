@@ -24,16 +24,18 @@ struct CaptureUploadSettingsView: View {
                         TextField("Region", text: $destination.region, prompt: Text("auto"))
                         TextField("Folder prefix", text: $destination.prefix)
                         TextField("Access key ID", text: $destination.accessKey)
-                        SecureField("Secret access key", text: $credential.secret)
-                        SecureField("Session token (optional)", text: $credential.sessionToken)
+                        RevealableSecureField(title: String(localized: "Secret access key"), text: $credential.secret)
+                        RevealableSecureField(
+                            title: String(localized: "Session token (optional)"), text: $credential.sessionToken)
                         TextField(
                             "Public URL base (optional)", text: $destination.publicBase,
                             prompt: Text("https://…"))
                     } else if destination.kind == .imgbb {
-                        SecureField("API key", text: $credential.secret)
+                        RevealableSecureField(title: String(localized: "API key"), text: $credential.secret)
                     } else {
                         TextField("Desktop OAuth client ID", text: $destination.clientID)
-                        SecureField("Client secret (optional)", text: $credential.clientSecret)
+                        RevealableSecureField(
+                            title: String(localized: "Client secret (optional)"), text: $credential.clientSecret)
                     }
                 }.disabled(coordinator.uploadConnecting)
                 HStack {

@@ -21,6 +21,7 @@ struct SettingsDetailView: View {
             case .capture: CaptureSettingsView()
             case .translation: TranslationSettingsView()
             case .fileSearch: FileSearchSettingsView()
+            case .cleanup: CleanupSettingsView()
             case .notes: NotesSettingsView()
             case .snippets: SnippetsSettingsView()
             case .navigation: NavigationSettingsView()

@@ -157,6 +157,8 @@ If a change touches anything in the right column, the harness on the left is man
 | `custom-command-test` | Command storage and execution, editor drafts, argument identities and dynamic keyboard focus |
 | `custom-command-list-test` | Browser result snapshots, observation, row actions and empty-library messages |
 | `uninstall-test` | all five pure files in `Uninstall/Model/` |
+| `cleanup-test` | everything in `Cleanup/Model/`, and `Uninstall/Model/UninstallProtection.swift` |
+| `cleanup-walk-test` | `Cleanup/Model/`, every scanner and `CleanupRunner` in `Cleanup/Service/`, `CleanupSettingsStore`, `ToolRunner` and `ExecutableLocator` — against a scratch home |
 | `quicklink-test` | all of `Quicklinks/Model/`, plus editor drafts and placeholder selection |
 | `quicklink-coordinator-test` | Opening and requested arguments, launcher editing, current enabled-state preservation, deletion during editing and feature gates; no platform effects or on-screen focus checks |
 | `apple-shortcut-test` | all of `AppleShortcuts/Model/` — the `shortcuts list` parser and entry ids |
@@ -527,6 +529,27 @@ caches, TCC grants and login item, so this cannot disturb an installed copy.
 - Confirming moves items to the Trash and they are **recoverable from it**
 - Escaping mid-scan cancels promptly with no spinner left behind
 - Hiding and immediately restoring the screen never strands an in-flight file icon as a placeholder
+
+### Disk Cleanup
+
+- Clean Up Disk opens on Disk Overview; rows appear by category and sizes fill in without reordering
+- Without Full Disk Access no system privacy prompt appears; the access row's ↵ opens Privacy & Security
+- A running browser or Xcode locks its rows live, with the reason in the tooltip and the detail pane
+- → or ⌘I on a group opens its items; ← returns with the same group highlighted; checkboxes are tri-state
+- The confirmation splits deleted from trashed bytes; Esc changes nothing; trashed items can be put back
+- Launching Chrome while the confirmation is open skips its rows and reports why
+- Escaping mid-scan cancels it; leaving both cleanup screens and returning scans again
+- Quick Clean from the launcher and from a hotkey: the HUD cancels the scan; the dialog lists only safe bytes
+- Deletion › Move everything to the Trash makes the confirmation and the result say Trash only
+- ⌘K › Don't Scan This hides the row now and on the next scan; Settings lists and removes it
+- Disk Usage: → opens a folder, ← returns to the same row, sizes sort once they land, ⌃X asks first
+- Turning on automatic cleaning shows the confirmation; a due run waits for five idle minutes
+- Below the low-space threshold one HUD appears and the menu bar shows Free Up Space until room returns
+- Leftover macOS updates: the system password prompt appears once, Cancel removes nothing
+- A project folder disappears from the list while a terminal sits inside that project
+- An iCloud Drive download is evicted and still opens from Finder
+- An in-app update waits while a cleanup runs
+- The Dev build never lists `com.tinycast.app`'s caches
 
 ### Quicklinks
 

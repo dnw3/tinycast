@@ -2,6 +2,9 @@ import AppKit
 
 @MainActor
 enum CaptureSelectionLoupe {
+    /// Labels drawn over the screenshot stay dark in either appearance so any pixels behind them read.
+    static let labelFill = NSColor.black.withAlphaComponent(0.85)
+
     static func draw(
         image: CGImage, at point: CGPoint, bounds: CGRect,
         context: CGContext, metrics: InterfaceMetrics
@@ -19,7 +22,7 @@ enum CaptureSelectionLoupe {
             .font: font(metrics), .foregroundColor: NSColor.white
         ])
         let frame = frame(at: point, bounds: bounds, metrics: metrics)
-        NSColor.black.withAlphaComponent(0.85).setFill()
+        labelFill.setFill()
         NSBezierPath(roundedRect: frame, xRadius: metrics.radius.barControl,
             yRadius: metrics.radius.barControl).fill()
         let raster = CGRect(x: frame.minX + gap + (source.minX - area.minX) * cell,

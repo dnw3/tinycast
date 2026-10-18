@@ -191,6 +191,18 @@ final class LauncherCoordinator {
             paletteCoordinator.togglePalette(mode: .emoji)
         case .searchFiles:
             fileSearchCoordinator.show()
+        case .cleanUpDisk:
+            core.cleanupCoordinator.show()
+        case .quickClean:
+            core.cleanupCoordinator.quickClean()
+        case .analyzeDiskUsage:
+            core.diskUsageCoordinator.show()
+        case .rebuildThumbnails:
+            dismissPalette()
+            core.cleanupCoordinator.runMaintenance(.rebuildThumbnails)
+        case .restartDock:
+            dismissPalette()
+            core.cleanupCoordinator.runMaintenance(.restartDock)
         case .searchMenuItems:
             menuSearchCoordinator.show()
         case .switchWindows:

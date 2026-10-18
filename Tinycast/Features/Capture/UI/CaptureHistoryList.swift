@@ -26,20 +26,7 @@ struct CaptureHistoryList: View {
                                     title: entry.date.formatted(date: .abbreviated, time: .omitted),
                                     isFirst: index == 0)
                             }
-                            HStack(spacing: metrics.spacing.md) {
-                                Thumbnail(url: directory.appendingPathComponent("\(entry.id)/thumbnail.png"))
-                                    .frame(width: metrics.size.rowIcon, height: metrics.size.rowIcon)
-                                VStack(alignment: .leading, spacing: metrics.spacing.xs) {
-                                    Text(entry.title).font(metrics.typography.rowTitle)
-                                    Text(entry.subtitle)
-                                        .font(metrics.typography.bar).foregroundStyle(
-                                            Theme.Colors.textSecondary)
-                                }
-                                Spacer()
-                                Text(entry.date.formatted(date: .omitted, time: .shortened))
-                                    .font(metrics.typography.bar).foregroundStyle(Theme.Colors.textTertiary)
-                            }
-                            .padding(metrics.spacing.md)
+                            Row(entry: entry, directory: directory, selected: selection == index)
                             .selectionFrame(selection == index)
                             .contentShape(Rectangle())
                             .onTapGesture(count: 2) { onActivate(index) }
@@ -68,6 +55,39 @@ struct CaptureHistoryList: View {
         }
     }
 
+    private struct Row: View {
+        let entry: CaptureHistoryEntry
+        let directory: URL
+        let selected: Bool
+        @State private var hovered = false
+        @Environment(\.metrics) private var metrics
+
+        private var fill: Color {
+            if selected { return Theme.Colors.selection }
+            return hovered ? Theme.Colors.rowHover : .clear
+        }
+
+        var body: some View {
+            HStack(spacing: metrics.spacing.md) {
+                Thumbnail(url: directory.appendingPathComponent("\(entry.id)/thumbnail.png"))
+                    .frame(width: metrics.size.rowIcon, height: metrics.size.rowIcon)
+                    .clipShape(RoundedRectangle(cornerRadius: metrics.radius.thumbnail, style: .continuous))
+                VStack(alignment: .leading, spacing: metrics.spacing.xs) {
+                    Text(entry.title).font(metrics.typography.rowTitle)
+                    Text(entry.displaySubtitle)
+                        .font(metrics.typography.bar).foregroundStyle(Theme.Colors.textSecondary)
+                }
+                Spacer()
+                Text(entry.date.formatted(date: .omitted, time: .shortened))
+                    .font(metrics.typography.bar).foregroundStyle(Theme.Colors.textTertiary)
+            }
+            .padding(.horizontal, metrics.spacing.md)
+            .padding(.vertical, metrics.spacing.sm)
+            .background(RoundedRectangle(cornerRadius: metrics.radius.row, style: .continuous).fill(fill))
+            .armedHover($hovered)
+        }
+    }
+
     private struct Thumbnail: View {
         let url: URL
         @State private var image: NSImage?
@@ -82,5 +102,20 @@ struct CaptureHistoryList: View {
             }
             .task(id: url) { image = await ImageThumbnail.loadAsync(url, maxPixel: 96) }
         }
+    }
+}
+
+extension CaptureHistoryEntry {
+    /// `subtitle` stays the model's English fact; this is the same line in the reader's language.
+    var displaySubtitle: String {
+        if let animationDuration {
+            return "GIF · \(Duration.seconds(animationDuration).formatted(.time(pattern: .minuteSecond)))"
+        }
+        if let videoDuration {
+            let time = Duration.seconds(videoDuration).formatted(.time(pattern: .minuteSecond))
+            return draft ? String(localized: "Video draft · \(time)") : String(localized: "Video · \(time)")
+        }
+        if draft { return String(localized: "Editable draft") }
+        return editable ? String(localized: "Editable original") : String(localized: "Flattened image")
     }
 }

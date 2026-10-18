@@ -9,55 +9,49 @@ struct CaptureVideoTimelineView: View {
     @State private var holdDuration = 1.0
 
     var body: some View {
-        DisclosureGroup("Cut and Freeze") {
-            VStack(alignment: .leading, spacing: metrics.spacing.sm) {
-                Text(
-                    "Times refer to the original recording. Changes outside the trimmed range are kept for later."
-                )
-                .foregroundStyle(Theme.Colors.textSecondary)
-                HStack(spacing: metrics.spacing.md) {
-                    seconds(String(localized: "Cut From"), value: $cutStart)
-                    seconds(String(localized: "To"), value: $cutEnd)
-                    CaptureIconButton(title: String(localized: "Remove Interval"), symbol: "scissors") {
-                        state.change { $0.cuts.append(.init(start: cutStart, end: cutEnd)) }
-                    }
-                    Spacer()
-                    seconds(String(localized: "Freeze At"), value: $holdPosition)
-                    seconds(String(localized: "For"), value: $holdDuration)
-                    CaptureIconButton(title: String(localized: "Add Freeze Frame"), symbol: "snowflake") {
-                        state.change {
-                            $0.holds.append(.init(position: holdPosition, duration: holdDuration))
-                        }
+        VStack(alignment: .leading, spacing: metrics.spacing.sm) {
+            HStack(spacing: metrics.spacing.md) {
+                seconds(String(localized: "Cut From"), value: $cutStart)
+                seconds(String(localized: "To"), value: $cutEnd)
+                CaptureIconButton(title: String(localized: "Remove Interval"), symbol: "scissors") {
+                    state.change { $0.cuts.append(.init(start: cutStart, end: cutEnd)) }
+                }
+                Spacer()
+                seconds(String(localized: "Freeze At"), value: $holdPosition)
+                seconds(String(localized: "For"), value: $holdDuration)
+                CaptureIconButton(title: String(localized: "Add Freeze Frame"), symbol: "snowflake") {
+                    state.change {
+                        $0.holds.append(.init(position: holdPosition, duration: holdDuration))
                     }
                 }
-                if !state.edit.cuts.isEmpty || !state.edit.holds.isEmpty {
-                    ScrollView {
-                        VStack(alignment: .leading, spacing: metrics.spacing.xs) {
-                            ForEach(state.edit.cuts.indices, id: \.self) { index in
-                                let range = state.edit.cuts[index]
-                                row(
-                                    String(
-                                        localized: "Cut \(range.start.formatted())–\(range.end.formatted()) s"
-                                    )
-                                ) {
-                                    state.change { $0.cuts.remove(at: index) }
-                                }
-                            }
-                            ForEach(state.edit.holds.indices, id: \.self) { index in
-                                let hold = state.edit.holds[index]
-                                row(
-                                    String(
-                                        localized:
-                                            "Freeze \(hold.position.formatted()) s for \(hold.duration.formatted()) s"
-                                    )
-                                ) {
-                                    state.change { $0.holds.remove(at: index) }
-                                }
+            }
+            if !state.edit.cuts.isEmpty || !state.edit.holds.isEmpty {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: metrics.spacing.xs) {
+                        ForEach(state.edit.cuts.indices, id: \.self) { index in
+                            let range = state.edit.cuts[index]
+                            row(
+                                String(
+                                    localized: "Cut \(range.start.formatted())–\(range.end.formatted()) s"
+                                )
+                            ) {
+                                state.change { $0.cuts.remove(at: index) }
                             }
                         }
-                    }.frame(maxHeight: metrics.scaled(100))
-                }
-            }.padding(.top, metrics.spacing.sm)
+                        ForEach(state.edit.holds.indices, id: \.self) { index in
+                            let hold = state.edit.holds[index]
+                            row(
+                                String(
+                                    localized:
+                                        "Freeze \(hold.position.formatted()) s for \(hold.duration.formatted()) s"
+                                )
+                            ) {
+                                state.change { $0.holds.remove(at: index) }
+                            }
+                        }
+                    }
+                }.frame(maxHeight: metrics.scaled(100))
+            }
         }
     }
 
@@ -65,7 +59,7 @@ struct CaptureVideoTimelineView: View {
         HStack(spacing: metrics.spacing.xs) {
             Text(title)
             TextField(title, value: value, format: .number.precision(.fractionLength(0...3)))
-                .textFieldStyle(.roundedBorder).frame(width: metrics.scaled(68))
+                .captureField(metrics).frame(width: metrics.scaled(68))
                 .accessibilityLabel(title)
         }
     }

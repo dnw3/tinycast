@@ -23,6 +23,11 @@ struct MenuBarMenu: View {
                 AppCore.shared.paletteCoordinator.showPalette(mode: .clipboard)
             }
         }
+        if let available = AppCore.shared.cleanupSchedule.lowSpaceAvailable {
+            Button("Free Up Space… \(available.formatted(.byteCount(style: .file))) left") {
+                AppCore.shared.cleanupCoordinator.show()
+            }
+        }
         if AppCore.shared.captureCoordinator.recording != nil {
             Button("Stop Recording") { AppCore.shared.captureCoordinator.finishRecording() }
         }

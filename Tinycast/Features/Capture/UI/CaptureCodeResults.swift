@@ -30,10 +30,7 @@ struct CaptureCodeResults: View {
                     state.codes = []
                 }
             }
-            .padding(metrics.spacing.sm)
-            .background(
-                Theme.Colors.panelScrim,
-                in: RoundedRectangle(cornerRadius: metrics.radius.row, style: .continuous))
+            .captureCard(metrics)
         }
     }
 }

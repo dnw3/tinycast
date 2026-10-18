@@ -217,7 +217,8 @@ A `PaletteMode` case like Clipboard and Calculator History, so the back chevron,
 bare-backspace exit, arrow nav and the menu-open input freeze all come from the shared contract (see
 [palette.md](palette.md)). It does **not** join the Tab cycle. The search field filters candidates by
 name or location; there is no sort control, and the footer's leading corner keeps the standard menu
-circle. The primary pill is the one rendered in `Theme.Colors.destructive`.
+circle. The primary pill renders in `Theme.Colors.destructive`, through
+`isPrimaryActionDestructive(at:)`.
 
 ↵ uninstalls, ⌘↵ toggles the highlighted row, clicking the checkbox toggles, double-clicking a row
 toggles. ⌘K carries Uninstall, Select/Unselect File, Copy Path, Show in Finder and Show Info in

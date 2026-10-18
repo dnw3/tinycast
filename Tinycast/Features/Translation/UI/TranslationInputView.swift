@@ -7,6 +7,7 @@ struct TranslationInputView: NSViewRepresentable {
     let onChange: (String, Bool) -> Void
     let onSubmit: () -> Void
     var onSelection: ((String) -> Void)?
+    var onFocusChange: ((Bool) -> Void)?
 
     func makeNSView(context: Context) -> NSScrollView {
         let scroll = NSScrollView()
@@ -42,6 +43,7 @@ struct TranslationInputView: NSViewRepresentable {
         editor.onChange = onChange
         editor.onSubmit = onSubmit
         editor.onSelection = onSelection
+        editor.onFocusChange = onFocusChange
         editor.font = metrics.typography.bodyNSFont
         editor.textColor = NSColor(Theme.Colors.textPrimary)
         editor.insertionPointColor = NSColor(Theme.Colors.textPrimary)

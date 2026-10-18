@@ -59,6 +59,11 @@ Before selection, Close/Cancel shares the bottom toolbar surface. After selectio
 use a side column exactly one button plus the shared padding wide. Scrolling, recording and target selection
 keep Close/Cancel in their bottom toolbar. Toolbar placement prefers space outside both the selection and
 the annotation bar, including narrow regions.
+Bars hold only icons and the commit action, so their width stays put as the state changes: instructions
+such as Preparing image…, Click a window or Add below ↵ sit in a notice under the bar. Start Recording and
+Start Scrolling read like the palette's primary pill, text plus ↵, and ↵ runs the same action. Every bar is
+`CaptureChrome.barShape` padded by `xs`, with tools in the concentric `toolShape`; notices and review cards
+take the HUD's scrim and glass because they sit on arbitrary screenshots.
 Before and while dragging a new region, a pointer loupe shows original pixels, sRGB HEX and top-left pixel coordinates.
 It hides over controls and after completing selection and never writes the clipboard.
 

@@ -17,6 +17,8 @@ struct UninstallScreen: PaletteScreen {
 
     var primaryActionTitle: String { "Uninstall Application" }
 
+    func isPrimaryActionDestructive(at selection: Int) -> Bool { true }
+
     /// Stands in for the section headers the other lists use.
     private var summary: String {
         let total = session.plan?.removableIDs.count ?? 0

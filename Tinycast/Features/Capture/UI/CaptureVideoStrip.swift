@@ -93,7 +93,7 @@ struct CaptureVideoStrip: View {
 
     private func handle(start: Bool, width: CGFloat, height: CGFloat) -> some View {
         let value = start ? state.edit.start : state.edit.end
-        return RoundedRectangle(cornerRadius: metrics.spacing.xxs).fill(Color.accentColor)
+        return RoundedRectangle(cornerRadius: metrics.spacing.xxs, style: .continuous).fill(Color.accentColor)
             .frame(width: metrics.scaled(Theme.Size.captureHandle), height: height)
             .frame(width: metrics.scaled(Theme.Size.captureTool)).contentShape(Rectangle())
             .position(
@@ -139,7 +139,7 @@ struct CaptureVideoStrip: View {
         HStack(spacing: metrics.spacing.xs) {
             Text(title)
             TextField(title, value: value, format: .number.precision(.fractionLength(0...3)))
-                .textFieldStyle(.roundedBorder).frame(width: metrics.scaled(Theme.Size.capturePropertyField))
+                .captureField(metrics).frame(width: metrics.scaled(Theme.Size.capturePropertyField))
                 .accessibilityLabel(title)
         }
     }

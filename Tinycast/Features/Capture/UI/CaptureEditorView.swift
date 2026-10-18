@@ -63,10 +63,11 @@ struct CaptureEditorView: View {
                         CaptureUploadMenu()
                         Button("Capture History") { coordinator.open(.captureHistory) }
                     } label: {
-                        SymbolImage(name: "ellipsis", size: metrics.size.rowIcon)
+                        CaptureToolbarGlyph(symbol: "ellipsis")
                     }
-                    .menuStyle(.borderlessButton).fixedSize()
-                    .accessibilityLabel(String(localized: "More")).disabled(state.busy)
+                    .menuStyle(CaptureToolbarMenuStyle()).fixedSize()
+                    .accessibilityLabel(String(localized: "More Actions")).tooltip(String(localized: "More Actions"))
+                    .disabled(state.busy)
                 }
                 CaptureCanvas(state: state).id(state.document.id)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -83,16 +84,20 @@ struct CaptureEditorView: View {
                             "\(Int(state.document.outputBounds.width)) × \(Int(state.document.outputBounds.height))"
                         )
                         .foregroundStyle(Theme.Colors.textSecondary).monospacedDigit()
-                        Menu("\(Int(state.zoom * 100))%") {
+                        CaptureValueMenu(
+                            title: String(localized: "Zoom"), value: "\(Int(state.zoom * 100))%"
+                        ) {
                             Button("Default Fit") { state.fit() }
                             Button("Entire Image") { state.fit(.window) }
                             ForEach([0.25, 0.5, 1, 2, 4], id: \.self) { zoom in
                                 Button("\(Int(zoom * 100))%") { state.setZoom(zoom) }
                             }
-                        }.fixedSize()
+                        }
                         if state.busy {
                             ProgressView().controlSize(.small)
-                            Button("Cancel") { coordinator.cancelWork() }
+                            CaptureIconButton(title: String(localized: "Cancel"), symbol: "xmark") {
+                                coordinator.cancelWork()
+                            }
                         }
                     }
                     .fixedSize()
@@ -123,8 +128,7 @@ struct CaptureEditorView: View {
             .padding(metrics.spacing.xl)
             .font(metrics.typography.rowTitle)
             .foregroundStyle(Theme.Colors.textPrimary)
-            .background(Theme.Colors.panelScrim)
-            .background(GlassEffectView())
+            .captureWindowSurface()
             .environment(\.metrics, metrics)
         }
     }

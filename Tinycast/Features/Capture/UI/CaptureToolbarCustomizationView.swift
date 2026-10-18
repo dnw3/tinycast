@@ -13,13 +13,19 @@ struct CaptureToolbarCustomizationView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: metrics.spacing.xl) {
+            Text("Customize Capture Toolbar").font(metrics.typography.panelTitle)
             preview(actions: false)
             preview(actions: true)
-            Picker("Toolbar", selection: $actions) {
-                Text("Annotations").tag(false)
-                Text("Capture and Output").tag(true)
-            }.pickerStyle(.segmented)
-            TextField("Search tools or shortcuts", text: $query).textFieldStyle(.roundedBorder)
+            SteadySegmentedPicker(
+                title: String(localized: "Toolbar"),
+                options: [
+                    .init(value: false, title: String(localized: "Annotations")),
+                    .init(value: true, title: String(localized: "Capture and Output"))
+                ],
+                selection: $actions
+            )
+            .fixedSize()
+            SettingsFilterField(prompt: String(localized: "Search tools or shortcuts"), query: $query)
                 .accessibilityLabel(String(localized: "Search Tools"))
             List(selection: $selection) {
                 ForEach(group.filter { $0.matches(query) }, id: \.self) { item in
@@ -31,7 +37,7 @@ struct CaptureToolbarCustomizationView: View {
                     guard query.isEmpty else { return }
                     store.reorderToolbar(actions: actions, from: offsets, to: destination)
                 }
-            }.listStyle(.inset)
+            }.listStyle(.inset).scrollContentBackground(.hidden)
             Text(
                 query.isEmpty
                     ? String(localized: "Drag rows to reorder. Checked tools appear in the toolbar.")
@@ -40,10 +46,12 @@ struct CaptureToolbarCustomizationView: View {
             .font(metrics.typography.bar).foregroundStyle(Theme.Colors.textSecondary)
             HStack {
                 Button("Reset Toolbar") { store.resetToolbar() }
+                    .buttonStyle(.modalAction(.standard, fillsWidth: false))
                 Spacer()
                 Button("Done") {
                     coordinator.toolbarCustomization.close(); _ = coordinator.overlay.focusExisting()
                 }
+                .buttonStyle(.modalAction(.primary, fillsWidth: false))
                 .keyboardShortcut(.defaultAction)
             }
         }
@@ -54,6 +62,7 @@ struct CaptureToolbarCustomizationView: View {
         .onChange(of: query) { selection.removeAll() }
         .padding(metrics.spacing.xl)
         .foregroundStyle(Theme.Colors.textPrimary)
+        .captureWindowSurface()
     }
 
     private func preview(actions: Bool) -> some View {

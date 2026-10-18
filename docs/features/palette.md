@@ -77,6 +77,11 @@ palette indexes into it. Adding a mode means adding a conformer, not a branch in
 A chord aimed at the selected row — ⌃X, ⇧⌘F, ⌘Y and the rest — follows the same rule:
 `PaletteShortcut` recognises the key and carries its compact-bar and open-menu guards, and the screen
 answers through `perform(_:at:)`, so a new chord never adds a cast to the shell.
+The footer pill follows the same rule: `isPrimaryActionDestructive(at:)` tints it
+`Theme.Colors.destructive` per row, so a screen whose access hint opens Settings keeps that row white.
+`navigateHorizontally(_:at:)` lets a nested screen take →/← to enter and leave a level, but only while
+the query is empty, the bar is expanded, no argument field has focus and no menu or control list is
+open, so the caret never loses those keys while there is text to move through.
 
 Where a reset leaves the highlight is the screen's to say too. Every reset — an open, a new query, a
 new filter — goes through `RootPaletteView.land()`, which reads `landingSelection`, so handlers that
@@ -99,6 +104,9 @@ every screen but two: the clipboard lands past its pins
 | `.customCommands` | `CustomCommandListScreen` | `CustomCommandList` + script preview (see [custom-commands.md](custom-commands.md#launcher-integration)) |
 | `.meetingDetails`    | `MeetingDetailsScreen`    | `MeetingDetailsView` (see [calendar.md](calendar.md#the-details-page))           |
 | `.uninstall`         | `UninstallScreen`         | `UninstallList` (see [uninstall.md](uninstall.md))                               |
+| `.cleanup`           | `CleanupScreen(.root)`    | `CleanupList` + `CleanupDetail` (see [cleanup.md](cleanup.md#the-screens))       |
+| `.cleanupGroup`      | `CleanupScreen(.group)`   | `CleanupList` + `CleanupDetail`, pushed from a group row                         |
+| `.diskUsage`         | `DiskUsageScreen`         | `DiskUsageList` + `DiskUsageDetail`; each folder opened is another frame (see [cleanup.md](cleanup.md#disk-usage)) |
 | `.quicklinks`        | `QuicklinkListScreen`     | `QuicklinkList` + preview (see [quicklinks.md](quicklinks.md#search-quicklinks)) |
 | `.quicklinkEditor`   | `QuicklinkEditorScreen`   | `QuicklinkEditorView` (see [quicklinks.md](quicklinks.md#launcher-editor)) |
 | `.snippets`          | `SnippetsScreen`          | `SnippetsList` + preview (see [snippets.md](snippets.md#search-snippets))        |

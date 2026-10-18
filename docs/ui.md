@@ -162,7 +162,7 @@ panel, the shortcut-recorder callout and the Notes switcher, and `menuRow` is de
 
 `panelWidth 750` · `panelHeight 475` · `headerHeight 44` · `bottomBarHeight 52` · `barButtonHeight 28` ·
 `rowIcon 24` · `resultRowIcon 26` · `keyCap 18` · `recorderKeyCap 16` · `menuButton 36` ·
-`clipboardListWidth 290` ·
+`clipboardListWidth 290` · `storageBarHeight 8` ·
 `menuWidth 276` · `clipboardFilterMenuWidth 200` · `fileSearchFilterMenuWidth 200` ·
 `emojiCategoryMenuWidth 220` · `menuIcon 20` ·
 `emojiGridInset 16` ·
@@ -198,7 +198,8 @@ segment's label once a segmented control has settled.
 System text styles only — **no fixed point sizes in views**. Two named exceptions are explicit:
 `searchField` (20pt Regular) and the optical SF Symbol treatment `menuSymbol` (14pt Medium). Use
 `rowTitle` (`.body`), `sectionHeader` (`.subheadline.medium`),
-`rowTrailing`/`bar`/`menuRow`/`keyCap` etc. as named.
+`rowTrailing`/`bar`/`menuRow`/`keyCap` etc. as named. `readout` (`.largeTitle.semibold`) is a detail
+pane's headline figure — Disk Cleanup's sizes and reclaimable total.
 
 `InterfaceMetrics.Typography` scales a style by rebuilding its `NSFont` **from that font's own
 descriptor** at the scaled point size. Never reconstruct one as `.system(size:weight:)` from a
@@ -374,6 +375,49 @@ with its header's chevron.
 
 ---
 
+## Translation panel
+
+Source: `Features/Translation/UI/`.
+
+Translation is a Notes sibling: a borderless, non-activating `.floating` panel with the panel recipe —
+`panelScrim` → `GlassEffectView()` → one continuous **`panel`** clip — so it rounds like Notes and the
+palette. Its pin, expand and close controls are compact `BarButton`s in a `frosted(in: Capsule())`, the
+Notes title-bar capsule restated locally because `NoteTitlebarActions` is private. Engine and language
+pickers are `HeaderMenuButton`s; the source field wears `formFieldChrome(focused:)`.
+
+A non-activating panel never shows `.help`, so every hint is a `.tooltip`, and shortcuts appear only
+there, as `Name  ⇧⌘C` — never in a button or in body text. `PopoverMenu` needs `PaletteState`, so
+`TranslationMenu` is its own child panel whose rows copy `PopoverMenuRow`; it closes on any click in
+the panel, on Escape (before the panel does), on resign-key and on resize. The footer speaks only when
+the user can act on it: missing Accessibility, a secure field, or a selection that cannot be replaced.
+
+---
+
+## Capture bars
+
+Source: `Features/Capture/UI/CaptureToolbar*.swift`, `CaptureActionButton.swift`.
+
+Every bar over a capture is icons only. A tool is a `CaptureIconButton`, a menu is
+`CaptureToolbarMenuStyle` + `CaptureToolbarGlyph`, and a setting is a `CaptureValueMenu` (or
+`CapturePickerMenu`) labelled by its current value — `1×`, `MP4`, `68%` — and named in its tooltip.
+Start Recording is a red `record.circle.fill`, Start Scrolling a filled play glyph, each with `↵` in its
+tooltip. Prompts such as "Click a window" never replace icons; they sit in the notice below the bar, so
+the bar's width never jumps. Hints are `.tooltip`, never `.help`.
+
+`CaptureChrome` keeps the shapes concentric: the bar is `radius.row` with an `xs` inset, and a tool
+inside it is `radius.row - spacing.xs`, derived rather than tokenised so the two cannot drift. Four
+finishes cover every surface: `captureBar` (frosted), `captureCard` (scrim + glass, for cards over a
+screenshot), `captureNotice` (scrim + glass capsule) and `captureField` (`cardFill` + hairline
+`border`). The selection's size label and the colour loupe share `CaptureSelectionLoupe`'s dark fill,
+since both sit over arbitrary pixels in either appearance.
+
+The capture windows — editor, recording, history preview and toolbar customization — take
+`AppWindowController`'s app-window recipe through `CaptureChrome.adopt`: full-size content under a
+transparent bar with the system title hidden, so the view draws its own title once. Their glass is
+`captureWindowSurface()`, which runs up under the bar; every other capture glass is `captureGlass`.
+
+---
+
 ## The edge dissolve
 
 Source: `DesignSystem/Scrolling/EdgeDissolve.swift`.
@@ -415,14 +459,14 @@ or pass `includingTop: true` for a bounded popup whose title and rows scroll tog
 ## Rows, selection, hover
 
 Source: `Launcher/UI/LauncherList.swift`, `Clipboard/UI/ClipboardView.swift`,
-`FileSearch/UI/FileSearchList.swift`, `Uninstall/UI/UninstallView.swift`.
+`FileSearch/UI/FileSearchList.swift`, `Uninstall/UI/UninstallView.swift`, `Cleanup/UI/CleanupList.swift`.
 
 All lists share one row grammar so launcher and clipboard look identical:
 
 - `HStack(spacing: lg)`: leading 26pt icon/thumbnail, title (`.body`, `lineLimit(1)`), optional trailing keycaps/kind label, `Spacer`. Insets: `.horizontal md`, `.vertical sm`.
 - **The palette result slot is always `Theme.Size.resultRowIcon`, whatever fills it.** A glyph smaller than an app icon — the uninstall list's 16pt checkbox — is centred _inside_ that 26pt slot rather than sizing the slot to itself. Every list then starts its title at the same x, so switching palette modes doesn't jog the column sideways. The slot doubles as the hit target. Settings and compact favorites keep the existing 24pt `rowIcon`.
 - Clipboard thumbnails use `IconCache.appIconExtent` within that slot; synthetic row symbols use the same app-icon-shaped tile as the launcher.
-- Background is a `RoundedRectangle(row, .continuous)` filled by `fill`: **selection → hover → clear**, in that precedence. This `fill` computed property is copy-identical across `AppRow`, `ClipboardRow` and `UninstallRow` — keep them in sync. The launcher's lead cards don't restate it: `.leadCard(selected:)` (`Features/Launcher/UI/LeadCard.swift`) owns their fill and hover, so a card can't answer a selection differently from its siblings.
+- Background is a `RoundedRectangle(row, .continuous)` filled by `fill`: **selection → hover → clear**, in that precedence. This `fill` computed property is copy-identical across `AppRow`, `ClipboardRow`, `UninstallRow` and `CleanupRowView` — keep them in sync. A locked row — uninstall or cleanup — dims to the same literal `0.55`; it stays a literal because it is copied from upstream's `UninstallRow`, not a token. The launcher's lead cards don't restate it: `.leadCard(selected:)` (`Features/Launcher/UI/LeadCard.swift`) owns their fill and hover, so a card can't answer a selection differently from its siblings.
 - **Hover state lives on the row**, not the list, so a mouse sweep repaints only the rows entering/leaving (a list-level hover rebuilds every row per move — don't do that).
 - **Hover is armed by pointer movement, not by the pointer's position** (`armedHover`, `Palette/HoverArming.swift`). A palette shown under a resting pointer lights nothing, and keys or a scroll drop the highlight until the pointer moves clear of the slop radius around where it stood — a row must never light up because it *slid under* a still pointer. Two measured facts the rule rests on: SwiftUI fires hover phases for rows arriving under a stationary pointer, but **not** for a lit row that merely shifts, so `PaletteState.hoverDisarmToken` clears what is already lit; and a wheel gesture ends with a mouse-moved event carrying no displacement, so *event type is not evidence the pointer moved*. `Tests/palette-navigation-test.swift` pins both halves.
 - **Scroll moves only on keyboard nav/reset**, driven by a `ScrollIntent` (`DesignSystem/Scrolling/ScrollIntent.swift`) — mouse selection targets a visible row and never yanks scroll. `.top` scrolls to the origin anchor that `scrollOriginAnchor()` installs — a zero-height overlay applied to the scrolled content _after_ its padding, so it marks offset 0 without joining the layout and the restored origin is exact (targeting the first row instead leaves the top padding hidden under the header); it is restated when the header's inset settles after mount, which moves the resting offset. A `.follow` that lands on flat index 0 restores the origin instead, so that row's section header comes back into view. A reset lands on the screen's `landingSelection` through `RootPaletteView.land()`: row 0 takes `.top`; a later row takes `.center`, which brings a row the lazy stack has not built in by id, centres it once its frame is measured and then lets go — restated, like `.top`, when the inset settles. One intent state serves every mode — they never coexist.
@@ -433,7 +477,7 @@ All lists share one row grammar so launcher and clipboard look identical:
 
 ### Section headers
 
-All six palette lists (App Launcher, Clipboard, Emoji, File Search, Calculator History, Uninstall) render category labels
+All seven palette lists (App Launcher, Clipboard, Emoji, File Search, Calculator History, Uninstall, Disk Cleanup) render category labels
 through one shared **`SectionHeader`** (`.subheadline.medium`, secondary — `Features/Launcher/UI/SectionHeader.swift`).
 The launcher shows a single "Results" header over search matches, and per-kind sections
 (Favorites / Applications / System Settings / Commands) for the empty query; clipboard/history use

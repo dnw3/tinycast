@@ -124,6 +124,7 @@ struct InterfaceSizeTests {
         expect(m.size.menuRowHeight, Theme.Size.menuRowHeight, "size.menuRowHeight")
         expect(m.size.menuRowsMaxHeight, Theme.Size.menuRowsMaxHeight, "size.menuRowsMaxHeight")
         expect(m.size.clipboardListWidth, Theme.Size.clipboardListWidth, "size.clipboardListWidth")
+        expect(m.size.storageBarHeight, Theme.Size.storageBarHeight, "size.storageBarHeight")
         expect(
             m.size.clipboardMediaHeight, Theme.Size.clipboardMediaHeight, "size.clipboardMediaHeight")
         expect(
@@ -333,6 +334,7 @@ struct InterfaceSizeTests {
             ("size.menuRowHeight", m.size.menuRowHeight),
             ("size.menuRowsMaxHeight", m.size.menuRowsMaxHeight),
             ("size.clipboardListWidth", m.size.clipboardListWidth),
+            ("size.storageBarHeight", m.size.storageBarHeight),
             ("size.clipboardMediaHeight", m.size.clipboardMediaHeight),
             ("size.emojiGridInset", m.size.emojiGridInset),
             ("size.emojiCell", m.size.emojiCell),

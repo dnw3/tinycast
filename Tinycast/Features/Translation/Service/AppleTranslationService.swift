@@ -11,7 +11,7 @@ enum AppleTranslationService {
             case .needsLanguages:
                 String(
                     localized:
-                        "Download the source and target languages in System Settings → Language & Region → Translation Languages."
+                        "Download the source and target languages in System Settings › Language & Region › Translation Languages."
                 )
             case .unsupported:
                 String(

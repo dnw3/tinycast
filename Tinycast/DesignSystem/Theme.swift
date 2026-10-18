@@ -164,6 +164,8 @@ enum Theme {
         /// The uninstall list's leading checkbox / lock glyph.
         static let checkbox: CGFloat = 16
         static let clipboardListWidth: CGFloat = 290
+        /// Disk Cleanup's used / selected / free bar; thicker than the volume track, read at rest.
+        static let storageBarHeight: CGFloat = 8
         /// Symmetric clearance between the emoji grid and both panel edges.
         static let emojiGridInset: CGFloat = 16
         static let emojiCell: CGFloat = 56
@@ -394,6 +396,8 @@ enum Theme {
         /// A borderless panel's own title, which names the surface rather than a section inside it.
         static let panelTitle = Font.headline
         static let calcResult = Font.title
+        /// A detail pane's headline figure: a size or total read before anything else.
+        static let readout = Font.largeTitle.weight(.semibold)
         static let keyCap = Font.caption
         /// Pair with the matching `Size` for `KeyCapChip.Scale`.
         static let compactKeyCap = Font.caption2

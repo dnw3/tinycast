@@ -10,7 +10,7 @@ struct CaptureEmojiControls: View {
         HStack(spacing: metrics.spacing.md) {
             TextField("Search emoji", text: $query)
                 .frame(width: metrics.scaled(Theme.Size.captureAdjustmentWidth))
-                .textFieldStyle(.roundedBorder)
+                .captureField(metrics)
             ScrollView(.horizontal) {
                 LazyHStack(spacing: metrics.spacing.xxs) {
                     ForEach(coordinator.emojiSuggestions(query)) { entry in
@@ -23,22 +23,20 @@ struct CaptureEmojiControls: View {
                                 .frame(width: metrics.scaled(Theme.Size.captureTool),
                                     height: metrics.scaled(Theme.Size.captureTool))
                                 .background(state.emoji == glyph ? Theme.Colors.selection : .clear,
-                                    in: RoundedRectangle(cornerRadius: metrics.radius.barControl))
+                                    in: RoundedRectangle(cornerRadius: metrics.radius.barControl, style: .continuous))
                         }.buttonStyle(.borderless).focusable(false).accessibilityLabel(entry.displayName)
                             .tooltip(entry.displayName)
                     }
                 }
             }.scrollIndicators(.hidden)
                 .frame(height: metrics.scaled(Theme.Size.captureTool))
-            Picker("Size", selection: Binding(get: { state.emojiSize }, set: {
-                state.emojiSize = $0
-                state.updateSelectedStyle()
-            })) {
-                ForEach([24.0, 48, 64, 96, 128], id: \.self) { Text("\(Int($0)) px").tag($0) }
-                if ![24.0, 48, 64, 96, 128].contains(state.emojiSize) {
-                    Text("\(Int(state.emojiSize)) px").tag(state.emojiSize)
-                }
-            }.fixedSize()
+            CapturePickerMenu(
+                title: String(localized: "Size"), symbol: "textformat.size",
+                options: Set([24.0, 48, 64, 96, 128, state.emojiSize]).sorted().map { ($0, "\(Int($0)) px") },
+                selection: Binding(get: { state.emojiSize }, set: {
+                    state.emojiSize = $0
+                    state.updateSelectedStyle()
+                }))
         }
         .disabled(state.busy)
         .task { await coordinator.loadEmoji() }

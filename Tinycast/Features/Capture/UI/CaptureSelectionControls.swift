@@ -35,27 +35,32 @@ struct CaptureSelectionControls: View {
                 )
                 .tooltip(String(localized: "Choose Display"))
             }
-            Picker("Ratio", selection: $workspace.aspect) {
-                ForEach(CaptureSelectionConstraint.Aspect.allCases, id: \.self) {
-                    Text(LocalizedStringKey($0.title)).tag($0)
-                }
-            }.fixedSize()
+            CapturePickerMenu(
+                title: String(localized: "Ratio"), symbol: "aspectratio",
+                options: CaptureSelectionConstraint.Aspect.allCases.map {
+                    ($0, Bundle.main.localizedString(forKey: $0.title, value: nil, table: nil))
+                },
+                selection: $workspace.aspect)
             if coordinator.editor != nil {
                 HStack(spacing: metrics.spacing.xxs) {
                     TextField("Width", value: $width, format: .number)
                         .frame(width: metrics.scaled(Theme.Size.capturePropertyField))
+                        .captureField(metrics)
                         .onSubmit { resize(widthChanged: true) }.accessibilityLabel(
                             String(localized: "Width in pixels"))
                     Text("×")
                     TextField("Height", value: $height, format: .number)
                         .frame(width: metrics.scaled(Theme.Size.capturePropertyField))
+                        .captureField(metrics)
                         .onSubmit { resize(widthChanged: false) }.accessibilityLabel(
                             String(localized: "Height in pixels"))
                     Text("px")
                 }.fixedSize()
             }
-            Toggle("Snap", isOn: $workspace.snaps).toggleStyle(.checkbox)
-                .tooltip(String(localized: "Snap to screen and window edges · Option disables snapping"))
+            CaptureIconButton(
+                title: String(localized: "Snap"), symbol: "squareshape.split.2x2.dotted", selected: workspace.snaps,
+                hint: String(localized: "Snap to screen and window edges · Option disables snapping")
+            ) { workspace.snaps.toggle() }
             CaptureIconButton(
                 title: String(localized: "Select Element"), symbol: "scope",
                 selected: workspace.choosingElement

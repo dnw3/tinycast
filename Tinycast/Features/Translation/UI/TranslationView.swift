@@ -4,6 +4,7 @@ struct TranslationView: View {
     let onSize: (CGSize) -> Void
     @Environment(TranslationCoordinator.self) private var coordinator
     @Environment(\.metrics) private var metrics
+    @State private var inputFocused = false
     private var state: TranslationState { coordinator.state }
 
     var body: some View {
@@ -12,7 +13,10 @@ struct TranslationView: View {
             languages
             source
             if state.isExpanded || state.phase != .idle {
-                Divider()
+                Rectangle()
+                    .fill(Theme.Colors.separator)
+                    .frame(height: Theme.Size.hairline)
+                    .accessibilityHidden(true)
                 TranslationResultView()
                     .frame(
                         maxWidth: .infinity, maxHeight: state.isExpanded ? .infinity : nil,
@@ -20,7 +24,7 @@ struct TranslationView: View {
             }
             if let notice = state.notice {
                 Text(notice)
-                    .font(metrics.typography.keyCap)
+                    .font(metrics.typography.rowTrailing)
                     .foregroundStyle(Theme.Colors.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -35,7 +39,7 @@ struct TranslationView: View {
         .foregroundStyle(Theme.Colors.textPrimary)
         .background(Theme.Colors.panelScrim)
         .background(GlassEffectView())
-        .clipShape(RoundedRectangle(cornerRadius: metrics.radius.dialog, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: metrics.radius.panel, style: .continuous))
         .panelEntrance()
         .onGeometryChange(for: CGSize.self, of: { $0.size }, action: onSize)
     }
@@ -50,96 +54,85 @@ struct TranslationView: View {
             .font(metrics.typography.panelTitle)
             .frame(maxWidth: .infinity, alignment: .leading)
             .windowDraggable(true)
-            Menu(state.engine.title) {
-                Picker(
-                    "Translation engine",
-                    selection: Binding(get: { state.engine }, set: { coordinator.changeEngine($0) })
-                ) {
-                    ForEach(TranslationPreferences.Engine.allCases, id: \.self) { engine in
-                        Text(engine.title).tag(engine)
-                    }
-                }
-                .pickerStyle(.inline)
-                Divider()
-                Button("Translation Settings…") { coordinator.showSettings() }
+            menuButton(.engine, title: state.engine.title)
+                .accessibilityLabel(String(localized: "Translation engine"))
+                .accessibilityValue(state.engine.title)
+                .tooltip(String(localized: "Choose Apple or AI translation"), edge: .bottom)
+            HStack(spacing: metrics.spacing.xxs) {
+                barAction(
+                    state.isPinned ? "pin.fill" : "pin",
+                    label: state.isPinned
+                        ? String(localized: "Unpin Translation") : String(localized: "Pin Translation"),
+                    help: state.isPinned
+                        ? String(localized: "Unpin: close when focus leaves")
+                        : String(localized: "Pin: keep open when switching apps"),
+                    action: coordinator.togglePinned
+                )
+                .accessibilityValue(
+                    state.isPinned ? String(localized: "Pinned") : String(localized: "Not pinned"))
+                barAction(
+                    state.isExpanded
+                        ? "arrow.down.right.and.arrow.up.left" : "arrow.up.left.and.arrow.down.right",
+                    label: state.isExpanded
+                        ? String(localized: "Use Mini Window") : String(localized: "Expand Translation"),
+                    help: state.isExpanded
+                        ? String(localized: "Use Mini Window") : String(localized: "Expand for longer text"),
+                    action: coordinator.toggleExpanded)
+                barAction(
+                    "xmark", label: String(localized: "Close Translation"),
+                    help: String(localized: "Close  ⎋"), action: coordinator.cancel)
             }
-            .menuStyle(.borderlessButton)
-            .menuIndicator(.visible)
-            .fixedSize()
-            .font(metrics.typography.bar)
-            .accessibilityLabel(String(localized: "Translation engine"))
-            .accessibilityValue(state.engine.title)
-            .help(String(localized: "Choose Apple or AI translation"))
-            Button(action: coordinator.togglePinned) {
-                Image(systemName: state.isPinned ? "pin.fill" : "pin")
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(
-                state.isPinned
-                    ? String(localized: "Unpin Translation") : String(localized: "Pin Translation")
-            )
-            .accessibilityValue(state.isPinned ? String(localized: "Pinned") : String(localized: "Not pinned"))
-            .help(
-                state.isPinned
-                    ? String(localized: "Unpin: close when focus leaves")
-                    : String(localized: "Pin: keep open when switching apps"))
-            Button(action: coordinator.toggleExpanded) {
-                Image(
-                    systemName: state.isExpanded
-                        ? "arrow.down.right.and.arrow.up.left" : "arrow.up.left.and.arrow.down.right")
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(
-                state.isExpanded
-                    ? String(localized: "Use Mini Window") : String(localized: "Expand Translation")
-            )
-            .help(
-                state.isExpanded
-                    ? String(localized: "Use Mini window") : String(localized: "Expand for longer text"))
-            Button(action: coordinator.cancel) { Image(systemName: "xmark") }
-                .buttonStyle(.plain)
-                .accessibilityLabel(String(localized: "Close Translation"))
-                .help(String(localized: "Close (Esc)"))
+            .padding(metrics.spacing.xxs)
+            .frosted(in: Capsule())
+        }
+    }
+
+    private func barAction(
+        _ symbol: String, label: String, help: String, action: @escaping () -> Void
+    ) -> some View {
+        BarButton(isCompact: true, action: action) {
+            SymbolImage(name: symbol, size: metrics.typography.bodyNSFont.pointSize)
+        }
+        .focusable(false)
+        .accessibilityLabel(label)
+        .tooltip(help, edge: .bottom)
+    }
+
+    /// `HeaderMenuButton` speaks through `.help`, which a non-activating panel never shows.
+    private func menuButton(_ kind: TranslationMenuKind, title: String) -> some View {
+        HeaderMenuButton(
+            title: title, icon: .blank, isOpen: coordinator.openMenu == kind, help: "",
+            action: { coordinator.toggleMenu(kind) }
+        )
+        .fixedSize()
+        .focusable(false)
+        .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: {
+            coordinator.menuAnchors[kind] = $0
         }
     }
 
     private var languages: some View {
-        HStack(spacing: metrics.spacing.md) {
-            languageMenu(
-                title: state.sourceOverride.isEmpty ? String(localized: "Auto · \(sourceName)") : sourceName,
-                automatic: String(localized: "Detect language"), action: coordinator.changeSource
-            )
-            .accessibilityLabel(String(localized: "Source language"))
-            Image(systemName: "arrow.right").foregroundStyle(Theme.Colors.textTertiary)
-            languageMenu(
+        HStack(spacing: metrics.spacing.xs) {
+            menuButton(.source, title: sourceTitle)
+                .accessibilityLabel(String(localized: "Source language"))
+            SymbolImage(name: "arrow.right", size: metrics.typography.bodyNSFont.pointSize)
+                .foregroundStyle(Theme.Colors.textTertiary)
+                .accessibilityHidden(true)
+            menuButton(
+                .target,
                 title: state.targetOverride.isEmpty
                     ? String(localized: "Auto · \(TranslationLanguageService.name(coordinator.targetLanguage))")
-                    : TranslationLanguageService.name(coordinator.targetLanguage),
-                automatic: String(localized: "Automatic direction"), action: coordinator.changeTarget
+                    : TranslationLanguageService.name(coordinator.targetLanguage)
             )
             .accessibilityLabel(String(localized: "Target language"))
             Spacer()
         }
     }
 
-    private var sourceName: String {
-        state.source.map(TranslationLanguageService.name) ?? "Detect"
-    }
-
-    private func languageMenu(
-        title: String, automatic: String, action: @escaping (String) -> Void
-    ) -> some View {
-        Menu(title) {
-            Button(automatic) { action("") }
-            Divider()
-            ForEach(coordinator.languages, id: \.self) { language in
-                Button(TranslationLanguageService.name(language)) { action(language) }
-            }
-        }
-        .menuStyle(.borderlessButton)
-        .menuIndicator(.visible)
-        .fixedSize()
-        .font(metrics.typography.bar)
+    private var sourceTitle: String {
+        guard state.sourceOverride.isEmpty else { return TranslationLanguageService.name(state.sourceOverride) }
+        guard let detected = state.detectedLanguage else { return String(localized: "Detect language") }
+        return String(localized: "Auto · \(TranslationLanguageService.name(detected))")
     }
 
     private var source: some View {
@@ -151,7 +144,8 @@ struct TranslationView: View {
             }
             TranslationInputView(
                 text: state.input, metrics: metrics, onChange: coordinator.inputChanged,
-                onSubmit: coordinator.submit, onSelection: { state.selectedInput = $0 }
+                onSubmit: coordinator.submit, onSelection: { state.selectedInput = $0 },
+                onFocusChange: { inputFocused = $0 }
             )
             .frame(
                 height: state.isExpanded
@@ -166,20 +160,40 @@ struct TranslationView: View {
                         .allowsHitTesting(false)
                 }
             }
-            .background(Theme.Colors.controlSurface)
-            .clipShape(RoundedRectangle(cornerRadius: metrics.radius.row))
-            HStack {
-                if state.origin == .selection {
-                    Text("Translates automatically · ⇧↵ New line")
-                } else {
-                    Button("Copy Source", action: coordinator.copySource)
-                    Button("Translate", action: coordinator.submit)
+            .formFieldChrome(focused: inputFocused)
+            if state.origin != .selection || lengthNote != nil {
+                HStack(spacing: metrics.spacing.xs) {
+                    if state.origin != .selection {
+                        textAction(String(localized: "Copy Source"), action: coordinator.copySource)
+                        textAction(String(localized: "Translate"), action: coordinator.submit)
+                    }
+                    Spacer()
+                    if let lengthNote {
+                        Text(lengthNote)
+                            .font(metrics.typography.rowTrailing)
+                            .foregroundStyle(Theme.Colors.textTertiary)
+                    }
                 }
-                Spacer()
-                if state.isExpanded { Text("\(state.input.utf8.count) / 12,000 bytes") }
             }
-            .font(metrics.typography.keyCap)
-            .foregroundStyle(Theme.Colors.textTertiary)
         }
+    }
+
+    private func textAction(_ title: String, action: @escaping () -> Void) -> some View {
+        BarButton(action: action) {
+            Text(title)
+                .font(metrics.typography.bar)
+                .foregroundStyle(Theme.Colors.textSecondary)
+        }
+        .focusable(false)
+    }
+
+    /// Silent until the text nears the request limit; nobody needs a byte count before then.
+    private var lengthNote: String? {
+        let used = state.input.utf8.count
+        let limit = TranslationRequest.maximumInputBytes
+        guard used * 10 >= limit * 8 else { return nil }
+        return used > limit
+            ? String(localized: "Too long to translate at once — shorten the text")
+            : String(localized: "Nearly at the length limit")
     }
 }

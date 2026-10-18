@@ -431,6 +431,10 @@ struct UpdatesTests {
         expect(UpdateReadiness.evaluate(busy) == .uninstalling, "a running uninstall holds the update")
 
         busy = UpdateActivity()
+        busy.isCleaning = true
+        expect(UpdateReadiness.evaluate(busy) == .cleaning, "a running disk cleanup holds the update")
+
+        busy = UpdateActivity()
         busy.isRunningExtension = true
         expect(
             UpdateReadiness.evaluate(busy) == .runningExtension,

@@ -1,7 +1,10 @@
 import Foundation
 
 struct CaptureVideoEffect: Codable, Equatable, Identifiable, Sendable {
-    enum Kind: String, Codable, CaseIterable, Sendable { case zoom, cover, text }
+    enum Kind: String, Codable, CaseIterable, Sendable {
+        case zoom, cover, text
+        var title: String { rawValue.capitalized }
+    }
 
     var id = UUID()
     var kind: Kind

@@ -121,7 +121,8 @@ enum SettingsSearchCatalog {
 
     static let entries: [SettingsSearchEntry] =
         general + applications + systemSettings + systemActions + commands + quicklinks
-        + appleShortcuts + fallbacks + clipboard + snippets + fileSearch + windowManagement
+        + appleShortcuts + fallbacks + clipboard + snippets + fileSearch + cleanup
+        + windowManagement
         + navigation + notes + calendar + emoji + capture + translation + ai + quickActions + dictation + extensions + permissions
         + backup + about
 
@@ -400,6 +401,42 @@ enum SettingsSearchCatalog {
         .init(
             group: .fileSearchIgnorePatterns, "Ignore Patterns",
             keywords: ["exclude", "glob", "node_modules", "skip", "ignore folder"])
+    ]
+
+    private static let cleanup: [SettingsSearchEntry] = [
+        .init(
+            pane: .cleanup,
+            keywords: ["cleanup", "clean", "disk", "storage", "caches", "free up space", "清理", "磁盘", "缓存"]),
+        .init(
+            .cleanupCleanup, "Disk Cleanup",
+            keywords: ["caches", "logs", "derived data", "junk", "purge"]),
+        .init(
+            group: .cleanupFullDiskAccess, "Full Disk Access",
+            keywords: ["permission", "privacy", "grant", "fda"]),
+        .init(
+            .cleanupDeletion, "Cleaned items",
+            keywords: ["trash", "delete", "permanently", "废纸篓", "删除"]),
+        .init(
+            .cleanupProjects, "Consider a project idle after",
+            keywords: ["node_modules", "target", "build", "stale", "闲置", "项目"]),
+        .init(
+            .cleanupFiles, "List files larger than",
+            keywords: ["large files", "duplicates", "installers", "dmg", "大文件", "重复文件", "安装包"]),
+        .init(
+            .cleanupAutomation, "Clean up automatically",
+            keywords: ["schedule", "scheduled", "定时清理", "自动清理"]),
+        .init(
+            .cleanupAutomation, "Warn when free space is low",
+            keywords: ["alert", "low disk", "空间不足", "提醒"]),
+        .init(
+            .cleanupAutomation, "History",
+            keywords: ["freed", "cleanup history", "清理历史"]),
+        .init(
+            group: .cleanupCommands, "Disk cleanup commands",
+            keywords: ["shortcut", "launcher"]),
+        .init(
+            group: .cleanupExclusions, "Excluded Folders",
+            keywords: ["exclude", "ignore", "skip", "never scan", "排除"])
     ]
 
     private static let notes: [SettingsSearchEntry] = [

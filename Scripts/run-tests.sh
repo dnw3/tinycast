@@ -574,6 +574,25 @@ run uninstall-test         Tinycast/Features/Uninstall/Model/UninstallTarget.swi
                            Tinycast/Features/Uninstall/Model/UninstallRules.swift \
                            Tinycast/Features/Uninstall/Model/UninstallProtection.swift \
                            Tinycast/Features/Uninstall/Model/UninstallPlan.swift
+run cleanup-test           Tinycast/Features/Cleanup/Model/*.swift \
+                           Tinycast/Features/Uninstall/Model/UninstallProtection.swift
+run cleanup-walk-test      Tinycast/Features/Cleanup/Model/*.swift \
+                           Tinycast/Features/Uninstall/Model/UninstallProtection.swift \
+                           Tinycast/Features/Cleanup/Service/DiskUsageScanner.swift \
+                           Tinycast/Features/Cleanup/Service/CleanupScanner.swift \
+                           Tinycast/Features/Cleanup/Service/CleanupRunner.swift \
+                           Tinycast/Features/Cleanup/Service/CleanupProjectScanner.swift \
+                           Tinycast/Features/Cleanup/Service/CleanupToolScanner.swift \
+                           Tinycast/Features/Cleanup/Service/CleanupSystemUpdateScanner.swift \
+                           Tinycast/Features/Cleanup/Service/CleanupFileScanner.swift \
+                           Tinycast/Features/Cleanup/Service/CleanupLeftoverScanner.swift \
+                           Tinycast/Features/Cleanup/Service/CleanupCloudScanner.swift \
+                           Tinycast/Platform/ExecutableLocator.swift \
+                           Tinycast/Platform/ProcessExit.swift \
+                           Tinycast/Features/Updates/Service/ToolRunner.swift \
+                           Tinycast/Features/Cleanup/Settings/CleanupSettingsStore.swift \
+                           Tinycast/Features/Settings/AppSettingsKey.swift \
+                           Tinycast/Platform/Signposts.swift
 run quicklink-test         Tinycast/Features/Quicklinks/Model/Quicklink.swift \
                            Tinycast/Features/Quicklinks/Model/QuicklinkDestination.swift \
                            Tinycast/Features/Quicklinks/Model/QuicklinkStore.swift \

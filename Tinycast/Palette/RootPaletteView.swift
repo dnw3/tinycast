@@ -58,6 +58,12 @@ struct RootPaletteView: View {
         case .uninstall:
             return UninstallScreen(
                 session: uninstall, core: core, vm: vm, openActions: openActions)
+        case .diskUsage:
+            return DiskUsageScreen(session: core.diskUsage, core: core, vm: vm, openActions: openActions)
+        case .cleanup, .cleanupGroup:
+            return CleanupScreen(
+                scope: vm.mode == .cleanup ? .root : .group, session: core.cleanup, core: core, vm: vm,
+                openActions: openActions)
         case .quicklinks:
             return QuicklinkListScreen(
                 store: quicklinks, core: core, vm: vm, openActions: openActions,
@@ -430,6 +436,8 @@ struct RootPaletteView: View {
                 land(restoringNavigation: true)
                 searchFocused = !screen.hidesSearchField
                 if vm.mode != .uninstall { uninstall.cancel() }
+                if !vm.mode.isCleanup { core.cleanup.leave() }
+                if vm.mode != .diskUsage { core.diskUsage.leave() }
                 // Entering with no query is the blank screen's own request for recents.
                 if vm.mode == .fileSearch {
                     fileSearch.search(vm.query, filter: vm.fileSearchFilter)
@@ -525,11 +533,13 @@ struct RootPaletteView: View {
             .onKeyPress(.leftArrow) {
                 if vm.isControlListOpen { return .ignored }
                 if menuOpen { return .handled }
+                if navigateHorizontally(-1) { return .handled }
                 return moveHorizontally(-1) ? .handled : .ignored
             }
             .onKeyPress(.rightArrow) {
                 if vm.isControlListOpen { return .ignored }
                 if menuOpen { return .handled }
+                if navigateHorizontally(1) { return .handled }
                 return moveHorizontally(1) ? .handled : .ignored
             }
             // Plain ↵ runs an open menu's row or non-form selection; ⌘↵ submits forms.
@@ -899,9 +909,10 @@ struct RootPaletteView: View {
             }
     }
 
-    /// The Uninstall screen's primary action is destructive, so its pill isn't white.
+    /// A destructive primary action tints the pill; the screen says so per row.
     private var pillTint: Color {
-        vm.mode == .uninstall ? Theme.Colors.destructive : .primary
+        let screen = screen
+        return screen.isPrimaryActionDestructive(at: selection(in: screen)) ? Theme.Colors.destructive : .primary
     }
 
     private func bottomBar(
@@ -1293,6 +1304,13 @@ struct RootPaletteView: View {
         vm.selection = next
         scroll = ScrollIntent(kind: .follow)
         return .handled
+    }
+
+    /// ←/→ into and out of a level, offered only while the caret has nothing to move through.
+    private func navigateHorizontally(_ delta: Int) -> Bool {
+        guard vm.query.isEmpty, !isCollapsed, argumentFocused == nil else { return false }
+        let screen = screen
+        return screen.navigateHorizontally(delta, at: selection(in: screen))
     }
 
     /// ←/→: consumed only by a horizontally navigating screen, else the caret keeps them.
