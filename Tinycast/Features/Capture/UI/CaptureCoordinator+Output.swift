@@ -36,7 +36,7 @@ extension CaptureCoordinator {
         core.showMessage(
             recorded != nil
                 ? String(localized: "Copied screenshot")
-                : String(localized: "Copied — history could not be saved"),
+                : String(localized: "Copied, but history couldn't be saved"),
             tone: recorded != nil ? .success : .neutral)
         if close, settings.preferences.closeAfterCopy, self.editor === editor,
             editor.document.revision == snapshot.revision
@@ -80,7 +80,8 @@ extension CaptureCoordinator {
         }
         let state = CaptureExportState(options: options, document: snapshot)
         panel.delegate = state
-        panel.nameFieldStringValue = "Screenshot.\(options.format.rawValue)"
+        let stem = "\(String(localized: "Screenshot"))-\(CaptureQuickSave.timestamp(Date()))"
+        panel.nameFieldStringValue = "\(stem).\(options.format.rawValue)"
         state.update(panel)
         let controls = NSHostingView(
             rootView: CaptureExportControls(state: state, document: snapshot, panel: panel)
@@ -116,20 +117,21 @@ extension CaptureCoordinator {
         editor.publishedRevision = snapshot.revision
         let historyPNG = source.directory.appendingPathComponent("output-\(UUID()).png")
         defer { try? FileManager.default.removeItem(at: historyPNG) }
-        var recorded: CaptureHistoryEntry?
+        let recorded: CaptureHistoryEntry?
         do {
             try await CaptureWork.run {
                 try CaptureRenderer.png(document: snapshot, directory: source.directory, to: historyPNG)
             }
             recorded = await recordHistory(document: snapshot, source: source, png: historyPNG)
         } catch {
-            editor.notice = String(localized: "Saved — history could not be saved. Save again to retry.")
+            recorded = nil
         }
         let destination = quickSave == nil ? url.deletingLastPathComponent() : quickSaveDirectory
+        let path = (destination.path as NSString).abbreviatingWithTildeInPath
         core.showMessage(
             recorded != nil
-                ? String(localized: "Saved to \(destination.path)")
-                : String(localized: "Saved — history could not be saved"),
+                ? String(localized: "Saved to \(path)")
+                : String(localized: "Saved, but history couldn't be saved"),
             tone: recorded != nil ? .success : .neutral)
         if let recorded { completionThumbnail.show(recorded, coordinator: self) }
     }
@@ -168,8 +170,6 @@ extension CaptureCoordinator {
                 return entry
             }
         } catch {
-            editor?.notice = String(
-                localized: "Output succeeded. History could not be saved; copy or save again to retry.")
             return nil
         }
     }

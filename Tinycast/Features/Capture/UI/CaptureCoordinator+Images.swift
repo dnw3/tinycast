@@ -34,7 +34,7 @@ extension CaptureCoordinator {
                 panel.allowedContentTypes = [.image]
                 panel.canChooseDirectories = false
                 panel.allowsMultipleSelection = false
-                panel.prompt = "Add Image"
+                panel.prompt = String(localized: "Add Image")
                 self.savePanel = panel
                 guard await self.editorWindow.present(panel) == .OK, let url = panel.url else { return }
                 size = try await CaptureWork.run { try CaptureImageSource.load(url, at: destination) }

@@ -113,6 +113,11 @@ extension CaptureCoordinator {
         }
     }
 
+    func copyCode(_ code: String) {
+        Paster.copyPlainText(code)
+        core.showMessage(String(localized: "Copied"), tone: .success)
+    }
+
     func recognize(translate: Bool) {
         run { [weak self] in try await self?.recognizeCurrent(translate: translate) }
     }

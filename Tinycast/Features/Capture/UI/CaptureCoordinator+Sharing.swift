@@ -109,8 +109,25 @@ extension CaptureCoordinator {
     private func uploadFile(
         _ file: URL, destination: CaptureUploadDestination, credential: CaptureUploadCredential
     ) async throws {
-        editor?.notice = String(localized: "Uploading to \(destination.title)…")
-        video?.notice = String(localized: "Uploading to \(destination.title)…")
+        let message = String(localized: "Uploading to \(destination.title)…")
+        guard editor != nil || video != nil else {
+            core.showProgress(message) { [weak self] in self?.cancelWork() }
+            do {
+                try await transferUpload(file, destination: destination, credential: credential)
+            } catch is CancellationError {
+                core.hideProgress()
+                throw CancellationError()
+            }
+            return
+        }
+        editor?.notice = message
+        video?.notice = message
+        try await transferUpload(file, destination: destination, credential: credential)
+    }
+
+    private func transferUpload(
+        _ file: URL, destination: CaptureUploadDestination, credential: CaptureUploadCredential
+    ) async throws {
         let prepared: CaptureUploadService.Prepared
         if destination.kind == .drive {
             let token = try await CaptureDriveService.refresh(

@@ -2,6 +2,7 @@ import SwiftUI
 
 struct CaptureHistoryList: View {
     let rows: [CaptureHistoryEntry]
+    let searching: Bool
     let directory: URL
     let selection: Int
     let scroll: ScrollIntent
@@ -13,7 +14,9 @@ struct CaptureHistoryList: View {
 
     var body: some View {
         if rows.isEmpty {
-            EmptyResults(text: String(localized: "No captures yet"))
+            EmptyResults(
+                text: searching
+                    ? String(localized: "No matching captures") : String(localized: "No captures yet"))
         } else {
             ScrollViewReader { proxy in
                 ScrollView {

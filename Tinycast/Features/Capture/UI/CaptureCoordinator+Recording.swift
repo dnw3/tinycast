@@ -236,7 +236,8 @@ extension CaptureCoordinator {
         let panel = NSSavePanel()
         panel.allowedContentTypes = options.format == .mp4 ? [.mpeg4Movie] : [.gif]
         panel.canCreateDirectories = true
-        panel.nameFieldStringValue = "Recording.\(options.format.rawValue)"
+        let stem = "\(String(localized: "Recording"))-\(CaptureQuickSave.timestamp(Date()))"
+        panel.nameFieldStringValue = "\(stem).\(options.format.rawValue)"
         savePanel = panel
         let response = await videoWindow.present(panel)
         savePanel = nil
@@ -297,8 +298,7 @@ extension CaptureCoordinator {
                     tone: .success)
                 completionThumbnail.show(entry, coordinator: self)
             } catch {
-                state.notice = String(localized: "Saved — history could not be saved. Save again to retry.")
-                core.showMessage(String(localized: "Saved — history could not be saved"), tone: .neutral)
+                core.showMessage(String(localized: "Saved, but history couldn't be saved"), tone: .neutral)
             }
             return true
         } catch {

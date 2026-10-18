@@ -29,7 +29,7 @@ struct CaptureCensorTools: View {
         case .pixelate: String(localized: "Pixelate")
         case .blur: String(localized: "Blur")
         case .erase: String(localized: "Erase")
-        default: tool.title
+        default: Bundle.main.localizedString(forKey: tool.title, value: nil, table: nil)
         }
     }
 }

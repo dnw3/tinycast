@@ -33,7 +33,7 @@ struct CaptureCompactStyle: View {
                 if tool == .text {
                     Menu("Font") {
                         ForEach(CaptureAnnotation.Font.allCases, id: \.self) { font in
-                            Button(font.title) { state.changeText(.font(font)) }
+                            Button(LocalizedStringKey(font.title)) { state.changeText(.font(font)) }
                         }
                     }
                     Menu("Font Size") {

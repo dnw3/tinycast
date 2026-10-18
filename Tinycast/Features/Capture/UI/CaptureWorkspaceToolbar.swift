@@ -240,7 +240,8 @@ private struct CaptureWorkspaceDismiss: View {
 
     var body: some View {
         if coordinator.editor?.busy == true || coordinator.workspace?.busy == true {
-            CaptureIconButton(title: String(localized: "Cancel"), symbol: "stop") {
+            ProgressView().controlSize(.small)
+            CaptureIconButton(title: String(localized: "Cancel"), symbol: "xmark") {
                 coordinator.cancelWork()
             }
         } else {

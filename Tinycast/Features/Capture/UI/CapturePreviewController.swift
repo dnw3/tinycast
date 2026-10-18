@@ -31,12 +31,7 @@ final class CapturePreviewController: NSObject, NSWindowDelegate {
         CaptureChrome.adopt(window)
         window.delegate = self
         if entry.animationDuration != nil {
-            let imageView = NSImageView(frame: CGRect(origin: .zero, size: size))
-            imageView.imageScaling = .scaleProportionallyUpOrDown
-            imageView.setAccessibilityLabel(String(localized: "Animated GIF Preview"))
-            window.contentView = Self.surface(imageView, metrics: metrics)
-            self.imageView = imageView
-            playAnimation(entry, source: source)
+            showAnimation(entry, source: source, in: window, metrics: metrics)
         } else if entry.videoDuration != nil {
             let player = AVPlayer(url: source.directory.appendingPathComponent(entry.filename))
             let view = AVPlayerView(frame: CGRect(origin: .zero, size: size))
@@ -89,8 +84,22 @@ final class CapturePreviewController: NSObject, NSWindowDelegate {
 
     func windowWillClose(_ notification: Notification) { close() }
 
-    private func playAnimation(_ entry: CaptureHistoryEntry, source: CaptureSource) {
-        animationTask = Task { [weak self] in
+    private func showAnimation(
+        _ entry: CaptureHistoryEntry, source: CaptureSource, in window: NSWindow, metrics: InterfaceMetrics
+    ) {
+        let imageView = NSImageView(frame: window.contentLayoutRect)
+        imageView.imageScaling = .scaleProportionallyUpOrDown
+        imageView.setAccessibilityLabel(String(localized: "Animated GIF Preview"))
+        window.contentView = Self.surface(imageView, metrics: metrics)
+        self.imageView = imageView
+        playAnimation(entry, source: source, in: window, metrics: metrics)
+    }
+
+    private func playAnimation(
+        _ entry: CaptureHistoryEntry, source: CaptureSource, in window: NSWindow, metrics: InterfaceMetrics
+    ) {
+        animationTask?.cancel()
+        animationTask = Task { [weak self, weak window] in
             do {
                 while !Task.isCancelled {
                     for try await frame in CaptureGIFService.frames(
@@ -102,13 +111,17 @@ final class CapturePreviewController: NSObject, NSWindowDelegate {
                     }
                 }
             } catch is CancellationError {} catch {
-                self?.window?.contentView = NSTextField(
-                    wrappingLabelWithString:
-                        String(
-                            localized:
-                                "GIF preview could not load. \(Bundle.main.localizedString(forKey: error.localizedDescription, value: nil, table: nil))"
-                        )
-                )
+                guard let self, let window, self.window === window else { return }
+                self.imageView = nil
+                let failure = AnimationFailure(
+                    message: Bundle.main.localizedString(
+                        forKey: error.localizedDescription, value: nil, table: nil)
+                ) { [weak self, weak window] in
+                    guard let self, let window, self.window === window else { return }
+                    self.showAnimation(entry, source: source, in: window, metrics: metrics)
+                }
+                window.contentView = Self.surface(
+                    NSHostingView(rootView: failure.environment(\.metrics, metrics)), metrics: metrics)
             }
         }
     }
@@ -123,6 +136,24 @@ final class CapturePreviewController: NSObject, NSWindowDelegate {
                 .captureWindowSurface())
         hosting.sizingOptions = []
         return hosting
+    }
+
+    private struct AnimationFailure: View {
+        let message: String
+        let retry: () -> Void
+        @Environment(\.metrics) private var metrics
+
+        var body: some View {
+            VStack(spacing: metrics.spacing.md) {
+                Text("Preview could not load")
+                Text(message).foregroundStyle(Theme.Colors.textSecondary)
+                Button("Retry Preview", action: retry)
+                    .buttonStyle(.modalAction(.standard, fillsWidth: false))
+            }
+            .multilineTextAlignment(.center)
+            .padding(metrics.spacing.lg).captureGlass(metrics)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
     }
 
     private struct Hosted: NSViewRepresentable {

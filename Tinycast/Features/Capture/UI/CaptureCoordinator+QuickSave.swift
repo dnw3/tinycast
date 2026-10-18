@@ -11,8 +11,9 @@ extension CaptureCoordinator {
     func revealQuickSaveFolder() {
         let directory = quickSaveDirectory
         guard FileManager.default.fileExists(atPath: directory.path) else {
+            let path = (directory.path as NSString).abbreviatingWithTildeInPath
             core.showMessage(
-                String(localized: "Quick Save creates \(directory.path) when you first save"), tone: .neutral)
+                String(localized: "Quick Save creates \(path) when you first save"), tone: .neutral)
             return
         }
         if workspace != nil { expandCapture() }
@@ -30,7 +31,7 @@ extension CaptureCoordinator {
             panel.allowsMultipleSelection = false
             panel.canCreateDirectories = true
             panel.directoryURL = self.quickSaveDirectory
-            panel.prompt = "Choose"
+            panel.prompt = String(localized: "Choose")
             self.savePanel = panel
             self.overlay.suspend()
             defer { self.savePanel = nil; self.overlay.resume() }

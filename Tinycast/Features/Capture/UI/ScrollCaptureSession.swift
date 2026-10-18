@@ -17,6 +17,9 @@ final class ScrollCaptureSession {
     let axis: CaptureDocument.Axis
     private(set) var paused = false
     @ObservationIgnored var onPauseChange: ((Bool) -> Void)?
+    @ObservationIgnored var onHintChange: (() -> Void)?
+    private(set) var hint: String?
+    private var hintExpiry: Task<Void, Never>?
     var automatic = false
     var notice = String(localized: "Scroll inside the selected region")
     var preview: CGImage?
@@ -72,6 +75,22 @@ final class ScrollCaptureSession {
         stopped = true
         automatic = false
         task?.cancel()
+        setHint(nil)
+    }
+
+    private func setHint(_ text: String?) {
+        hintExpiry?.cancel()
+        hintExpiry = nil
+        if hint != text {
+            hint = text
+            onHintChange?()
+        }
+        guard text != nil else { return }
+        hintExpiry = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(3))
+            guard !Task.isCancelled else { return }
+            self?.setHint(nil)
+        }
     }
 
     func pause(_ reason: String = String(localized: "Paused — captured content is kept")) {
@@ -80,6 +99,7 @@ final class ScrollCaptureSession {
         automatic = false
         candidate = nil
         notice = reason
+        setHint(nil)
         onPauseChange?(true)
     }
 
@@ -116,12 +136,15 @@ final class ScrollCaptureSession {
             guard !paused, generation == self.generation else { return }
             switch decision {
             case .duplicate: notice = String(localized: "No new content found")
-            case .reverse: notice = String(localized: "Scroll forward to add more content")
+            case .reverse:
+                notice = String(localized: "Scroll forward to add more content")
+                setHint(notice)
             case .uncertain:
                 Self.logger.notice("Scroll alignment uncertain: pieces=\(self.document.pieces.count)")
                 pause(String(localized: "Could not align. Scroll back slightly, or select a region without fixed sidebars or scrollbars"))
             case .append(let offset, _, let trailing):
                 guard try await append(temporary, offset: offset, trailing: trailing) else { return }
+                setHint(nil)
                 self.accepted = frame
                 CapturePerformance.completed("scroll-preview-ready", since: stable)
             }

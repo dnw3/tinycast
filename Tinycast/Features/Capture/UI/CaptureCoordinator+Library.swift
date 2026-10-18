@@ -62,7 +62,11 @@ extension CaptureCoordinator {
 
     func loadHistory() async throws {
         let repository = repository
-        historyEntries = try await CaptureWork.run { try repository.entries() }
+        let entries = try await CaptureWork.run { try repository.entries() }
+        historySearchText = Dictionary(
+            entries.map { ($0.id, "\($0.title) \($0.date.formatted()) \($0.displaySubtitle)") },
+            uniquingKeysWith: { first, _ in first })
+        historyEntries = entries
         core.paletteCoordinator.togglePalette(mode: .captureHistory)
     }
 
@@ -99,7 +103,7 @@ extension CaptureCoordinator {
                 let (document, directory) = try repository.open(entry, id: id)
                 return (document, try CaptureSource(directory: directory))
             }
-            self.core.paletteCoordinator.hidePalette(restoreFocus: false)
+            self.core.paletteCoordinator.hidePalette(restoreFocus: action == "copy")
             if action == "pin" {
                 try await self.pin(document: result.0, source: result.1)
             } else if action == "copy" {

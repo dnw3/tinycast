@@ -3,6 +3,7 @@ import SwiftUI
 
 struct CaptureCodeResults: View {
     @Bindable var state: CaptureEditorState
+    @Environment(CaptureCoordinator.self) private var coordinator
     @Environment(\.metrics) private var metrics
 
     var body: some View {
@@ -18,7 +19,7 @@ struct CaptureCodeResults: View {
                     }
                 }
                 CaptureIconButton(title: String(localized: "Copy Code"), symbol: "doc.on.doc") {
-                    Paster.copyPlainText(code)
+                    coordinator.copyCode(code)
                 }
                 if let url = URL(string: code), ["https", "http"].contains(url.scheme?.lowercased() ?? "") {
                     CaptureIconButton(title: String(localized: "Open Link"), symbol: "arrow.up.right.square")

@@ -12,7 +12,7 @@ struct CapturePresentationPresets: View {
     var body: some View {
         Menu("Presets") {
             ForEach(CapturePresentationPreset.BuiltIn.allCases, id: \.self) { preset in
-                Button(preset.title) { apply(preset.presentation) }
+                Button(LocalizedStringKey(preset.title)) { apply(preset.presentation) }
             }
             if !coordinator.settings.presentationPresets.isEmpty {
                 Divider()

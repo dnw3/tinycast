@@ -12,9 +12,13 @@ struct CaptureQuickSave: Sendable {
         }
         let values = try directory.resourceValues(forKeys: [.isDirectoryKey])
         guard values.isDirectory == true else { throw CocoaError(.fileWriteInvalidFileName) }
-        let timestamp = ISO8601DateFormatter().string(from: now).replacingOccurrences(of: ":", with: "-")
-        destination = directory.appendingPathComponent("Screenshot-\(timestamp)-\(id).\(format.rawValue)")
+        destination = directory.appendingPathComponent(
+            "Screenshot-\(Self.timestamp(now))-\(id).\(format.rawValue)")
         staging = directory.appendingPathComponent(".tinycast-\(UUID()).\(format.rawValue)")
+    }
+
+    nonisolated static func timestamp(_ now: Date) -> String {
+        ISO8601DateFormatter().string(from: now).replacingOccurrences(of: ":", with: "-")
     }
 
     nonisolated func publish() throws {

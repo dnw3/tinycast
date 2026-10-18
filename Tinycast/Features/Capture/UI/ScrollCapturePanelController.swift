@@ -43,7 +43,13 @@ final class ScrollCapturePanelController {
             guard let panel else { return }
             panel.setFrame(expanded ? placement.expanded : placement.collapsed, display: false)
         }
-        session.onPauseChange = { paused in resize(paused || details.shown) }
+        session.onPauseChange = { [weak session] paused in
+            resize(paused || details.shown || session?.hint != nil)
+        }
+        session.onHintChange = { [weak session] in
+            guard let session else { return }
+            resize(session.paused || details.shown || session.hint != nil)
+        }
         self.session = session
         let hosting = NSHostingView(
             rootView: Controls(session: session, details: details, resize: resize)
@@ -77,7 +83,7 @@ final class ScrollCapturePanelController {
     }
 
     func close() {
-        session?.onPauseChange = nil; session = nil
+        session?.onPauseChange = nil; session?.onHintChange = nil; session = nil
         panel?.orderOut(nil); panel?.contentView = nil; panel = nil
         border?.orderOut(nil); border?.contentView = nil; border = nil
     }
@@ -118,6 +124,17 @@ final class ScrollCapturePanelController {
         private var expanded: Bool { session.paused || details.shown }
 
         var body: some View {
+            VStack(spacing: metrics.spacing.xs) {
+                bar
+                if !expanded, let hint = session.hint {
+                    Text(hint).lineLimit(2).foregroundStyle(Theme.Colors.textPrimary)
+                        .captureNotice(metrics)
+                }
+            }
+            .frame(maxHeight: .infinity, alignment: .top)
+        }
+
+        private var bar: some View {
             VStack(alignment: .leading, spacing: 0) {
                 HStack(spacing: metrics.spacing.xxs) {
                     Text("\(session.document.size.width) × \(session.document.size.height)")
@@ -157,7 +174,7 @@ final class ScrollCapturePanelController {
                             isOn: Binding(
                                 get: { details.shown },
                                 set: { value in
-                                    resize(session.paused || value)
+                                    resize(session.paused || value || session.hint != nil)
                                     details.shown = value
                                 }))
                         Button("Select Again…") { coordinator.restartScroll() }

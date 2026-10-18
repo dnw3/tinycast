@@ -13,6 +13,7 @@ final class CaptureCoordinator {
     var retainedWorkspace: CaptureWorkspaceState?
     var pendingCapture: CaptureAppendState?
     var historyEntries: [CaptureHistoryEntry] = []
+    @ObservationIgnored var historySearchText: [UUID: String] = [:]
     var historyQuery = ""
     var pins: [CapturePinController] = []
     var exportOptions = CaptureExportOptions()

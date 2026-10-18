@@ -120,8 +120,10 @@ Time/UUID filenames publish without replacing an existing file; cancellation and
 Quick Save uses the current format/export options and closes only the unchanged inline session after success.
 The expanded editor stays open. The main Save icon and Shift-Command-S open Save As, hide the overlay,
 and restore it after completion or cancellation; this does not change the quick-save folder.
+Save As suggests a localized Screenshot or Recording name with Quick Save's timestamp.
 The save menu retains Quick Save with an actual Command-S binding and Show Quick Save Folder.
-Settings can also reveal the folder; successful saves report the destination directory.
+Settings can also reveal the folder; successful saves report the tilde-abbreviated destination directory.
+If history cannot be saved, only the HUD says so (Copied/Saved, but history couldn't be saved).
 Both save shortcuts work while editing annotation text; text copy and undo keep their normal behavior.
 Scrolling controls offer Finish and Save As to stop sampling and open the result's save panel in one action.
 That action stays disabled until the first valid frame is captured.
@@ -136,8 +138,8 @@ See [the efficiency spec](../plans/capture-efficiency-spec.md) and [implementati
 
 QR scanning uses the existing recognition helper with a typed request content kind. It scans the
 composited overview and overlapping full-resolution tiles, maps results back into document coordinates,
-and deduplicates overlapping detections. Results remain beside the image; Copy and HTTP(S) Open Link
-are explicit user actions. A document revision change clears old code results. Hidden source pixels
+and deduplicates overlapping detections. Results remain beside the image; Copy (confirmed by the
+Copied HUD) and HTTP(S) Open Link are explicit user actions. A document revision change clears old code results. Hidden source pixels
 are never passed to QR recognition.
 
 Selection Options includes a 3/5/10-second delayed recapture. It closes the current capture through
@@ -187,7 +189,8 @@ Closing checks both unsaved results. Canceling without keeping a result restores
 
 `ScrollCaptureSession` serializes stable-frame sampling, RGB registration, strip writes and incremental
 preview updates. It requires two stable samples, matches against the last accepted frame and rejects
-ambiguous displacement. Duplicate and reverse frames do not grow the result. Along-axis fixed headers
+ambiguous displacement. Duplicate and reverse frames do not grow the result; a reverse frame shows
+Scroll forward in a notice under the bar for three seconds, cleared by the next appended strip. Along-axis fixed headers
 stay in the first strip; the previous fixed footer is removed before a new strip and footer are appended.
 Independent per-lane checks reject inconsistent cross-axis content, including sampled fixed sidebars.
 Uncertain content pauses with the last valid result and a Select Again path; it is never force-stitched.
@@ -446,8 +449,11 @@ Saved GIFs retain animation in history, with actual frame duration, dimensions a
 Return opens GIF playback; images and movies also offer Quick Preview. GIF playback decodes sequentially off-main
 and queues at most one pending frame; closing cancels playback and releases the copied source lease.
 Video preview distinguishes loading, ready and failure, offers Retry Preview, and releases its player item when hidden.
+A failed GIF preview shows the same centred card; Retry Preview restarts decoding from the first frame.
 
 Copy on movie/GIF history entries delivers a file; image entries expose Copy File separately from Copy Image.
+History Copy (⌘↵) returns focus to the previous app; ⌃X deletes, ⌘Y opens Quick Preview and ⇧⌘C copies the file.
+Search matches title, date and subtitle text built once per history load; no match reads No matching captures.
 The file is copied into the channel's `captures/transfers/<entry-id>/` directory before changing the pasteboard.
 History cleanup, preview closure and quitting the app do not remove it. Repeated copies reuse the immutable file.
 The next file copy reclaims transfer directories older than 24 hours, excluding current pasteboard file URLs.
@@ -529,7 +535,8 @@ or background uploads are performed. Actual provider sign-in and downloaded-file
 
 Transfers use a private ephemeral URLSession with no URL cache, cookies or credential storage, reject
 redirects and cap responses at 64 KiB. PNG/GIF/MP4 uploads use the final rendered file, never the editable
-source. Local history is committed first and survives remote errors or cancellation. S3 and Drive stream
+source. Local history is committed first and survives remote errors or cancellation. History uploads,
+which have no editor notice, report progress in a cancellable HUD that the result replaces. S3 and Drive stream
 files up to 2 GB from disk; imgbb's temporary multipart file contains no API key. Cloud links are copied
 only after a successful validated response; the app does not open them automatically.
 
