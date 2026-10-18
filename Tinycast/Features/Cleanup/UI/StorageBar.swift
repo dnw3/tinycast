@@ -34,7 +34,7 @@ struct StorageBar: View {
             .frame(height: metrics.size.storageBarHeight)
             HStack(spacing: metrics.spacing.lg) {
                 legend(String(localized: "Used"), used, Theme.Colors.textTertiary)
-                legend(String(localized: "Selected"), selected, Theme.Colors.textPrimary)
+                if selected > 0 { legend(String(localized: "Selected"), selected, Theme.Colors.textPrimary) }
                 Spacer(minLength: 0)
                 legend(String(localized: "Available"), available, Theme.Colors.controlSurface)
             }

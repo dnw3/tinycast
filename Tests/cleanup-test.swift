@@ -403,6 +403,42 @@ struct CleanupTests {
         expect(plan.item(items[1].path)?.size == 100, "a neighbour keeps its size")
     }
 
+    static func testEmptyItems() {
+        var plan = CleanupPlan(generation: 1)
+        let empty = item("Library/Logs/Empty", size: 0)
+        let full = item("Library/Caches/com.raycast.macos")
+        var unknown = item("Library/Logs/Unknown", size: 0)
+        unknown.isSizeUnknown = true
+        plan.add([empty, full])
+        expect(plan.group(.logs)?.isEmptyOnDisk == true, "a group measured at nothing is empty")
+        expect(plan.group(.appCaches)?.isEmptyOnDisk == false, "a group with bytes is not")
+        expect(!item("Library/Logs/Pending", size: nil).isEmptyOnDisk, "a pending size is not empty yet")
+        expect(!unknown.isEmptyOnDisk, "an unknown size is not empty")
+        var selection = CleanupSelection()
+        selection.preselect([empty, full])
+        expect(!selection.checked.contains(empty.path), "an empty row is never preselected")
+        selection.set([empty], checked: true)
+        selection.set([full], checked: false)
+        expect(!selection.hasEffective(in: plan, runtime: .idle, exclusions: []), "only empty rows checked counts as none")
+        selection.set([full], checked: true)
+        expect(selection.hasEffective(in: plan, runtime: .idle, exclusions: []), "a counted row is found")
+        expect(
+            selection.effective(in: plan, runtime: .idle, exclusions: []) == [full], "an empty row never counts")
+    }
+
+    static func testReclaimable() {
+        var (plan, items) = makePlan()
+        let movie = CleanupItem(
+            path: home + "/Downloads/big.mov",
+            match: CleanupMatch(target: .largeFiles, pattern: CleanupPattern(""), captures: [], isContentsChild: false),
+            name: "big.mov", size: 5_000, modified: nil, protection: .removable)
+        plan.add([movie])
+        let runtime = CleanupRuntime(runningBundleIDs: ["com.tinyspeck.slackmacgap"])
+        let reclaimable = plan.reclaimableItems(runtime: runtime, exclusions: [])
+        expect(reclaimable == [items[0], items[4]], "only safe rows free right now count toward the headline")
+        expect(!reclaimable.contains(movie), "a personal file is never part of the headline")
+    }
+
     static func testAutomaticItems() {
         let (plan, items) = makePlan()
         let runtime = CleanupRuntime(runningBundleIDs: ["com.tinyspeck.slackmacgap"])
@@ -445,6 +481,9 @@ struct CleanupTests {
         report.recordFailure(name: "x", path: "/x", reason: .inUse)
         expect(report.removedBytes == (1 << 30) + 100 && report.removedCount == 2, "tallies add up")
         expect(report.hasFailures, "a failure is kept")
+        expect(!report.wasCancelled && report.realFailures.count == 1, "a real failure is not a cancel")
+        report.recordFailure(name: "y", path: "/y", reason: .cancelled)
+        expect(report.wasCancelled && report.realFailures.count == 1, "a cancelled item is not a failure to report")
         expect(!report.isHeldBySnapshots, "no reading, no snapshot note")
         report.volumeGain = 10 << 20
         expect(report.isHeldBySnapshots, "a gigabyte deleted for 10 MB freed points at snapshots")
@@ -918,6 +957,12 @@ struct CleanupTests {
         expect(level.entries.first { $0.kind == .unattributed }?.bytes == 85, "the rest is attributed")
         level.attribute(used: 400, title: "Other")
         expect(level.entries.filter { $0.kind == .unattributed }.count == 1, "attributed once")
+        level.remove(home + "/b")
+        expect(level.total == 100 && level.entries.first?.name == "Other", "a removed row leaves the total")
+        let loading = DiskUsageLevel(path: home, title: "tester", entries: [], listing: .loading)
+        expect(!loading.isComplete, "a folder still being listed is not complete")
+        let unreadable = DiskUsageLevel(path: home, title: "tester", entries: [], listing: .unreadable)
+        expect(unreadable.entries.isEmpty && unreadable.listing == .unreadable, "an unreadable folder says so")
         expect(DiskUsagePolicy.canTrash(home + "/Downloads/big.iso", home: home), "a file in Downloads can go")
         expect(!DiskUsagePolicy.canTrash(home + "/Downloads", home: home), "a top-level folder can't")
         expect(!DiskUsagePolicy.canTrash(home + "/Library/Caches/x", home: home), "nothing in Library")
@@ -977,6 +1022,8 @@ struct CleanupTests {
         testGroupToggle()
         testStreamedSizes()
         testAutomaticItems()
+        testEmptyItems()
+        testReclaimable()
         testKeepNewest()
         testDeletionMode()
         testReport()

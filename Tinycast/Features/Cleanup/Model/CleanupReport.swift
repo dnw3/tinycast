@@ -47,6 +47,9 @@ struct CleanupReport: Equatable, Sendable {
     var removedBytes: Int64 { deletedBytes + trashedBytes + evictedBytes }
     var removedCount: Int { deletedCount + trashedCount + evictedCount }
     var hasFailures: Bool { !failures.isEmpty }
+    /// What actually went wrong; items a cancel left untouched are not failures to report.
+    var realFailures: [Failure] { failures.filter { $0.reason != .cancelled } }
+    var wasCancelled: Bool { failures.contains { $0.reason == .cancelled } }
 
     mutating func recordDeleted(bytes: Int64) {
         deletedBytes += bytes

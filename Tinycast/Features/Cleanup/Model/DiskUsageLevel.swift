@@ -24,24 +24,44 @@ struct DiskUsageEntry: Identifiable, Equatable, Sendable {
 
 /// The entries of one folder, with their order frozen once every size is known.
 struct DiskUsageLevel: Equatable, Sendable {
-    let path: String
-    let title: String
-    private(set) var entries: [DiskUsageEntry]
-
-    init(path: String, title: String, entries: [DiskUsageEntry]) {
-        self.path = path
-        self.title = title
-        self.entries = entries
+    enum Listing: Equatable, Sendable {
+        case loading
+        case listed
+        /// The folder itself could not be read, which is not the same as empty.
+        case unreadable
     }
 
-    var isComplete: Bool { entries.allSatisfy { $0.bytes != nil || $0.kind == .guarded } }
-    var total: Int64 { entries.reduce(0) { $0 + ($1.bytes ?? 0) } }
+    let path: String
+    let title: String
+    let listing: Listing
+    private(set) var entries: [DiskUsageEntry]
+    private(set) var total: Int64 = 0
+    private var positions: [String: Int] = [:]
+    private var pending = 0
+
+    init(path: String, title: String, entries: [DiskUsageEntry], listing: Listing = .listed) {
+        self.path = path
+        self.title = title
+        self.listing = listing
+        self.entries = entries
+        total = entries.reduce(0) { $0 + ($1.bytes ?? 0) }
+        pending = entries.count { $0.bytes == nil && $0.kind != .guarded }
+        reindex()
+    }
+
+    var isComplete: Bool { listing != .loading && pending == 0 }
 
     mutating func setSize(_ bytes: Int64, isPartial: Bool, forPath path: String) {
-        guard let index = entries.firstIndex(where: { $0.path == path }) else { return }
+        guard let index = positions[path] else { return }
+        if let old = entries[index].bytes {
+            total -= old
+        } else if entries[index].kind != .guarded {
+            pending -= 1
+        }
+        total += bytes
         entries[index].bytes = bytes
         entries[index].isPartial = isPartial
-        if isComplete { sortBySize() }
+        if pending == 0 { sortBySize() }
     }
 
     /// Adds the space the volume reports used but no entry accounts for, once all have landed.
@@ -50,11 +70,16 @@ struct DiskUsageLevel: Equatable, Sendable {
         let remainder = used - total
         guard remainder > 0 else { return }
         entries.append(DiskUsageEntry(path: path + "\u{0}other", name: title, kind: .unattributed, bytes: remainder))
+        total += remainder
         sortBySize()
     }
 
     mutating func remove(_ path: String) {
-        entries.removeAll { $0.path == path }
+        guard let index = positions[path] else { return }
+        let entry = entries.remove(at: index)
+        total -= entry.bytes ?? 0
+        if entry.bytes == nil, entry.kind != .guarded { pending -= 1 }
+        reindex()
     }
 
     /// Largest first; ties and guarded rows by name, so the order never flickers.
@@ -65,10 +90,14 @@ struct DiskUsageLevel: Equatable, Sendable {
             if left != right { return left > right }
             return lhs.name.localizedStandardCompare(rhs.name) == .orderedAscending
         }
+        reindex()
+    }
+
+    private mutating func reindex() {
+        positions = Dictionary(entries.indices.map { (entries[$0].path, $0) }, uniquingKeysWith: { first, _ in first })
     }
 
     func fraction(of entry: DiskUsageEntry) -> Double {
-        let total = total
         guard total > 0, let bytes = entry.bytes else { return 0 }
         return Double(bytes) / Double(total)
     }

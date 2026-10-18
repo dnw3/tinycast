@@ -117,6 +117,13 @@ struct CleanupWalkTests {
         expect(container?.match.pattern.contentsOnly == true, "a container's cache folder is emptied, not removed")
         expect(items.allSatisfy { $0.size == nil }, "discovery leaves every size pending")
 
+        let batches = Mutex<[[CleanupItem]]>([])
+        await CleanupScanner.discover(environment()) { batch in batches.withLock { $0.append(batch) } }
+        let streamed = batches.withLock { $0 }
+        expect(!streamed.isEmpty && streamed.allSatisfy { !$0.isEmpty }, "each source arrives as its own batch")
+        expect(
+            Set(streamed.flatMap { $0 }.map(\.path)) == Set(items.map(\.path)), "streaming finds what one pass finds")
+
         let guarded = await CleanupScanner.discover(environment(hasFullDiskAccess: false))
         expect(!guarded.contains { $0.path.contains("/Library/Containers/") }, "containers are not listed without access")
     }

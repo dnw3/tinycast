@@ -19,6 +19,8 @@ struct CleanupItem: Identifiable, Hashable, Sendable {
 
     var id: String { path }
     var target: CleanupTarget { CleanupCatalog.target(match.target) }
+    /// Measured at nothing; a floor, an upper bound or an unknown size could still free space.
+    var isEmptyOnDisk: Bool { size == 0 && !isPartial && !isUpperBound && !isSizeUnknown }
 }
 
 enum CleanupLock: Equatable, Sendable {
@@ -40,6 +42,7 @@ struct CleanupGroup: Identifiable, Equatable, Sendable {
 
     var id: CleanupTargetID { target.id }
     var bytes: Int64 { items.reduce(0) { $0 + ($1.size ?? 0) } }
+    var isEmptyOnDisk: Bool { items.allSatisfy(\.isEmptyOnDisk) }
 }
 
 /// One scan's findings, in catalog order; a landed size never reorders a row.
@@ -105,6 +108,13 @@ struct CleanupPlan: Equatable, Sendable {
             && !CleanupExclusions.contains(item.path, in: exclusions)
     }
 
+    /// The overview's figure and its per-category split: safe, free right now and not empty.
+    func reclaimableItems(runtime: CleanupRuntime, exclusions: [String]) -> [CleanupItem] {
+        items.filter { item in
+            item.target.tier == .safe && !item.isEmptyOnDisk && isAvailable(item, runtime: runtime, exclusions: exclusions)
+        }
+    }
+
     /// What Quick Clean and scheduled runs may take: audited, delete-type and free right now.
     func automaticItems(runtime: CleanupRuntime, exclusions: [String]) -> [CleanupItem] {
         items.filter { item in
@@ -120,7 +130,7 @@ struct CleanupSelection: Equatable, Sendable {
 
     /// Safe rows arrive checked; a reviewed row is always the user's own pick.
     mutating func preselect(_ items: [CleanupItem]) {
-        for item in items where item.target.tier == .safe { checked.insert(item.path) }
+        for item in items where item.target.tier == .safe && !item.isEmptyOnDisk { checked.insert(item.path) }
     }
 
     mutating func toggle(_ item: CleanupItem, in plan: CleanupPlan, runtime: CleanupRuntime, exclusions: [String]) {
@@ -162,9 +172,16 @@ struct CleanupSelection: Equatable, Sendable {
         return count == available.count ? .on : .mixed
     }
 
-    /// Checked and still available: the only set totals, confirmation and the run may use.
+    /// The footer asks on every render, so it stops at the first counted item.
+    func hasEffective(in plan: CleanupPlan, runtime: CleanupRuntime, exclusions: [String]) -> Bool {
+        plan.groups.contains { group in
+            group.items.contains { !$0.isEmptyOnDisk && isChecked($0, in: plan, runtime: runtime, exclusions: exclusions) }
+        }
+    }
+
+    /// Checked, available and not empty: the only set totals, confirmation and the run may use.
     func effective(in plan: CleanupPlan, runtime: CleanupRuntime, exclusions: [String]) -> [CleanupItem] {
-        plan.items.filter { isChecked($0, in: plan, runtime: runtime, exclusions: exclusions) }
+        plan.items.filter { !$0.isEmptyOnDisk && isChecked($0, in: plan, runtime: runtime, exclusions: exclusions) }
     }
 }
 

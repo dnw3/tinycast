@@ -285,10 +285,17 @@ item that is already gone counts as done. The file operations are injected, so
 `Clean Up Disk` (`CommandID.cleanUpDisk`, owned by Settings › Disk Cleanup) opens `.cleanup`, laid out
 like File Search: the list, a hairline, then the detail pane. `onScreenOpening` starts the scan; the
 first row, Disk Overview, carries the reclaimable total in `Typography.readout`, a `StorageBar`
-(used, selected, free; selected drawn at the trailing end of used) and per-category subtotals.
+(used, selected, free; selected drawn at the trailing end of used) and per-category subtotals. Both
+figures count only safe rows that are free right now (`CleanupPlan.reclaimableItems`), so the
+categories add up to the headline; personal files and other reviewed rows are listed, not counted.
 Without Full Disk Access an access row follows it, and on that row ↵ opens Privacy & Security
 instead of cleaning. Groups are listed under their category headers in catalog order, and a size
 stays blank until every walk in the group has landed, so no total reads low and nothing reorders.
+Each source's rows appear as it finishes — the catalog, update files and leftovers together, so no
+catalog row inside a leftover is counted twice, then tools, projects, files and iCloud — and each
+batch is measured before the next. The highlight follows its row by ID as groups land above it. A
+row measured at zero bytes (not a floor, an upper bound or unknown) is never preselected or
+counted, and a group made only of them is hidden.
 
 A group with more than one item, or a generic one, drills into `.cleanupGroup` with →, ⌘I or a
 double-click; ← or Esc pops back to the same group, since `CleanupSession.focusedGroupID` survives
@@ -297,7 +304,10 @@ the pop and `landingSelection` finds it. The group's items are sorted by size on
 ↵ always goes through `CleanupCoordinator.performCleanup`: it confirms with the deleted and trashed
 byte counts, then checks that the plan's generation is unchanged and takes the selection that is
 still checked and unlocked at that moment. The run shows `Cleaning…` in a cancellable HUD, removes
-what it cleaned from the plan, and reports a summary or a notice listing up to five failures. While
+what it cleaned from the plan, and reports a summary or a notice that opens with that summary and
+lists up to five failures. A cancelled run, including a cancelled administrator prompt, is not a
+failure: it reports `Cancelled` and what was freed before it stopped. While selected sizes are still
+landing the confirmation reads "at least". While
 it runs, `UpdateReadiness` holds an in-app update with `.cleaning`. Leaving both modes calls
 `CleanupSession.leave()`, which cancels the scan and discards the plan; the next visit scans again.
 
@@ -309,8 +319,8 @@ cancellable `Looking for things to clean…` HUD, measures only safe delete-type
 confirmation states the total and the split, and the run then goes through the same `run` as the
 screen, behind the same `isCleaning` gate; a screen run started while the dialog was open wins.
 
-The Trash row is never selectable. Its ⌘K offers Empty Trash…, which hands over to the existing
-`SystemAction.emptyTrash` and its own confirmation.
+The Trash row is never selectable. On it ↵ and ⌘K offer Empty Trash…, which hands over to the
+existing `SystemAction.emptyTrash` and its own confirmation.
 
 ## Disk usage
 
@@ -320,8 +330,10 @@ measured. → , ↵, ⌘I or a double-click opens a folder as another `.diskUsag
 back with the parent's row still highlighted; `DiskUsageCoordinator.depth` is the number of analyzer
 frames on the palette's back stack, and `DiskUsageSession` holds one level per frame — each level is
 only its direct children, so memory never grows with the tree. Rows keep their listing order while
-sizes stream in and sort largest first once, when the last one lands; each carries a bar for its share
-of the folder. ⌘F shows in Finder, ⌃⌘C copies the path, and ⌃X moves an item to the Trash after a
+sizes stream in and sort largest first once, when the last one lands, with the highlight kept on its
+entry; each carries a bar for its share of the folder. A folder is listed off the main actor behind a
+spinner, rows use Finder's localized display names (paths stay the identity), and a folder that can't
+be read says so rather than reading as empty. ⌘F shows in Finder, ⌃⌘C copies the path, and ⌃X moves an item to the Trash after a
 confirmation — only inside home, below a top-level folder and outside `Library` (`DiskUsagePolicy`).
 On a file ↵ shows it in Finder. The detail pane names no keys; it mentions the Trash only where
 `DiskUsagePolicy` allows it, and the footer button carries the primary action.
@@ -336,7 +348,7 @@ totals that would have entered one read as floors. Leaving the mode discards eve
 60-second startup delay, then a check every 15 minutes. It decides when; `CleanupCoordinator` cleans.
 
 - **Scheduled cleaning** (`cleanupScheduleEnabled`) grants unattended deletion, so it is switched on
-  only in Settings, after a Tinycast dialog listing every target it may take; it has no settings-file
+  only in Settings, after a Tinycast dialog naming the kinds of item it may take; it has no settings-file
   key and no backup (`settings-file-test` lists it with the other grants). The first run is a full
   interval (daily, weekly or monthly) after switching on. A due run waits until the Mac has been idle
   for five minutes (keys, clicks, scrolls and pointer moves), the palette is hidden, no dialog is open

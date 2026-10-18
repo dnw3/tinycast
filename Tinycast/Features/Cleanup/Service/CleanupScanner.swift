@@ -19,18 +19,39 @@ nonisolated enum CleanupScanner {
 
     @concurrent
     static func discover(_ environment: Environment) async -> [CleanupItem] {
+        await withTaskGroup(of: [CleanupItem].self) { group in
+            addSources(environment, to: &group)
+            var items: [CleanupItem] = []
+            for await batch in group { items += batch }
+            return items
+        }
+    }
+
+    /// Hands over each source's findings as it finishes, so the quick ones are listed first.
+    @concurrent
+    static func discover(_ environment: Environment, each deliver: @Sendable ([CleanupItem]) async -> Void) async {
+        await withTaskGroup(of: [CleanupItem].self) { group in
+            addSources(environment, to: &group)
+            for await batch in group where !batch.isEmpty && !Task.isCancelled { await deliver(batch) }
+        }
+    }
+
+    private static func addSources(_ environment: Environment, to group: inout TaskGroup<[CleanupItem]>) {
+        group.addTask { localItems(environment) }
+        group.addTask { await CleanupToolScanner.discover(environment) }
+        group.addTask { await CleanupProjectScanner.discover(environment) }
+        group.addTask { await CleanupFileScanner.discover(environment) }
+        group.addTask { CleanupCloudScanner.discover(environment) }
+    }
+
+    /// One batch, so no catalog row inside a leftover folder offered whole counts its bytes again.
+    private static func localItems(_ environment: Environment) -> [CleanupItem] {
         let catalog = discoverCatalog(environment)
         guard !Task.isCancelled else { return [] }
-        async let tools = CleanupToolScanner.discover(environment)
-        async let files = CleanupFileScanner.discover(environment)
-        async let cloud = CleanupCloudScanner.discover(environment)
-        let projects = await CleanupProjectScanner.discover(environment)
-        let updates = CleanupSystemUpdateScanner.discover(environment)
         let leftovers = CleanupLeftoverScanner.discover(environment)
-        // A leftover folder is offered whole, so no catalog row inside it counts its bytes again.
         let roots = leftovers.map { $0.path + "/" }
         let outside = catalog.filter { item in !roots.contains { item.path.hasPrefix($0) } }
-        return updates + outside + (await tools) + projects + (await files) + (await cloud) + leftovers
+        return CleanupSystemUpdateScanner.discover(environment) + outside + leftovers
     }
 
     private static func discoverCatalog(_ environment: Environment) -> [CleanupItem] {

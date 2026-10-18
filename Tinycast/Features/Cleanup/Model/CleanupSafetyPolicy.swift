@@ -38,11 +38,23 @@ struct CleanupPathContext: Sendable {
 
 /// Processes whose activity makes a leaf unsafe to remove right now.
 struct CleanupRuntime: Equatable, Sendable {
-    var runningBundleIDs: Set<String> = []
+    let runningBundleIDs: Set<String>
     /// Executable file names, lowercased.
-    var runningProcesses: Set<String> = []
+    let runningProcesses: Set<String>
     /// Kernel-reported working directories of the user's processes, symlinks resolved.
-    var workingDirectories: Set<String> = []
+    let workingDirectories: Set<String>
+    /// Lowercased once here, since every row's lock read compares against all of them.
+    let lowercasedBundleIDs: [String: String]
+
+    init(
+        runningBundleIDs: Set<String> = [], runningProcesses: Set<String> = [], workingDirectories: Set<String> = []
+    ) {
+        self.runningBundleIDs = runningBundleIDs
+        self.runningProcesses = runningProcesses
+        self.workingDirectories = workingDirectories
+        lowercasedBundleIDs = Dictionary(
+            runningBundleIDs.map { ($0.lowercased(), $0) }, uniquingKeysWith: { first, _ in first })
+    }
 
     static let idle = CleanupRuntime()
 }
@@ -207,10 +219,9 @@ enum CleanupSafetyPolicy {
         if target.isGeneric, let key = match.key, looksLikeBundleID(key) { bundleIDs.append(key) }
         for owner in bundleIDs {
             let lower = owner.lowercased()
-            if let running = runtime.runningBundleIDs.first(where: { candidate in
-                let running = candidate.lowercased()
-                return running == lower || lower.hasPrefix(running + ".") || running.hasPrefix(lower + ".")
-            }) {
+            if let running = runtime.lowercasedBundleIDs[lower] ?? runtime.lowercasedBundleIDs.first(where: { candidate in
+                lower.hasPrefix(candidate.key + ".") || candidate.key.hasPrefix(lower + ".")
+            })?.value {
                 return running.count <= owner.count ? running : owner
             }
         }

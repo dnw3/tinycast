@@ -22,49 +22,56 @@ final class DiskUsageSession {
         guard levels.isEmpty else { return }
         reset()
         hasFullDiskAccess = Permissions.hasFullDiskAccess()
-        let home = NSHomeDirectory()
-        let entries = [
-            DiskUsageEntry(path: home, name: (home as NSString).lastPathComponent, kind: .folder),
-            DiskUsageEntry(path: "/Applications", name: "Applications", kind: .folder),
-            DiskUsageEntry(path: "/Library", name: "Library", kind: .folder)
-        ]
+        let entries = [NSHomeDirectory(), "/Applications", "/Library"].map { path in
+            DiskUsageEntry(path: path, name: FileManager.default.displayName(atPath: path), kind: .folder)
+        }
         let title = (try? URL(fileURLWithPath: "/").resourceValues(forKeys: [.volumeLocalizedNameKey]))?
             .volumeLocalizedName ?? "Macintosh HD"
         levels = [DiskUsageLevel(path: "/", title: title, entries: entries)]
         measure(depth: 0, paths: entries.map(\.path))
     }
 
-    /// Replaces everything deeper than `depth` with `entry`'s folder.
+    /// Replaces everything deeper than `depth` with `entry`'s folder, listed off the main actor.
     func enter(_ entry: DiskUsageEntry, from depth: Int) {
         guard entry.canOpen else { return }
         cancelTasks()
         levels = Array(levels.prefix(depth + 1))
-        let home = NSHomeDirectory()
+        levels.append(DiskUsageLevel(path: entry.path, title: entry.name, entries: [], listing: .loading))
+        let generation = generation
         let checksAccess = !hasFullDiskAccess
-        let names = (try? FileManager.default.contentsOfDirectory(atPath: entry.path)) ?? []
+        let task = Task { [weak self] in
+            let entries = await Self.list(entry.path, checksAccess: checksAccess)
+            guard let self, !Task.isCancelled, generation == self.generation, levels.indices.contains(depth + 1)
+            else { return }
+            levels[depth + 1] = DiskUsageLevel(
+                path: entry.path, title: entry.name, entries: entries ?? [], listing: entries == nil ? .unreadable : .listed)
+            measure(depth: depth + 1, paths: (entries ?? []).filter { $0.kind == .folder }.map(\.path))
+        }
+        tasks.append(task)
+    }
+
+    /// Nil when the folder itself can't be read.
+    @concurrent
+    private nonisolated static func list(_ folder: String, checksAccess: Bool) async -> [DiskUsageEntry]? {
+        guard let names = try? FileManager.default.contentsOfDirectory(atPath: folder) else { return nil }
+        let home = NSHomeDirectory()
         var entries: [DiskUsageEntry] = []
-        var folders: [String] = []
         for name in names {
-            let path = entry.path == "/" ? "/" + name : entry.path + "/" + name
+            let path = folder == "/" ? "/" + name : folder + "/" + name
             var info = stat()
             guard lstat(path, &info) == 0 else { continue }
+            let title = FileManager.default.displayName(atPath: path)
             switch info.st_mode & S_IFMT {
             case S_IFDIR:
-                if checksAccess, CleanupScanner.isGuarded(path + "/", home: home) {
-                    entries.append(DiskUsageEntry(path: path, name: name, kind: .guarded))
-                } else {
-                    entries.append(DiskUsageEntry(path: path, name: name, kind: .folder))
-                    folders.append(path)
-                }
+                let guarded = checksAccess && CleanupScanner.isGuarded(path + "/", home: home)
+                entries.append(DiskUsageEntry(path: path, name: title, kind: guarded ? .guarded : .folder))
             case S_IFREG, S_IFLNK:
-                entries.append(
-                    DiskUsageEntry(path: path, name: name, kind: .file, bytes: Int64(info.st_blocks) * 512))
+                entries.append(DiskUsageEntry(path: path, name: title, kind: .file, bytes: Int64(info.st_blocks) * 512))
             default:
                 continue
             }
         }
-        levels.append(DiskUsageLevel(path: entry.path, title: entry.name, entries: entries))
-        measure(depth: depth + 1, paths: folders)
+        return entries
     }
 
     func remove(_ path: String) {

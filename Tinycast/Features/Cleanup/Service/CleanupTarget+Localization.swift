@@ -265,8 +265,8 @@ extension CleanupLock {
 
 extension CleanupItem {
     /// Blank until every walk lands, so a total never reads lower than it will settle at.
-    static func sizeLabel(_ items: [CleanupItem], pending: String = "") -> String {
-        guard !items.isEmpty, items.allSatisfy({ $0.size != nil }) else { return pending }
+    static func sizeLabel(_ items: [CleanupItem]) -> String {
+        guard !items.isEmpty, items.allSatisfy({ $0.size != nil }) else { return "" }
         if items.allSatisfy(\.isSizeUnknown) { return String(localized: "Size unknown") }
         let bytes = items.reduce(Int64(0)) { $0 + ($1.size ?? 0) }
         let prefix: String

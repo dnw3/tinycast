@@ -56,23 +56,21 @@ final class CleanupSession {
 
     var isScanning: Bool { phase == .discovering || phase == .measuring }
 
-    var groups: [CleanupGroup] { plan.groups.filter { !$0.items.isEmpty } }
+    var groups: [CleanupGroup] { plan.groups.filter { !$0.items.isEmpty && !$0.isEmptyOnDisk } }
 
     var effectiveSelection: [CleanupItem] {
         selection.effective(in: plan, runtime: runtime, exclusions: exclusions)
     }
 
+    var hasEffectiveSelection: Bool { selection.hasEffective(in: plan, runtime: runtime, exclusions: exclusions) }
+
     var selectedBytes: Int64 { effectiveSelection.reduce(0) { $0 + ($1.size ?? 0) } }
 
-    /// Everything that could be cleaned right now, checked or not.
-    var reclaimableBytes: Int64 {
-        plan.items.reduce(0) { total, item in
-            plan.isAvailable(item, runtime: runtime, exclusions: exclusions) ? total + (item.size ?? 0) : total
+    /// What is safe to clean right now, checked or not, by category; the overview's whole figure.
+    var reclaimableBytesByCategory: [CleanupCategory: Int64] {
+        plan.reclaimableItems(runtime: runtime, exclusions: exclusions).reduce(into: [:]) { totals, item in
+            totals[item.target.category, default: 0] += item.size ?? 0
         }
-    }
-
-    func bytes(in category: CleanupCategory) -> Int64 {
-        groups.filter { $0.target.category == category && $0.target.isSelectable }.reduce(0) { $0 + $1.bytes }
     }
 
     // MARK: - Scanning
@@ -93,26 +91,31 @@ final class CleanupSession {
         focusedOrder = []
         hasFullDiskAccess = environment.hasFullDiskAccess
         phase = .discovering
+        // One volume query, read now so the storage bar fills the pane while discovery runs.
+        capacity = Self.readCapacitySync()
         scanTask = Task { [weak self] in
-            async let processes = Self.sampleProcesses()
-            async let capacity = Self.readCapacity()
-            let items = await CleanupScanner.discover(environment)
-            guard let self, !Task.isCancelled, generation == self.generation else { return }
-            self.processes = await processes
-            self.capacity = await capacity
-            plan.add(items)
-            selection.preselect(items)
-            phase = .measuring
-            let paths = items.filter { $0.size == nil && $0.protection.isRemovable }.map(\.path)
+            self?.processes = await Self.sampleProcesses()
             let skipping = environment.hasFullDiskAccess ? [] : CleanupScanner.guardedFolders(home: environment.home)
-            await DiskUsageScanner.measure(paths, skipping: skipping) { [weak self] batch in
-                guard let self, generation == self.generation else { return }
-                for (path, size) in batch {
-                    plan.setSize(size.bytes, isPartial: size.isPartial, forPath: path, generation: generation)
-                }
+            await CleanupScanner.discover(environment) { [weak self] items in
+                await self?.receive(items, generation: generation, skipping: skipping)
             }
-            guard !Task.isCancelled, generation == self.generation else { return }
+            guard let self, !Task.isCancelled, generation == self.generation else { return }
             phase = .ready
+        }
+    }
+
+    /// Lists one source's findings at once and measures them before taking the next.
+    private func receive(_ items: [CleanupItem], generation: Int, skipping: Set<String>) async {
+        guard !Task.isCancelled, generation == self.generation else { return }
+        plan.add(items)
+        selection.preselect(items)
+        phase = .measuring
+        let paths = items.filter { $0.size == nil && $0.protection.isRemovable }.map(\.path)
+        await DiskUsageScanner.measure(paths, skipping: skipping) { [weak self] batch in
+            guard let self, generation == self.generation else { return }
+            for (path, size) in batch {
+                plan.setSize(size.bytes, isPartial: size.isPartial, forPath: path, generation: generation)
+            }
         }
     }
 
@@ -177,7 +180,7 @@ final class CleanupSession {
         focusedOrder = items.sorted { ($0.size ?? 0) > ($1.size ?? 0) }.map(\.path)
     }
 
-    var focusedItems: [CleanupItem] { focusedOrder.compactMap { plan.item($0) } }
+    var focusedItems: [CleanupItem] { focusedOrder.compactMap { plan.item($0) }.filter { !$0.isEmptyOnDisk } }
 
     // MARK: - Running
 
@@ -196,11 +199,6 @@ final class CleanupSession {
     @concurrent
     private nonisolated static func sampleProcesses() async -> CleanupAccess.ProcessSnapshot {
         CleanupAccess.processSnapshot()
-    }
-
-    @concurrent
-    private nonisolated static func readCapacity() async -> Capacity? {
-        readCapacitySync()
     }
 
     /// Finder's figure: available includes purgeable space, so the two numbers agree.

@@ -24,8 +24,11 @@ enum CleanupCacheClass: Equatable, Sendable {
 enum CleanupCatalog {
     static let targets: [CleanupTarget] = system + browsers + developer + tools + projects + files + leftovers + [trash]
 
+    /// Read for every row on every render, so it must not scan the list.
+    private static let byID = Dictionary(targets.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+
     static func target(_ id: CleanupTargetID) -> CleanupTarget {
-        guard let target = targets.first(where: { $0.id == id }) else {
+        guard let target = byID[id] else {
             preconditionFailure("missing catalog target \(id)")
         }
         return target

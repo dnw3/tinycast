@@ -160,10 +160,14 @@ struct DiskUsageDetail: View {
             Text(entry.name)
                 .font(metrics.typography.panelTitle)
                 .lineLimit(2)
-            Text(entry.bytes.map { (entry.isPartial ? "≥ " : "") + CleanupCoordinator.format($0) } ?? "—")
-                .font(metrics.typography.readout)
-                .monospacedDigit()
-                .contentTransition(.numericText())
+            if let bytes = entry.bytes {
+                Text((entry.isPartial ? "≥ " : "") + CleanupCoordinator.format(bytes))
+                    .font(metrics.typography.readout)
+                    .monospacedDigit()
+                    .contentTransition(.numericText())
+            } else {
+                PendingReadout()
+            }
             if let level, level.isComplete, entry.bytes != nil {
                 let share = level.fraction(of: entry).formatted(.percent.precision(.fractionLength(0)))
                 Text(String(localized: "\(share) of everything in \(level.title)"))

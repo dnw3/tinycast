@@ -122,7 +122,15 @@ struct DiskUsageScreen: PaletteScreen {
         let selected = rows.indices.contains(selection) ? rows[selection] : nil
         HStack(spacing: 0) {
             Group {
-                if rows.isEmpty {
+                if level?.listing == .loading {
+                    ProgressView().controlSize(.small).frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if level?.listing == .unreadable {
+                    EmptyResults(
+                        text: String(localized: "Can’t read this folder"),
+                        detail: session.hasFullDiskAccess
+                            ? nil : String(localized: "Tinycast may need Full Disk Access to read it."),
+                        systemImage: "lock")
+                } else if rows.isEmpty {
                     EmptyResults(
                         text: query.isEmpty ? String(localized: "This folder is empty") : String(localized: "No matches"),
                         systemImage: "folder")
@@ -142,6 +150,7 @@ struct DiskUsageScreen: PaletteScreen {
                 }
             }
             .frame(width: metrics.size.clipboardListWidth)
+            .modifier(CleanupSelectionAnchor(ids: rows.map(\.id), query: query, vm: vm))
             Rectangle()
                 .fill(Theme.Colors.separator)
                 .frame(width: Theme.Size.hairline)

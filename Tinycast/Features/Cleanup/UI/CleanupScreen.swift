@@ -72,7 +72,11 @@ struct CleanupScreen: PaletteScreen {
     // MARK: - Footer
 
     var primaryActionTitle: String {
-        if row(at: vm.selection) == .access { return String(localized: "Open Privacy Settings") }
+        switch row(at: vm.selection) {
+        case .access: return String(localized: "Open Privacy Settings")
+        case .group(.trash): return String(localized: "Empty Trash…")
+        default: break
+        }
         if session.isCleaning { return String(localized: "Cleaning…") }
         let bytes = session.selectedBytes
         return bytes > 0
@@ -80,20 +84,23 @@ struct CleanupScreen: PaletteScreen {
     }
 
     func isPrimaryActionEnabled(at selection: Int) -> Bool {
-        if row(at: selection) == .access { return true }
-        return !session.isCleaning && !session.effectiveSelection.isEmpty
+        switch row(at: selection) {
+        case .access, .group(.trash): return true
+        default: return !session.isCleaning && session.hasEffectiveSelection
+        }
     }
 
+    /// Red only when pressing it would delete; a disabled pill dims but would keep the tint.
     func isPrimaryActionDestructive(at selection: Int) -> Bool {
-        row(at: selection) != .access
+        row(at: selection) != .access && isPrimaryActionEnabled(at: selection)
     }
 
     func activate(at selection: Int) {
-        if row(at: selection) == .access {
-            coordinator.openFullDiskAccessSettings()
-            return
+        switch row(at: selection) {
+        case .access: coordinator.openFullDiskAccessSettings()
+        case .group(.trash): coordinator.emptyTrash()
+        default: coordinator.performCleanup()
         }
-        coordinator.performCleanup()
     }
 
     /// ⌘↵ checks the highlighted row, a group toggling every item it can.
@@ -208,6 +215,7 @@ struct CleanupScreen: PaletteScreen {
                 }
             }
             .frame(width: metrics.size.clipboardListWidth)
+            .modifier(CleanupSelectionAnchor(ids: rows.map(\.id), query: query, vm: vm))
             Rectangle()
                 .fill(Theme.Colors.separator)
                 .frame(width: Theme.Size.hairline)
@@ -224,10 +232,11 @@ enum CleanupActionsMenu {
     ) -> PopoverMenuContent? {
         var items: [PopoverMenuItem] = []
         var header = String(localized: "Clean Up")
-        if !session.effectiveSelection.isEmpty, !session.isCleaning {
+        if session.hasEffectiveSelection, !session.isCleaning {
             items.append(
                 PopoverMenuItem(
-                    title: String(localized: "Clean Up Selected"), systemImage: "trash", shortcut: "↵",
+                    title: String(localized: "Clean Up Selected"), systemImage: "trash",
+                    shortcut: row == .group(.trash) ? nil : "↵",
                     isDestructive: true
                 ) { coordinator.performCleanup() })
         }
@@ -253,7 +262,7 @@ enum CleanupActionsMenu {
                 items.append(
                     PopoverMenuItem(
                         title: String(localized: "Empty Trash…"), systemImage: "trash.slash", startsSection: true,
-                        isDestructive: true
+                        shortcut: "↵", isDestructive: true
                     ) { coordinator.emptyTrash() })
             }
         case .item(let itemPath):
@@ -314,6 +323,28 @@ enum CleanupActionsMenu {
             guard let items = session.plan.group(id)?.items, items.count == 1 else { return nil }
             return items[0].path
         case .overview, .access, nil: return nil
+        }
+    }
+}
+
+/// Keeps the highlight on its row when rows land, sort or are inserted above it.
+struct CleanupSelectionAnchor<ID: Hashable>: ViewModifier {
+    struct Key: Equatable {
+        let query: String
+        let ids: [ID]
+    }
+
+    let ids: [ID]
+    let query: String
+    let vm: PaletteState
+
+    func body(content: Content) -> some View {
+        content.onChange(of: Key(query: query, ids: ids)) { old, new in
+            // A new query lands the highlight itself; only a change in the rows is followed here.
+            guard old.query == new.query, old.ids.indices.contains(vm.selection),
+                let index = new.ids.firstIndex(of: old.ids[vm.selection]), index != vm.selection
+            else { return }
+            vm.selection = index
         }
     }
 }

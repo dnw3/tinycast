@@ -68,7 +68,7 @@ final class CleanupCoordinator {
         let mode = deletionMode
         Task {
             guard await core.confirm(
-                title: String(localized: "Clean Up \(Self.format(Self.bytes(of: items)))?"),
+                title: Self.confirmTitle(for: items),
                 message: confirmation(for: items, mode: mode), symbol: "trash",
                 confirmTitle: String(localized: "Clean Up"))
             else { return }
@@ -78,6 +78,15 @@ final class CleanupCoordinator {
             guard !current.isEmpty else { return }
             await run(current, mode: mode)
         }
+    }
+
+    /// Sizes still landing make the total a floor, so the title never promises an exact figure.
+    private static func confirmTitle(for items: [CleanupItem]) -> String {
+        let total = bytes(of: items)
+        let size = format(total)
+        guard items.contains(where: { $0.size == nil }) else { return String(localized: "Clean Up \(size)?") }
+        return total > 0
+            ? String(localized: "Clean Up at Least \(size)?") : String(localized: "Clean Up Selected Items?")
     }
 
     /// Scans on its own, then offers only what automatic cleaning may take: audited, safe, free now.
@@ -206,15 +215,13 @@ final class CleanupCoordinator {
             settings.scheduleEnabled = false
             return
         }
-        let targets = CleanupCatalog.targets.filter { $0.tier == .safe && $0.disposition == .delete }
-        let names = targets.map(\.id.title).joined(separator: ", ")
         Task {
             guard await core.confirm(
                 title: String(localized: "Clean Up Automatically?"),
                 message: String(
                     localized: """
-                        While your Mac is idle, Tinycast deletes only items marked safe: \(names). \
-                        Running apps, excluded folders and anything that needs review are never touched.
+                        While your Mac is idle, Tinycast deletes only items marked safe, such as caches, logs and \
+                        build data. Running apps, excluded folders and anything that needs review are never touched.
                         """),
                 symbol: "calendar.badge.clock", confirmTitle: String(localized: "Turn On"))
             else { return }
@@ -261,23 +268,28 @@ final class CleanupCoordinator {
         }
         let tools = Set(items.compactMap { CleanupTool(target: $0.match.target)?.executable }).sorted()
         if !tools.isEmpty {
-            lines.append(String(localized: "Cleaned by their own tools: \(tools.joined(separator: ", "))."))
+            lines.append(String(localized: "Cleaned by their own tools: \(tools.formatted(.list(type: .and)))."))
         }
         return lines.joined(separator: "\n")
     }
 
     private func present(_ report: CleanupReport) async {
-        guard report.hasFailures else {
-            guard report.removedCount > 0 else { return }
-            core.showMessage(Self.summary(of: report))
+        let failures = report.realFailures
+        let summary = report.removedCount > 0 ? Self.summary(of: report) : ""
+        guard !failures.isEmpty else {
+            if report.wasCancelled {
+                core.showMessage(summary.isEmpty ? String(localized: "Cancelled") : String(localized: "Cancelled · \(summary)"))
+            } else if !summary.isEmpty {
+                core.showMessage(summary)
+            }
             return
         }
-        let listed = report.failures.prefix(5).map { "\($0.name) — \($0.reason.reason(appName: appName))" }
-        let remaining = report.failures.count - listed.count
+        let listed = failures.prefix(5).map { "\($0.name) — \($0.reason.reason(appName: appName))" }
+        let remaining = failures.count - listed.count
         await core.showNotice(
             title: report.removedCount > 0
                 ? String(localized: "Some Items Weren’t Cleaned") : String(localized: "Nothing Was Cleaned"),
-            message: listed.joined(separator: "\n")
+            message: (summary.isEmpty ? "" : summary + "\n\n") + listed.joined(separator: "\n")
                 + (remaining > 0 ? String(localized: "\nand \(remaining) more.") : ""),
             symbol: "trash", tone: .danger)
     }
@@ -321,7 +333,10 @@ final class CleanupCoordinator {
         Task {
             let result = try? await ToolRunner.run(URL(fileURLWithPath: command.executable), command.arguments, timeout: 30)
             guard let result, result.succeeded else {
-                core.showMessage(String(localized: "Couldn’t finish: \(result?.tail ?? "")"), tone: .danger)
+                let tail = result?.tail ?? ""
+                core.showMessage(
+                    tail.isEmpty ? String(localized: "Couldn’t finish") : String(localized: "Couldn’t finish: \(tail)"),
+                    tone: .danger)
                 return
             }
             switch task {

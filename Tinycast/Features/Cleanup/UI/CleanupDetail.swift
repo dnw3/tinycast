@@ -9,6 +9,12 @@ struct CleanupDetail: View {
     let appName: (String) -> String
     var history: CleanupScheduleStore?
 
+    private enum Readout {
+        case none
+        case pending
+        case value(String)
+    }
+
     private struct InfoRow: Identifiable {
         let label: String
         let value: String
@@ -43,10 +49,12 @@ struct CleanupDetail: View {
     // MARK: - Overview
 
     @ViewBuilder private var overview: some View {
+        let byCategory = session.reclaimableBytesByCategory
+        let reclaimable = byCategory.values.reduce(0, +)
         heading(
             title: String(localized: "Can Be Cleaned"),
-            readout: session.isScanning && session.reclaimableBytes == 0
-                ? "—" : CleanupCoordinator.format(session.reclaimableBytes),
+            readout: session.isScanning && reclaimable == 0
+                ? .pending : .value(CleanupCoordinator.format(reclaimable)),
             caption: status)
         if let capacity = session.capacity {
             StorageBar(total: capacity.total, available: capacity.available, selected: session.selectedBytes)
@@ -62,10 +70,10 @@ struct CleanupDetail: View {
                         value: CleanupCoordinator.format(history?.totalFreed ?? 0))
                 ], title: String(localized: "History"))
         }
-        let categories = CleanupCategory.allCases.filter { session.bytes(in: $0) > 0 }
+        let categories = CleanupCategory.allCases.filter { byCategory[$0, default: 0] > 0 }
         if !categories.isEmpty {
             info(
-                categories.map { InfoRow(label: $0.title, value: CleanupCoordinator.format(session.bytes(in: $0))) },
+                categories.map { InfoRow(label: $0.title, value: CleanupCoordinator.format(byCategory[$0] ?? 0)) },
                 title: String(localized: "By Category"))
         }
     }
@@ -81,7 +89,7 @@ struct CleanupDetail: View {
     // MARK: - Access
 
     @ViewBuilder private var access: some View {
-        heading(title: String(localized: "Full Disk Access"), readout: nil, caption: nil)
+        heading(title: String(localized: "Full Disk Access"), readout: .none, caption: nil)
         paragraph(
             String(
                 localized: """
@@ -113,7 +121,7 @@ struct CleanupDetail: View {
         if let tool = CleanupTool(target: group.id), let item = group.items.first {
             return Self.commandRows(tool, item: item)
         }
-        var rows = [InfoRow(label: String(localized: "Items"), value: group.items.count.formatted())]
+        var rows = [InfoRow(label: String(localized: "Count"), value: group.items.count.formatted())]
         if group.items.count == 1, let item = group.items.first {
             rows.append(InfoRow(label: String(localized: "Where"), value: Self.abbreviate(item.path)))
         }
@@ -147,7 +155,7 @@ struct CleanupDetail: View {
         ]
         if item.isOnDisk { rows.append(InfoRow(label: String(localized: "Where"), value: abbreviate(item.path))) }
         if tool == .localSnapshots || tool == .simulators {
-            rows.append(InfoRow(label: String(localized: "Items"), value: item.match.captures.count.formatted()))
+            rows.append(InfoRow(label: String(localized: "Count"), value: item.match.captures.count.formatted()))
         }
         return rows
     }
@@ -182,18 +190,24 @@ struct CleanupDetail: View {
 
     // MARK: - Pieces
 
-    private func readout(_ items: [CleanupItem]) -> String {
-        CleanupItem.sizeLabel(items, pending: "—")
+    private func readout(_ items: [CleanupItem]) -> Readout {
+        let label = CleanupItem.sizeLabel(items)
+        return label.isEmpty ? .pending : .value(label)
     }
 
     @ViewBuilder
-    private func heading(title: String, readout: String?, caption: String?) -> some View {
+    private func heading(title: String, readout: Readout, caption: String?) -> some View {
         VStack(alignment: .leading, spacing: metrics.spacing.xs) {
             Text(title)
                 .font(metrics.typography.panelTitle)
                 .lineLimit(2)
-            if let readout {
-                Text(readout)
+            switch readout {
+            case .none:
+                EmptyView()
+            case .pending:
+                PendingReadout()
+            case .value(let text):
+                Text(text)
                     .font(metrics.typography.readout)
                     .monospacedDigit()
                     .contentTransition(.numericText())
@@ -240,5 +254,15 @@ struct CleanupDetail: View {
 
     private static func abbreviate(_ path: String) -> String {
         (path as NSString).abbreviatingWithTildeInPath
+    }
+}
+
+/// A readout still being measured: a spinner on the figure's own line, so the number lands in place.
+struct PendingReadout: View {
+    @Environment(\.metrics) private var metrics
+
+    var body: some View {
+        Text(verbatim: "0").font(metrics.typography.readout).hidden()
+            .overlay(alignment: .leading) { ProgressView().controlSize(.small) }
     }
 }

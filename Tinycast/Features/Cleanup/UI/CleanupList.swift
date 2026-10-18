@@ -204,5 +204,12 @@ private struct CleanupRowView: View {
         .accessibilityLabel(content.title)
         .accessibilityValue(accessibilityValue(content))
         .accessibilityAddTraits(selected ? .isSelected : [])
+        .accessibilityActions {
+            if content.isCheckbox, !content.isLocked {
+                Button(
+                    content.glyph == "checkmark.square.fill" ? String(localized: "Unselect") : String(localized: "Select"),
+                    action: onToggle)
+            }
+        }
     }
 }
