@@ -583,17 +583,6 @@
         }
       }
     },
-    "%@ of caches and logs is deleted for good.": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ 缓存和日志将被永久删除。"
-          }
-        }
-      }
-    },
     "%@ of everything in %@": {
       "localizations": {
         "en": {
@@ -3697,7 +3686,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "授予完全磁盘访问权限以找到更多"
+            "value": "授予完全磁盘访问权限，找到更多可清理项"
           }
         }
       }
@@ -5815,6 +5804,16 @@
         }
       }
     },
+    "Cancelled · %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已取消 · %@"
+          }
+        }
+      }
+    },
     "Cannot %@ %@ and %@.": {
       "localizations": {
         "en": {
@@ -5873,6 +5872,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "现在无法清理。"
+          }
+        }
+      }
+    },
+    "Can’t read this folder": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法读取此文件夹"
           }
         }
       }
@@ -6620,32 +6629,22 @@
         }
       }
     },
+    "Choose a model in Settings › Translation.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请在“设置 › 翻译”中选择模型。"
+          }
+        }
+      }
+    },
     "Choose a model in Settings → Quick Actions.": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
             "value": "请在“设置 → 快捷操作”中选择模型。"
-          }
-        }
-      }
-    },
-    "Choose a model in Settings → Translation.": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "请在“设置 → 翻译”中选择模型。"
-          }
-        }
-      }
-    },
-    "Choose a model…": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "选择模型…"
           }
         }
       }
@@ -6969,6 +6968,26 @@
         }
       }
     },
+    "Clean Up Selected Items?": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清理所选项目？"
+          }
+        }
+      }
+    },
+    "Clean Up at Least %@?": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "至少清理 %@？"
+          }
+        }
+      }
+    },
     "Clean Up…": {
       "localizations": {
         "zh-Hans": {
@@ -7077,16 +7096,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "清除计算历史？"
-          }
-        }
-      }
-    },
-    "Clear clipboard history?": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "清除剪贴板历史？"
           }
         }
       }
@@ -7331,6 +7340,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "剪贴板历史为空"
+          }
+        }
+      }
+    },
+    "Clipboard history paused": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "剪贴板记录已暂停"
+          }
+        }
+      }
+    },
+    "Clipboard history resumed": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "剪贴板记录已恢复"
           }
         }
       }
@@ -7637,6 +7666,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Codex 已停止。"
+          }
+        }
+      }
+    },
+    "Collapse": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "收起"
           }
         }
       }
@@ -8207,12 +8246,12 @@
         }
       }
     },
-    "Copied — history could not be saved": {
+    "Copied, but history couldn't be saved": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "已复制，但历史记录未保存"
+            "value": "已复制，但历史记录未能保存"
           }
         }
       }
@@ -8892,6 +8931,16 @@
         }
       }
     },
+    "Couldn’t finish": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未能完成"
+          }
+        }
+      }
+    },
     "Couldn’t finish: %@": {
       "localizations": {
         "zh-Hans": {
@@ -8962,13 +9011,23 @@
         }
       }
     },
+    "Count": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "数量"
+          }
+        }
+      }
+    },
     "Cover": {
       "extractionState": "manual",
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "遮挡"
+            "value": "遮盖"
           }
         }
       }
@@ -9927,16 +9986,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "已检测到"
-          }
-        }
-      }
-    },
-    "Detecting language…": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "正在检测语言…"
           }
         }
       }
@@ -13267,16 +13316,6 @@
         }
       }
     },
-    "GIF preview could not load. %@": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "无法载入 GIF 预览。%@"
-          }
-        }
-      }
-    },
     "GITHUB_TOKEN=…": {
       "shouldTranslate": false
     },
@@ -15030,16 +15069,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "斜体"
-          }
-        }
-      }
-    },
-    "Items": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "项目"
           }
         }
       }
@@ -18504,6 +18533,16 @@
         }
       }
     },
+    "No matching captures": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "没有匹配的截图"
+          }
+        }
+      }
+    },
     "No matching chats": {
       "localizations": {
         "zh-Hans": {
@@ -20512,6 +20551,16 @@
         }
       }
     },
+    "Outdated translation": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "旧译文"
+          }
+        }
+      }
+    },
     "Outline": {
       "extractionState": "manual",
       "localizations": {
@@ -20552,16 +20601,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "输出格式"
-          }
-        }
-      }
-    },
-    "Output succeeded. History could not be saved; copy or save again to retry.": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "输出成功，但历史记录未保存。可再次复制或保存以重试。"
           }
         }
       }
@@ -20921,6 +20960,17 @@
         }
       }
     },
+    "Pause or Resume Clipboard History": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "暂停或恢复剪贴板记录"
+          }
+        }
+      }
+    },
     "Paused": {
       "localizations": {
         "zh-Hans": {
@@ -21063,7 +21113,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "固定剪贴板图片"
+            "value": "剪贴板图片贴图"
           }
         }
       }
@@ -21144,7 +21194,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "固定的截图"
+            "value": "贴图"
           }
         }
       }
@@ -21154,7 +21204,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "固定的截图"
+            "value": "贴图"
           }
         }
       }
@@ -22464,6 +22514,16 @@
         }
       }
     },
+    "Recording paused": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已暂停记录"
+          }
+        }
+      }
+    },
     "Records audio only while dictating.": {
       "localizations": {
         "zh-Hans": {
@@ -22879,16 +22939,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "移除参数"
-          }
-        }
-      }
-    },
-    "Remove connection?": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "移除连接？"
           }
         }
       }
@@ -24269,22 +24319,12 @@
         }
       }
     },
-    "Saved — history could not be saved": {
+    "Saved, but history couldn't be saved": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "已保存，但历史记录未保存"
-          }
-        }
-      }
-    },
-    "Saved — history could not be saved. Save again to retry.": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "已保存，但历史记录未保存。请再次保存以重试。"
+            "value": "已保存，但历史记录未能保存"
           }
         }
       }
@@ -25552,6 +25592,16 @@
         }
       }
     },
+    "Set per app in System Settings › General › Language & Region.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在“系统设置 › 通用 › 语言与地区”中为每个应用单独设置。"
+          }
+        }
+      }
+    },
     "Settings": {
       "localizations": {
         "zh-Hans": {
@@ -26789,6 +26839,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "来源 %lld：%@，%@"
+          }
+        }
+      }
+    },
+    "Source copied": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已复制原文"
           }
         }
       }
@@ -29296,16 +29356,6 @@
         }
       }
     },
-    "This can't be undone.": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "此操作无法撤销。"
-          }
-        }
-      }
-    },
     "This chat": {
       "localizations": {
         "zh-Hans": {
@@ -30015,6 +30065,16 @@
         }
       }
     },
+    "Tinycast may need Full Disk Access to read it.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "可能需要授予 Tinycast 完全磁盘访问权限才能读取。"
+          }
+        }
+      }
+    },
     "Tinycast needs OpenCode 2. Update OpenCode, then Check Again.": {
       "localizations": {
         "zh-Hans": {
@@ -30265,12 +30325,12 @@
         }
       }
     },
-    "Too long to translate at once — shorten the text": {
+    "Too long to translate — shorten it or select part of it": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "太长了，无法一次翻译，请缩短文本"
+            "value": "文本过长，请缩短或只选择其中一部分"
           }
         }
       }
@@ -30507,16 +30567,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "翻译所选文字，也可以打开空白窗口手动输入。"
-          }
-        }
-      }
-    },
-    "Translate up to 12 KB at a time. Shorten the source text and retry.": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "每次最多翻译 12 KB，请缩短源文本后重试。"
           }
         }
       }
@@ -31572,16 +31622,6 @@
         }
       }
     },
-    "Use Mini Window": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "使用迷你窗口"
-          }
-        }
-      }
-    },
     "Use Original Icon": {
       "localizations": {
         "zh-Hans": {
@@ -31716,6 +31756,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "已用"
+          }
+        }
+      }
+    },
+    "Uses %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "占用 %@"
           }
         }
       }
@@ -32287,12 +32337,12 @@
         }
       }
     },
-    "While your Mac is idle, Tinycast deletes only items marked safe: %@. Running apps, excluded folders and anything that needs review are never touched.": {
+    "While your Mac is idle, Tinycast deletes only items marked safe, such as caches, logs and build data. Running apps, excluded folders and anything that needs review are never touched.": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Mac 闲置时，Tinycast 只删除标记为可放心清理的项目：%@。正在运行的应用、排除的文件夹以及任何需确认的项目都不会被动到。"
+            "value": "Mac 空闲时，Tinycast 只删除可放心清理的项目，例如缓存、日志和构建数据。正在运行的应用、已排除的文件夹和需要确认的项目都不会被处理。"
           }
         }
       }

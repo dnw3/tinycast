@@ -389,7 +389,9 @@ A non-activating panel never shows `.help`, so every hint is a `.tooltip`, and s
 there, as `Name  ⇧⌘C` — never in a button or in body text. `PopoverMenu` needs `PaletteState`, so
 `TranslationMenu` is its own child panel whose rows copy `PopoverMenuRow`; it closes on any click in
 the panel, on Escape (before the panel does), on resign-key and on resize. The footer speaks only when
-the user can act on it: missing Accessibility, a secure field, or a selection that cannot be replaced.
+the user can act on it: missing Accessibility (with a Grant Access… `BarButton`), a secure field, or a
+selection that cannot be replaced. A result notice clears with the next edit, and the last translation
+stays visible but dimmed until the new one lands, so the Mini panel never collapses mid-typing.
 
 ---
 
