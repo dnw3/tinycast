@@ -22,6 +22,11 @@ enum CommandID: String, CaseIterable, Sendable {
     case pasteSequentially = "command:paste-sequentially"
     case searchEmoji = "command:search-emoji"
     case searchFiles = "command:search-files"
+    case cleanUpDisk = "command:clean-up-disk"
+    case quickClean = "command:quick-clean"
+    case analyzeDiskUsage = "command:analyze-disk-usage"
+    case rebuildThumbnails = "command:rebuild-thumbnail-cache"
+    case restartDock = "command:restart-dock"
     case searchMenuItems = "command:search-menu-items"
     case switchWindows = "command:switch-windows"
     case openCamera = "command:open-camera"
@@ -79,6 +84,11 @@ enum CommandID: String, CaseIterable, Sendable {
         case .pasteSequentially: return "Paste Sequentially"
         case .searchEmoji: return "Search Emoji & Symbols"
         case .searchFiles: return "Search Files"
+        case .cleanUpDisk: return "Clean Up Disk"
+        case .quickClean: return "Quick Clean"
+        case .analyzeDiskUsage: return "Disk Usage"
+        case .rebuildThumbnails: return "Rebuild Thumbnail Cache"
+        case .restartDock: return "Restart Dock"
         case .searchMenuItems: return "Search Menu Bar Items"
         case .switchWindows: return "Switch Windows"
         case .openCamera: return "Open Camera"
@@ -127,6 +137,11 @@ enum CommandID: String, CaseIterable, Sendable {
         case .editClipboardImage: ["编辑剪贴板图片", "编辑图片"]
         case .pinClipboardImage: ["贴图", "固定截图"]
         case .captureHistory: ["截图历史", "截屏历史"]
+        case .cleanUpDisk: ["清理磁盘", "磁盘清理", "清理缓存", "Free Up Space", "Clear Cache"]
+        case .quickClean: ["快速清理", "一键清理"]
+        case .analyzeDiskUsage: ["磁盘空间分析", "空间占用", "磁盘占用", "Storage"]
+        case .rebuildThumbnails: ["重建缩略图缓存", "Quick Look"]
+        case .restartDock: ["重启程序坞", "Dock"]
         default: []
         }
     }
@@ -153,6 +168,11 @@ enum CommandID: String, CaseIterable, Sendable {
         case .pasteSequentially: return "list.bullet.clipboard"
         case .searchEmoji: return "face.smiling"
         case .searchFiles: return "doc.text.magnifyingglass"
+        case .cleanUpDisk: return "externaldrive.badge.minus"
+        case .quickClean: return "wand.and.rays"
+        case .analyzeDiskUsage: return "chart.bar.doc.horizontal"
+        case .rebuildThumbnails: return "photo.stack"
+        case .restartDock: return "dock.rectangle"
         case .searchMenuItems: return "menubar.rectangle"
         case .switchWindows: return "macwindow.on.rectangle"
         case .openCamera: return "camera"

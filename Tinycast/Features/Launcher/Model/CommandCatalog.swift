@@ -62,6 +62,7 @@ extension SettingsTab {
             .captureAndTranslate, .editClipboardImage, .pinClipboardImage, .captureHistory
         ]
         case .fileSearch: [.searchFiles]
+        case .cleanup: [.cleanUpDisk, .quickClean, .analyzeDiskUsage, .rebuildThumbnails, .restartDock]
         case .notes: [.showNotes, .createNote, .searchNotes]
         case .snippets: [.searchSnippets, .createSnippet]
         case .navigation: [.switchWindows, .searchMenuItems]

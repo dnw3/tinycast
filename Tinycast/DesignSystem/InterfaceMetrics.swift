@@ -99,6 +99,7 @@ struct InterfaceMetrics: Equatable, Sendable {
             (Theme.Size.menuVisibleRows * (menuRowHeight + menuRowSpacing)).rounded()
         }
         var clipboardListWidth: CGFloat { scaledPoints(Theme.Size.clipboardListWidth, scale) }
+        var storageBarHeight: CGFloat { scaledPoints(Theme.Size.storageBarHeight, scale) }
         var clipboardMediaHeight: CGFloat { scaledPoints(Theme.Size.clipboardMediaHeight, scale) }
         var clipboardPreviewPixel: CGFloat { scaledPoints(Theme.Size.clipboardPreviewPixel, scale) }
         var emojiGridInset: CGFloat { scaledPoints(Theme.Size.emojiGridInset, scale) }
@@ -180,6 +181,7 @@ struct InterfaceMetrics: Equatable, Sendable {
         var sectionHeader: Font { font(Theme.Typography.sectionHeader, .subheadline, .medium) }
         var panelTitle: Font { font(Theme.Typography.panelTitle, .headline) }
         var calcResult: Font { font(Theme.Typography.calcResult, .title1) }
+        var readout: Font { font(Theme.Typography.readout, .largeTitle, .semibold) }
         var keyCap: Font { font(Theme.Typography.keyCap, .caption1) }
         var compactKeyCap: Font { font(Theme.Typography.compactKeyCap, .caption2) }
         var heroKeyCap: Font { font(Theme.Typography.heroKeyCap, .body) }

@@ -194,6 +194,22 @@ enum SettingsBackupCoverage {
         AppSettingsKey.translationPreferences.rawValue:
             "Includes the choice to send translation text to an AI provider; imports cannot choose it.",
         AppSettingsKey.translationModel.rawValue:
-            "Names the destination for translation text and must be chosen on this Mac."
+            "Names the destination for translation text and must be chosen on this Mac.",
+        AppSettingsKey.cleanupDeletionMode.rawValue:
+            "Decides whether cleanup deletes files for good; an import must not loosen it.",
+        AppSettingsKey.cleanupExclusions.rawValue:
+            "Names folders on this Mac's disk; the one a backup lands on may not have them.",
+        AppSettingsKey.cleanupProjectIdleDays.rawValue:
+            "Decides which project folders cleanup may delete directly; an import must not loosen it.",
+        AppSettingsKey.cleanupLargeFileThreshold.rawValue:
+            "Kept with the other Disk Cleanup preferences, none of which a backup carries.",
+        AppSettingsKey.cleanupScheduleEnabled.rawValue:
+            "Grants unattended deletion on a schedule; only the app may switch it on.",
+        AppSettingsKey.cleanupScheduleInterval.rawValue:
+            "Kept with the other Disk Cleanup preferences, none of which a backup carries.",
+        AppSettingsKey.cleanupLowSpaceAlert.rawValue:
+            "Kept with the other Disk Cleanup preferences, none of which a backup carries.",
+        AppSettingsKey.cleanupLowSpaceThreshold.rawValue:
+            "Sized to this Mac's disk; another Mac's may be a different size."
     ]
 }

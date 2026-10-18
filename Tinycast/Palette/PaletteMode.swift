@@ -21,6 +21,11 @@ enum PaletteMode: String, CaseIterable, Identifiable {
     /// One meeting's read-only page, pushed from that meeting's own actions.
     case meetingDetails
     case uninstall
+    case cleanup
+    /// One cleanup group's items, pushed from its row on the cleanup screen.
+    case cleanupGroup
+    /// The disk usage analyzer; each folder opened is another frame of this mode.
+    case diskUsage
     case quicklinks
     case quicklinkEditor
     case snippets
@@ -34,6 +39,8 @@ enum PaletteMode: String, CaseIterable, Identifiable {
         self == .snippetEditor || self == .quicklinkEditor || self == .eventEditor
             || self == .customCommandEditor
     }
+
+    var isCleanup: Bool { self == .cleanup || self == .cleanupGroup }
 
     var systemImage: String {
         switch self {
@@ -54,6 +61,8 @@ enum PaletteMode: String, CaseIterable, Identifiable {
         case .customCommandEditor, .customCommands: return CustomCommand.sfSymbol
         case .meetingDetails: return "calendar"
         case .uninstall: return "trash"
+        case .cleanup, .cleanupGroup: return "externaldrive.badge.minus"
+        case .diskUsage: return "chart.bar.doc.horizontal"
         case .quicklinks, .quicklinkEditor: return Quicklink.sfSymbol
         case .snippets, .snippetEditor: return "curlybraces"
         case .dictionary: return "book.closed"
@@ -81,6 +90,9 @@ enum PaletteMode: String, CaseIterable, Identifiable {
         case .customCommands: return String(localized: "Search custom commands…")
         case .meetingDetails: return String(localized: "Meeting details")
         case .uninstall: return String(localized: "Filter files and folders by name…")
+        case .cleanup: return String(localized: "Filter cleanup items…")
+        case .cleanupGroup: return String(localized: "Filter items…")
+        case .diskUsage: return String(localized: "Filter this folder…")
         case .quicklinks: return String(localized: "Search quicklinks…")
         case .quicklinkEditor: return String(localized: "Quicklink editor")
         case .snippets: return String(localized: "Search snippets…")

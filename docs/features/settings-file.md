@@ -164,6 +164,16 @@ in `commands.builtIn` — by their ID after `command:`. App Launcher and Dictati
 - `applications.enabled`, `systemSettings.enabled`, `systemActions.enabled` and
   `commands.builtInEnabled` are each pane's category switch; `commands.enabled` stays custom commands'.
 
+## Disk Cleanup
+
+`cleanup.deletionMode` is `"tiered"` or `"trashOnly"`; `cleanup.exclusions` lists absolute or
+`~/` folders, normalized to one tilde spelling each, with relative entries dropped;
+`cleanup.projectIdleDays`, `cleanup.largeFileThresholdMB` and `cleanup.lowSpaceThresholdGB` accept only
+the values their pickers offer; `cleanup.scheduleInterval` is `"daily"`, `"weekly"` or `"monthly"`, and
+`cleanup.lowSpaceAlert` a boolean. All live in the fork's own `CleanupSettingsStore`, are bound through
+the schema's `cleanup:` parameter, and stay out of a settings backup (see `SettingsBackupCoverage`).
+Scheduled cleaning itself grants unattended deletion, so it has no key at all.
+
 ## Window management
 
 - **`shortcuts`** lists all 35 commands by ID, `null` when unbound; one left out is unbound too.

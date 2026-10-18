@@ -73,6 +73,15 @@ extension SettingsAnchor {
     static let fileSearchSearchScopes = Self(tab: .fileSearch, title: "Search Scopes")
     static let fileSearchIgnorePatterns = Self(tab: .fileSearch, title: "Ignore Patterns")
 
+    static let cleanupCleanup = Self(tab: .cleanup, title: "Disk Cleanup")
+    static let cleanupFullDiskAccess = Self(tab: .cleanup, title: "Full Disk Access")
+    static let cleanupDeletion = Self(tab: .cleanup, title: "Deletion")
+    static let cleanupProjects = Self(tab: .cleanup, title: "Projects")
+    static let cleanupFiles = Self(tab: .cleanup, title: "Files")
+    static let cleanupAutomation = Self(tab: .cleanup, title: "Automation")
+    static let cleanupCommands = Self(tab: .cleanup, title: "Commands")
+    static let cleanupExclusions = Self(tab: .cleanup, title: "Excluded Folders")
+
     static let notesNotes = Self(tab: .notes, title: "Notes")
     static let notesOptions = Self(tab: .notes, title: "Options")
     static let notesCommands = Self(tab: .notes, title: "Commands")

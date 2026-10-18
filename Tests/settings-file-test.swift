@@ -46,7 +46,7 @@ struct SettingsFileTest {
             SettingsFileKey.sections == [
                 "general", "appearance", "hyperKey", "calculator", "search", "applications",
                 "systemSettings", "systemActions", "commands", "quicklinks", "appleShortcuts", "ai",
-                "quickActions", "dictation", "fileSearch", "notes", "snippets", "navigation",
+                "quickActions", "dictation", "fileSearch", "cleanup", "notes", "snippets", "navigation",
                 "windowManagement", "clipboard", "emoji", "calendar", "capture", "extensions"
             ])
 
@@ -54,7 +54,8 @@ struct SettingsFileTest {
         let grantPaths = [
             "snippets.enabled", "extensions.enabled", "calendar.enabled",
             "calendar.autoJoinMeetings", "calendar.cameraPreview", "quickActions.enabled",
-            "ai.mcpEnabled", "mcp.enabled", "clipboard.textSearchEnabled", "dictation.enabled"
+            "ai.mcpEnabled", "mcp.enabled", "clipboard.textSearchEnabled", "dictation.enabled",
+            "cleanup.scheduleEnabled"
         ]
         check(
             "no capability grant has a settings.json key",

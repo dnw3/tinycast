@@ -67,6 +67,11 @@ final class AppCore {
     let windowSwitch = WindowSwitchSession()
     let activationPolicy = ActivationPolicy()
     let uninstall = UninstallSession()
+    let cleanupSettings = CleanupSettingsStore()
+    @ObservationIgnored private(set) lazy var cleanupSchedule = CleanupScheduleStore(settings: cleanupSettings)
+    @ObservationIgnored private(set) lazy var diskUsage = DiskUsageSession()
+    @ObservationIgnored private(set) lazy var cleanup = CleanupSession(
+        runningApps: runningApps, settings: cleanupSettings)
     let notesStore: NotesStore
     let extensions: ExtensionManager
     let chatHistory: ChatHistoryStore
@@ -132,6 +137,11 @@ final class AppCore {
         session: uninstall, palette: palette, paletteCoordinator: paletteCoordinator,
         appIndex: appIndex, runningApps: runningApps, hotKeys: hotKeys, favorites: favorites,
         visibility: visibility, ranking: launcherRanking, aliases: aliases, core: self)
+    @ObservationIgnored private(set) lazy var cleanupCoordinator = CleanupCoordinator(
+        session: cleanup, palette: palette, paletteCoordinator: paletteCoordinator, appIndex: appIndex,
+        settings: cleanupSettings, schedule: cleanupSchedule, core: self)
+    @ObservationIgnored private(set) lazy var diskUsageCoordinator = DiskUsageCoordinator(
+        session: diskUsage, palette: palette, paletteCoordinator: paletteCoordinator, core: self)
     @ObservationIgnored private(set) lazy var extensionCoordinator = ExtensionCoordinator(
         extensions: extensions, palette: palette, paletteCoordinator: paletteCoordinator,
         settingsCoordinator: settingsCoordinator, settings: settings, core: self)
@@ -345,6 +355,8 @@ final class AppCore {
                 case .menuSearch: self?.menuSearchCoordinator.load()
                 case .switchWindows: self?.windowSwitchCoordinator.load()
                 case .rooms, .roomWindows: self?.roomCoordinator.load()
+                case .cleanup: self?.cleanupCoordinator.load()
+                case .diskUsage: self?.diskUsageCoordinator.load()
                 default: break
                 }
             }
@@ -359,6 +371,9 @@ final class AppCore {
             updateCoordinator.applyAutomaticChecking()
             supportReminders.onDue = { [weak self] in self?.supportCoordinator.presentIfDue() }
             supportReminders.start()
+            cleanupSchedule.onScheduledRunDue = { [weak self] in self?.cleanupCoordinator.runScheduled() }
+            cleanupSchedule.onLowSpace = { [weak self] available in self?.cleanupCoordinator.presentLowSpace(available) }
+            cleanupSchedule.start()
 
             hyperKey.healthTicker = healthTicker
             hotKeys.modifierTapMonitor.healthTicker = healthTicker
@@ -872,7 +887,8 @@ final class AppCore {
                 windowManagement: WindowManagementSettingsFile(
                     sizes: customWindowSizes, layouts: windowLayouts, rooms: rooms, aliases: aliases,
                     shortcuts: shortcuts),
-                capturePresets: captureCoordinator.settings.presentationPresetsBinding),
+                capturePresets: captureCoordinator.settings.presentationPresetsBinding,
+                cleanup: cleanupSettings),
             commit: shortcuts.commit)
         file.onIssues = { [weak self] issues in self?.reportSettingsFileIssues(issues) }
         settingsFile = file
@@ -901,6 +917,7 @@ final class AppCore {
             isExpandingSnippet: textInjector.isDelivering,
             isRunningExtension: extensions.running != nil,
             isUninstalling: uninstall.isTrashing,
+            isCleaning: cleanup.isCleaning,
             isRecordingHotKey: hotKeys.recordingAction != nil,
             isShowingDialog: isShowingDialog,
             isPaletteVisible: paletteCoordinator.isVisible)
@@ -918,7 +935,7 @@ final class AppCore {
     func confirm(
         title: String, message: String?, symbol: String?, confirmTitle: String,
         tone: DialogTone = .danger, confirmRole: DialogAction.Role = .destructive,
-        dismissTitle: String = "Cancel"
+        dismissTitle: String = String(localized: "Cancel")
     ) async -> Bool {
         await dialogs.confirm(
             title: title, message: message, symbol: symbol, tone: tone, confirmTitle: confirmTitle,

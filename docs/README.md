@@ -48,6 +48,7 @@ open with an `## Invariants` section; read it before changing anything in that a
 [rooms](features/window-rooms.md) ·
 [custom commands](features/custom-commands.md) ·
 [uninstall](features/uninstall.md) ·
+[disk cleanup](features/cleanup.md) ·
 [backup](features/backup.md) ·
 [settings file](features/settings-file.md) ·
 [Raycast import](features/raycast-import.md) ·
@@ -66,6 +67,7 @@ implemented invariants.
 
 - Capture efficiency: [Spec](plans/capture-efficiency-spec.md), [Plan](plans/capture-efficiency-plan.md).
 - Capture complete experience: [Spec](plans/capture-product-spec.md), [Plan](plans/capture-product-plan.md).
+- Disk cleanup: [Spec](plans/cleanup-spec.md), [Plan](plans/cleanup-plan.md).
 
 ## Contributing
 

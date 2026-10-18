@@ -117,6 +117,8 @@ private extension MenuPanelCorner {
     /// False when the selection can't be acted on, which hides the footer pill and swallows ⌘K.
     func hasPrimaryAction(at selection: Int) -> Bool
     func isPrimaryActionEnabled(at selection: Int) -> Bool
+    /// True when the primary action destroys something, which tints the footer pill.
+    func isPrimaryActionDestructive(at selection: Int) -> Bool
     /// False when ⌘K would open on nothing, which hides the Actions half of the footer group.
     func hasActions(at selection: Int) -> Bool
     /// True while the selected row edits with ↑/↓ itself, which leaves those keys to it.
@@ -143,6 +145,8 @@ private extension MenuPanelCorner {
     func perform(_ shortcut: PaletteShortcut, at selection: Int) -> Bool
     /// The selection an arrow key lands on, or nil to leave the key to the palette's own default.
     func move(_ delta: Int, axis: PaletteAxis, from selection: Int) -> Int?
+    /// →/← into or out of a nested level with an empty query; true when the screen took the key.
+    func navigateHorizontally(_ delta: Int, at selection: Int) -> Bool
     /// Controls the row wants beside the search field; `focus` is lent, never owned.
     func headerAccessory(
         at selection: Int, focus: FocusState<String?>.Binding
@@ -154,6 +158,7 @@ private extension MenuPanelCorner {
 extension PaletteScreen {
     func hasPrimaryAction(at selection: Int) -> Bool { true }
     func isPrimaryActionEnabled(at selection: Int) -> Bool { true }
+    func isPrimaryActionDestructive(at selection: Int) -> Bool { false }
     func hasActions(at selection: Int) -> Bool { true }
     var hidesSearchField: Bool { false }
     var actsWithoutRows: Bool { false }
@@ -178,6 +183,7 @@ extension PaletteScreen {
     func pasteKeepingWindowOpen(at selection: Int) -> Bool { false }
     func perform(_ shortcut: PaletteShortcut, at selection: Int) -> Bool { false }
     func move(_ delta: Int, axis: PaletteAxis, from selection: Int) -> Int? { nil }
+    func navigateHorizontally(_ delta: Int, at selection: Int) -> Bool { false }
     func headerAccessory(
         at selection: Int, focus: FocusState<String?>.Binding
     )

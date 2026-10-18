@@ -6,20 +6,22 @@ enum SettingsFileSchema {
     static func bindings(
         settings: AppSettings, ai: AISettingsStore,
         shortcuts: HotKeySettingsFile, launcher: LauncherSettingsFile,
-        windowManagement: WindowManagementSettingsFile, capturePresets: SettingsFileBinding
+        windowManagement: WindowManagementSettingsFile, capturePresets: SettingsFileBinding,
+        cleanup: CleanupSettingsStore
     ) -> [SettingsFileBinding] {
         SettingsFileKey.allCases.map { key in
             binding(
                 for: key, settings: settings, ai: ai,
                 shortcuts: shortcuts, launcher: launcher, windowManagement: windowManagement,
-                capturePresets: capturePresets)
+                capturePresets: capturePresets, cleanup: cleanup)
         }
     }
 
     private static func binding(
         for key: SettingsFileKey, settings: AppSettings, ai: AISettingsStore,
         shortcuts: HotKeySettingsFile,
-        launcher: LauncherSettingsFile, windowManagement: WindowManagementSettingsFile, capturePresets: SettingsFileBinding
+        launcher: LauncherSettingsFile, windowManagement: WindowManagementSettingsFile, capturePresets: SettingsFileBinding,
+        cleanup: CleanupSettingsStore
     ) -> SettingsFileBinding {
         func bind<Root: AnyObject, Value: SettingsFileValue>(
             _ root: Root, _ path: ReferenceWritableKeyPath<Root, Value>,
@@ -84,6 +86,17 @@ enum SettingsFileSchema {
         case .fileSearchScopes: return bind(settings, \.fileSearchScopes)
         case .fileSearchIgnorePatterns: return bind(settings, \.fileSearchIgnorePatterns)
         case .fileSearchCommands: return launcher.commandsBinding(for: key, owner: .fileSearch)
+        case .cleanupDeletionMode: return bind(cleanup, \.deletionMode)
+        case .cleanupExclusions: return bind(cleanup, \.exclusions) { CleanupSettingsStore.normalize($0) }
+        case .cleanupProjectIdleDays:
+            return bind(cleanup, \.projectIdleDays) { CleanupProjectPolicy.idleDayChoices.contains($0) ? $0 : nil }
+        case .cleanupLargeFileThreshold:
+            return bind(cleanup, \.largeFileThresholdMB) { CleanupSettingsStore.largeFileChoicesMB.contains($0) ? $0 : nil }
+        case .cleanupScheduleInterval: return bind(cleanup, \.scheduleInterval)
+        case .cleanupLowSpaceAlert: return bind(cleanup, \.lowSpaceAlertEnabled)
+        case .cleanupLowSpaceThreshold:
+            return bind(cleanup, \.lowSpaceThresholdGB) { CleanupSpaceAlert.thresholdChoicesGB.contains($0) ? $0 : nil }
+        case .cleanupCommands: return launcher.commandsBinding(for: key, owner: .cleanup)
         case .notesEnabled: return bind(settings, \.notesEnabled)
         case .notesRendersMarkdown: return bind(settings, \.notesRendersMarkdown)
         case .notesShowsFormattingBar: return bind(settings, \.notesShowsFormattingBar)
@@ -165,6 +178,8 @@ extension EscapeKeyBehavior: SettingsFileRawValue {}
 extension AppAppearance: SettingsFileRawValue {}
 extension InterfaceSize: SettingsFileRawValue {}
 extension HyperKeyPhysicalKey: SettingsFileRawValue {}
+extension CleanupDeletionMode: SettingsFileRawValue {}
+extension CleanupScheduleInterval: SettingsFileRawValue {}
 extension HyperKeyQuickPress: SettingsFileRawValue {}
 extension CalcNumberStyle: SettingsFileRawValue {}
 extension SearchSensitivity: SettingsFileRawValue {}
