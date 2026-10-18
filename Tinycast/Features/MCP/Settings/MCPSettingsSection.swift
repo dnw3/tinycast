@@ -1,11 +1,11 @@
 import SwiftUI
 
 struct MCPSettingsSection: View {
+    @Environment(AppCore.self) private var core
     @Environment(MCPCoordinator.self) private var coordinator
     @Environment(AppSettings.self) private var appSettings
     @Environment(MCPSettingsStore.self) private var store
     @State private var editor: MCPServerEditorTarget?
-    @State private var pendingRemoval: MCPServer?
     @State private var removalError: String?
 
     var body: some View {
@@ -23,7 +23,7 @@ struct MCPSettingsSection: View {
                         MCPServerRow(
                             server: server, status: coordinator.status(of: server.id),
                             onEdit: { editor = MCPServerEditorTarget(server: server, isNew: false) },
-                            onRemove: { pendingRemoval = server })
+                            onRemove: { confirmRemoval(of: server) })
                     }
                 }
                 Button {
@@ -52,18 +52,20 @@ struct MCPSettingsSection: View {
         .settingsEditorPanel(item: $editor) { target in
             MCPServerEditor(target: target, onSave: save, onCancel: { editor = nil })
         }
-        .confirmationDialog(
-            "Remove \(pendingRemoval?.title ?? "this server")?", isPresented: removalBinding,
-            presenting: pendingRemoval
-        ) { server in
-            Button("Remove", role: .destructive) { remove(server) }
-        } message: { _ in
-            Text("Its tools stop being offered, and its stored credentials are deleted.")
-        }
     }
 
-    private var removalBinding: Binding<Bool> {
-        Binding(get: { pendingRemoval != nil }, set: { if !$0 { pendingRemoval = nil } })
+    private func confirmRemoval(of server: MCPServer) {
+        Task {
+            guard
+                await core.confirm(
+                    title: String(localized: "Remove \(server.title)?"),
+                    message: String(
+                        localized: "Its tools stop being offered, and its stored credentials are deleted."),
+                    symbol: "wrench.and.screwdriver", confirmTitle: String(localized: "Remove")),
+                store.servers.contains(where: { $0.id == server.id })
+            else { return }
+            remove(server)
+        }
     }
 
     /// A returned message is shown in the panel; nil closes it.
@@ -78,7 +80,6 @@ struct MCPSettingsSection: View {
     }
 
     private func remove(_ server: MCPServer) {
-        pendingRemoval = nil
         do {
             try coordinator.remove(server.id)
             removalError = nil

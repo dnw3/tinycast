@@ -4,7 +4,6 @@ struct GeneralSettingsView: View {
     @Environment(AppCore.self) private var core
     @Environment(AppSettings.self) private var settings
     private var launcherRanking: LauncherRankingStore { core.launcherRanking }
-    @State private var confirmingRankingReset = false
     @State private var inputSources: [InputSourceSwitcher.Option] = []
 
     var body: some View {
@@ -70,6 +69,7 @@ struct GeneralSettingsView: View {
                 } label: {
                     SettingsRowTitle(.generalAppearance, "Theme")
                 }
+                LanguageRow()
                 InterfaceSizeRow()
                 WindowModeRow()
                 Toggle(isOn: $settings.showFavoritesInCompactMode) {
@@ -119,9 +119,7 @@ struct GeneralSettingsView: View {
                     Text("Lower finds names from scattered letters.")
                 }
                 LabeledContent {
-                    Button("Reset…", role: .destructive) {
-                        confirmingRankingReset = true
-                    }
+                    Button("Reset…", role: .destructive, action: confirmRankingReset)
                     .disabled(launcherRanking.isEmpty)
                 } label: {
                     SettingsRowTitle(.generalSearch, "Learned ranking")
@@ -133,18 +131,6 @@ struct GeneralSettingsView: View {
         }
         .formStyle(.grouped)
         .settingsScrollTarget(.general)
-        .confirmationDialog(
-            "Reset learned launcher ranking?",
-            isPresented: $confirmingRankingReset,
-            titleVisibility: .visible
-        ) {
-            Button("Reset Ranking", role: .destructive) {
-                launcherRanking.resetAll()
-            }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("Tinycast will relearn your preferred results as you use the launcher.")
-        }
         .onAppear(perform: refreshInputSources)
         .onReceive(
             DistributedNotificationCenter.default().publisher(
@@ -154,8 +140,44 @@ struct GeneralSettingsView: View {
         }
     }
 
+    private func confirmRankingReset() {
+        Task {
+            guard
+                await core.confirm(
+                    title: String(localized: "Reset learned launcher ranking?"),
+                    message: String(
+                        localized: "Tinycast will relearn your preferred results as you use the launcher."),
+                    symbol: "arrow.counterclockwise", confirmTitle: String(localized: "Reset Ranking"))
+            else { return }
+            launcherRanking.resetAll()
+        }
+    }
+
     private func refreshInputSources() {
         inputSources = core.inputSourceSwitcher.options(selecting: settings.autoSwitchInputSourceID)
+    }
+}
+
+/// macOS owns each app's language, so this names the current one and opens the pane that sets it.
+private struct LanguageRow: View {
+    private var current: String {
+        let identifier = Bundle.main.preferredLocalizations.first ?? "en"
+        return Locale.current.localizedString(forIdentifier: identifier) ?? identifier
+    }
+
+    var body: some View {
+        SettingsRow(
+            title: "Language",
+            subtitle: String(localized: "Set per app in System Settings › General › Language & Region."),
+            subtitleLineLimit: 2, anchor: .generalAppearance
+        ) {
+            HStack(spacing: Theme.Spacing.md) {
+                Text(current).foregroundStyle(.secondary)
+                Button(String(localized: "Change…")) {
+                    AppLauncher.openSettingsPane(bundleID: "com.apple.Localization-Settings.extension")
+                }
+            }
+        }
     }
 }
 
