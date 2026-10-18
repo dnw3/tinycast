@@ -5,6 +5,19 @@ final class TranslationTextView: NSTextView {
     var onChange: ((String, Bool) -> Void)?
     var onSubmit: (() -> Void)?
     var onSelection: ((String) -> Void)?
+    var onFocusChange: ((Bool) -> Void)?
+
+    override func becomeFirstResponder() -> Bool {
+        let became = super.becomeFirstResponder()
+        if became { onFocusChange?(true) }
+        return became
+    }
+
+    override func resignFirstResponder() -> Bool {
+        let resigned = super.resignFirstResponder()
+        if resigned { onFocusChange?(false) }
+        return resigned
+    }
 
     override func setSelectedRange(_ charRange: NSRange) {
         super.setSelectedRange(charRange)

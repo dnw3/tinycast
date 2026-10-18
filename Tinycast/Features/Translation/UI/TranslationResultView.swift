@@ -33,44 +33,36 @@ struct TranslationResultView: View {
             .font(metrics.typography.rowTrailing)
             .foregroundStyle(Theme.Colors.textSecondary)
             Spacer()
-            Button(action: coordinator.copy) {
-                SymbolImage(
-                    name: state.isCopied ? "checkmark" : "doc.on.doc",
-                    size: metrics.typography.bodyNSFont.pointSize)
-            }
-            .buttonStyle(.accessoryBar)
-            .disabled(!state.canCopy)
-            .accessibilityLabel(
-                state.isCopied
-                    ? String(localized: "Translation copied") : String(localized: "Copy translation")
-            )
-            .help(
-                state.isCopied
-                    ? String(localized: "Translation copied") : String(localized: "Copy translation (⌘⇧C)"))
-            Menu {
-                Button("Translate Again", systemImage: "arrow.clockwise", action: coordinator.submit)
-                    .disabled(!state.canSubmit || state.isRunning || state.isDelivering)
-                if state.origin == .selection {
-                    Divider()
-                    Button(
-                        state.deliveryTitle ?? String(localized: "Replace selection"),
-                        systemImage: "text.insert",
-                        action: coordinator.deliver
-                    )
-                    .keyboardShortcut(.return, modifiers: .command)
-                    .disabled(!coordinator.canDeliver)
+            HStack(spacing: metrics.spacing.xxs) {
+                BarButton(isCompact: true, action: coordinator.copy) {
+                    SymbolImage(
+                        name: state.isCopied ? "checkmark" : "doc.on.doc",
+                        size: metrics.typography.bodyNSFont.pointSize)
                 }
-            } label: {
-                SymbolImage(name: "ellipsis", size: metrics.typography.bodyNSFont.pointSize)
+                .focusable(false)
+                .disabled(!state.canCopy)
+                .accessibilityLabel(
+                    state.isCopied
+                        ? String(localized: "Translation copied") : String(localized: "Copy translation")
+                )
+                .tooltip(
+                    state.isCopied
+                        ? String(localized: "Translation copied") : String(localized: "Copy  ⇧⌘C"),
+                    alignment: .trailing)
+                BarButton(
+                    isSelected: coordinator.openMenu == .actions, isCompact: true,
+                    action: { coordinator.toggleMenu(.actions) }
+                ) {
+                    SymbolImage(name: "ellipsis", size: metrics.typography.bodyNSFont.pointSize)
+                }
+                .focusable(false)
+                .disabled(coordinator.menuItems(.actions).isEmpty)
+                .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: {
+                    coordinator.menuAnchors[.actions] = $0
+                }
+                .accessibilityLabel(String(localized: "Translation actions"))
+                .tooltip(String(localized: "More Actions"), alignment: .trailing)
             }
-            .menuStyle(.button)
-            .menuIndicator(.hidden)
-            .buttonStyle(.accessoryBar)
-            .accessibilityLabel(String(localized: "Translation actions"))
-            .help(
-                state.origin == .selection
-                    ? String(localized: "Translation actions · Apply to original field (⌘Return)")
-                    : String(localized: "Translation actions"))
         }
     }
 

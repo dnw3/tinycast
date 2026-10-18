@@ -1,3 +1,4 @@
+import Combine
 import SwiftUI
 
 struct TranslationSettingsView: View {
@@ -10,19 +11,14 @@ struct TranslationSettingsView: View {
         return Form {
             Section {
                 Toggle(isOn: $settings.translationEnabled) {
-                    SettingsRowTitle(.translationTranslation, "Enable Translation")
-                    Text("Translate selected text, or open an empty window and type.")
+                    SettingsFeatureToggleLabel(
+                        anchor: .translationTranslation, title: "Enable Translation",
+                        subtitle: String(localized: "Translate selected text, or open an empty window and type."))
                 }
-                Button("Open Translation") { coordinator.open() }
-                    .disabled(!settings.translationEnabled)
-                Button("Selection & Replacement Permission…") { Permissions.ensureAccessibility() }
-            } header: {
-                SettingsSectionHeader(.translationTranslation)
-            } footer: {
-                Text(
-                    "Typing and copying work without Accessibility. Reading and replacing text in other apps need permission."
-                )
+                TranslationAccessibilityRow()
+                    .settingsEnabled(settings.translationEnabled)
             }
+            .settingsAnchor(.translationTranslation)
             Group {
                 Section {
                     Picker(selection: $store.preferences.firstLanguage) {
@@ -38,9 +34,7 @@ struct TranslationSettingsView: View {
                 } header: {
                     SettingsSectionHeader(.translationLanguages)
                 } footer: {
-                    Text(
-                        "Primary language → secondary language. All other source languages → primary language."
-                    )
+                    Text("Primary → secondary. Every other language → primary.")
                 }
                 Section {
                     Picker(selection: $store.preferences.engine) {
@@ -58,11 +52,7 @@ struct TranslationSettingsView: View {
                 } header: {
                     SettingsSectionHeader(.translationEngine)
                 } footer: {
-                    Text(
-                        String(
-                            localized:
-                                "Apple runs on this Mac with downloaded languages. AI uses the selected provider and may send text online. Configure providers in Settings → AI."
-                        ))
+                    Text("AI may send text to its provider online. Set up providers in Settings › AI.")
                 }
                 FeatureCommandsSection(owner: .translation, anchor: .translationCommands)
             }
@@ -80,6 +70,36 @@ struct TranslationSettingsView: View {
             coordinator.languages.filter { TranslationLanguagePolicy.family($0) != family }, id: \.self
         ) { language in
             Text(TranslationLanguageService.name(language)).tag(language)
+        }
+    }
+}
+
+/// The Permissions pane's row, so the same grant reads the same way here.
+private struct TranslationAccessibilityRow: View {
+    @State private var trusted = Permissions.isAccessibilityTrusted()
+    private let refreshTimer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+
+    var body: some View {
+        LabeledContent {
+            HStack(spacing: Theme.Spacing.lg) {
+                HStack(spacing: Theme.Spacing.xs) {
+                    Image(systemName: trusted ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+                        .accessibilityHidden(true)
+                    Text(trusted ? String(localized: "Granted") : String(localized: "Not granted"))
+                }
+                .foregroundStyle(trusted ? Color.green : Color.orange)
+                Button(trusted ? String(localized: "Open…") : String(localized: "Grant Access…")) {
+                    if trusted { Permissions.openAccessibilitySettings() } else { _ = Permissions.ensureAccessibility() }
+                }
+                .help(String(localized: "Opens Privacy & Security › Accessibility."))
+            }
+        } label: {
+            SettingsRowTitle(.translationTranslation, "Accessibility")
+            Text("Reads and replaces selected text in other apps.")
+        }
+        .onReceive(refreshTimer) { _ in
+            let now = Permissions.isAccessibilityTrusted()
+            if now != trusted { trusted = now }
         }
     }
 }

@@ -45,10 +45,19 @@ SwiftUI reports content size, and `NSHostingView.sizingOptions` stays empty. The
 and scaled `InterfaceMetrics`, including light and dark appearances. Window modes are not persisted.
 The `TranslationWindow` log category records geometry and focus lifecycle without source or output text.
 
-Engine and language selectors show native dropdown indicators. The completed result has a Copy icon
-at its top-right, changing to a checkmark after copying; it stays outside the scrolling text. The
-adjacent actions menu holds Translate Again and Insert/Replace, with the latter disabled unless the
-original target is verifiable. There is no persistent Translate or Replace button row.
+The panel rounds with `radius.panel`, like Notes and the palette, and its controls are Tinycast's own:
+the engine and language selectors are `HeaderMenuButton`s, the window actions are compact
+`BarButton`s in a frosted capsule, and hover labels use `.tooltip`, since a non-activating panel
+never shows `.help`. The selectors and the actions menu open `TranslationMenuWindowController`, a
+child window copying `PopoverMenuRow`'s look as Notes' heading menu does, because `PopoverMenu`
+reads palette state. Any press in the panel, Escape, focus loss or a resize closes it.
+
+The completed result has a Copy icon at its top-right, changing to a checkmark after copying; it stays
+outside the scrolling text. The adjacent actions menu holds Translate Again and Insert/Replace,
+listing Insert/Replace only while the original target is verifiable. There is no persistent
+Translate or Replace button row. The input takes `formFieldChrome`; its length note appears only
+near the 12,000-byte limit. A notice appears only when there is something to act on: missing
+Accessibility, a password field, or a selection that cannot be replaced. An empty selection says nothing.
 
 | Gesture | Result |
 | --- | --- |

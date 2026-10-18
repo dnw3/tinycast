@@ -21,7 +21,10 @@ final class TranslationCoordinator {
     @ObservationIgnored private var task: Task<Void, Never>?
     @ObservationIgnored private var languageLoad: Task<Void, Never>?
     @ObservationIgnored private var retainedSource: AnyObject?
+    @ObservationIgnored private var menuOpenAtPress: TranslationMenuKind?
+    @ObservationIgnored var menuAnchors: [TranslationMenuKind: CGRect] = [:]
     var sourcePreview: CGImage?
+    private(set) var openMenu: TranslationMenuKind?
 
     var requiresAI: Bool { settingsVisible || imageTranslations > 0 || (isVisible && state.engine == .ai) }
     var targetLanguage: String {
@@ -102,18 +105,15 @@ final class TranslationCoordinator {
 
     private func capture(from app: NSRunningApplication?, revision: Int) async {
         guard isCurrent(revision) else { return }
-        guard let app, app.processIdentifier != ProcessInfo.processInfo.processIdentifier else {
-            state.notice = String(localized: "Type or paste text to translate.")
-            return
-        }
+        guard let app, app.processIdentifier != ProcessInfo.processInfo.processIdentifier else { return }
         guard Permissions.isAccessibilityTrusted() else {
             logger.info("Selection unavailable: Accessibility not granted")
             state.notice = String(
-                localized: "Type or paste text. Selection and replacement need Accessibility permission.")
+                localized: "To translate selected text, allow Tinycast in Accessibility settings.")
             return
         }
         guard !IsSecureEventInputEnabled() else {
-            state.notice = String(localized: "Secure input is active. Type or paste text to translate.")
+            state.notice = String(localized: "A password field is active, so the selection can’t be read.")
             return
         }
         target = TranslationTarget.capture(in: app)
@@ -134,11 +134,9 @@ final class TranslationCoordinator {
         if let selection {
             state.input = selection
         }
-        if target == nil {
-            state.notice =
-                selection == nil
-                ? String(localized: "Type or paste text. No selection could be confirmed in this app.")
-                : String(localized: "This source cannot be safely replaced. You can copy the translation.")
+        // An empty field already says what to do; only a selection that can't be replaced needs a word.
+        if target == nil, selection != nil {
+            state.notice = String(localized: "This app’s text can’t be replaced. Copy the translation instead.")
         }
     }
 
@@ -152,6 +150,7 @@ final class TranslationCoordinator {
         state.isDelivering = false
         target = nil
         isVisible = false
+        closeMenu()
         panels.dismiss()
         retainedSource = nil
         sourcePreview = nil
@@ -159,10 +158,95 @@ final class TranslationCoordinator {
     }
 
     func windowLostFocus() {
+        closeMenu()
         if state.dismissesOnBlur { cancel() }
     }
 
     func togglePinned() { state.isPinned.toggle() }
+
+    // MARK: - Menus
+
+    func toggleMenu(_ kind: TranslationMenuKind) {
+        // The press that closed this menu also clicks its button; reopening would undo the close.
+        guard menuOpenAtPress != kind else {
+            menuOpenAtPress = nil
+            return
+        }
+        guard openMenu != kind else { return closeMenu() }
+        let items = menuItems(kind)
+        guard !items.isEmpty, let anchor = menuAnchors[kind] else { return }
+        openMenu = kind
+        panels.presentMenu(
+            kind, rows: items.count, groups: items.filter(\.startsGroup).count, anchor: anchor, coordinator: self,
+            metrics: core.settings.interfaceSize.metrics)
+    }
+
+    func closeMenu() {
+        guard openMenu != nil else { return }
+        openMenu = nil
+        panels.hideMenu()
+    }
+
+    func panelMouseDown() {
+        menuOpenAtPress = openMenu
+        closeMenu()
+    }
+
+    func choose(_ item: TranslationMenuItem) {
+        closeMenu()
+        item.action()
+    }
+
+    func menuItems(_ kind: TranslationMenuKind) -> [TranslationMenuItem] {
+        switch kind {
+        case .engine:
+            return TranslationPreferences.Engine.allCases.map { engine in
+                TranslationMenuItem(
+                    id: engine.title, title: engine.title, isCurrent: state.engine == engine,
+                    action: { [weak self] in self?.changeEngine(engine) })
+            } + [
+                TranslationMenuItem(
+                    id: "settings", title: String(localized: "Translation Settings…"), startsGroup: true
+                ) { [weak self] in self?.showSettings() }
+            ]
+        case .source:
+            return languageItems(
+                automatic: String(localized: "Detect language"), current: state.sourceOverride,
+                choose: changeSource)
+        case .target:
+            return languageItems(
+                automatic: String(localized: "Automatic direction"), current: state.targetOverride,
+                choose: changeTarget)
+        case .actions:
+            var items: [TranslationMenuItem] = []
+            if state.canSubmit, !state.isRunning, !state.isDelivering {
+                items.append(
+                    TranslationMenuItem(id: "again", title: String(localized: "Translate Again")) { [weak self] in
+                        self?.submit()
+                    })
+            }
+            if state.origin == .selection, canDeliver {
+                items.append(
+                    TranslationMenuItem(
+                        id: "deliver", title: state.deliveryTitle ?? String(localized: "Replace"),
+                        startsGroup: !items.isEmpty, shortcut: ["⌘", "↵"]
+                    ) { [weak self] in self?.deliver() })
+            }
+            return items
+        }
+    }
+
+    private func languageItems(
+        automatic: String, current: String, choose: @escaping (String) -> Void
+    ) -> [TranslationMenuItem] {
+        [TranslationMenuItem(id: "automatic", title: automatic, isCurrent: current.isEmpty) { choose("") }]
+            + languages.enumerated().map { index, language in
+                TranslationMenuItem(
+                    id: language, title: TranslationLanguageService.name(language), isCurrent: current == language,
+                    startsGroup: index == 0
+                ) { choose(language) }
+            }
+    }
 
     func toggleExpanded() { state.isExpanded.toggle() }
 
@@ -301,14 +385,15 @@ final class TranslationCoordinator {
             onDelivered: { [weak self] in
                 guard let self, self.state.revision == revision else { return }
                 self.cancel()
-                self.core.showMessage(String(localized: "Translation applied"))
+                self.core.showMessage(
+                    target.range.length == 0
+                        ? String(localized: "Translation inserted") : String(localized: "Translation replaced"))
             },
             onFailed: { [weak self] in
                 guard let self, self.state.revision == revision else { return }
                 self.state.isDelivering = false
                 self.state.notice = String(
-                    localized:
-                        "The original field changed or could not accept text. Copy the translation instead.")
+                    localized: "The original text changed or can’t be edited. Copy the translation instead.")
                 self.target = nil
                 self.state.deliveryTitle = nil
                 self.panels.focus()
