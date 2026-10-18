@@ -32,6 +32,7 @@ struct CapturePresentationPresets: View {
         if naming {
             TextField("Preset Name", text: $name)
                 .frame(width: metrics.scaled(Theme.Size.capturePropertyField * 3))
+                .captureField(metrics)
                 .onSubmit { save(name: name) }.accessibilityLabel(String(localized: "Preset Name"))
             CaptureIconButton(title: String(localized: "Save Preset"), symbol: "plus") { save(name: name) }
             CaptureIconButton(title: String(localized: "Cancel Preset"), symbol: "xmark") {

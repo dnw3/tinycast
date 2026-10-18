@@ -39,7 +39,7 @@ struct CaptureActionButton: View {
                 CaptureIconButton(
                     title: Bundle.main.localizedString(forKey: action.title, value: nil, table: nil),
                     symbol: action.symbol,
-                    shortcut: action == .copy ? "⌘C / Return" : "", selected: action == .copy, action: perform
+                    shortcut: action == .copy ? "⌘C · ↵" : "", selected: action == .copy, action: perform
                 )
                 .contextMenu {
                     Button("Move to All Tools") {
@@ -91,5 +91,43 @@ struct CaptureActionButton: View {
                 coordinator.showUploadSettings()
             }
         }
+    }
+}
+
+extension View {
+    func captureBar(_ metrics: InterfaceMetrics) -> some View {
+        padding(metrics.spacing.xs)
+            .background { CaptureChrome.barShape(metrics).fill(.clear).frosted(in: CaptureChrome.barShape(metrics)) }
+    }
+
+    func captureCard(_ metrics: InterfaceMetrics) -> some View {
+        padding(metrics.spacing.xs).captureGlass(metrics)
+    }
+
+    /// Scrim under the glass keeps contrast steady over whatever the screen shows.
+    func captureGlass(_ metrics: InterfaceMetrics) -> some View {
+        background(Theme.Colors.panelScrim).background(GlassEffectView())
+            .clipShape(CaptureChrome.barShape(metrics))
+    }
+
+    /// A capture window's glass runs up under its transparent title bar.
+    func captureWindowSurface() -> some View {
+        background(Theme.Colors.panelScrim).background { GlassEffectView().ignoresSafeArea() }
+    }
+
+    /// A compact field sized for the tool bars, in the form field's fill and border.
+    func captureField(_ metrics: InterfaceMetrics) -> some View {
+        textFieldStyle(.plain)
+            .padding(.horizontal, metrics.spacing.sm).padding(.vertical, metrics.spacing.xxs)
+            .background(Theme.Colors.cardFill, in: CaptureChrome.toolShape(metrics))
+            .overlay { CaptureChrome.toolShape(metrics).strokeBorder(Theme.Colors.border, lineWidth: Theme.Size.hairline) }
+    }
+
+    /// Notes sit over arbitrary screenshots, so they take the HUD's scrim and glass for contrast.
+    func captureNotice(_ metrics: InterfaceMetrics) -> some View {
+        font(metrics.typography.bar)
+            .padding(.horizontal, metrics.spacing.md).padding(.vertical, metrics.spacing.sm)
+            .background(Theme.Colors.panelScrim).background(GlassEffectView())
+            .clipShape(Capsule())
     }
 }

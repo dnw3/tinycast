@@ -2,7 +2,10 @@ import Foundation
 
 struct CaptureVideoExportOptions: Equatable, Sendable {
     enum Format: String, CaseIterable, Sendable { case mp4, gif }
-    enum Quality: String, CaseIterable, Sendable { case compact, balanced, high }
+    enum Quality: String, CaseIterable, Sendable {
+        case compact, balanced, high
+        var title: String { rawValue.capitalized }
+    }
     var format = Format.mp4
     var maximumDimension = 640
     var framesPerSecond = 10

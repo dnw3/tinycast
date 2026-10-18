@@ -27,32 +27,21 @@ struct CaptureWorkspaceToolbar: View {
                     CaptureWorkspaceDismiss()
                 }
             }
-            .padding(metrics.spacing.xs)
-            .background {
-                RoundedRectangle(cornerRadius: metrics.radius.row).fill(.clear)
-                    .frosted(in: RoundedRectangle(cornerRadius: metrics.radius.row))
-            }
+            .captureBar(metrics)
             if workspace.selectionOptions {
                 CaptureSelectionControls(workspace: workspace)
-                    .padding(metrics.spacing.xs)
-                    .background { Capsule().fill(.clear).frosted(in: Capsule()) }
+                    .captureBar(metrics)
             }
-            if let notice = coordinator.editor?.notice {
-                Text(notice).font(metrics.typography.bar).padding(metrics.spacing.sm)
-                    .background(
-                        Theme.Colors.panelScrim, in: RoundedRectangle(cornerRadius: metrics.radius.row))
+            if let prompt {
+                prompt.captureNotice(metrics)
+            } else if let notice = coordinator.editor?.notice {
+                Text(notice).captureNotice(metrics)
             } else if workspace.requiresScrollRegion {
-                Text("Select the scrolling content inside the window")
-                    .font(metrics.typography.bar).padding(metrics.spacing.sm)
-                    .background(
-                        Theme.Colors.panelScrim, in: RoundedRectangle(cornerRadius: metrics.radius.row))
+                Text("Select the scrolling content inside the window").captureNotice(metrics)
             } else if workspace.request.mode != .screenshot,
                 coordinator.editor?.document.edit.isEmpty == false
             {
-                Text("Use this region · annotations stay in the screenshot")
-                    .font(metrics.typography.bar).padding(metrics.spacing.sm)
-                    .background(
-                        Theme.Colors.panelScrim, in: RoundedRectangle(cornerRadius: metrics.radius.row))
+                Text("Use this region · annotations stay in the screenshot").captureNotice(metrics)
             }
             if coordinator.pendingCapture == nil, let state = coordinator.editor,
                 workspace.request.mode == .screenshot, !workspace.selectingTarget
@@ -75,7 +64,7 @@ struct CaptureWorkspaceToolbar: View {
                     }
                 }
                 CaptureIconButton(
-                    title: String(localized: "Capture All Displays"), symbol: "display.2", shortcut: "Return"
+                    title: String(localized: "Capture All Displays"), symbol: "display.2", shortcut: "↵"
                 ) {
                     coordinator.selectDisplaysRegion(selection.bounds)
                 }
@@ -96,17 +85,28 @@ struct CaptureWorkspaceToolbar: View {
         .fixedSize()
     }
 
+    /// Instructions sit under the bar, so the bar keeps its icons and width while they change.
+    private var prompt: Text? {
+        if !workspace.preparation.ready, workspace.preparation.pending != nil {
+            return Text("Preparing image…")
+        } else if workspace.displays != nil {
+            return Text("Drag across displays")
+        } else if let pending = coordinator.pendingCapture {
+            let key = KeyCapChip.inlineText(["↵"])
+            return pending.axis == .vertical ? Text("Add below  \(key)") : Text("Add to the right  \(key)")
+        } else if coordinator.editor == nil || workspace.selectingTarget,
+            workspace.choosingElement || workspace.choosingWindow
+        {
+            return workspace.choosingElement ? Text("Click an element or drag") : Text("Click a window")
+        }
+        return nil
+    }
+
     @ViewBuilder private var tools: some View {
         if !workspace.preparation.ready, workspace.preparation.pending != nil {
-            Text("Preparing image…").font(metrics.typography.bar).padding(.horizontal, metrics.spacing.md)
-        } else if workspace.displays != nil {
-            Text("Drag across displays").font(metrics.typography.bar).padding(.horizontal, metrics.spacing.md)
-        } else if let pending = coordinator.pendingCapture {
-            Text(
-                pending.axis == .vertical
-                    ? String(localized: "Add below · Return") : String(localized: "Add to right · Return")
-            )
-            .font(metrics.typography.bar).padding(.horizontal, metrics.spacing.md)
+            EmptyView()
+        } else if workspace.displays != nil || coordinator.pendingCapture != nil {
+            EmptyView()
         } else if let state = coordinator.editor, !workspace.selectingTarget {
             if workspace.request.mode == .screenshot {
                 HStack(spacing: metrics.spacing.xxs) {
@@ -124,12 +124,6 @@ struct CaptureWorkspaceToolbar: View {
             } else {
                 CaptureRecordingPreparation(workspace: workspace)
             }
-        } else if workspace.choosingElement || workspace.choosingWindow {
-            Text(
-                workspace.choosingElement
-                    ? String(localized: "Click an element or drag") : String(localized: "Click a window")
-            )
-            .font(metrics.typography.bar).padding(.horizontal, metrics.spacing.md)
         }
     }
 
@@ -142,7 +136,7 @@ struct CaptureWorkspaceToolbar: View {
                 coordinator.setCaptureScope(.region)
             }
             CaptureIconButton(
-                title: String(localized: "Window"), symbol: "macwindow", shortcut: "Space",
+                title: String(localized: "Window"), symbol: "macwindow", shortcut: "␣",
                 selected: workspace.request.scope == .window
             ) {
                 coordinator.setCaptureScope(.window)
@@ -166,13 +160,13 @@ struct CaptureWorkspaceToolbar: View {
             }
             CaptureIconButton(
                 title: String(localized: "Scrolling Screenshot"),
-                symbol: "arrow.down.right.and.arrow.up.left",
+                symbol: "scroll",
                 selected: workspace.request.mode == .scrolling
             ) {
                 coordinator.setCaptureMode(.scrolling)
             }
             CaptureIconButton(
-                title: String(localized: "Record"), symbol: "record.circle",
+                title: String(localized: "Record Screen"), symbol: "record.circle",
                 selected: workspace.request.mode == .recording
             ) {
                 coordinator.setCaptureMode(.recording)
@@ -181,7 +175,7 @@ struct CaptureWorkspaceToolbar: View {
     }
 
     private var scrolling: some View {
-        HStack(spacing: metrics.spacing.sm) {
+        HStack(spacing: metrics.spacing.xxs) {
             CaptureIconButton(
                 title: String(localized: "Vertical"), symbol: "arrow.up.and.down",
                 selected: workspace.axis == .vertical
@@ -194,8 +188,10 @@ struct CaptureWorkspaceToolbar: View {
             ) {
                 workspace.axis = .horizontal
             }
-            Button("Start Scrolling") { coordinator.startSelectedScroll() }
-                .buttonStyle(.borderedProminent).fixedSize().disabled(workspace.requiresScrollRegion)
+            CaptureIconButton(title: String(localized: "Start Scrolling"), symbol: "play.fill", shortcut: "↵") {
+                coordinator.startSelectedScroll()
+            }
+            .disabled(workspace.requiresScrollRegion)
         }
     }
 }
@@ -213,7 +209,7 @@ struct CaptureWorkspaceOutputs: View {
                 Group {
                     if coordinator.pendingCapture != nil {
                         CaptureIconButton(
-                            title: String(localized: "Add Capture"), symbol: "plus", shortcut: "Return",
+                            title: String(localized: "Add Capture"), symbol: "plus", shortcut: "↵",
                             selected: true
                         ) {
                             coordinator.finishAppendCapture()
@@ -232,11 +228,7 @@ struct CaptureWorkspaceOutputs: View {
             }
             CaptureWorkspaceDismiss()
         }
-        .padding(metrics.spacing.xs)
-        .background {
-            RoundedRectangle(cornerRadius: metrics.radius.row).fill(.clear)
-                .frosted(in: RoundedRectangle(cornerRadius: metrics.radius.row))
-        }
+        .captureBar(metrics)
         .foregroundStyle(Theme.Colors.textPrimary)
         .frame(maxWidth: .infinity)
         .fixedSize(horizontal: false, vertical: true)
@@ -248,12 +240,12 @@ private struct CaptureWorkspaceDismiss: View {
 
     var body: some View {
         if coordinator.editor?.busy == true || coordinator.workspace?.busy == true {
-            CaptureIconButton(title: String(localized: "Cancel Operation"), symbol: "stop") {
+            CaptureIconButton(title: String(localized: "Cancel"), symbol: "stop") {
                 coordinator.cancelWork()
             }
         } else {
             CaptureIconButton(
-                title: String(localized: "Close Capture"), symbol: "xmark", shortcut: "Esc · ⌘W"
+                title: String(localized: "Close Capture"), symbol: "xmark", shortcut: "⎋ · ⌘W"
             ) {
                 coordinator.requestClose()
             }

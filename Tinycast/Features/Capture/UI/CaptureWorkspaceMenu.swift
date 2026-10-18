@@ -7,7 +7,7 @@ struct CaptureWorkspaceMenu: View {
     private var symbol: String {
         switch workspace.request.mode {
         case .screenshot: "camera"
-        case .scrolling: "arrow.down.right.and.arrow.up.left"
+        case .scrolling: "scroll"
         case .recording: "record.circle"
         }
     }

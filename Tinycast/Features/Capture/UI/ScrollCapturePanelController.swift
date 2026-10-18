@@ -135,13 +135,13 @@ final class ScrollCapturePanelController {
                     ) { coordinator.toggleAutomaticScroll() }
                     .keyboardShortcut("a", modifiers: [])
                     CaptureIconButton(
-                        title: session.paused ? String(localized: "Continue") : String(localized: "Pause"),
-                        symbol: session.paused ? "play.fill" : "pause.fill", shortcut: "Space"
+                        title: session.paused ? String(localized: "Resume") : String(localized: "Pause"),
+                        symbol: session.paused ? "play.fill" : "pause.fill", shortcut: "␣"
                     ) {
                         coordinator.toggleScrollPause()
                     }.keyboardShortcut(.space, modifiers: [])
                     CaptureIconButton(
-                        title: String(localized: "Finish Scrolling"), symbol: "checkmark", shortcut: "Return",
+                        title: String(localized: "Finish Scrolling"), symbol: "checkmark", shortcut: "↵",
                         selected: true
                     ) { coordinator.finishScroll() }
                     .keyboardShortcut(.return, modifiers: [])
@@ -161,7 +161,7 @@ final class ScrollCapturePanelController {
                                     details.shown = value
                                 }))
                         Button("Select Again…") { coordinator.restartScroll() }
-                        Button("Cancel Capture") { coordinator.cancelScroll() }
+                        Button("Cancel Scrolling…") { coordinator.cancelScroll() }
                             .keyboardShortcut(.escape, modifiers: [])
                     } label: {
                         CaptureToolbarGlyph(symbol: "ellipsis")
@@ -183,7 +183,8 @@ final class ScrollCapturePanelController {
                             Text(session.notice).lineLimit(2)
                             if details.shown {
                                 Text(
-                                    session.axis.rawValue.capitalized + " · "
+                                    (session.axis == .vertical
+                                        ? String(localized: "Vertical") : String(localized: "Horizontal")) + " · "
                                         + "\(session.document.size.width) × \(session.document.size.height)"
                                 )
                                 .monospacedDigit()
@@ -196,12 +197,8 @@ final class ScrollCapturePanelController {
                 }
             }
             .font(metrics.typography.bar)
-            .padding(metrics.spacing.xs)
             .foregroundStyle(Theme.Colors.textPrimary)
-            .background {
-                RoundedRectangle(cornerRadius: metrics.radius.row).fill(.clear)
-                    .frosted(in: RoundedRectangle(cornerRadius: metrics.radius.row))
-            }
+            .captureBar(metrics)
         }
     }
 }

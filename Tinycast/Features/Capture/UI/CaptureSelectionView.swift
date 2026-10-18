@@ -185,16 +185,20 @@ final class CaptureSelectionView: NSView {
         }
         let scale = workspace.displays?.snapshots.map(\.display.scale).max() ?? workspace.target.scale
         let dimensions = "\(Int(rect.width * scale)) × \(Int(rect.height * scale))"
+        let metrics = coordinator.metrics
         let text = NSAttributedString(
             string: dimensions,
-            attributes: [
-                .font: coordinator.metrics.typography.chipNSFont,
-                .foregroundColor: NSColor.white, .backgroundColor: NSColor.black.withAlphaComponent(0.7)
-            ])
-        text.draw(
-            at: CGPoint(
-                x: max(0, rect.minX),
-                y: min(bounds.maxY - text.size().height, rect.maxY + coordinator.metrics.spacing.sm)))
+            attributes: [.font: metrics.typography.chipNSFont, .foregroundColor: NSColor.white])
+        let padding = CGSize(width: metrics.spacing.sm, height: metrics.spacing.xxs)
+        let size = CGSize(
+            width: text.size().width + padding.width * 2, height: text.size().height + padding.height * 2)
+        let chip = CGRect(
+            origin: CGPoint(
+                x: max(0, rect.minX), y: min(bounds.maxY - size.height, rect.maxY + metrics.spacing.sm)),
+            size: size)
+        CaptureSelectionLoupe.labelFill.setFill()
+        NSBezierPath(roundedRect: chip, xRadius: metrics.radius.barControl, yRadius: metrics.radius.barControl).fill()
+        text.draw(at: CGPoint(x: chip.minX + padding.width, y: chip.minY + padding.height))
     }
 
     private func hitHandle(_ point: CGPoint) -> CaptureSelectionGeometry.Handle? {

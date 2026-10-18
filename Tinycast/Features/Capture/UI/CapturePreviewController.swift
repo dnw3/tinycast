@@ -1,6 +1,7 @@
 import AppKit
 import AVKit
 import QuickLookUI
+import SwiftUI
 
 @MainActor
 final class CapturePreviewController: NSObject, NSWindowDelegate {
@@ -23,16 +24,17 @@ final class CapturePreviewController: NSObject, NSWindowDelegate {
         let window = Window(
             contentRect: CGRect(origin: .zero, size: size),
             styleMask: [.titled, .closable, .resizable], backing: .buffered, defer: false)
-        window.title = String(localized: "Capture Preview · \(entry.subtitle)")
+        window.title = String(localized: "Capture Preview · \(entry.displaySubtitle)")
         window.isReleasedWhenClosed = false
         window.isRestorable = false
         window.contentMinSize = Theme.Size.captureEditorMinimum
+        CaptureChrome.adopt(window)
         window.delegate = self
         if entry.animationDuration != nil {
             let imageView = NSImageView(frame: CGRect(origin: .zero, size: size))
             imageView.imageScaling = .scaleProportionallyUpOrDown
             imageView.setAccessibilityLabel(String(localized: "Animated GIF Preview"))
-            window.contentView = imageView
+            window.contentView = Self.surface(imageView, metrics: metrics)
             self.imageView = imageView
             playAnimation(entry, source: source)
         } else if entry.videoDuration != nil {
@@ -40,7 +42,7 @@ final class CapturePreviewController: NSObject, NSWindowDelegate {
             let view = AVPlayerView(frame: CGRect(origin: .zero, size: size))
             view.player = player
             view.controlsStyle = .floating
-            window.contentView = view
+            window.contentView = Self.surface(view, metrics: metrics)
             self.player = player
             player.play()
         } else {
@@ -49,7 +51,7 @@ final class CapturePreviewController: NSObject, NSWindowDelegate {
             preview.autostarts = true
             preview.shouldCloseWithWindow = false
             preview.previewItem = source.directory.appendingPathComponent(entry.filename) as NSURL
-            window.contentView = preview
+            window.contentView = Self.surface(preview, metrics: metrics)
             self.preview = preview
         }
         self.window = window
@@ -112,6 +114,22 @@ final class CapturePreviewController: NSObject, NSWindowDelegate {
     }
 
     isolated deinit { animationTask?.cancel() }
+
+    private static func surface(_ content: NSView, metrics: InterfaceMetrics) -> NSView {
+        let hosting = NSHostingView(
+            rootView: Hosted(view: content)
+                .clipShape(RoundedRectangle(cornerRadius: metrics.radius.row, style: .continuous))
+                .padding(metrics.spacing.md)
+                .captureWindowSurface())
+        hosting.sizingOptions = []
+        return hosting
+    }
+
+    private struct Hosted: NSViewRepresentable {
+        let view: NSView
+        func makeNSView(context: Context) -> NSView { view }
+        func updateNSView(_ nsView: NSView, context: Context) {}
+    }
 
     private final class Window: NSWindow {
         override func cancelOperation(_ sender: Any?) { performClose(sender) }

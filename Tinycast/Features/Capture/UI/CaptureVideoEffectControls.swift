@@ -9,7 +9,7 @@ struct CaptureVideoEffectControls: View {
         if let effect = state.selectedEffect {
             VStack(alignment: .leading, spacing: metrics.spacing.sm) {
                 HStack(spacing: metrics.spacing.md) {
-                    Text(effect.kind.rawValue.capitalized)
+                    Text(LocalizedStringKey(effect.kind.title))
                     field(String(localized: "From"), value: value(\.start))
                     field(String(localized: "To"), value: value(\.end))
                     if effect.kind != .zoom {
@@ -22,7 +22,7 @@ struct CaptureVideoEffectControls: View {
                                         state.changeEffect { $0.color = color }
                                     }
                                 })
-                        ).textFieldStyle(.roundedBorder)
+                        ).captureField(metrics)
                             .frame(width: metrics.scaled(Theme.Size.capturePropertyField * 1.5))
                             .accessibilityLabel(String(localized: "Video Effect Color"))
                     }
@@ -44,7 +44,7 @@ struct CaptureVideoEffectControls: View {
                             set: { value in
                                 state.changeEffect { $0.text = value }
                             }), axis: .vertical
-                    ).textFieldStyle(.roundedBorder).lineLimit(1...3)
+                    ).captureField(metrics).lineLimit(1...3)
                         .accessibilityLabel(String(localized: "Video Text")).focused($editingText)
                         .onChange(of: editingText) { _, editing in
                             if editing { state.beginEditing() } else { state.endEditing() }
@@ -66,7 +66,7 @@ struct CaptureVideoEffectControls: View {
         HStack(spacing: metrics.spacing.xs) {
             Text(title)
             TextField(title, value: value, format: .number.precision(.fractionLength(0...3)))
-                .textFieldStyle(.roundedBorder).frame(width: metrics.scaled(Theme.Size.capturePropertyField))
+                .captureField(metrics).frame(width: metrics.scaled(Theme.Size.capturePropertyField))
                 .accessibilityLabel(String(localized: "Video Effect \(title)"))
         }
     }

@@ -115,17 +115,13 @@ final class CapturePinController: Identifiable {
                             } label: {
                                 CaptureToolbarGlyph(symbol: "ellipsis")
                             }
-                            .menuStyle(CaptureToolbarMenuStyle())
+                            .menuStyle(CaptureToolbarMenuStyle()).fixedSize()
                             .accessibilityLabel(Text("More Actions")).tooltip(String(localized: "More Actions"))
                             CaptureIconButton(title: String(localized: "Close Pin"), symbol: "xmark") {
                                 coordinator.closePin(pin)
                             }
                         }
-                        .padding(metrics.spacing.xxs)
-                        .background {
-                            RoundedRectangle(cornerRadius: metrics.radius.barControl).fill(.clear)
-                                .frosted(in: RoundedRectangle(cornerRadius: metrics.radius.barControl))
-                        }
+                        .captureBar(metrics)
                         .padding(metrics.spacing.xxs)
                     }
                 }
@@ -140,11 +136,7 @@ final class CapturePinController: Identifiable {
                             minHeight: metrics.scaled(Theme.Size.captureTool))
                         .tooltip(String(localized: "Reset Zoom"))
                         .accessibilityLabel(Text("Reset Zoom"))
-                        .padding(metrics.spacing.xxs)
-                        .background {
-                            RoundedRectangle(cornerRadius: metrics.radius.barControl).fill(.clear)
-                                .frosted(in: RoundedRectangle(cornerRadius: metrics.radius.barControl))
-                        }
+                        .captureBar(metrics)
                         .padding(metrics.spacing.xxs)
                     }
                 }

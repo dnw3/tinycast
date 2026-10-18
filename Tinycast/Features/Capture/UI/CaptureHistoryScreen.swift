@@ -8,7 +8,7 @@ struct CaptureHistoryScreen: PaletteScreen {
         let query = vm.query.trimmingCharacters(in: .whitespacesAndNewlines)
         return coordinator.historyEntries.filter {
             query.isEmpty
-                || ($0.title + " " + $0.date.formatted() + " " + $0.subtitle)
+                || ($0.title + " " + $0.date.formatted() + " " + $0.displaySubtitle)
                     .localizedCaseInsensitiveContains(query)
         }
     }

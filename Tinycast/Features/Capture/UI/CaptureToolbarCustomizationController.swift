@@ -14,6 +14,7 @@ final class CaptureToolbarCustomizationController: NSObject, NSWindowDelegate {
             contentRect: CGRect(origin: .zero, size: Theme.Size.captureToolbarCustomization),
             styleMask: [.titled, .closable, .nonactivatingPanel], backing: .buffered, defer: false)
         panel.title = String(localized: "Customize Capture Toolbar")
+        CaptureChrome.adopt(panel)
         panel.isReleasedWhenClosed = false
         panel.hidesOnDeactivate = false
         panel.isRestorable = false

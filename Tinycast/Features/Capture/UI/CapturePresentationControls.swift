@@ -10,11 +10,12 @@ struct CapturePresentationControls: View {
         if state.presentationControls {
             CaptureToolFlow(spacing: metrics.spacing.md) {
                 CapturePresentationPresets(state: state)
-                Picker("Background", selection: binding(\.background)) {
-                    ForEach(CapturePresentation.Background.allCases, id: \.self) {
-                        Text(LocalizedStringKey($0.title)).tag($0)
-                    }
-                }.fixedSize()
+                CapturePickerMenu(
+                    title: String(localized: "Background"), symbol: "square.fill.on.square",
+                    options: CapturePresentation.Background.allCases.map {
+                        ($0, Bundle.main.localizedString(forKey: $0.title, value: nil, table: nil))
+                    },
+                    selection: binding(\.background))
                 if style.background != .transparent {
                     color(String(localized: "Background Color"), key: \.color)
                     if style.background == .gradient || style.background == .grid {
@@ -90,7 +91,6 @@ struct CapturePresentationControls: View {
         @Binding var value: CaptureColor
         let finish: () -> Void
         @Environment(\.metrics) private var metrics
-        @State private var text = ""
 
         var body: some View {
             HStack(spacing: metrics.spacing.xxs) {
@@ -98,16 +98,10 @@ struct CapturePresentationControls: View {
                     .frame(
                         width: metrics.scaled(Theme.Size.captureGlyph),
                         height: metrics.scaled(Theme.Size.captureGlyph))
-                TextField(title, text: $text)
-                    .frame(width: metrics.scaled(Theme.Size.capturePropertyField * 2))
-                    .accessibilityLabel(title).tooltip(title)
-                    .onAppear { text = value.hex }
-                    .onChange(of: value) { _, next in text = next.hex }
-                    .onSubmit {
-                        finish()
-                        if let color = CaptureColor(hex: text) { value = color }
-                        text = value.hex
-                    }
+                CaptureHexField(title: title, color: value) { color in
+                    finish()
+                    if let color { value = color }
+                }
             }
         }
     }

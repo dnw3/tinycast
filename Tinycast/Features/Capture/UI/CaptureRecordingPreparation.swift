@@ -72,16 +72,14 @@ struct CaptureRecordingPreparation: View {
                 CaptureToolbarGlyph(symbol: "slider.horizontal.3")
             }
             .menuStyle(CaptureToolbarMenuStyle()).fixedSize()
-            .help(String(localized: "Recording Options")).accessibilityLabel(
+            .tooltip(String(localized: "Recording Options")).accessibilityLabel(
                 String(localized: "Recording Options"))
-            Button(
-                workspace.recordingOptions.delay == 0
-                    ? String(localized: "Start Recording")
-                    : String(localized: "Start in \(workspace.recordingOptions.delay)s")
+            CaptureIconButton(
+                title: String(localized: "Start Recording"), symbol: "record.circle.fill", shortcut: "↵",
+                tint: Theme.Colors.destructive
             ) {
                 coordinator.startSelectedRecording()
             }
-            .buttonStyle(.borderedProminent).fixedSize()
         }
     }
 }

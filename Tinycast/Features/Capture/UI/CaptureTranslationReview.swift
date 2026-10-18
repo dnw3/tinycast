@@ -29,9 +29,11 @@ struct CaptureTranslationReview: View {
                         }
                     }.fixedSize()
                     Button("Translate Paragraphs") { coordinator.translateImageParagraphs() }
+                        .buttonStyle(.modalAction(.standard, fillsWidth: false))
                         .disabled(review.source.isEmpty)
                     if review.needsLanguages {
                         Button("Translation Languages…") { coordinator.openTranslationLanguages() }
+                            .buttonStyle(.modalAction(.standard, fillsWidth: false))
                     }
                     CaptureIconButton(
                         title: state.document.edit.translation?.enabled == false
@@ -52,13 +54,8 @@ struct CaptureTranslationReview: View {
                     TextField(
                         "Translation", text: $review.translation.blocks[review.index].text, axis: .vertical
                     )
-                    .lineLimit(2...3).textFieldStyle(.plain).accessibilityLabel(
-                        String(localized: "Paragraph Translation")
-                    )
-                    .padding(metrics.spacing.sm).background(
-                        Theme.Colors.panelScrim,
-                        in: RoundedRectangle(cornerRadius: metrics.radius.barControl)
-                    )
+                    .lineLimit(2...3).accessibilityLabel(String(localized: "Paragraph Translation"))
+                    .captureField(metrics)
                     .frame(maxWidth: .infinity)
                 }
                 HStack(spacing: metrics.spacing.sm) {
@@ -76,6 +73,7 @@ struct CaptureTranslationReview: View {
                         review.index = (review.index + 1) % review.translation.blocks.count
                     }
                     Button("Apply Edits") { coordinator.applyImageTranslation() }
+                        .buttonStyle(.modalAction(.standard, fillsWidth: false))
                         .disabled(
                             !review.translation.isValid
                                 || review.translation == state.document.edit.translation)

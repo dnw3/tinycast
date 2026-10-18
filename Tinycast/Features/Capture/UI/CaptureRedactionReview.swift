@@ -27,6 +27,7 @@ struct CaptureRedactionReview: View {
                     Button("Cover \(included) \(included == 1 ? "Area" : "Areas")") {
                         state.applyRedactions()
                     }
+                    .buttonStyle(.modalAction(.standard, fillsWidth: false))
                     .disabled(!state.redactionCandidates.contains(where: \.included))
                     CaptureIconButton(title: String(localized: "Dismiss Suggestions"), symbol: "xmark") {
                         state.redactionCandidates = []
@@ -34,8 +35,7 @@ struct CaptureRedactionReview: View {
                 }
                 .font(metrics.typography.bar)
             }
-            .padding(metrics.spacing.sm)
-            .background(Theme.Colors.panelScrim, in: RoundedRectangle(cornerRadius: metrics.radius.row))
+            .captureCard(metrics)
             .disabled(state.busy)
         }
     }

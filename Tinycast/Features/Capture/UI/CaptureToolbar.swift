@@ -6,6 +6,7 @@ struct CaptureIconButton: View {
     var shortcut = ""
     var selected = false
     var hint = ""
+    var tint: Color?
     let action: () -> Void
     private var help: String {
         let name = Bundle.main.localizedString(forKey: title, value: nil, table: nil)
@@ -15,7 +16,7 @@ struct CaptureIconButton: View {
 
     var body: some View {
         Button(action: action) {
-            CaptureToolbarGlyph(symbol: symbol)
+            CaptureToolbarGlyph(symbol: symbol).foregroundStyle(tint.map(AnyShapeStyle.init) ?? AnyShapeStyle(.primary))
         }
         .buttonStyle(CaptureToolbarButtonStyle(selected: selected))
         .focusable(false)
@@ -25,9 +26,55 @@ struct CaptureIconButton: View {
     }
 }
 
+/// A setting shown by its current value, like `1×` or `MP4`, named only in its tooltip.
+struct CaptureValueMenu<Content: View>: View {
+    let title: String
+    var symbol: String?
+    let value: String
+    @ViewBuilder let content: () -> Content
+    @Environment(\.metrics) private var metrics
+
+    var body: some View {
+        Menu(content: content) {
+            HStack(spacing: metrics.spacing.xxs) {
+                if let symbol { CaptureToolbarGlyph(symbol: symbol) }
+                Text(value).monospacedDigit()
+                Image(systemName: "chevron.down").font(metrics.typography.disclosure)
+                    .foregroundStyle(Theme.Colors.textSecondary)
+            }
+            .font(metrics.typography.bar)
+        }
+        .menuStyle(CaptureToolbarMenuStyle(fitsContent: true)).fixedSize()
+        .tooltip(title).accessibilityLabel(title).accessibilityValue(value)
+    }
+}
+
+/// A `CaptureValueMenu` over a fixed list, checking the current choice.
+struct CapturePickerMenu<Value: Hashable>: View {
+    let title: String
+    var symbol: String?
+    let options: [(value: Value, label: String)]
+    @Binding var selection: Value
+
+    var body: some View {
+        CaptureValueMenu(
+            title: title, symbol: symbol, value: options.first { $0.value == selection }?.label ?? ""
+        ) {
+            Picker(title, selection: $selection) {
+                ForEach(options.indices, id: \.self) { Text(options[$0].label).tag(options[$0].value) }
+            }
+            .pickerStyle(.inline).labelsHidden()
+        }
+    }
+}
+
 struct CaptureToolProperties: View {
     @Bindable var state: CaptureEditorState
     @Environment(\.metrics) private var metrics
+
+    private func localized(_ title: String) -> String {
+        Bundle.main.localizedString(forKey: title, value: nil, table: nil)
+    }
 
     private var tool: CaptureAnnotation.Tool {
         state.document.edit.annotations.first(where: { $0.id == state.selected })?.tool ?? state.tool
@@ -39,31 +86,29 @@ struct CaptureToolProperties: View {
         } else if tool == .emoji {
             CaptureEmojiControls(state: state)
         } else if tool == .magnifier {
-            Picker(
-                "Magnification",
+            CapturePickerMenu(
+                title: String(localized: "Magnification"), symbol: "plus.magnifyingglass",
+                options: [2.0, 4, 8].map { ($0, "\(Int($0))×") },
                 selection: Binding(
                     get: { state.magnification },
                     set: {
                         state.magnification = $0
                         state.updateSelectedStyle()
                     })
-            ) {
-                ForEach([2.0, 4, 8], id: \.self) { Text("\(Int($0))×").tag($0) }
-            }.fixedSize().disabled(state.busy)
+            ).disabled(state.busy)
         } else if tool == .blur {
-            Picker(
-                "Blur",
+            CapturePickerMenu(
+                title: String(localized: "Blur"), symbol: "drop",
+                options: [
+                    (4.0, String(localized: "Soft")), (8.0, String(localized: "Medium")),
+                    (12.0, String(localized: "Strong"))
+                ],
                 selection: Binding(
                     get: { state.strokeWidth },
                     set: {
                         state.strokeWidth = $0; state.updateSelectedStyle()
                     })
-            ) {
-                Text("Light").tag(4.0)
-                Text("Medium").tag(8.0)
-                Text("Strong").tag(12.0)
-            }
-            .fixedSize().disabled(state.busy)
+            ).disabled(state.busy)
         } else if ![.select, .crop, .pixelate, .cover, .spotlight, .erase].contains(tool) {
             CaptureToolFlow(spacing: metrics.spacing.md) {
                 ForEach(CaptureAnnotation.Ink.allCases, id: \.self) { ink in
@@ -89,26 +134,19 @@ struct CaptureToolProperties: View {
                                 ))
                     }
                     .buttonStyle(.borderless).focusable(false)
-                    .accessibilityLabel(ink.rawValue.capitalized)
+                    .accessibilityLabel(Text(LocalizedStringKey(ink.title)))
                     .accessibilityAddTraits(state.ink == ink && state.color == nil ? .isSelected : [])
                 }
                 if state.color != nil { CaptureColorField(state: state) }
                 if tool == .text {
-                    Picker(
-                        "Font",
-                        selection: Binding(
-                            get: { state.font },
-                            set: {
-                                state.changeText(.font($0))
-                            })
-                    ) {
-                        ForEach(CaptureAnnotation.Font.allCases, id: \.self) { font in
-                            Text(LocalizedStringKey(font.title)).tag(font)
-                        }
-                    }.fixedSize()
+                    CapturePickerMenu(
+                        title: String(localized: "Font"), symbol: "textformat",
+                        options: CaptureAnnotation.Font.allCases.map { ($0, localized($0.title)) },
+                        selection: Binding(get: { state.font }, set: { state.changeText(.font($0)) }))
                     HStack(spacing: metrics.spacing.xxs) {
                         TextField("Size", value: $state.fontSize, format: .number)
                             .frame(width: metrics.scaled(Theme.Size.capturePropertyField))
+                            .captureField(metrics)
                             .onSubmit {
                                 state.fontSize =
                                     state.fontSize.isFinite ? min(768, max(6, state.fontSize)) : 24
@@ -116,87 +154,75 @@ struct CaptureToolProperties: View {
                             }.accessibilityLabel(String(localized: "Font Size"))
                         Text("pt")
                     }.fixedSize().tooltip(String(localized: "Font Size"))
-                    Menu("Text Style") { CaptureTextStyleControls(state: state) }
-                        .fixedSize().focusable(false)
+                    Menu { CaptureTextStyleControls(state: state) } label: {
+                        CaptureToolbarGlyph(symbol: "bold.italic.underline")
+                    }
+                    .menuStyle(CaptureToolbarMenuStyle()).fixedSize().focusable(false)
+                    .tooltip(String(localized: "Text Style")).accessibilityLabel(String(localized: "Text Style"))
                 } else {
-                    Picker(
-                        "Stroke",
+                    CapturePickerMenu(
+                        title: String(localized: "Stroke"), symbol: "lineweight",
+                        options: [
+                            (2.0, String(localized: "Fine")), (4.0, String(localized: "Medium")),
+                            (8.0, String(localized: "Bold"))
+                        ],
                         selection: Binding(
                             get: { state.strokeWidth },
                             set: {
                                 state.strokeWidth = $0; state.updateSelectedStyle()
-                            })
-                    ) {
-                        Text("Fine").tag(2.0)
-                        Text("Medium").tag(4.0)
-                        Text("Bold").tag(8.0)
-                    }.fixedSize()
+                            }))
                 }
                 if tool == .rectangle || tool == .ellipse {
-                    Picker(
-                        "Shape",
+                    CapturePickerMenu(
+                        title: String(localized: "Shape"), symbol: "square.on.circle",
+                        options: CaptureAnnotation.ShapeStyle.allCases.map { ($0, localized($0.title)) },
                         selection: Binding(
                             get: { state.shapeStyle },
                             set: {
                                 state.shapeStyle = $0; state.updateSelectedStyle()
-                            })
-                    ) {
-                        ForEach(CaptureAnnotation.ShapeStyle.allCases, id: \.self) {
-                            Text(LocalizedStringKey($0.title)).tag($0)
-                        }
-                    }.fixedSize()
+                            }))
                     if tool == .rectangle {
-                        Picker(
-                            "Corners",
+                        CapturePickerMenu(
+                            title: String(localized: "Corners"), symbol: "app.dashed",
+                            options: [
+                                (0.0, String(localized: "Square")), (12.0, String(localized: "Rounded")),
+                                (32.0, String(localized: "Round"))
+                            ],
                             selection: Binding(
                                 get: { state.cornerRadius },
                                 set: {
                                     state.cornerRadius = $0; state.updateSelectedStyle()
-                                })
-                        ) {
-                            Text("Square").tag(0.0)
-                            Text("Rounded").tag(12.0)
-                            Text("Round").tag(32.0)
-                        }.fixedSize()
+                                }))
                     }
                 }
                 if tool == .arrow || tool == .curvedArrow {
-                    Picker(
-                        "Arrow",
+                    CapturePickerMenu(
+                        title: String(localized: "Arrow"), symbol: "arrow.up.right",
+                        options: CaptureAnnotation.ArrowStyle.allCases.map { ($0, localized($0.title)) },
                         selection: Binding(
                             get: { state.arrowStyle },
                             set: {
                                 state.arrowStyle = $0; state.updateSelectedStyle()
-                            })
+                            }))
+                    CaptureIconButton(
+                        title: String(localized: "Reverse"), symbol: "arrow.left.arrow.right", selected: state.reversed
                     ) {
-                        ForEach(CaptureAnnotation.ArrowStyle.allCases, id: \.self) {
-                            Text(LocalizedStringKey($0.title)).tag($0)
-                        }
-                    }.fixedSize()
-                    Toggle(
-                        "Reverse",
-                        isOn: Binding(
-                            get: { state.reversed },
-                            set: {
-                                state.reversed = $0; state.updateSelectedStyle()
-                            })
-                    ).toggleStyle(.checkbox)
+                        state.reversed.toggle(); state.updateSelectedStyle()
+                    }
                 }
                 if tool == .number { CaptureNumberControls(state: state) }
                 if tool == .highlighter { CaptureHighlightControls(state: state) }
                 if tool == .pen {
-                    Toggle(
-                        "Smooth",
-                        isOn: Binding(
-                            get: { state.smoothPen },
-                            set: {
-                                state.smoothPen = $0; state.updateSelectedStyle()
-                            })
-                    ).toggleStyle(.checkbox)
+                    CaptureIconButton(
+                        title: String(localized: "Smooth"), symbol: "scribble.variable", selected: state.smoothPen
+                    ) {
+                        state.smoothPen.toggle(); state.updateSelectedStyle()
+                    }
                 }
                 HStack(spacing: metrics.spacing.xxs) {
                     TextField("Rotation", value: $state.rotation, format: .number)
                         .frame(width: metrics.scaled(Theme.Size.capturePropertyField))
+                        .captureField(metrics)
                         .onSubmit {
                             state.rotation = state.rotation.isFinite ? min(180, max(-180, state.rotation)) : 0
                             state.updateSelectedStyle()

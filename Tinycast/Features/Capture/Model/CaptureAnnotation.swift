@@ -41,8 +41,8 @@ struct CaptureAnnotation: Codable, Equatable, Sendable, Identifiable {
             case .text: "textformat"
             case .pen: "pencil.tip"
             case .number: "1.circle"
-            case .cover: "square.fill"
-            case .pixelate: "square.grid.3x3.fill"
+            case .cover: "square.inset.filled"
+            case .pixelate: "square.grid.3x3"
             case .crop: "crop"
             case .line: "line.diagonal"
             case .curvedArrow: "arrow.turn.up.right"
@@ -59,7 +59,14 @@ struct CaptureAnnotation: Codable, Equatable, Sendable, Identifiable {
 
     enum ArrowStyle: String, Codable, CaseIterable, Sendable {
         case single, double, thick, open
-        var title: String { rawValue.capitalized }
+        var title: String {
+            switch self {
+            case .single: "Single-Headed"
+            case .double: "Double-Headed"
+            case .thick: "Thick Arrow"
+            case .open: "Open Arrowhead"
+            }
+        }
     }
 
     enum ShapeStyle: String, Codable, CaseIterable, Sendable {
@@ -80,6 +87,7 @@ struct CaptureAnnotation: Codable, Equatable, Sendable, Identifiable {
 
     enum Ink: String, Codable, CaseIterable, Sendable {
         case red, blue, yellow, black, white
+        var title: String { rawValue.capitalized }
         var rgba: [Double] {
             switch self {
             case .red: [0.95, 0.22, 0.25, 1]
