@@ -309,6 +309,6 @@ Dev 不通过应用内更新器更新，继续使用本分支的新代码需要�
 | 自动检查 | 121 个 harness 中 120 个通过，`form-input-test` 同上一轮为本机已知失败；Debug / Release 通过，Swift 警告 0；lint 165 项，与合并前相同 |
 | 原生验收 | 应用内更新 1.0.0 → 1.1.0 已在本机验证，粘贴、截图等已授权限保留；听写边录边插入、AI Chat 新界面、OpenCode v2、文件搜索、扩展 OAuth、听写键尚未逐项复验 |
 | 证据 | 合并提交说明 |
-| 后续 | 同日发布 [v1.1.0](https://github.com/dnw3/tinycast/releases/tag/v1.1.0)（`68813796`，arm64 zip 11 MB，CI 通过）：主程序与 4 个 helper（含 `FileIndexHelper`）均由 `Tinycast Self-Signed` 签名并启用 hardened runtime；本机经应用内更新升级到 1.1.0，签名叶证书不变、无隔离标记 |
+| 后续 | 同日发布 [v1.1.0](https://github.com/dnw3/tinycast/releases/tag/v1.1.0)（`68813796`，arm64 zip 11 MB，CI 通过）：主程序与 4 个 helper（含 `FileIndexHelper`）均由 `Tinycast Self-Signed` 签名并启用 hardened runtime；本机经应用内更新升级到 1.1.0，签名叶证书不变、无隔离标记。2026-10-18 发布 [v1.2.0](https://github.com/dnw3/tinycast/releases/tag/v1.2.0)（`2e519584`，arm64 zip 11 MB）：新增 Disk Cleanup，统一截图与翻译界面；仓库 Actions 被停用，此版未经 CI，以本机全量 harness、lint 与 Debug / Release 构建为准；发版前 `Tinycast Self-Signed` 的代码签名信任曾丢失，已重新设为受信任 |
 
 下次同步时更新本节的日期、上游 SHA、改动摘要、验证范围与证据链接；旧证据文件保留，便于回溯。
