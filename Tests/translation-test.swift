@@ -114,6 +114,21 @@ struct TranslationTests {
         expect(state.output.isEmpty && state.phase == .translating, "old requests cannot overwrite new input")
         state.finish("new result", revision: state.revision)
         expect(state.canCopy, "only a completed current request enables output actions")
+        state.resultNotice = "Delivery failed"
+        state.invalidate()
+        expect(state.staleOutput == "new result" && !state.canCopy, "a stale result stays visible but inert")
+        expect(state.resultNotice == nil, "an edit clears notices about the previous result")
+        state.finish("newer result", revision: state.revision)
+        expect(state.staleOutput.isEmpty && state.output == "newer result", "a fresh result replaces stale text")
+        state.invalidate()
+        state.fail("failed")
+        expect(state.staleOutput.isEmpty, "a failure does not keep showing an older translation")
+        state.origin = .capture(documentID: UUID(), revision: 1)
+        state.input = "full text"
+        state.selectedInput = "part"
+        expect(state.requestInput == "part", "screenshot requests and the length note measure the selection")
+        state.origin = .selection
+        expect(state.requestInput == "full text", "selection queries translate the whole input")
         state.isCopied = true
         state.reset(preferences: TranslationPreferences())
         expect(state.input.isEmpty && !state.canCopy && !state.isCopied, "reopening clears text, results and copy feedback")

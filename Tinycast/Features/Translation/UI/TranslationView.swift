@@ -12,7 +12,7 @@ struct TranslationView: View {
             header
             languages
             source
-            if state.isExpanded || state.phase != .idle {
+            if state.isExpanded || state.phase != .idle || !state.staleOutput.isEmpty {
                 Rectangle()
                     .fill(Theme.Colors.separator)
                     .frame(height: Theme.Size.hairline)
@@ -22,11 +22,17 @@ struct TranslationView: View {
                         maxWidth: .infinity, maxHeight: state.isExpanded ? .infinity : nil,
                         alignment: .topLeading)
             }
-            if let notice = state.notice {
-                Text(notice)
-                    .font(metrics.typography.rowTrailing)
-                    .foregroundStyle(Theme.Colors.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
+            if let notice = state.resultNotice ?? state.notice?.text {
+                HStack(spacing: metrics.spacing.md) {
+                    Text(notice)
+                        .font(metrics.typography.rowTrailing)
+                        .foregroundStyle(Theme.Colors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    if state.resultNotice == nil, let action = state.notice?.action {
+                        noticeAction(action)
+                    }
+                }
             }
         }
         .padding(state.isExpanded ? metrics.spacing.xxl : metrics.spacing.xl)
@@ -74,9 +80,9 @@ struct TranslationView: View {
                     state.isExpanded
                         ? "arrow.down.right.and.arrow.up.left" : "arrow.up.left.and.arrow.down.right",
                     label: state.isExpanded
-                        ? String(localized: "Use Mini Window") : String(localized: "Expand Translation"),
+                        ? String(localized: "Collapse") : String(localized: "Expand Translation"),
                     help: state.isExpanded
-                        ? String(localized: "Use Mini Window") : String(localized: "Expand for longer text"),
+                        ? String(localized: "Collapse") : String(localized: "Expand for longer text"),
                     action: coordinator.toggleExpanded)
                 barAction(
                     "xmark", label: String(localized: "Close Translation"),
@@ -166,6 +172,7 @@ struct TranslationView: View {
                     if state.origin != .selection {
                         textAction(String(localized: "Copy Source"), action: coordinator.copySource)
                         textAction(String(localized: "Translate"), action: coordinator.submit)
+                            .disabled(state.isRunning)
                     }
                     Spacer()
                     if let lengthNote {
@@ -175,6 +182,13 @@ struct TranslationView: View {
                     }
                 }
             }
+        }
+    }
+
+    private func noticeAction(_ action: TranslationState.Notice.Action) -> some View {
+        switch action {
+        case .grantAccessibility:
+            textAction(String(localized: "Grant Access…")) { coordinator.perform(action) }
         }
     }
 
@@ -189,11 +203,10 @@ struct TranslationView: View {
 
     /// Silent until the text nears the request limit; nobody needs a byte count before then.
     private var lengthNote: String? {
-        let used = state.input.utf8.count
-        let limit = TranslationRequest.maximumInputBytes
-        guard used * 10 >= limit * 8 else { return nil }
-        return used > limit
-            ? String(localized: "Too long to translate at once — shorten the text")
-            : String(localized: "Nearly at the length limit")
+        let used = state.requestInput.utf8.count
+        guard used * 10 >= TranslationRequest.maximumInputBytes * 8 else { return nil }
+        guard state.exceedsLimit else { return String(localized: "Nearly at the length limit") }
+        if case .failed = state.phase { return nil }
+        return TranslationCoordinator.tooLongMessage
     }
 }

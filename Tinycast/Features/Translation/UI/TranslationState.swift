@@ -12,6 +12,12 @@ final class TranslationState {
         case failed(String)
     }
 
+    struct Notice: Equatable {
+        enum Action { case grantAccessibility }
+        let text: String
+        var action: Action?
+    }
+
     var input = ""
     var isComposing = false
     var sourceOverride = ""
@@ -19,10 +25,13 @@ final class TranslationState {
     var detectedLanguage: String?
     var engine: TranslationPreferences.Engine = .apple
     var output = ""
+    /// The last translation, dimmed while a newer one runs so the Mini window keeps its height.
+    var staleOutput = ""
     var isCopied = false
     var phase: Phase = .idle
     var needsLanguages = false
-    var notice: String?
+    var notice: Notice?
+    var resultNotice: String?
     var deliveryTitle: String?
     var isDelivering = false
     var isPinned = false
@@ -34,6 +43,8 @@ final class TranslationState {
     var source: String? { sourceOverride.isEmpty ? detectedLanguage : sourceOverride }
     var isRunning: Bool { phase == .detecting || phase == .translating }
     var canCopy: Bool { phase == .finished && !output.isEmpty }
+    var requestInput: String { origin != .selection && !selectedInput.isEmpty ? selectedInput : input }
+    var exceedsLimit: Bool { requestInput.utf8.count > TranslationRequest.maximumInputBytes }
     var canSubmit: Bool { !isComposing && !input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
     var dismissesOnBlur: Bool { !isPinned && !isDelivering }
 
@@ -45,13 +56,22 @@ final class TranslationState {
     func finish(_ output: String, revision: Int) {
         guard revision == self.revision else { return }
         self.output = output
+        staleOutput = ""
         phase = .finished
+    }
+
+    func fail(_ message: String) {
+        output = ""
+        staleOutput = ""
+        phase = .failed(message)
     }
 
     @discardableResult
     func invalidate() -> Int {
         revision += 1
+        if !output.isEmpty { staleOutput = output }
         output = ""
+        resultNotice = nil
         isCopied = false
         phase = .idle
         needsLanguages = false
@@ -60,6 +80,7 @@ final class TranslationState {
 
     func reset(preferences: TranslationPreferences) {
         invalidate()
+        staleOutput = ""
         input = ""
         isComposing = false
         sourceOverride = ""

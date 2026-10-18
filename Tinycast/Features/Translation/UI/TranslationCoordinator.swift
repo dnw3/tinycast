@@ -73,7 +73,7 @@ final class TranslationCoordinator {
         state.reset(preferences: store.preferences)
         state.origin = source
         state.input = text
-        state.notice = notice
+        state.notice = notice.map { TranslationState.Notice(text: $0) }
         state.isExpanded = true
         retainedSource = retaining
         sourcePreview = preview
@@ -86,6 +86,7 @@ final class TranslationCoordinator {
 
     func copySource() {
         Paster.copyPlainText(state.selectedInput.isEmpty ? state.input : state.selectedInput)
+        core.showMessage(String(localized: "Source copied"))
     }
 
     func translateImage(
@@ -108,12 +109,14 @@ final class TranslationCoordinator {
         guard let app, app.processIdentifier != ProcessInfo.processInfo.processIdentifier else { return }
         guard Permissions.isAccessibilityTrusted() else {
             logger.info("Selection unavailable: Accessibility not granted")
-            state.notice = String(
-                localized: "To translate selected text, allow Tinycast in Accessibility settings.")
+            state.notice = TranslationState.Notice(
+                text: String(localized: "To translate selected text, allow Tinycast in Accessibility settings."),
+                action: .grantAccessibility)
             return
         }
         guard !IsSecureEventInputEnabled() else {
-            state.notice = String(localized: "A password field is active, so the selection can’t be read.")
+            state.notice = TranslationState.Notice(
+                text: String(localized: "A password field is active, so the selection can’t be read."))
             return
         }
         target = TranslationTarget.capture(in: app)
@@ -136,7 +139,8 @@ final class TranslationCoordinator {
         }
         // An empty field already says what to do; only a selection that can't be replaced needs a word.
         if target == nil, selection != nil {
-            state.notice = String(localized: "This app’s text can’t be replaced. Copy the translation instead.")
+            state.notice = TranslationState.Notice(
+                text: String(localized: "This app’s text can’t be replaced. Copy the translation instead."))
         }
     }
 
@@ -239,13 +243,24 @@ final class TranslationCoordinator {
     private func languageItems(
         automatic: String, current: String, choose: @escaping (String) -> Void
     ) -> [TranslationMenuItem] {
-        [TranslationMenuItem(id: "automatic", title: automatic, isCurrent: current.isEmpty) { choose("") }]
-            + languages.enumerated().map { index, language in
-                TranslationMenuItem(
-                    id: language, title: TranslationLanguageService.name(language), isCurrent: current == language,
-                    startsGroup: index == 0
-                ) { choose(language) }
-            }
+        let preferred = preferredLanguages.reduce(into: [String]()) { if !$0.contains($1) { $0.append($1) } }
+        let others = languages.filter { !preferred.contains($0) }
+            .map { (code: $0, name: TranslationLanguageService.name($0)) }
+            .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+        let preferredItems = preferred.enumerated().map { index, language in
+            TranslationMenuItem(
+                id: language, title: TranslationLanguageService.name(language), isCurrent: current == language,
+                startsGroup: index == 0
+            ) { choose(language) }
+        }
+        let otherItems = others.enumerated().map { index, language in
+            TranslationMenuItem(
+                id: language.code, title: language.name, isCurrent: current == language.code,
+                startsGroup: index == 0
+            ) { choose(language.code) }
+        }
+        return [TranslationMenuItem(id: "automatic", title: automatic, isCurrent: current.isEmpty) { choose("") }]
+            + preferredItems + otherItems
     }
 
     func toggleExpanded() { state.isExpanded.toggle() }
@@ -256,7 +271,11 @@ final class TranslationCoordinator {
         state.selectedInput = ""
         state.isComposing = isComposing
         invalidate()
-        state.detectedLanguage = nil
+        // The last detection stays until the next one lands, so the source label doesn't flicker.
+        if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            state.staleOutput = ""
+            state.detectedLanguage = nil
+        }
         if state.origin != .selection { return }
         let revision = state.revision
         inputSession.schedule(text: text, isComposing: isComposing) { [weak self] in
@@ -285,18 +304,14 @@ final class TranslationCoordinator {
         invalidate()
         guard state.canSubmit else { return }
         guard core.settings.translationEnabled else {
-            state.notice = String(
+            state.staleOutput = ""
+            state.resultNotice = String(
                 localized:
                     "Enable Translation in Settings to translate this text. You can still copy and edit it.")
             return
         }
-        let input =
-            state.origin != .selection && !state.selectedInput.isEmpty ? state.selectedInput : state.input
-        guard input.utf8.count <= TranslationRequest.maximumInputBytes else {
-            state.phase = .failed(
-                String(localized: "Translate up to 12 KB at a time. Shorten the source text and retry."))
-            return
-        }
+        let input = state.requestInput
+        guard !state.exceedsLimit else { return state.fail(Self.tooLongMessage) }
         let revision = state.revision
         let preferred = preferredLanguages
         state.phase = .detecting
@@ -309,13 +324,12 @@ final class TranslationCoordinator {
             self.state.detectedLanguage = detected
             guard TranslationLanguagePolicy.hasLetters(input) else {
                 self.state.finish(input, revision: revision)
-                self.state.notice = String(
+                self.state.resultNotice = String(
                     localized: "No language to translate; numbers and symbols are unchanged.")
                 return
             }
             guard let source = self.state.source else {
-                self.state.phase = .failed(
-                    String(localized: "Could not identify the language. Choose a source language."))
+                self.state.fail(String(localized: "Could not identify the language. Choose a source language."))
                 return
             }
             let request = TranslationRequest(text: input, source: source, target: self.targetLanguage)
@@ -344,10 +358,8 @@ final class TranslationCoordinator {
             state.finish(output, revision: revision)
         } catch {
             guard isCurrent(revision) else { return }
-            state.output = ""
             state.needsLanguages = (error as? AppleTranslationService.Failure) == .needsLanguages
-            state.phase = .failed(
-                Bundle.main.localizedString(forKey: error.localizedDescription, value: nil, table: nil))
+            state.fail(Bundle.main.localizedString(forKey: error.localizedDescription, value: nil, table: nil))
         }
     }
 
@@ -392,7 +404,7 @@ final class TranslationCoordinator {
             onFailed: { [weak self] in
                 guard let self, self.state.revision == revision else { return }
                 self.state.isDelivering = false
-                self.state.notice = String(
+                self.state.resultNotice = String(
                     localized: "The original text changed or can’t be edited. Copy the translation instead.")
                 self.target = nil
                 self.state.deliveryTitle = nil
@@ -400,10 +412,26 @@ final class TranslationCoordinator {
             })
     }
 
-    func showSettings() { core.settingsCoordinator.showSettings(tab: .translation) }
+    static var tooLongMessage: String {
+        String(localized: "Too long to translate — shorten it or select part of it")
+    }
+
+    /// Settings take focus, and an unpinned panel would close with the query on focus loss.
+    func showSettings() {
+        state.isPinned = true
+        core.settingsCoordinator.showSettings(tab: .translation)
+    }
 
     func openLanguageSettings() {
+        state.isPinned = true
         AppLauncher.openSettingsPane(bundleID: "com.apple.Localization-Settings.extension")
+    }
+
+    func perform(_ action: TranslationState.Notice.Action) {
+        state.isPinned = true
+        switch action {
+        case .grantAccessibility: Permissions.ensureAccessibility()
+        }
     }
 
     func settingsAppeared(_ visible: Bool) {

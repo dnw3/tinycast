@@ -22,7 +22,8 @@ struct TranslationInputView: NSViewRepresentable {
         editor.isHorizontallyResizable = false
         editor.autoresizingMask = [.width]
         editor.textContainer?.widthTracksTextView = true
-        editor.textContainerInset = NSSize(width: metrics.spacing.sm, height: metrics.spacing.md)
+        editor.textContainer?.lineFragmentPadding = 0
+        editor.textContainerInset = NSSize(width: metrics.spacing.md, height: metrics.spacing.md)
         editor.string = text
         editor.setAccessibilityLabel(String(localized: "Source text"))
         scroll.documentView = editor

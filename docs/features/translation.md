@@ -19,9 +19,11 @@
 - Committed nonblank input automatically translates after 800 ms without edits. Marked text never
   starts a request; committing it restarts the delay. Explicit submission cancels the pending timer.
 - Streamed output is a preview. Copy and Insert/Replace require a complete current response; a failed,
-  cancelled, empty or explicitly truncated response cannot be delivered.
-- Apple is the default engine and uses downloaded system languages. AI requires an independently
-  selected model through the existing provider factory. There is no automatic provider fallback.
+  cancelled, empty or explicitly truncated response cannot be delivered. After an edit the previous
+  translation stays dimmed until the new one arrives, so Mini keeps its height; it is not delivered.
+- Apple is the default engine and uses downloaded system languages. AI uses its own selected model,
+  or the AI default model when none is chosen, through the existing provider factory, as Quick
+  Actions do. There is no automatic fallback to another engine or provider.
   The request has translation instructions and source text only, with no chat history, tools or search.
 - No source text or translation history is persisted. Translation preferences and model routes are
   excluded from settings backups. The AI provider retains its own documented transport behavior.
@@ -56,14 +58,18 @@ The completed result has a Copy icon at its top-right, changing to a checkmark a
 outside the scrolling text. The adjacent actions menu holds Translate Again and Insert/Replace,
 listing Insert/Replace only while the original target is verifiable. There is no persistent
 Translate or Replace button row. The input takes `formFieldChrome`; its length note appears only
-near the 12,000-byte limit. A notice appears only when there is something to act on: missing
-Accessibility, a password field, or a selection that cannot be replaced. An empty selection says nothing.
+near the 12,000-byte limit and measures exactly what Translate would send. A session notice appears
+only when there is something to act on: missing Accessibility (offering Grant Access…), a password
+field, or a selection that cannot be replaced. An empty selection says nothing. Result notices — no
+translatable letters, Translation disabled, failed delivery — clear with the next edit or request.
+The running status reads "Translating…" through detection and translation. Settings, Language &
+Region and Grant Access… pin the window first, so the query survives the focus change.
 
 | Gesture | Result |
 | --- | --- |
 | Translate command or its configured global shortcut | Read selection and translate, or focus an empty editor |
 | Pin / Unpin | Keep visible on focus loss / restore automatic dismissal |
-| Expand / Use Mini Window | Change size while preserving input, languages and the active response |
+| Expand / Collapse | Change size while preserving input, languages and the active response |
 | Pause typing or pasting for 800 ms | Detect language and translate automatically |
 | Return in the input | Translate immediately, cancelling the pending automatic request |
 | Shift-Return | Insert a newline |
@@ -92,9 +98,9 @@ input stays unchanged. Detection and translation run together after the input de
 and explicit submissions start immediately. Changing the language or engine also submits immediately,
 unless the editor still contains marked text.
 
-The menu combines Apple's supported languages with common AI choices. The Apple service checks the
-actual source/target pair. A missing pack leaves the input visible and links to Language & Region.
-Pin before switching to settings to retain the query, or reopen Translate after downloading the pack.
+The menu combines Apple's supported languages with common AI choices. The preferred pair comes
+first, then the rest sorted by localized name. The Apple service checks the actual source/target pair. A
+missing pack leaves the input visible and links to Language & Region, which pins the window first.
 Unsupported pairs offer a clear error.
 
 ## Delivery and providers

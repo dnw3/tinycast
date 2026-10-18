@@ -24,14 +24,9 @@ struct TranslationResultView: View {
     private var toolbar: some View {
         HStack(spacing: metrics.spacing.md) {
             if state.isRunning { ProgressView().controlSize(.small) }
-            Text(
-                state.isRunning
-                    ? (state.phase == .detecting
-                        ? String(localized: "Detecting language…") : String(localized: "Translating…"))
-                    : String(localized: "Result")
-            )
-            .font(metrics.typography.rowTrailing)
-            .foregroundStyle(Theme.Colors.textSecondary)
+            Text(state.isRunning ? String(localized: "Translating…") : String(localized: "Result"))
+                .font(metrics.typography.rowTrailing)
+                .foregroundStyle(Theme.Colors.textSecondary)
             Spacer()
             HStack(spacing: metrics.spacing.xxs) {
                 BarButton(isCompact: true, action: coordinator.copy) {
@@ -66,10 +61,17 @@ struct TranslationResultView: View {
         }
     }
 
+    private func outputText(_ text: String) -> some View {
+        Text(text)
+            .font(metrics.typography.rowTitle)
+            .lineSpacing(metrics.spacing.xs)
+            .textSelection(.enabled)
+    }
+
     @ViewBuilder
     private var content: some View {
         switch state.phase {
-        case .idle:
+        case .idle where state.staleOutput.isEmpty:
             Text("Your translation will appear here.")
                 .font(metrics.typography.rowTitle)
                 .foregroundStyle(Theme.Colors.textTertiary)
@@ -85,12 +87,13 @@ struct TranslationResultView: View {
                         .buttonStyle(.modalAction(.standard, fillsWidth: false))
                 }
             }
-        case .detecting, .translating, .finished:
+        case .idle, .detecting, .translating, .finished:
             if !state.output.isEmpty {
-                Text(state.output)
-                    .font(metrics.typography.rowTitle)
-                    .lineSpacing(metrics.spacing.xs)
-                    .textSelection(.enabled)
+                outputText(state.output)
+            } else if !state.staleOutput.isEmpty {
+                outputText(state.staleOutput)
+                    .foregroundStyle(Theme.Colors.textTertiary)
+                    .accessibilityHint(String(localized: "Outdated translation"))
             }
         }
     }

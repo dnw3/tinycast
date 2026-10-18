@@ -647,8 +647,8 @@ final class AppCore {
     }
 
     func translationProvider() throws -> any AIProvider {
-        guard let selection = translationSettings.model else {
-            throw AIProviderError.unavailable(String(localized: "Choose a model in Settings → Translation."))
+        guard let selection = translationSettings.model ?? aiSettings.defaultModel else {
+            throw AIProviderError.unavailable(String(localized: "Choose a model in Settings › Translation."))
         }
         return try AIProviderFactory.make(
             selection: selection, settings: aiSettings, subscription: chatGPTSubscription,

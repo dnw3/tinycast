@@ -45,7 +45,7 @@ struct TranslationSettingsView: View {
                         SettingsRowTitle(.translationEngine, "Default engine")
                     }
                     AIModelSelectionRows(
-                        selection: store.model, inheritedTitle: String(localized: "Choose a model…"),
+                        selection: store.model, inheritedTitle: String(localized: "Default model"),
                         select: { store.model = $0 },
                         modelLabel: { SettingsRowTitle(.translationEngine, "Translation model") },
                         effortLabel: { SettingsRowTitle(.translationEngine, "Reasoning effort") })
