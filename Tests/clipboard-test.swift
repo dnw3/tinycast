@@ -1,5 +1,6 @@
 // Standalone test for the clipboard store, compiling the real source rather than a copy.
 import Foundation
+import SQLite3
 
 @main
 @MainActor
@@ -7,7 +8,7 @@ struct ClipboardTests {
     static var failures = 0
     static var passes = 0
 
-    static func main() {
+    static func main() async throws {
         pinOrder()
         unpinRejoinsAsNewest()
         pasteLeavesPinsAlone()
@@ -34,6 +35,14 @@ struct ClipboardTests {
         defaultActionChords()
         plainTextSkipsTheFile()
         offersTextExtraction()
+        recopyingSurfacesTheExistingRow()
+        recopyingAPinOnlyBumpsIt()
+        dedupSurvivesAReopen()
+        longTextIsKeptButIndexedByItsHead()
+        olderDatabasesMigrateInPlace()
+        diskUsageCountsTheDatabaseAndBlobs()
+        try await imagesDedupeByContent()
+        try await staleImagesLeaveNoTrace()
 
         print("\(passes)/\(passes + failures) passed")
         if failures > 0 { exit(1) }
@@ -732,7 +741,155 @@ struct ClipboardTests {
             "a PDF stays a background-indexing capability")
     }
 
+    /// Copying what is already anywhere in the history moves that row up instead of repeating it.
+    static func recopyingSurfacesTheExistingRow() {
+        withStore { store, _ in
+            store.addText("a", sourceBundleID: nil)
+            store.addText("b", sourceBundleID: nil)
+            store.addText("c", sourceBundleID: nil)
+            let id = item(store, "a").id
+            store.addText("a", sourceBundleID: nil)
+            expect(texts(store) == ["a", "c", "b"], "the old row leads, nothing is added")
+            expect(item(store, "a").id == id, "under its own id, so its derived text stays")
+            store.addFiles(["/tmp/x.png"], sourceBundleID: nil)
+            store.addText("b", sourceBundleID: nil)
+            store.addFiles(["/tmp/x.png"], sourceBundleID: nil)
+            expect(store.items.count == 4, "files dedupe by path too")
+            expect(store.items.first?.filePath == "/tmp/x.png", "and lead once copied again")
+            store.addText("/tmp/x.png", sourceBundleID: nil)
+            expect(store.items.count == 5, "the same characters as text are a different entry")
+        }
+    }
+
+    static func recopyingAPinOnlyBumpsIt() {
+        withStore { store, _ in
+            store.addText("keep", sourceBundleID: nil)
+            store.addText("other", sourceBundleID: nil)
+            store.togglePinned(item(store, "keep"))
+            let before = item(store, "keep")
+            store.addText("keep", sourceBundleID: nil)
+            let after = item(store, "keep")
+            expect(store.items.count == 2, "no duplicate of a pin")
+            expect(after.pinnedAt == before.pinnedAt, "the pin and its place are kept")
+            expect(after.createdAt > before.createdAt, "only its timestamp moves")
+        }
+    }
+
+    static func dedupSurvivesAReopen() {
+        withStore { store, dir in
+            store.addText("persisted", sourceBundleID: nil)
+            store.addText("later", sourceBundleID: nil)
+            let reopened = ClipboardStore(directory: dir)
+            reopened.load()
+            reopened.addText("persisted", sourceBundleID: nil)
+            expect(texts(reopened) == ["persisted", "later"], "the hash is stored with the row")
+        }
+    }
+
+    /// Stored whole, but only the head is in the trigram index.
+    static func longTextIsKeptButIndexedByItsHead() {
+        withStore { store, _ in
+            let head = ClipboardStore.indexedTextLength
+            let text = "zqxhead" + String(repeating: "a", count: head) + "zqxtail"
+            store.addText(text, sourceBundleID: nil)
+            store.addText("filler", sourceBundleID: nil)
+            store.load()
+            expect(store.items.contains { $0.text == text }, "a long copy is stored whole")
+            expect(store.search("zqxhead", filter: .all).count == 1, "found by its head")
+            expect(store.search("zqxtail", filter: .all).isEmpty, "the tail stays out of the index")
+            store.remove(store.items.first { $0.text == text }!)
+            expect(integrityHolds(store.dbURL), "deleting it leaves the index consistent")
+        }
+    }
+
+    /// A file from before the hash column and the prefix index opens in place, history intact.
+    static func olderDatabasesMigrateInPlace() {
+        let dir = scratchDirectory()
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let long = String(repeating: "b", count: ClipboardStore.indexedTextLength + 10) + "tailword"
+        let now = Date().timeIntervalSince1970
+        var db: OpaquePointer?
+        sqlite3_open(dir.appendingPathComponent("clipboard.sqlite3").path, &db)
+        sqlite3_exec(
+            db,
+            """
+            CREATE TABLE items(id TEXT NOT NULL UNIQUE, kind TEXT NOT NULL, text TEXT,
+              image_path TEXT, created_at REAL NOT NULL, source_app TEXT, pinned_at REAL);
+            CREATE VIRTUAL TABLE items_fts USING fts5(
+              text, content='items', content_rowid='rowid', tokenize='trigram');
+            CREATE TRIGGER items_ai AFTER INSERT ON items BEGIN
+              INSERT INTO items_fts(rowid, text) VALUES(new.rowid, new.text);
+            END;
+            INSERT INTO items VALUES('\(UUID())', 'text', 'legacy row', NULL, \(now), NULL, NULL);
+            INSERT INTO items VALUES('\(UUID())', 'text', '\(long)', NULL, \(now), NULL, NULL);
+            """, nil, nil, nil)
+        sqlite3_close(db)
+
+        let store = ClipboardStore(directory: dir)
+        store.load()
+        expect(store.items.count == 2, "the old rows survive the migration")
+        expect(store.search("legacy", filter: .all).count == 1, "and are still searchable")
+        expect(store.search("tailword", filter: .all).isEmpty, "a long row is re-indexed by its head")
+        store.addText("fresh", sourceBundleID: nil)
+        store.addText("fresh again", sourceBundleID: nil)
+        store.addText("fresh", sourceBundleID: nil)
+        expect(store.items.count == 4, "new rows dedupe once the column exists")
+        store.clearAll()
+        expect(integrityHolds(store.dbURL), "clearing migrated rows leaves the index consistent")
+    }
+
+    static func diskUsageCountsTheDatabaseAndBlobs() {
+        withStore { store, _ in
+            let empty = ClipboardStore.diskUsage(databaseAt: store.dbURL, imagesIn: store.imagesDir)
+            try? Data(count: 200_000).write(to: store.imagesDir.appendingPathComponent("blob.png"))
+            let full = ClipboardStore.diskUsage(databaseAt: store.dbURL, imagesIn: store.imagesDir)
+            expect(empty > 0, "the database counts")
+            expect(full >= empty + 200_000, "and so does every blob")
+        }
+    }
+
+    static func imagesDedupeByContent() async throws {
+        let dir = scratchDirectory()
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let store = ClipboardStore(directory: dir)
+        store.addImage(Data("same png".utf8), sourceBundleID: nil)
+        try await settle { store.items.count == 1 }
+        store.addText("between", sourceBundleID: nil)
+        store.addImage(Data("same png".utf8), sourceBundleID: nil)
+        try await settle { store.items.first?.kind == .image }
+        let blobs = (try? FileManager.default.contentsOfDirectory(atPath: store.imagesDir.path)) ?? []
+        expect(store.items.count == 2, "the same PNG makes one row")
+        expect(store.items.first?.kind == .image, "which moves to the top")
+        expect(blobs.count == 1, "and keeps one blob")
+    }
+
+    /// A clear or a refusal during the write must not resurrect the image or strand its file.
+    static func staleImagesLeaveNoTrace() async throws {
+        let dir = scratchDirectory()
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let store = ClipboardStore(directory: dir)
+        store.addImage(Data("cleared".utf8), sourceBundleID: nil)
+        store.clearAll()
+        store.addImage(Data("refused".utf8), sourceBundleID: nil) { false }
+        try await Task.sleep(for: .milliseconds(300))
+        let blobs = (try? FileManager.default.contentsOfDirectory(atPath: store.imagesDir.path)) ?? []
+        expect(store.items.isEmpty, "neither stale image is inserted")
+        expect(blobs.isEmpty, "and neither leaves a blob behind")
+    }
+
     // MARK: - Harness
+
+    static func settle(_ done: () -> Bool) async throws {
+        for _ in 0..<200 where !done() { try await Task.sleep(for: .milliseconds(10)) }
+    }
+
+    static func integrityHolds(_ url: URL) -> Bool {
+        var db: OpaquePointer?
+        defer { sqlite3_close(db) }
+        guard sqlite3_open(url.path, &db) == SQLITE_OK else { return false }
+        let check = "INSERT INTO items_fts(items_fts, rank) VALUES('integrity-check', 1)"
+        return sqlite3_exec(db, check, nil, nil, nil) == SQLITE_OK
+    }
 
     /// Runs `body` against a store rooted in a fresh temp directory, torn down afterwards.
     static func withStore(_ body: (ClipboardStore, URL) -> Void) {

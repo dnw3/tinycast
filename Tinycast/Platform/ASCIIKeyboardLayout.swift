@@ -16,8 +16,35 @@ enum ASCIIKeyboardLayout {
         } ?? [:]
     }
 
+    /// The key a synthesized chord must post, so ⌘V still means paste on Dvorak or AZERTY.
+    @MainActor static func keyCode(typing character: Character, fallback: Int) -> Int {
+        withCurrentInputSource { layout, sourceID in
+            keyCode(
+                typing: character, inputSourceID: sourceID,
+                baseCharacters: (0..<128).reduce(into: [:]) { characters, keyCode in
+                    characters[keyCode] = Self.character(for: keyCode, modifiers: 0, in: layout)
+                }, fallback: fallback)
+        } ?? fallback
+    }
+
+    /// A "QWERTY ⌘" layout switches back to QWERTY under ⌘, so its ANSI key is already right.
+    static func keyCode(
+        typing character: Character, inputSourceID: String?, baseCharacters: [Int: String],
+        fallback: Int
+    ) -> Int {
+        if inputSourceID?.contains("QWERTYCMD") == true { return fallback }
+        let wanted = String(character)
+        return baseCharacters.filter { $0.value == wanted }.keys.min() ?? fallback
+    }
+
     @MainActor private static func withCurrentLayout<Result>(
         _ body: (UnsafePointer<UCKeyboardLayout>) -> Result?
+    ) -> Result? {
+        withCurrentInputSource { layout, _ in body(layout) }
+    }
+
+    @MainActor private static func withCurrentInputSource<Result>(
+        _ body: (UnsafePointer<UCKeyboardLayout>, String?) -> Result?
     ) -> Result? {
         guard
             let source = TISCopyCurrentASCIICapableKeyboardLayoutInputSource()?
@@ -27,11 +54,15 @@ enum ASCIIKeyboardLayout {
         else { return nil }
 
         let layoutData = unsafeBitCast(layoutDataPointer, to: CFData.self)
+        let sourceID = TISGetInputSourceProperty(source, kTISPropertyInputSourceID).map {
+            unsafeBitCast($0, to: CFString.self) as String
+        }
         // The bytes belong to `source`, which stays retained until `body` returns.
         return withExtendedLifetime(source) {
             body(
                 unsafeBitCast(
-                    CFDataGetBytePtr(layoutData), to: UnsafePointer<UCKeyboardLayout>.self))
+                    CFDataGetBytePtr(layoutData), to: UnsafePointer<UCKeyboardLayout>.self),
+                sourceID)
         }
     }
 

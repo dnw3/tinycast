@@ -157,6 +157,7 @@ enum ClipboardSelectionBenchmark {
 
 @MainActor
 final class AppSettings {
+    var clipboardEnabled = true
     var clipboardDisabledApps: Set<String> = []
 }
 

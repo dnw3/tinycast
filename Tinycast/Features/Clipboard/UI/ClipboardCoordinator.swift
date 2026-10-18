@@ -37,7 +37,8 @@ final class ClipboardCoordinator {
 
     /// Off means the poller stops, the database closes and nothing new is ever recorded.
     func applyEnabled() {
-        appIndex.setCommandsVisible([.clipboardHistory, .pasteSequentially], settings.clipboardEnabled)
+        appIndex.setCommandsVisible(
+            [.clipboardHistory, .pasteSequentially, .toggleClipboardRecording], settings.clipboardEnabled)
         guard settings.clipboardEnabled else {
             core.applyClipboardTextSearch()
             clipboardManager.stop()
@@ -131,6 +132,17 @@ final class ClipboardCoordinator {
             return
         }
         core.showMessage(String(localized: "Nothing left to paste"), tone: .neutral)
+    }
+
+    /// Session-only: the pause is for what you are about to copy, so a relaunch records again.
+    func toggleRecording() {
+        let paused = !clipboardManager.isRecordingPaused
+        clipboardManager.setRecordingPaused(paused)
+        core.showMessage(
+            paused
+                ? String(localized: "Clipboard history paused")
+                : String(localized: "Clipboard history resumed"),
+            tone: .neutral)
     }
 
     /// A copy since the last press, or a long pause, starts the walk over from the newest entry.

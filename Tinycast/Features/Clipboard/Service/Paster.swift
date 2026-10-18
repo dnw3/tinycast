@@ -146,7 +146,8 @@ enum Paster {
 
     @MainActor
     static func postCommandV(toPid pid: pid_t? = nil) {
-        postCommand(key: CGKeyCode(kVK_ANSI_V), toPid: pid)
+        let key = ASCIIKeyboardLayout.keyCode(typing: "v", fallback: kVK_ANSI_V)
+        postCommand(key: CGKeyCode(key), toPid: pid)
     }
 
     /// Synthesize ⌘C, for reading a selection an app will not surface over Accessibility.

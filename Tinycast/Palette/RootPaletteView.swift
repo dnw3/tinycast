@@ -180,7 +180,7 @@ struct RootPaletteView: View {
         PopoverMenuContent(
             items: ClipboardFilter.allCases.enumerated().map { index, filter in
                 PopoverMenuItem(
-                    title: filter.title, systemImage: filter.systemImage,
+                    title: Bundle.main.localizedString(forKey: filter.title, value: nil, table: nil), systemImage: filter.systemImage,
                     startsSection: index == 1
                 ) {
                     vm.clipboardFilter = filter
@@ -191,7 +191,7 @@ struct RootPaletteView: View {
     private var fileSearchFilterContent: PopoverMenuContent {
         PopoverMenuContent(
             items: FileSearchFilter.allCases.map { filter in
-                PopoverMenuItem(title: filter.title, systemImage: filter.systemImage) {
+                PopoverMenuItem(title: Bundle.main.localizedString(forKey: filter.title, value: nil, table: nil), systemImage: filter.systemImage) {
                     vm.fileSearchFilter = filter
                 }
             })
@@ -715,7 +715,8 @@ struct RootPaletteView: View {
             if !isCollapsed, vm.mode == .fileSearch {
                 headerGutter(width: metrics.spacing.md)
                 HeaderMenuButton(
-                    title: vm.fileSearchFilter.title, systemImage: vm.fileSearchFilter.systemImage,
+                    title: Bundle.main.localizedString(forKey: vm.fileSearchFilter.title, value: nil, table: nil),
+                    systemImage: vm.fileSearchFilter.systemImage,
                     isOpen: openMenu == .fileSearchFilter, help: String(localized: "Filter by type  ⌘P"),
                     action: toggleFileSearchFilter)
             }

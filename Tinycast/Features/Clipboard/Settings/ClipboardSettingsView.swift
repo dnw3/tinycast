@@ -4,7 +4,15 @@ import UniformTypeIdentifiers
 struct ClipboardSettingsView: View {
     @Environment(AppCore.self) private var core
     @Environment(AppSettings.self) private var settings
-    @State private var confirmingClear = false
+    @State private var diskUsage: Int64?
+    /// With the feature off a clear leaves `items` empty either way, so it bumps this instead.
+    @State private var clears = 0
+
+    private var usageKey: UsageKey {
+        UsageKey(
+            count: core.clipboardStore.items.count, newest: core.clipboardStore.items.first?.id,
+            clears: clears)
+    }
 
     var body: some View {
         @Bindable var settings = settings
@@ -55,7 +63,18 @@ struct ClipboardSettingsView: View {
 
             Section {
                 LabeledContent {
-                    Button("Clear…", role: .destructive) { confirmingClear = true }
+                    HStack {
+                        if let diskUsage {
+                            Text("Uses \(diskUsage.formatted(.byteCount(style: .file)))")
+                                .foregroundStyle(.secondary)
+                        }
+                        Button("Clear…", role: .destructive) {
+                            Task {
+                                await core.clipboardCoordinator.deleteAllClips()
+                                clears += 1
+                            }
+                        }
+                    }
                 } label: {
                     SettingsRowTitle(.clipboardDisabledApplications, "Clear history")
                     Text("Removes every clip and image.")
@@ -64,17 +83,21 @@ struct ClipboardSettingsView: View {
         }
         .formStyle(.grouped)
         .settingsScrollTarget(.clipboard)
-        .confirmationDialog(
-            "Clear clipboard history?",
-            isPresented: $confirmingClear,
-            titleVisibility: .visible
-        ) {
-            Button("Clear History", role: .destructive) {
-                core.clipboardCoordinator.clearHistory()
-            }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("This can't be undone.")
+        .task(id: usageKey) {
+            let store = core.clipboardStore
+            let (database, images) = (store.dbURL, store.imagesDir)
+            let usage = await Task.detached(priority: .utility) {
+                ClipboardStore.diskUsage(databaseAt: database, imagesIn: images)
+            }.value
+            guard !Task.isCancelled else { return }
+            diskUsage = usage
         }
     }
+}
+
+/// Recounted when the history gains, loses or reorders a row, never on a timer.
+private struct UsageKey: Equatable {
+    let count: Int
+    let newest: UUID?
+    let clears: Int
 }

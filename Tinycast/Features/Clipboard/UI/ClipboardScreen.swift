@@ -123,15 +123,20 @@ struct ClipboardScreen: PaletteScreen {
     @ViewBuilder
     private func content(selection: Int, scroll: ScrollIntent) -> some View {
         let rows = rows
+        let pausedNotice =
+            core.clipboardManager.isRecordingPaused ? String(localized: "Recording paused") : nil
         // Empty history: centre one message across the panel, not in the list column.
         if rows.isEmpty {
             // Names the filter, so one hiding every entry doesn't read as an empty history.
-            EmptyResults(text: Bundle.main.localizedString(forKey: vm.clipboardFilter.emptyMessage, value: nil, table: nil))
+            EmptyResults(
+                text: Bundle.main.localizedString(forKey: vm.clipboardFilter.emptyMessage, value: nil, table: nil),
+                detail: pausedNotice)
         } else {
             let selected = item(at: selection)
             HStack(spacing: 0) {
                 ClipboardList(
                     results: rows,
+                    isRecordingPaused: pausedNotice != nil,
                     selectedID: selected?.id,
                     scroll: scroll,
                     onSelect: { item in vm.selection = rows.firstIndex(of: item) ?? 0 },
@@ -277,8 +282,8 @@ enum ClipboardActionsMenu {
         switch item.kind {
         case .text:
             // Collapse whitespace so a multi-line copy stays a clean one-line title.
-            let oneLine = (item.text ?? "").split(whereSeparator: \.isWhitespace).joined(
-                separator: " ")
+            let oneLine = (item.text ?? "").prefix(400).split(whereSeparator: \.isWhitespace)
+                .joined(separator: " ")
             return String(oneLine.prefix(40))
         case .image: return String(localized: "Image")
         case .file: return (item.filePath as NSString?)?.lastPathComponent ?? String(localized: "File")

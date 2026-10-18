@@ -7,7 +7,7 @@ struct ClipboardFilterButton: View {
 
     var body: some View {
         HeaderMenuButton(
-            title: filter.title,
+            title: Bundle.main.localizedString(forKey: filter.title, value: nil, table: nil),
             systemImage: filter.systemImage,
             isOpen: isOpen,
             help: String(localized: "Filter by type  ⌘P"),

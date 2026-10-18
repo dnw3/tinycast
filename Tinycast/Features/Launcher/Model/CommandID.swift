@@ -20,6 +20,7 @@ enum CommandID: String, CaseIterable, Sendable {
     case calculatorHistory = "command:calculator-history"
     case clipboardHistory = "command:clipboard-history"
     case pasteSequentially = "command:paste-sequentially"
+    case toggleClipboardRecording = "command:toggle-clipboard-recording"
     case searchEmoji = "command:search-emoji"
     case searchFiles = "command:search-files"
     case cleanUpDisk = "command:clean-up-disk"
@@ -82,6 +83,7 @@ enum CommandID: String, CaseIterable, Sendable {
         case .calculatorHistory: return "Calculator History"
         case .clipboardHistory: return "Clipboard History"
         case .pasteSequentially: return "Paste Sequentially"
+        case .toggleClipboardRecording: return "Pause or Resume Clipboard History"
         case .searchEmoji: return "Search Emoji & Symbols"
         case .searchFiles: return "Search Files"
         case .cleanUpDisk: return "Clean Up Disk"
@@ -142,6 +144,7 @@ enum CommandID: String, CaseIterable, Sendable {
         case .analyzeDiskUsage: ["磁盘空间分析", "空间占用", "磁盘占用", "Storage"]
         case .rebuildThumbnails: ["重建缩略图缓存", "Quick Look"]
         case .restartDock: ["重启程序坞", "Dock"]
+        case .toggleClipboardRecording: ["暂停剪贴板记录", "恢复剪贴板记录"]
         default: []
         }
     }
@@ -166,6 +169,7 @@ enum CommandID: String, CaseIterable, Sendable {
         case .calculatorHistory: return "plus.forwardslash.minus"
         case .clipboardHistory: return "doc.on.clipboard"
         case .pasteSequentially: return "list.bullet.clipboard"
+        case .toggleClipboardRecording: return "pause.circle"
         case .searchEmoji: return "face.smiling"
         case .searchFiles: return "doc.text.magnifyingglass"
         case .cleanUpDisk: return "externaldrive.badge.minus"

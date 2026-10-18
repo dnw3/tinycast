@@ -74,6 +74,32 @@ struct ASCIILayoutTests {
             ASCIIKeyboardLayout.recovered(KeyEquivalent("C"), layoutCharacter: nil)
                 == KeyEquivalent("c"))
 
+        print("\n# a synthesized ⌘V names the key that types v")
+        let qwerty = [9: "v", 8: "c", 47: "."]
+        let dvorak = [9: ".", 8: "j", 47: "v"]
+        check(
+            "QWERTY posts the ANSI key",
+            ASCIIKeyboardLayout.keyCode(
+                typing: "v", inputSourceID: "com.apple.keylayout.US", baseCharacters: qwerty,
+                fallback: 9) == 9)
+        check(
+            "Dvorak posts the key that types v",
+            ASCIIKeyboardLayout.keyCode(
+                typing: "v", inputSourceID: "com.apple.keylayout.Dvorak", baseCharacters: dvorak,
+                fallback: 9) == 47)
+        check(
+            "a QWERTY ⌘ layout keeps the ANSI key",
+            ASCIIKeyboardLayout.keyCode(
+                typing: "v", inputSourceID: "com.apple.keylayout.DVORAK-QWERTYCMD",
+                baseCharacters: dvorak, fallback: 9) == 9)
+        check(
+            "a layout with no v falls back to the ANSI key",
+            ASCIIKeyboardLayout.keyCode(
+                typing: "v", inputSourceID: nil, baseCharacters: [9: "м"], fallback: 9) == 9)
+        check(
+            "the live layout answers some key",
+            (0..<128).contains(ASCIIKeyboardLayout.keyCode(typing: "v", fallback: 9)))
+
         print("\n\(passes) passed, \(failures) failed")
         exit(failures == 0 ? 0 : 1)
     }

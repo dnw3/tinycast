@@ -1,5 +1,7 @@
 # Clipboard history
 
+Improvements adopted from a Maccy comparison, and the deferred rich-text plan: [Plan](../plans/clipboard-plan.md).
+
 ## Invariants
 
 - **`clipboardEnabled` ships on — the only feature switch that does.** Absence of the key therefore
@@ -22,8 +24,14 @@
 - **Paste Sequentially never promotes, and its walk is frozen at the first press.** `PasteSequence`
   keeps every entry's id, newest first, and resolves each against the live history, so a promotion
   cannot repeat or skip an entry and a deleted one is passed over rather than pasted.
-- **`Model/ClipboardStore.swift` keeps to Foundation plus SQLite3 and no other app source**, so
-  `clipboard-test` can compile it standalone. It uses `isolated deinit` for its SQLite teardown.
+- **`Model/ClipboardStore.swift` keeps to Foundation, SQLite3 and CryptoKit and no other app
+  source**, so `clipboard-test` can compile it standalone. It uses `isolated deinit` for its SQLite
+  teardown.
+- **Copying what the history already holds surfaces that row; it never adds a second one.** Text
+  and file rows match on a SHA-256 of their `text`, images on one of their PNG, stored in the
+  indexed `content_hash` column. The match is moved by the same rowid update `promote` uses, so its
+  UUID, blob and recognized text survive; a pin keeps its stamp and place and only its timestamp
+  moves. Rows written before the column existed carry no hash and are never matched.
 - A database that cannot be opened is deleted and recreated. That is sound because a history is
   captured rather than authored, and there is no UI for an unavailable clipboard — `QuicklinkStore`
   deliberately does the opposite. It is **not** a licence to treat the file as disposable: it lives in
@@ -57,8 +65,17 @@
 Finder puts the file's *display name* on `public.utf8-plain-string` beside `public.file-url`, so a
 text-first poller records `IMG_1234.png` as prose. The read sits after the `internalType` and
 sensitive-type guards, which stay unconditional — a secret must never be recorded whatever shape it
-arrives in. A bare screenshot carries no file URL and still falls through to the `.png`/`.tiff`
-branch untouched.
+arrives in. A bare screenshot carries no file URL and still falls through to the image branch
+untouched.
+
+`sensitiveTypes` is the nspasteboard.org concealed, transient and auto-generated markers, macOS's
+`com.apple.is-sensitive`, and the private markers 1Password, KeeWeb, TypeIt4Me and Peter Maurer's
+tools put on their own writes. The image branch takes PNG as it is and re-encodes TIFF, JPEG and
+HEIC to PNG through ImageIO off the main actor, so the history keeps one image format.
+
+**Text up to `maxTextLength` (1,000,000 characters) is kept whole**; a bigger copy is skipped
+rather than truncated, since a tail-less copy pastes wrong. `fitsTextLimit` refuses on the O(1)
+UTF-8 count before it would walk characters, so a giant copy costs nothing on the poll.
 
 `ClipboardManager.fileURLs(on:volatileRoots:)` takes both the pasteboard and the roots as
 parameters, so `pasteboard-test` can drive an `NSPasteboard.withUniqueName()` and its own scratch
@@ -83,6 +100,12 @@ A ⌘C Tinycast sends to read a selection can't carry that marker, since the oth
 between, and the restore's baseline keeps the copy from being recorded once it resumes.
 `TextInjector` refuses a second borrow while one is in flight, so the pause is never nested.
 
+**Pause Clipboard History** is a launcher command, session-only state on `ClipboardManager` and
+never a setting: a relaunch records again. While paused the poller still advances its change count,
+so resuming never records what was copied in between, and Capture's `recordCapture` is refused too.
+A HUD confirms each toggle, and the palette screen says **Recording paused** in one quiet line above
+the rows, or under the empty state.
+
 `stop()` is the off switch: it drops the timer and the fast-user-switching observers, and clears the
 `isCapturing` flag that `prepareForTinycastPasteboardMutation` reads — so a paste Tinycast performs
 itself no longer drains the pasteboard into history either.
@@ -90,7 +113,9 @@ itself no longer drains the pasteboard into history either.
 Existing clips survive being switched off, since a history is captured rather than authored and
 nothing else can put it back. **Clear history stays live with the feature off** —
 `ClipboardCoordinator.clearHistory()` reopens the file, clears the unpinned rows and closes it again — so a reader
-who turns the feature off can still erase what it kept.
+who turns the feature off can still erase what it kept. Settings › Clipboard asks through the same
+`deleteAllClips()` dialog the palette uses, and shows the history's disk use beside it (database,
+WAL files and owned blobs, measured off the main actor when the history changes).
 
 ## Store
 
@@ -105,8 +130,21 @@ nor a full disk — while the retention setting offers **Forever** and a pin is 
 A database that won't open is deleted and recreated (worst case the store degrades to session-only
 in-memory history).
 
-Image capture (TIFF→PNG re-encode + blob write) runs off the main actor via detached tasks; row
-inserts, original-text search, and pruning stay on the main actor.
+Image capture (re-encode, hash and blob write) runs off the main actor via detached tasks; row
+inserts, original-text search, and pruning stay on the main actor. **An image is re-checked after
+every suspension**: once hashed and again once written, the store asks the manager's `isWanted`
+(enabled, not paused, source not excluded), compares a history generation that Clear History and
+`close()` bump, and needs an open database. A stale capture deletes the blob it wrote, since a
+blob with no row is never pruned; a duplicate is surfaced before any blob is written.
+
+**The trigram index holds only the first `indexedTextLength` (32,000) characters of a row.** Every
+FTS trigger takes the same `substr`, because an external-content delete must name exactly what was
+inserted. A long copy is stored, pasted and matched in memory whole, but FTS finds it by its head,
+and previews stay truncated. A database from before this (`user_version` 0) re-indexes its rows
+past the prefix once and swaps the triggers in one transaction; if that fails it rolls back and
+keeps the whole-row triggers, which still search correctly. The `content_hash` column is added in
+place by `ALTER TABLE`; only a failure there falls back to recreating the file.
+
 Image copy uses Foundation’s `mappedIfSafe` hint before publishing the original PNG and marker.
 
 **A backup reads the whole table, not `items`.** `forEachStoredItem(inDatabaseAt:)` is `nonisolated`
@@ -132,6 +170,10 @@ load everything — while the history is shorter than the window.
 Searching is trigram FTS, which needs **at least three characters**; shorter queries, and the
 no-database fallback path, filter the in-memory window instead. Results are memoized one query deep,
 with a second memo for the empty query, and both are invalidated whenever `items` changes.
+With a query typed, a row's title opens a few characters before the first hit, whitespace folded
+onto one line, and the hits are drawn primary and bold over a secondary base; that is UI-only
+(`ClipTitle`) and searches no further than the indexed prefix. An OCR-only match has no hit in its
+title and renders plain.
 The FTS query picks its newest `searchLimit` row IDs before materializing rows, so a broad query
 never builds more items than it can show. Pins are still matched separately in memory, and the type
 filter applies after the limit. `promote` updates the row's timestamp and rowid in one statement
@@ -385,6 +427,11 @@ disk for it, and the row's path points at the original wherever it lies. That is
 sees can never be deleted by `deleteBlob` or a retention cut. `clipboard-test`'s
 `referencedFilesOutliveTheirRows` is the case that pins it, across `remove`, a retention cut and
 Clear History alike.
+
+**Every synthesized ⌘V names the key that types `v` in the current ASCII-capable layout**
+(`ASCIIKeyboardLayout.keyCode(typing:fallback:)`), so Dvorak and AZERTY still paste. A layout whose
+input source ID contains `QWERTYCMD` switches to QWERTY under ⌘ and keeps `kVK_ANSI_V`, as does a
+layout with no `v`. `TextInjector` and the extension bridge paste through the same `postCommandV`.
 
 **Pasting writes two flavours.** `public.file-url` so Finder, Mail and anything file-taking receive
 the *file*, and `.string` carrying the **path** — deliberately not Finder's own choice of the name,

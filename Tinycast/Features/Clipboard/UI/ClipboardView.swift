@@ -5,6 +5,8 @@ struct ClipboardList: View {
 
     @Environment(\.metrics) private var metrics
     let results: [ClipboardItem]
+    /// Shown as one quiet line above the rows rather than a banner.
+    let isRecordingPaused: Bool
     let selectedID: ClipboardItem.ID?
     /// Changes only when the list should scroll, so mouse selection never yanks it.
     let scroll: ScrollIntent
@@ -55,6 +57,15 @@ struct ClipboardList: View {
         return ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(spacing: 0) {
+                    if isRecordingPaused {
+                        Label("Recording paused", systemImage: "pause.circle")
+                            .font(metrics.typography.sectionHeader)
+                            .foregroundStyle(.tertiary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, metrics.spacing.md)
+                            .padding(.top, metrics.spacing.xs)
+                            .padding(.bottom, metrics.spacing.sm)
+                    }
                     ForEach(rows) { row in
                         switch row {
                         case .header(let title):
@@ -146,7 +157,7 @@ private struct ClipboardRow: View {
         return HStack(spacing: metrics.spacing.lg) {
             thumbnail(item.colorValue)
                 .frame(width: metrics.size.resultRowIcon, height: metrics.size.resultRowIcon)
-            Text(previewText)
+            Text(title)
                 .font(metrics.typography.menuRow)
                 .lineLimit(1)
                 .truncationMode(.tail)
@@ -167,17 +178,18 @@ private struct ClipboardRow: View {
         .armedHover($hovered)
     }
 
-    private var previewText: String {
+    private var title: AttributedString {
+        let query = palette.query.trimmingCharacters(in: .whitespaces)
         switch item.kind {
-        // Cap before trimming: never walk a multi-MB clipboard string per row.
         case .text:
-            return String((item.text ?? "").prefix(200)).trimmingCharacters(
-                in: .whitespacesAndNewlines)
-        case .image: return String(localized: "Image")
+            let text = item.text ?? ""
+            return ClipTitle.highlighted(ClipTitle.snippet(text, around: query), query: query)
+        case .image: return AttributedString(String(localized: "Image"))
         case .file:
-            return item.filePath.map {
+            let name = item.filePath.map {
                 URL(filePath: $0, directoryHint: .inferFromPath).lastPathComponent
-            } ?? String(localized: "File")
+            }
+            return ClipTitle.highlighted(name ?? String(localized: "File"), query: query)
         }
     }
 
@@ -227,6 +239,44 @@ private struct ClipboardRow: View {
     }
 
     private var artworkSize: CGFloat { metrics.size.resultRowIcon * IconCache.appIconExtent }
+}
+
+/// A row's one-line title, opened a little before the first hit so the match stays in view.
+private enum ClipTitle {
+    static let length = 200
+    static let lead = 24
+    /// Never walk a multi-MB clipboard string per row; the trigram index stops here too.
+    static let searchedLength = ClipboardStore.indexedTextLength
+    static let options: String.CompareOptions = .caseInsensitive
+
+    static func snippet(_ text: String, around query: String) -> String {
+        let head = text.prefix(searchedLength)
+        guard !query.isEmpty, let hit = head.range(of: query, options: options) else {
+            return String(text.prefix(length)).trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        let start =
+            head.index(hit.lowerBound, offsetBy: -lead, limitedBy: head.startIndex) ?? head.startIndex
+        // One line only shows the first, so a hit two lines down would otherwise stay hidden.
+        let line = head[start...].prefix(length).split(whereSeparator: \.isWhitespace)
+            .joined(separator: " ")
+        return start == head.startIndex ? line : "…" + line
+    }
+
+    /// The hits in primary bold over a secondary base, so the eye lands on why the row matched.
+    static func highlighted(_ title: String, query: String) -> AttributedString {
+        var result = AttributedString(title)
+        guard !query.isEmpty, title.range(of: query, options: options) != nil else { return result }
+        result.foregroundColor = .secondary
+        var searchStart = title.startIndex
+        while let hit = title.range(of: query, options: options, range: searchStart..<title.endIndex) {
+            if let range = Range(hit, in: result) {
+                result[range].foregroundColor = .primary
+                result[range].inlinePresentationIntent = .stronglyEmphasized
+            }
+            searchStart = hit.upperBound
+        }
+        return result
+    }
 }
 
 /// ImageIO for a blob we hold; QuickLook for a referenced file, which may be any type.
@@ -289,6 +339,14 @@ struct ClipboardPreview: View {
     let item: ClipboardItem?
     @Environment(ClipboardStore.self) private var store
 
+    /// A history keeps copies up to a million characters; laying one out whole stalls the pane.
+    private static let previewLength = 20_000
+
+    private static func previewText(_ text: String) -> String {
+        let head = text.prefix(previewLength)
+        return head.endIndex == text.endIndex ? text : String(head) + "…"
+    }
+
     var body: some View {
         if let item {
             VStack(alignment: .leading, spacing: 0) {
@@ -310,7 +368,7 @@ struct ClipboardPreview: View {
                 ColorPreview(color: color, text: item.text ?? "")
             } else {
                 ScrollView {
-                    Text(item.text ?? "")
+                    Text(Self.previewText(item.text ?? ""))
                         .font(.system(.subheadline, design: .monospaced))
                         .textSelection(.enabled)
                         .frame(maxWidth: .infinity, alignment: .topLeading)
@@ -407,7 +465,7 @@ private struct ClipboardInfoSection: View {
         switch item.kind {
         case .text:
             let isColor = item.colorValue != nil
-            rows.append(InfoRow(label: String(localized: "Type"), value: isColor ? "Color" : "Text"))
+            rows.append(InfoRow(label: String(localized: "Type"), value: isColor ? String(localized: "Color") : String(localized: "Text")))
             // A colour's own notations are the pane above; its length is not what you came for.
             if !isColor {
                 if let characters = details.characters {
@@ -419,7 +477,7 @@ private struct ClipboardInfoSection: View {
                 }
             }
         case .image:
-            rows.append(InfoRow(label: String(localized: "Type"), value: "Image"))
+            rows.append(InfoRow(label: String(localized: "Type"), value: String(localized: "Image")))
             if let size = details.pixelSize {
                 rows.append(
                     InfoRow(
@@ -437,7 +495,7 @@ private struct ClipboardInfoSection: View {
             rows.append(
                 InfoRow(
                     label: String(localized: "Type"),
-                    value: details.typeName ?? ClipboardFileKind.of(path: path).title))
+                    value: details.typeName ?? Bundle.main.localizedString(forKey: ClipboardFileKind.of(path: path).title, value: nil, table: nil)))
             rows.append(
                 InfoRow(
                     label: String(localized: "Path"), value: (path as NSString).abbreviatingWithTildeInPath))

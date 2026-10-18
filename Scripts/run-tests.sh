@@ -277,7 +277,8 @@ run pasteboard-test        Tinycast/Platform/PasteboardFiles.swift \
                            Tinycast/Features/Clipboard/Model/ColorFormat.swift \
                            Tinycast/Features/Clipboard/Model/ColorSpaces.swift \
                            Tinycast/Features/Clipboard/Service/ClipboardManager.swift \
-                           Tinycast/Features/Clipboard/Service/Paster.swift
+                           Tinycast/Features/Clipboard/Service/Paster.swift \
+                           Tinycast/Platform/ASCIIKeyboardLayout.swift
 run index clipboard-file-performance \
                            Tinycast/Platform/PasteboardFiles.swift \
                            Tinycast/Features/Clipboard/Model/ClipboardStore.swift \

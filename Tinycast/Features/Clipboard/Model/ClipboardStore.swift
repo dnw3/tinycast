@@ -1,3 +1,4 @@
+import CryptoKit
 import Foundation
 import SQLite3
 
@@ -185,6 +186,8 @@ final class ClipboardStore {
     @ObservationIgnored var onSearchResultsChanged: ((String, [ClipboardItem], [ClipboardItem]) -> Void)?
     /// Rotated whenever the history is replaced, so a helper's late answer lands on nothing.
     @ObservationIgnored private(set) var extractionGeneration = UUID()
+    /// Bumped by a clear or a close, so an image written across one is discarded, not inserted.
+    @ObservationIgnored private var historyGeneration = 0
     /// The only thing a view observes for search freshness; `items` cannot speak for OCR.
     private var searchRevision = 0
     @ObservationIgnored private(set) var textSearchEnabled = false
@@ -208,9 +211,30 @@ final class ClipboardStore {
     /// The most unpinned rows any one query answers with, ordinary and OCR-only alike.
     nonisolated private static let searchLimit = 200
 
+    /// Characters the trigram index holds per row; a long copy is stored whole, found by its head.
+    nonisolated static let indexedTextLength = 32_000
+
     nonisolated private static let insertSQL = """
-        INSERT INTO items(id, kind, text, image_path, created_at, source_app, pinned_at)
-        VALUES(?,?,?,?,?,?,?)
+        INSERT INTO items(id, kind, text, image_path, created_at, source_app, pinned_at, content_hash)
+        VALUES(?,?,?,?,?,?,?,?)
+        """
+
+    /// A delete must name exactly what the insert indexed, so every trigger takes the same prefix.
+    private static let ftsTriggers = """
+        CREATE TRIGGER IF NOT EXISTS items_ai AFTER INSERT ON items BEGIN
+          INSERT INTO items_fts(rowid, text)
+            VALUES(new.rowid, substr(new.text, 1, \(indexedTextLength)));
+        END;
+        CREATE TRIGGER IF NOT EXISTS items_ad AFTER DELETE ON items BEGIN
+          INSERT INTO items_fts(items_fts, rowid, text)
+            VALUES('delete', old.rowid, substr(old.text, 1, \(indexedTextLength)));
+        END;
+        CREATE TRIGGER IF NOT EXISTS items_au AFTER UPDATE OF rowid, text ON items BEGIN
+          INSERT INTO items_fts(items_fts, rowid, text)
+            VALUES('delete', old.rowid, substr(old.text, 1, \(indexedTextLength)));
+          INSERT INTO items_fts(rowid, text)
+            VALUES(new.rowid, substr(new.text, 1, \(indexedTextLength)));
+        END;
         """
 
     private static let schema = """
@@ -221,23 +245,30 @@ final class ClipboardStore {
           image_path TEXT,
           created_at REAL NOT NULL,
           source_app TEXT,
-          pinned_at REAL
+          pinned_at REAL,
+          content_hash TEXT
         );
         CREATE INDEX IF NOT EXISTS items_created_at ON items(created_at);
         CREATE INDEX IF NOT EXISTS items_pinned_at ON items(pinned_at) WHERE pinned_at IS NOT NULL;
         CREATE VIRTUAL TABLE IF NOT EXISTS items_fts USING fts5(
           text, content='items', content_rowid='rowid', tokenize='trigram'
         );
-        CREATE TRIGGER IF NOT EXISTS items_ai AFTER INSERT ON items BEGIN
-          INSERT INTO items_fts(rowid, text) VALUES(new.rowid, new.text);
-        END;
-        CREATE TRIGGER IF NOT EXISTS items_ad AFTER DELETE ON items BEGIN
-          INSERT INTO items_fts(items_fts, rowid, text) VALUES('delete', old.rowid, old.text);
-        END;
-        CREATE TRIGGER IF NOT EXISTS items_au AFTER UPDATE OF rowid, text ON items BEGIN
-          INSERT INTO items_fts(items_fts, rowid, text) VALUES('delete', old.rowid, old.text);
-          INSERT INTO items_fts(rowid, text) VALUES(new.rowid, new.text);
-        END;
+        """ + ftsTriggers
+
+    /// Version 1 indexes only a prefix; older rows past it are re-indexed once to match.
+    private static let prefixIndexMigration = """
+        BEGIN;
+        INSERT INTO items_fts(items_fts, rowid, text)
+          SELECT 'delete', rowid, text FROM items WHERE length(text) > \(indexedTextLength);
+        INSERT INTO items_fts(rowid, text)
+          SELECT rowid, substr(text, 1, \(indexedTextLength)) FROM items
+          WHERE length(text) > \(indexedTextLength);
+        DROP TRIGGER IF EXISTS items_ai;
+        DROP TRIGGER IF EXISTS items_ad;
+        DROP TRIGGER IF EXISTS items_au;
+        """ + ftsTriggers + """
+        PRAGMA user_version = 1;
+        COMMIT;
         """
 
     private static let extractionSchema = """
@@ -279,6 +310,7 @@ final class ClipboardStore {
     @ObservationIgnored private var pinStmt: OpaquePointer?
     @ObservationIgnored private var staleImagesStmt: OpaquePointer?
     @ObservationIgnored private var deleteStaleStmt: OpaquePointer?
+    @ObservationIgnored private var duplicateStmt: OpaquePointer?
 
     /// `directory` defaults to the per-channel store; the harness passes a throwaway one.
     init(directory: URL? = nil) {
@@ -305,6 +337,7 @@ final class ClipboardStore {
     func close() {
         setTextSearchEnabled(false)
         extractionGeneration = UUID()
+        historyGeneration += 1
         closeDatabase()
         items = []
     }
@@ -356,7 +389,10 @@ final class ClipboardStore {
 
     func addText(_ text: String, sourceBundleID: String?) {
         if items.first?.kind == .text, items.first?.text == text { return }
-        insert(ClipboardItem(text: text, sourceBundleID: sourceBundleID))
+        let item = ClipboardItem(text: text, sourceBundleID: sourceBundleID)
+        let hash = Self.contentHash(of: item)
+        if let hash, surfaceDuplicate(hash) { return }
+        insert(item, hash: hash)
     }
 
     /// One row per file. Batched, so a multi-file copy prunes once rather than once per file.
@@ -365,21 +401,73 @@ final class ClipboardStore {
         if paths.count == 1, items.first?.kind == .file, items.first?.text == paths[0] { return }
         for path in paths {
             let item = ClipboardItem(filePath: path, sourceBundleID: sourceBundleID)
-            if let stmt = insertStmt { Self.bindAndInsert(stmt, item) }
+            let hash = Self.contentHash(of: item)
+            if let hash, surfaceDuplicate(hash) { continue }
+            if let stmt = insertStmt { Self.bindAndInsert(stmt, item, hash: hash) }
             items.insert(item, at: 0)
         }
         trimWindow()
         prune()
     }
 
-    func addImage(_ data: Data, sourceBundleID: String?) {
+    /// `isWanted` is asked again after the off-main hash and write: capture can stop meanwhile.
+    func addImage(
+        _ data: Data, sourceBundleID: String?,
+        isWanted: @escaping @MainActor @Sendable () -> Bool = { true }
+    ) {
         let url = imagesDir.appendingPathComponent(UUID().uuidString + ".png")
         let item = ClipboardItem(imagePath: url.path, sourceBundleID: sourceBundleID)
-        // The blob write is multi-MB I/O; only the row insert returns to the main actor.
+        let generation = historyGeneration
+        // Hashing and the blob write are multi-MB work; only the row insert returns to main.
         Task.detached(priority: .utility) { [weak self] in
-            guard (try? data.write(to: url, options: .atomic)) != nil else { return }
-            await self?.insert(item)
+            let hash = Self.contentHash(.image, data)
+            guard
+                await self?.settlesWithoutBlob(hash, generation: generation, isWanted: isWanted)
+                    == false,
+                (try? data.write(to: url, options: .atomic)) != nil
+            else { return }
+            guard let self else {
+                try? FileManager.default.removeItem(at: url)
+                return
+            }
+            await self.insertImage(
+                item, at: url, hash: hash, generation: generation, isWanted: isWanted)
         }
+    }
+
+    /// True when no blob is needed: the capture went stale, or its image is already in the history.
+    private func settlesWithoutBlob(
+        _ hash: String, generation: Int, isWanted: @MainActor () -> Bool
+    ) -> Bool {
+        guard isWanted(), generation == historyGeneration, insertStmt != nil else { return true }
+        return surfaceDuplicate(hash)
+    }
+
+    /// A blob with no row is never pruned, so a stale or duplicate write is deleted here.
+    private func insertImage(
+        _ item: ClipboardItem, at url: URL, hash: String, generation: Int,
+        isWanted: @MainActor () -> Bool
+    ) {
+        guard !settlesWithoutBlob(hash, generation: generation, isWanted: isWanted) else {
+            try? FileManager.default.removeItem(at: url)
+            return
+        }
+        insert(item, hash: hash)
+    }
+
+    /// Moves an existing copy of the content to the top; a pin keeps its place and gains a stamp.
+    private func surfaceDuplicate(_ hash: String) -> Bool {
+        guard let stmt = duplicateStmt else { return false }
+        sqlite3_bind_text(stmt, 1, hash, -1, SQLITE_TRANSIENT)
+        let stored = sqlite3_step(stmt) == SQLITE_ROW ? Self.row(stmt) : nil
+        sqlite3_reset(stmt)
+        sqlite3_clear_bindings(stmt)
+        guard let stored else { return false }
+        let existing = items.first { $0.id == stored.id } ?? stored
+        if items.first?.id != existing.id {
+            reinsert(existing.with(createdAt: Date(), pinnedAt: existing.pinnedAt))
+        }
+        return true
     }
 
     /// Bulk-insert from an import: original timestamps, external image paths, deduped.
@@ -418,6 +506,7 @@ final class ClipboardStore {
     func clearAll() {
         invalidateSearch()
         extractionGeneration = UUID()
+        historyGeneration += 1
         // RETURNING hands back the deleted blobs in the same pass, so no separate SELECT is needed.
         if db != nil,
             let stmt = prepare("DELETE FROM items WHERE pinned_at IS NULL RETURNING image_path")
@@ -800,14 +889,45 @@ final class ClipboardStore {
         items.remove(at: index)
     }
 
-    private func insert(_ item: ClipboardItem) {
-        if let stmt = insertStmt { Self.bindAndInsert(stmt, item) }
+    private func insert(_ item: ClipboardItem, hash: String?) {
+        if let stmt = insertStmt { Self.bindAndInsert(stmt, item, hash: hash) }
         items.insert(item, at: 0)
         trimWindow()
         prune()
     }
 
-    nonisolated private static func bindAndInsert(_ stmt: OpaquePointer, _ item: ClipboardItem) {
+    /// Kind-prefixed, so a path and the same characters copied as text never collide.
+    nonisolated static func contentHash(_ kind: ClipboardItem.Kind, _ data: Data) -> String {
+        var hasher = SHA256()
+        hasher.update(data: Data((kind.rawValue + "\0").utf8))
+        hasher.update(data: data)
+        return hasher.finalize().map { String(format: "%02x", $0) }.joined()
+    }
+
+    /// Text and file entries hash their `text`; an image hashes its PNG, which only capture holds.
+    nonisolated static func contentHash(of item: ClipboardItem) -> String? {
+        guard item.kind != .image, let text = item.text else { return nil }
+        return contentHash(item.kind, Data(text.utf8))
+    }
+
+    /// The history's footprint: the database with its WAL files, plus the blobs it owns.
+    nonisolated static func diskUsage(databaseAt dbURL: URL, imagesIn imagesDir: URL) -> Int64 {
+        let keys: Set<URLResourceKey> = [.totalFileAllocatedSizeKey]
+        func size(_ url: URL) -> Int64 {
+            Int64((try? url.resourceValues(forKeys: keys))?.totalFileAllocatedSize ?? 0)
+        }
+        var total = ["", "-wal", "-shm"].reduce(Int64(0)) {
+            $0 + size(URL(fileURLWithPath: dbURL.path + $1))
+        }
+        let files = FileManager.default.enumerator(
+            at: imagesDir, includingPropertiesForKeys: Array(keys), options: .skipsHiddenFiles)
+        while let url = files?.nextObject() as? URL { total += size(url) }
+        return total
+    }
+
+    nonisolated private static func bindAndInsert(
+        _ stmt: OpaquePointer, _ item: ClipboardItem, hash: String?
+    ) {
         sqlite3_bind_text(stmt, 1, item.id.uuidString, -1, SQLITE_TRANSIENT)
         sqlite3_bind_text(stmt, 2, item.kind.rawValue, -1, SQLITE_TRANSIENT)
         if let text = item.text {
@@ -830,6 +950,11 @@ final class ClipboardStore {
             sqlite3_bind_double(stmt, 7, pinnedAt.timeIntervalSince1970)
         } else {
             sqlite3_bind_null(stmt, 7)
+        }
+        if let hash {
+            sqlite3_bind_text(stmt, 8, hash, -1, SQLITE_TRANSIENT)
+        } else {
+            sqlite3_bind_null(stmt, 8)
         }
         sqlite3_step(stmt)
         sqlite3_reset(stmt)
@@ -889,7 +1014,8 @@ final class ClipboardStore {
                 == SQLITE_OK,
             sqlite3_exec(db, "PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL;", nil, nil, nil)
                 == SQLITE_OK,
-            sqlite3_exec(db, Self.schema, nil, nil, nil) == SQLITE_OK
+            sqlite3_exec(db, Self.schema, nil, nil, nil) == SQLITE_OK,
+            migrate()
         else { return false }
         insertStmt = prepare(Self.insertSQL)
         // Two indexed branches, deliberately not one OR. See docs/features/clipboard.md#store.
@@ -920,9 +1046,46 @@ final class ClipboardStore {
             WHERE created_at < ? AND pinned_at IS NULL AND image_path IS NOT NULL
             """)
         deleteStaleStmt = prepare("DELETE FROM items WHERE created_at < ? AND pinned_at IS NULL")
+        duplicateStmt = prepare(
+            """
+            SELECT id, kind, text, image_path, created_at, source_app, pinned_at
+            FROM items WHERE content_hash = ? ORDER BY rowid DESC LIMIT 1
+            """)
         return insertStmt != nil && loadStmt != nil && windowFloorStmt != nil && searchStmt != nil
             && deleteByIDStmt != nil && pinStmt != nil && staleImagesStmt != nil
-            && deleteStaleStmt != nil
+            && deleteStaleStmt != nil && duplicateStmt != nil
+    }
+
+    /// Brings an older build's file forward; only a missing column is fatal, never the index.
+    private func migrate() -> Bool {
+        guard let db else { return false }
+        if !exists("SELECT 1 FROM pragma_table_info('items') WHERE name = 'content_hash'"),
+            sqlite3_exec(db, "ALTER TABLE items ADD COLUMN content_hash TEXT", nil, nil, nil)
+                != SQLITE_OK
+        {
+            return false
+        }
+        guard
+            sqlite3_exec(
+                db,
+                """
+                CREATE INDEX IF NOT EXISTS items_content_hash ON items(content_hash)
+                  WHERE content_hash IS NOT NULL
+                """, nil, nil, nil) == SQLITE_OK
+        else { return false }
+        if !exists("SELECT 1 FROM pragma_user_version WHERE user_version >= 1"),
+            sqlite3_exec(db, Self.prefixIndexMigration, nil, nil, nil) != SQLITE_OK
+        {
+            // The old triggers index whole rows, which still search correctly, just larger.
+            sqlite3_exec(db, "ROLLBACK", nil, nil, nil)
+        }
+        return true
+    }
+
+    private func exists(_ sql: String) -> Bool {
+        guard let stmt = prepare(sql) else { return false }
+        defer { sqlite3_finalize(stmt) }
+        return sqlite3_step(stmt) == SQLITE_ROW
     }
 
     private func prepare(_ sql: String) -> OpaquePointer? {
@@ -934,7 +1097,7 @@ final class ClipboardStore {
     private func closeDatabase() {
         [
             insertStmt, loadStmt, windowFloorStmt, searchStmt, deleteByIDStmt, pinStmt,
-            staleImagesStmt, deleteStaleStmt
+            staleImagesStmt, deleteStaleStmt, duplicateStmt
         ].forEach { sqlite3_finalize($0) }
         insertStmt = nil
         loadStmt = nil
@@ -944,6 +1107,7 @@ final class ClipboardStore {
         pinStmt = nil
         staleImagesStmt = nil
         deleteStaleStmt = nil
+        duplicateStmt = nil
         sqlite3_close_v2(db)
         db = nil
     }
@@ -980,7 +1144,7 @@ final class ClipboardStore {
             {
                 continue
             }
-            bindAndInsert(stmt, item)
+            bindAndInsert(stmt, item, hash: contentHash(of: item))
             inserted += 1
         }
         sqlite3_exec(db, "COMMIT", nil, nil, nil)

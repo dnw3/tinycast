@@ -68,7 +68,7 @@ extension SettingsTab {
         case .navigation: [.switchWindows, .searchMenuItems]
         case .windowManagement:
             [.createWindowLayout, .captureWindowLayout, .switchRoom, .createRoom]
-        case .clipboard: [.clipboardHistory, .pasteSequentially]
+        case .clipboard: [.clipboardHistory, .pasteSequentially, .toggleClipboardRecording]
         case .emoji: [.searchEmoji]
         case .calendar:
             [.joinNextMeeting, .mySchedule, .createEvent, .copyMeetingLink, .openInCalendar]

@@ -68,6 +68,7 @@ implemented invariants.
 - Capture efficiency: [Spec](plans/capture-efficiency-spec.md), [Plan](plans/capture-efficiency-plan.md).
 - Capture complete experience: [Spec](plans/capture-product-spec.md), [Plan](plans/capture-product-plan.md).
 - Disk cleanup: [Spec](plans/cleanup-spec.md), [Plan](plans/cleanup-plan.md).
+- Clipboard improvements from a Maccy comparison: [Plan](plans/clipboard-plan.md).
 
 ## Contributing
 
