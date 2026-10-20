@@ -20,6 +20,12 @@ struct ChatTranscriptView: View {
     let status: String?
     let usage: AIUsage?
     let surface: ChatSurface
+    /// The reply in flight began then; its last line says what it does while nothing else moves.
+    var workingSince: Date?
+    /// An agent may go quiet after its text while it writes its next step, so its status stays up.
+    var statusFollowsText = false
+    /// A scrolling capture stitches the moving text; a button holding still over it breaks that.
+    var isScrollCaptured = false
     /// Offered on the last reply once it has finished; nil where a surface has no room for it.
     var onRegenerate: (() -> Void)?
     /// Answers with one of the last reply's choices; nil leaves them unshown.
@@ -49,6 +55,8 @@ struct ChatTranscriptView: View {
                             message: message,
                             surface: surface,
                             status: isLast ? status : nil,
+                            workingSince: isLast ? workingSince : nil,
+                            statusFollowsText: statusFollowsText,
                             onRegenerate: isLast && message.role == .assistant
                                 ? onRegenerate : nil,
                             // Only the latest reply's choices still answer anything.
@@ -56,6 +64,7 @@ struct ChatTranscriptView: View {
                         )
                         .equatable()
                         .environment(\.chatTextHighlight, highlight(for: message.id))
+                        .environment(\.chatHoverStill, isScrollCaptured)
                         .id(message.id)
                     }
                     if let total = usage?.totalTokens {
@@ -123,8 +132,8 @@ struct ChatTranscriptView: View {
                     follow(proxy, always: true)
                 }
                 .padding(.bottom, metrics.spacing.lg)
-                .opacity(followsTail ? 0 : 1)
-                .allowsHitTesting(!followsTail)
+                .opacity(followsTail || isScrollCaptured ? 0 : 1)
+                .allowsHitTesting(!followsTail && !isScrollCaptured)
                 .animation(.easeOut(duration: Theme.Duration.chatFooter), value: followsTail)
             }
         }
@@ -183,9 +192,12 @@ private struct ChatMessageView: View, @MainActor Equatable {
     let message: ChatMessage
     let surface: ChatSurface
     let status: String?
+    let workingSince: Date?
+    let statusFollowsText: Bool
     let onRegenerate: (() -> Void)?
     let onChoose: ((String) -> Void)?
     @Environment(\.chatTextHighlight) private var highlight
+    @Environment(\.chatHoverStill) private var hoverStill
 
     @State private var hovered = false
 
@@ -198,6 +210,15 @@ private struct ChatMessageView: View, @MainActor Equatable {
     private var references: [ChatReference] {
         guard message.role == .assistant, message.state != .streaming else { return [] }
         return ChatReferences.extract(from: parts.text)
+    }
+
+    private var workingText: String { status ?? String(localized: "Working…") }
+
+    /// Answer text arriving is progress enough, unless thinking resumed under it.
+    private var showsWorkingLine: Bool {
+        guard !message.tailShowsProgress else { return false }
+        guard case .text? = message.segments.last else { return true }
+        return statusFollowsText || status != nil
     }
 
     /// The palette aligns a reply with its header's chevron; the window, with the composer's edge.
@@ -232,7 +253,7 @@ private struct ChatMessageView: View, @MainActor Equatable {
             if let onRegenerate { RegenerateButton(action: onRegenerate) }
             if message.role == .assistant { timestamp }
         }
-        .opacity(hovered ? 1 : 0)
+        .opacity(hovered && !hoverStill ? 1 : 0)
         // A reply's footer hugs the same edge as its text.
         .padding(.horizontal, message.role == .user ? metrics.spacing.md : replyInset)
     }
@@ -247,9 +268,15 @@ private struct ChatMessageView: View, @MainActor Equatable {
         if message.text.isEmpty, message.searches.isEmpty, message.toolUses.isEmpty,
             message.reasoning.isEmpty, message.state == .streaming
         {
-            HStack(spacing: metrics.spacing.sm) {
-                ProgressView().controlSize(.small)
-                if let status { Text(status).foregroundStyle(.secondary) }
+            Group {
+                if let workingSince {
+                    ChatWorkingLine(text: workingText, since: workingSince)
+                } else {
+                    HStack(spacing: metrics.spacing.sm) {
+                        ProgressView().controlSize(.small)
+                        if let status { Text(status).foregroundStyle(.secondary) }
+                    }
+                }
             }
             .padding(metrics.spacing.md)
         } else {
@@ -321,6 +348,9 @@ private struct ChatMessageView: View, @MainActor Equatable {
                     }
                     .environment(\.chatFindPath, [offset])
                 }
+                if let workingSince, message.state == .streaming, showsWorkingLine {
+                    ChatWorkingLine(text: workingText, since: workingSince)
+                }
                 if let onChoose, !parts.choices.isEmpty {
                     ChatSuggestionChips(choices: parts.choices, onChoose: onChoose)
                 }
@@ -337,6 +367,7 @@ private struct ChatMessageView: View, @MainActor Equatable {
 extension ChatMessageView {
     static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.message == rhs.message && lhs.surface == rhs.surface && lhs.status == rhs.status
+            && lhs.workingSince == rhs.workingSince && lhs.statusFollowsText == rhs.statusFollowsText
             && (lhs.onRegenerate == nil) == (rhs.onRegenerate == nil)
             && (lhs.onChoose == nil) == (rhs.onChoose == nil)
     }
@@ -426,7 +457,7 @@ private struct ChatReasoningBlock: View {
     @State private var expanded = false
 
     private var title: String {
-        if isThinking { return String(localized: "Thinking…") }
+        if isThinking { return block.heading ?? String(localized: "Thinking…") }
         guard let duration = block.duration else { return String(localized: "Thoughts") }
         return String(localized: "Thought for \(max(1, Int(duration.rounded())))s")
     }
@@ -481,6 +512,33 @@ private struct ChatReasoningBlock: View {
                     .transition(.opacity)
             }
         }
+    }
+}
+
+/// An agent turn's last line while it works: what it is doing, and for how long.
+private struct ChatWorkingLine: View {
+    @Environment(\.metrics) private var metrics
+    let text: String
+    let since: Date
+
+    var body: some View {
+        HStack(spacing: metrics.spacing.sm) {
+            ProgressView().controlSize(.small)
+            Text(text)
+            TimelineView(.periodic(from: since, by: 1)) { context in
+                Text(Self.elapsed(from: since, to: context.date))
+                    .monospacedDigit()
+                    .foregroundStyle(Theme.Colors.textTertiary)
+            }
+        }
+        .font(metrics.typography.rowTrailing)
+        .foregroundStyle(Theme.Colors.textSecondary)
+        .accessibilityElement(children: .combine)
+    }
+
+    private static func elapsed(from start: Date, to now: Date) -> String {
+        Duration.seconds(max(0, Int(now.timeIntervalSince(start))))
+            .formatted(.units(allowed: [.hours, .minutes, .seconds], width: .narrow))
     }
 }
 
@@ -550,10 +608,7 @@ private struct ChatToolRun: View {
                         isExpanded.toggle()
                     } label: {
                         HStack(spacing: metrics.spacing.sm) {
-                            Image(
-                                systemName: uses.failedCount > 0
-                                    ? "exclamationmark.triangle" : "wrench.and.screwdriver"
-                            )
+                            Image(systemName: uses.failedCount > 0 ? "exclamationmark.triangle" : uses.symbol)
                             .symbolRenderingMode(.hierarchical)
                             .foregroundStyle(
                                 uses.failedCount > 0
@@ -593,27 +648,85 @@ private struct ChatToolRun: View {
     }
 }
 
+/// One step; a step that kept what it was given opens onto it, the way a thought's fold does.
 private struct ChatToolRow: View {
     @Environment(\.metrics) private var metrics
+    @Environment(\.chatAwaitedCall) private var awaitedCall
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.chatHoverStill) private var hoverStill
     let use: ChatToolUse
+    @State private var isExpanded = false
+    @State private var hovering = false
+
+    private var isHovered: Bool { hovering && !hoverStill }
 
     var body: some View {
-        HStack(spacing: metrics.spacing.sm) {
+        VStack(alignment: .leading, spacing: metrics.spacing.sm) {
+            if let detail = use.detail {
+                Button {
+                    isExpanded.toggle()
+                } label: {
+                    line
+                }
+                .buttonStyle(.plain)
+                .onHover { hovering = $0 }
+                .accessibilityValue(
+                    isExpanded ? String(localized: "Expanded") : String(localized: "Collapsed"))
+                if isExpanded {
+                    ChatToolDetailView(use: use, detail: detail)
+                        .transition(.opacity)
+                }
+            } else {
+                line
+            }
+        }
+        .animation(reduceMotion ? nil : .easeOut(duration: Theme.Duration.chatFooter), value: isExpanded)
+    }
+
+    private var line: some View {
+        let awaited = use.state == .running && use.callID == awaitedCall
+        return HStack(spacing: metrics.spacing.sm) {
             switch use.state {
+            case .running where awaited:
+                glyph("hand.raised")
             case .running:
                 ProgressView().controlSize(.small)
             case .completed:
-                glyph("wrench.and.screwdriver")
+                glyph(use.symbol)
             case .failed:
                 glyph("exclamationmark.triangle")
                     .foregroundStyle(Theme.Colors.destructive)
+            case .declined:
+                glyph("hand.raised.slash")
             }
-            Text(use.label)
+            Text(awaited ? use.awaitingLabel : use.label)
                 .font(metrics.typography.rowTrailing)
                 .lineLimit(1)
+            if use.kind == .edit, let detail = use.detail { diffCounts(detail.input) }
+            if use.detail != nil {
+                Image(systemName: "chevron.right")
+                    .font(metrics.typography.disclosure)
+                    .rotationEffect(.degrees(isExpanded ? 90 : 0))
+                    .opacity(isHovered || isExpanded ? 1 : 0)
+            }
         }
-        .foregroundStyle(Theme.Colors.textSecondary)
+        .foregroundStyle(isHovered ? Theme.Colors.textPrimary : Theme.Colors.textSecondary)
+        .contentShape(Rectangle())
         .animation(.easeOut(duration: Theme.Duration.chatFooter), value: use.state)
+    }
+
+    /// "+3 −1", as a change list counts it, in the diff's own colours.
+    @ViewBuilder private func diffCounts(_ diff: String) -> some View {
+        let counts = ChatToolDetail.diffCounts(in: diff)
+        HStack(spacing: metrics.spacing.xs) {
+            if counts.added > 0 {
+                Text(verbatim: "+\(counts.added)").foregroundStyle(Theme.Colors.Syntax.inserted)
+            }
+            if counts.removed > 0 {
+                Text(verbatim: "−\(counts.removed)").foregroundStyle(Theme.Colors.Syntax.deleted)
+            }
+        }
+        .font(metrics.typography.rowTrailing.monospacedDigit())
     }
 
     /// Sized by the row's own font, like the search row beside it, not by a symbol point size.
@@ -621,6 +734,36 @@ private struct ChatToolRow: View {
         Image(systemName: name)
             .font(metrics.typography.rowTrailing)
             .symbolRenderingMode(.hierarchical)
+    }
+}
+
+extension EnvironmentValues {
+    /// The call an approval card is asking about, whose row waits rather than spins.
+    @Entry var chatAwaitedCall: String?
+    /// The open chat's folder, so an opened step names a file the way its approval card did.
+    @Entry var chatAgentWorkspace: AgentWorkspace?
+    /// A scrolling capture is reading the transcript: hovering must not change what it sees.
+    @Entry var chatHoverStill = false
+}
+
+extension ChatToolUse {
+    /// An agent's step by what it did, an MCP call by the tools mark.
+    fileprivate var symbol: String {
+        switch kind {
+        case .read?: "doc.text"
+        case .search?: "magnifyingglass"
+        case .edit?: "pencil"
+        case .command?: "terminal"
+        case .other?, nil: "wrench.and.screwdriver"
+        }
+    }
+}
+
+extension Array where Element == ChatToolUse {
+    /// One kind of step keeps its own mark when folded; a mix falls back to the tools mark.
+    fileprivate var symbol: String {
+        guard let first, allSatisfy({ $0.kind == first.kind }) else { return "wrench.and.screwdriver" }
+        return first.symbol
     }
 }
 

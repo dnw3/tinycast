@@ -9,9 +9,14 @@ struct ChatComposerTextView: NSViewRepresentable {
     let maximumTextHeight: CGFloat
     let handle: ComposerTextViewHandle
     @Binding var isFileDragTargeted: Bool
+    /// True while an input method holds marked text, which the bound text does not have yet.
+    @Binding var isComposing: Bool
     let onDropFiles: ([URL]) -> Void
     let onInvalidate: (ComposerTextView) -> Void
     let onSubmit: () -> Void
+    /// ⌥↩ and Escape, offered to the pane first; `false` leaves the key its usual meaning.
+    var onAlternateSubmit: () -> Bool = { false }
+    var onEscape: () -> Bool = { false }
 
     private static var font: NSFont { .preferredFont(forTextStyle: .body) }
 
@@ -34,7 +39,9 @@ struct ChatComposerTextView: NSViewRepresentable {
     }
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(text: $text, onInvalidate: onInvalidate, onSubmit: onSubmit)
+        Coordinator(
+            text: $text, onInvalidate: onInvalidate, onSubmit: onSubmit,
+            onAlternateSubmit: onAlternateSubmit, onEscape: onEscape)
     }
 
     func makeNSView(context: Context) -> NSScrollView {
@@ -67,10 +74,15 @@ struct ChatComposerTextView: NSViewRepresentable {
         context.coordinator.text = $text
         context.coordinator.onInvalidate = onInvalidate
         context.coordinator.onSubmit = onSubmit
+        context.coordinator.onAlternateSubmit = onAlternateSubmit
+        context.coordinator.onEscape = onEscape
         textView.onDropFiles = onDropFiles
         textView.onFileDragTargeted = { [$isFileDragTargeted] in $isFileDragTargeted.wrappedValue = $0 }
-        // Only an outside write lands here; echoing the view's own text back would reset the caret.
-        if textView.string != text { textView.string = text }
+        textView.onComposingChange = { [$isComposing] composing in
+            if $isComposing.wrappedValue != composing { $isComposing.wrappedValue = composing }
+        }
+        // Only an outside write lands here; marked text is not in the binding, and a write ends it.
+        if textView.string != text, !textView.hasMarkedText() { textView.string = text }
         guard context.coordinator.focusedKey != focusKey else { return }
         context.coordinator.focusedKey = focusKey
         // Next turn: on first mount the view has no window to become first responder of yet.
@@ -87,6 +99,7 @@ struct ChatComposerTextView: NSViewRepresentable {
         textView.delegate = nil
         textView.onDropFiles = nil
         textView.onFileDragTargeted = nil
+        textView.onComposingChange = nil
     }
 
     /// Measured from the text rather than the text view, whose width lags the proposal by a pass.
@@ -104,15 +117,20 @@ struct ChatComposerTextView: NSViewRepresentable {
         var text: Binding<String>
         var onInvalidate: (ComposerTextView) -> Void
         var onSubmit: () -> Void
+        var onAlternateSubmit: () -> Bool
+        var onEscape: () -> Bool
         var focusedKey: UUID?
 
         init(
             text: Binding<String>, onInvalidate: @escaping (ComposerTextView) -> Void,
-            onSubmit: @escaping () -> Void
+            onSubmit: @escaping () -> Void, onAlternateSubmit: @escaping () -> Bool,
+            onEscape: @escaping () -> Bool
         ) {
             self.text = text
             self.onInvalidate = onInvalidate
             self.onSubmit = onSubmit
+            self.onAlternateSubmit = onAlternateSubmit
+            self.onEscape = onEscape
         }
 
         func textDidChange(_ notification: Notification) {
@@ -122,13 +140,22 @@ struct ChatComposerTextView: NSViewRepresentable {
 
         /// Never called mid-composition, so Return confirming an input method's text stays its own.
         func textView(_ textView: NSTextView, doCommandBy selector: Selector) -> Bool {
-            guard selector == #selector(NSResponder.insertNewline(_:)) else { return false }
-            if NSApp.currentEvent?.modifierFlags.contains(.shift) == true {
-                textView.insertNewlineIgnoringFieldEditor(nil)
-            } else {
-                onSubmit()
+            switch selector {
+            case #selector(NSResponder.insertNewline(_:)):
+                if NSApp.currentEvent?.modifierFlags.contains(.shift) == true {
+                    textView.insertNewlineIgnoringFieldEditor(nil)
+                } else {
+                    onSubmit()
+                }
+                return true
+            case #selector(NSResponder.insertNewlineIgnoringFieldEditor(_:)):
+                return onAlternateSubmit()
+            // ⌘. arrives as the same selector, and keeps its own meaning.
+            case #selector(NSResponder.cancelOperation(_:)):
+                return NSApp.currentEvent?.modifierFlags.contains(.command) != true && onEscape()
+            default:
+                return false
             }
-            return true
         }
     }
 }
@@ -137,6 +164,22 @@ struct ChatComposerTextView: NSViewRepresentable {
 final class ComposerTextView: NSTextView, InjectableTextView {
     var onDropFiles: (([URL]) -> Void)?
     var onFileDragTargeted: ((Bool) -> Void)?
+    var onComposingChange: ((Bool) -> Void)?
+
+    override func setMarkedText(_ string: Any, selectedRange: NSRange, replacementRange: NSRange) {
+        super.setMarkedText(string, selectedRange: selectedRange, replacementRange: replacementRange)
+        onComposingChange?(hasMarkedText())
+    }
+
+    override func unmarkText() {
+        super.unmarkText()
+        onComposingChange?(hasMarkedText())
+    }
+
+    override func insertText(_ insertString: Any, replacementRange: NSRange) {
+        super.insertText(insertString, replacementRange: replacementRange)
+        onComposingChange?(hasMarkedText())
+    }
 
     /// A dropped file attaches, as on the rest of the pane, instead of the text view typing its path.
     override func draggingEntered(_ sender: any NSDraggingInfo) -> NSDragOperation {

@@ -63,9 +63,11 @@ struct AIToolLoopProvider: AIProvider {
                 let tool = tools.first { $0.name == call.name }
                 continuation.yield(
                     .toolCall(
-                        id: call.id, origin: tool?.origin ?? "", title: tool?.title ?? call.name))
+                        id: call.id, origin: tool?.origin ?? "", title: tool?.title ?? call.name,
+                        detail: ChatToolDetail(input: call.arguments)))
                 let result = await bounded(invoke(call), spent: &spent)
-                continuation.yield(.toolResult(id: call.id, isError: result.isError))
+                continuation.yield(
+                    .toolResult(id: call.id, isError: result.isError, output: result.content))
                 carried += result.content.utf8.count
                 messages.append(AIMessage(role: .tool, text: "", toolResult: result))
             }

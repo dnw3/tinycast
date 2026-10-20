@@ -14,6 +14,8 @@ final class AIChatCoordinator {
     private let window: AppWindowController
     /// Chats with a title request in flight, so a quick second reply never asks twice.
     @ObservationIgnored private var naming: [UUID: Task<Void, Never>] = [:]
+    /// Kept for the app's life: it watches the chats and the key window by itself.
+    @ObservationIgnored private var waitingHUD: AgentWaitingHUDController?
 
     init(
         chats: AIChatSurfacesState, settings: AppSettings, appIndex: AppIndex,
@@ -26,11 +28,13 @@ final class AIChatCoordinator {
         self.paletteCoordinator = paletteCoordinator
         self.settingsCoordinator = settingsCoordinator
         self.core = core
+        // An accessory's input-method candidates reach the full-screen Space this window floats on.
         window = AppWindowController(
             title: String(localized: "AI Chat"), contentSize: Theme.Size.aiChatWindow,
             minimumSize: Theme.Size.aiChatWindowMinimum, resizable: true,
-            autosaveName: "AIChatWindow", activation: core.activationPolicy, closesOnEscape: true)
-        chats.onReplyFinished = { [weak self] chat in self?.nameIfNeeded(chat) }
+            autosaveName: "AIChatWindow", activation: nil, closesOnEscape: true)
+        chats.onReplyEnded = { [weak self] chat, state in self?.replyEnded(chat, state) }
+        waitingHUD = AgentWaitingHUDController(coordinator: self, settings: settings)
     }
 
     func applyEnabled() {
@@ -68,6 +72,7 @@ final class AIChatCoordinator {
     func showWindow(applyingOpenPolicy: Bool = false) {
         guard settings.aiEnabled else { return }
         prepareForChat()
+        recentAgentFolders = history.recentAgentFolders(limit: Self.recentFolderLimit)
         guard !window.focus() else { return }
         if applyingOpenPolicy {
             chats.applyWindowOpenPolicy(
@@ -75,10 +80,14 @@ final class AIChatCoordinator {
         }
         // One find per window: the chrome's search field writes it, the transcript reads it.
         let find = ChatFindState()
-        window.show(chrome: AIChatWindowChrome(coordinator: self, chats: chats, find: find)) {
+        let peek = AIChatSidebarPeek()
+        let chrome = AIChatWindowChrome(coordinator: self, chats: chats, find: find, peek: peek)
+        window.show(chrome: chrome) {
             AIChatSplitViewController(
                 sidebar: AIChatSidebarView().environment(self),
-                detail: AIChatDetailView().environment(self).environment(find))
+                detail: AIChatDetailView().modifier(AIChatSidebarPeekEdge())
+                    .environment(self).environment(find).environment(peek),
+                peek: peek)
         }
     }
 
@@ -94,6 +103,22 @@ final class AIChatCoordinator {
 
     func focusExisting() -> Bool {
         window.focus()
+    }
+
+    /// A scrolling capture is reading a Tinycast window: nothing may float still over its text.
+    var isScrollCaptured: Bool {
+        core.captureCoordinator.scroll?.targetPID == ProcessInfo.processInfo.processIdentifier
+    }
+
+    /// The reader is in the window, or in a sheet hung from it.
+    var isWindowKey: Bool {
+        NSApp.keyWindow.map { $0.sheetParent ?? $0 }?.identifier == AIChatWindowChrome.windowIdentifier
+    }
+
+    /// The waiting pill's way back: the chat comes into the window, and the window to the front.
+    func showWaiting(_ chat: AIChatState) {
+        if chats.window !== chat { openChat(id: chat.session.id) }
+        showWindow()
     }
 
     /// ⌘Q's target while the window is key; false leaves the chord to Settings.
@@ -164,10 +189,15 @@ final class AIChatCoordinator {
         let panel = NSSavePanel()
         // A title may hold a slash or a colon, neither of which a file name can.
         panel.nameFieldStringValue = markdown.title.replacing(/[\/:]/, with: "-") + ".md"
-        NSApp.activate()
-        guard panel.runModal() == .OK, let url = panel.url else { return }
+        Task {
+            guard await window.runSheet(panel) == .OK, let url = panel.url else { return }
+            saveExport(markdown.text, to: url)
+        }
+    }
+
+    private func saveExport(_ text: String, to url: URL) {
         do {
-            try Data(markdown.text.utf8).write(to: url, options: .atomic)
+            try Data(text.utf8).write(to: url, options: .atomic)
         } catch {
             core.showMessage(String(localized: "The chat could not be exported."), tone: .danger)
         }
@@ -206,6 +236,24 @@ final class AIChatCoordinator {
             core.chatGPTSubscription.turns.discardConversation(id: conversation.id)
         }
         chats.deleteAll()
+    }
+
+    // MARK: - Replies ending
+
+    /// A finished chat may be named; an agent's turn that ended out of the reader's sight says so.
+    private func replyEnded(_ chat: AIChatState, _ state: ChatMessage.State) {
+        if state == .complete { nameIfNeeded(chat) }
+        guard isAgentChat(chat), !(isWindowKey && chats.window === chat) else { return }
+        let title = title(of: chat)
+        guard state == .complete else {
+            core.showMessage(String(localized: "“\(title)” didn't finish"), tone: .danger)
+            return
+        }
+        let steps = chat.session.messages.last?.toolUses ?? []
+        core.showMessage(
+            steps.isEmpty
+                ? String(localized: "“\(title)” is done")
+                : String(localized: "“\(title)” is done · \(steps.completedLabel)"))
     }
 
     // MARK: - Titles
@@ -320,7 +368,115 @@ final class AIChatCoordinator {
         guard model(for: chat)?.runsItsOwnTools == true else {
             return toolAware(try provider(for: chat), scopedTo: slug, in: chat)
         }
-        return try provider(for: chat, toolServers: toolServers(for: chat, scopedTo: slug))
+        return try provider(
+            for: chat, toolServers: toolServers(for: chat, scopedTo: slug),
+            agent: agentSession(for: chat))
+    }
+
+    // MARK: - Agent
+
+    /// Codex and Claude can work in a folder; every other route stays a chat.
+    func agentKind(for chat: AIChatState) -> InstalledAIKind? {
+        switch model(for: chat) {
+        case .codex?: .codex
+        case .claude?: .claude
+        default: nil
+        }
+    }
+
+    /// Quick AI stays a plain chat until the palette can show an approval itself.
+    func isAgentChat(_ chat: AIChatState) -> Bool {
+        chat.session.agent != nil && agentKind(for: chat) != nil && chat !== chats.quickAI
+    }
+
+    private func agentSession(for chat: AIChatState) -> AgentSession? {
+        guard isAgentChat(chat), let workspace = chat.session.agent,
+            let route = agentKind(for: chat)?.rawValue
+        else { return nil }
+        let folder = workspace.folder.standardizedFileURL.path
+        let thread = chat.session.agentThread.flatMap {
+            $0.continues(route: route, in: workspace) ? $0 : nil
+        }
+        return AgentSession(
+            workspace: workspace, resume: thread?.id, rounds: core.aiSettings.toolRounds.limit,
+            language: Self.interfaceLanguage,
+            approve: { [weak chat] request in
+                guard let chat else { return .deny }
+                switch AgentApprovalPolicy.verdict(
+                    for: request, in: workspace, grants: chat.agentGrants)
+                {
+                case .allow: return .allow
+                case .deny: return .deny
+                case .ask: return await chat.requestApproval(request)
+                }
+            },
+            started: { [weak chat] id in
+                chat?.setAgentThread(AgentThread(route: route, folder: folder, id: id))
+            },
+            lost: { [weak chat] in chat?.setAgentThread(nil) })
+    }
+
+    /// macOS sets each app's own language; the agent is told it by its English name.
+    private static var interfaceLanguage: String {
+        let identifier = Bundle.main.preferredLocalizations.first ?? "en"
+        return Locale(identifier: "en").localizedString(forIdentifier: identifier) ?? identifier
+    }
+
+    func chooseAgentFolder(for chat: AIChatState) {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.allowsMultipleSelection = false
+        panel.prompt = String(localized: "Choose")
+        panel.message = String(localized: "Choose the folder the agent works in.")
+        let id = chat.session.id
+        Task {
+            guard await window.runSheet(panel) == .OK, let url = panel.url, chat.session.id == id else { return }
+            setAgentFolder(url, in: chat)
+        }
+    }
+
+    /// The mode carries over from the folder before, so switching folders never widens it.
+    func setAgentFolder(_ folder: URL?, in chat: AIChatState) {
+        chat.setAgent(folder.map { AgentWorkspace(folder: $0, mode: chat.session.agent?.mode ?? .ask) })
+        guard let folder else { return }
+        recentAgentFolders = [folder] + recentAgentFolders.filter { $0 != folder }.prefix(Self.recentFolderLimit - 1)
+    }
+
+    /// Edits without asking is the one mode that widens what happens unseen, so it is confirmed.
+    func setAgentMode(_ mode: AgentMode, in chat: AIChatState) async {
+        guard var workspace = chat.session.agent, workspace.mode != mode else { return }
+        if mode == .autoEdit {
+            let folder = workspace.folder.lastPathComponent
+            let index = await core.choose(
+                title: String(localized: "Let the agent edit files without asking?"),
+                message: String(
+                    localized:
+                        "Edits in \u{201C}\(folder)\u{201D} go ahead unasked. Commands, deletions and outside edits still ask."
+                ),
+                symbol: "bolt",
+                options: [
+                    DialogAction(title: String(localized: "Allow Edits")),
+                    DialogAction(title: String(localized: "Cancel"), role: .cancel)
+                ],
+                defaultIndex: 0)
+            guard index == 0, chat.session.agent?.folder == workspace.folder else { return }
+        }
+        workspace.mode = mode
+        chat.setAgent(workspace)
+    }
+
+    /// Read when the window opens, not per render: the composer's row redraws on every flush.
+    private(set) var recentAgentFolders: [URL] = []
+    private static let recentFolderLimit = 6
+
+    /// Typed instead of an answer: the request is refused, the turn ends, then the text goes next.
+    func redirect(_ text: String, in chat: AIChatState) {
+        chat.answerApproval(.redirect(text))
+        Task { [weak self] in
+            await chat.replyEnded()
+            self?.send(text, in: chat)
+        }
     }
 
     /// The same narrowing as `tools(for:scopedTo:)`, for a client that starts its own servers.
@@ -481,9 +637,11 @@ final class AIChatCoordinator {
         panel.allowsMultipleSelection = true
         panel.prompt = "Attach"
         panel.message = String(localized: "Choose images, PDFs or text files to send with your next message.")
-        NSApp.activate(ignoringOtherApps: true)
-        guard panel.runModal() == .OK else { return }
-        attach(files: panel.urls, to: chat)
+        let id = chat.session.id
+        Task {
+            guard await window.runSheet(panel) == .OK, chat.session.id == id else { return }
+            attach(files: panel.urls, to: chat)
+        }
     }
 
     func clearAttachments(in chat: AIChatState) {
@@ -587,7 +745,7 @@ final class AIChatCoordinator {
     }
 
     private func provider(
-        for chat: AIChatState, toolServers: AIToolServerSession? = nil
+        for chat: AIChatState, toolServers: AIToolServerSession? = nil, agent: AgentSession? = nil
     ) throws -> any AIProvider {
         guard let selection = model(for: chat) else {
             throw AIProviderError.unavailable(String(localized: "Choose a default AI model in Settings."))
@@ -595,7 +753,7 @@ final class AIChatCoordinator {
         return try AIProviderFactory.make(
             selection: selection, settings: core.aiSettings,
             subscription: core.chatGPTSubscription, installedAI: core.installedAI,
-            toolServers: toolServers)
+            toolServers: toolServers, agent: agent)
     }
 
     /// Tinycast runs a local server itself only while some live chat's route cannot.

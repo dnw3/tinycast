@@ -40,6 +40,51 @@ enum ClaudeControlProtocol {
         return line
     }
 
+    /// A built-in tool's question, which an agent turn puts to the reader instead of refusing.
+    struct AgentRequest: Equatable, Sendable {
+        let id: String
+        let toolName: String
+        let input: JSONValue
+        /// The `tool_use` this asks about, which is the transcript row's own ID.
+        var toolUseID: String?
+    }
+
+    static func agentRequest(_ object: [String: Any]) -> AgentRequest? {
+        guard object["type"] as? String == "control_request",
+            let id = object["request_id"] as? String,
+            let request = object["request"] as? [String: Any],
+            request["subtype"] as? String == "can_use_tool",
+            let name = request["tool_name"] as? String,
+            ClaudeMCPLaunch.route(name) == nil
+        else { return nil }
+        return AgentRequest(
+            id: id, toolName: name, input: JSONValue(request["input"] ?? [String: Any]()),
+            toolUseID: request["tool_use_id"] as? String)
+    }
+
+    /// A redirect also interrupts, so the turn ends and what the reader typed is sent next.
+    static func response(to request: AgentRequest, decision: AgentApprovalDecision) -> Data? {
+        var answer: [String: Any] = ["behavior": "allow", "updatedInput": request.input.jsonObject]
+        switch decision {
+        case .allow, .allowForChat:
+            break
+        case .deny:
+            answer = ["behavior": "deny", "message": "The user declined this action. Do not retry it."]
+        case .redirect:
+            answer = [
+                "behavior": "deny", "interrupt": true,
+                "message": "The user declined this action and is giving a new instruction."
+            ]
+        }
+        var line = try? JSONSerialization.data(
+            withJSONObject: [
+                "type": "control_response",
+                "response": ["subtype": "success", "request_id": request.id, "response": answer]
+            ])
+        line?.append(0x0A)
+        return line
+    }
+
     /// A control request that is no tool question of ours; unanswered, the CLI waits for good.
     static func unsupportedRequestID(_ object: [String: Any]) -> String? {
         guard object["type"] as? String == "control_request", request(object) == nil else {

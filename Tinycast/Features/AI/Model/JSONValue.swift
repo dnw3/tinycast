@@ -69,4 +69,15 @@ enum JSONValue: Equatable, Sendable {
         guard case .number(let value) = self else { return nil }
         return Int(value)
     }
+
+    /// Compact with sorted keys, so the same input always reads the same; a bare string stays one.
+    var jsonText: String {
+        guard
+            let data = try? JSONSerialization.data(
+                withJSONObject: jsonObject,
+                options: [.sortedKeys, .withoutEscapingSlashes, .fragmentsAllowed]),
+            let text = String(data: data, encoding: .utf8)
+        else { return "" }
+        return text
+    }
 }

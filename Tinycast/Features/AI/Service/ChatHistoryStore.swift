@@ -88,6 +88,28 @@ final class ChatHistoryStore {
           duration REAL,
           PRIMARY KEY(message_id, position)
         );
+        CREATE TABLE IF NOT EXISTS conversation_agents(
+          conversation_id TEXT PRIMARY KEY NOT NULL
+            REFERENCES conversations(id) ON DELETE CASCADE,
+          workspace TEXT,
+          thread TEXT
+        );
+        CREATE TABLE IF NOT EXISTS message_tool_kinds(
+          message_id TEXT NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+          position INTEGER NOT NULL,
+          kind TEXT NOT NULL,
+          PRIMARY KEY(message_id, position)
+        );
+        CREATE TABLE IF NOT EXISTS message_tool_details(
+          message_id TEXT NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+          position INTEGER NOT NULL,
+          input TEXT NOT NULL,
+          explanation TEXT,
+          output TEXT,
+          exit_code INTEGER,
+          output_trimmed INTEGER NOT NULL DEFAULT 0,
+          PRIMARY KEY(message_id, position)
+        );
         CREATE INDEX IF NOT EXISTS messages_by_conversation
           ON messages(conversation_id, position);
         CREATE INDEX IF NOT EXISTS conversations_by_recency
@@ -233,16 +255,20 @@ final class ChatHistoryStore {
                     reasoning: reasoning[messageID] ?? [],
                     usage: meta[messageID]?.usage, toolScope: meta[messageID]?.toolScope))
         }
+        let agent = agent(forConversation: id, in: database)
         return ChatSession(
             id: id, createdAt: createdAt, updatedAt: updatedAt, messages: messages,
-            model: model(forConversation: id, in: database))
+            model: model(forConversation: id, in: database), agent: agent.workspace,
+            agentThread: agent.thread)
     }
 
     func save(_ session: ChatSession) {
         guard !session.messages.isEmpty, ensureDatabase(), let database else { return }
         guard sqlite3_exec(database, "BEGIN IMMEDIATE", nil, nil, nil) == SQLITE_OK else { return }
         guard saveConversation(session, in: database), rewriteTail(of: session, database: database),
-            saveModel(of: session)
+            saveModel(of: session),
+            session.agent == nil && session.agentThread == nil
+                || saveAgent(session.agent, thread: session.agentThread, of: session.id)
         else {
             sqlite3_exec(database, "ROLLBACK", nil, nil, nil)
             return
@@ -518,6 +544,52 @@ final class ChatHistoryStore {
             sqlite3_reset(statement)
             sqlite3_clear_bindings(statement)
         }
+        return saveToolKinds(of: message, in: database) && saveToolDetails(of: message, in: database)
+    }
+
+    /// Beside `message_tools`, not in it, so a database from before kinds needs no migration.
+    private func saveToolKinds(of message: ChatMessage, in database: OpaquePointer) -> Bool {
+        let kinds = message.toolUses.compactMap { use in use.kind.map { (use.sequence, $0) } }
+        guard !kinds.isEmpty else { return true }
+        let sql = """
+            INSERT OR REPLACE INTO message_tool_kinds(message_id, position, kind) VALUES(?, ?, ?);
+            """
+        guard let statement = prepare(sql, in: database) else { return false }
+        defer { sqlite3_finalize(statement) }
+        for (position, kind) in kinds {
+            bind(message.id.uuidString, to: statement, at: 1)
+            sqlite3_bind_int64(statement, 2, Int64(position))
+            bind(kind.rawValue, to: statement, at: 3)
+            guard sqlite3_step(statement) == SQLITE_DONE else { return false }
+            sqlite3_reset(statement)
+            sqlite3_clear_bindings(statement)
+        }
+        return true
+    }
+
+    /// Beside `message_tools` for the same reason as kinds; an MCP call has no row here.
+    private func saveToolDetails(of message: ChatMessage, in database: OpaquePointer) -> Bool {
+        let details = message.toolUses.compactMap { use in use.detail.map { (use.sequence, $0) } }
+        guard !details.isEmpty else { return true }
+        let sql = """
+            INSERT OR REPLACE INTO message_tool_details(
+              message_id, position, input, explanation, output, exit_code, output_trimmed)
+            VALUES(?, ?, ?, ?, ?, ?, ?);
+            """
+        guard let statement = prepare(sql, in: database) else { return false }
+        defer { sqlite3_finalize(statement) }
+        for (position, detail) in details {
+            bind(message.id.uuidString, to: statement, at: 1)
+            sqlite3_bind_int64(statement, 2, Int64(position))
+            bind(detail.input, to: statement, at: 3)
+            if let explanation = detail.explanation { bind(explanation, to: statement, at: 4) }
+            if let output = detail.output { bind(output, to: statement, at: 5) }
+            if let code = detail.exitCode { sqlite3_bind_int64(statement, 6, Int64(code)) }
+            sqlite3_bind_int64(statement, 7, detail.isOutputTrimmed ? 1 : 0)
+            guard sqlite3_step(statement) == SQLITE_DONE else { return false }
+            sqlite3_reset(statement)
+            sqlite3_clear_bindings(statement)
+        }
         return true
     }
 
@@ -526,9 +598,13 @@ final class ChatHistoryStore {
         forConversation id: UUID, in database: OpaquePointer
     ) -> [UUID: [ChatToolUse]] {
         let sql = """
-            SELECT t.message_id, t.call_id, t.origin, t.title, t.state, t.text_offset, t.position
+            SELECT t.message_id, t.call_id, t.origin, t.title, t.state, t.text_offset, t.position,
+              k.kind, d.input, d.explanation, d.output, d.exit_code, d.output_trimmed
             FROM message_tools t
             JOIN messages m ON m.id = t.message_id
+            LEFT JOIN message_tool_kinds k ON k.message_id = t.message_id AND k.position = t.position
+            LEFT JOIN message_tool_details d
+              ON d.message_id = t.message_id AND d.position = t.position
             WHERE m.conversation_id = ? ORDER BY t.message_id, t.position;
             """
         guard let statement = prepare(sql, in: database) else { return [:] }
@@ -543,9 +619,22 @@ final class ChatHistoryStore {
                     callID: text(statement, 1), origin: text(statement, 2),
                     title: text(statement, 3), state: stored == .running ? .failed : stored,
                     textOffset: Int(sqlite3_column_int64(statement, 5)),
-                    sequence: Int(sqlite3_column_int64(statement, 6))))
+                    sequence: Int(sqlite3_column_int64(statement, 6)),
+                    kind: sqlite3_column_type(statement, 7) == SQLITE_NULL
+                        ? nil : ChatToolUse.Kind(rawValue: text(statement, 7)),
+                    detail: toolDetail(statement, from: 8)))
         }
         return uses
+    }
+
+    private func toolDetail(_ statement: OpaquePointer?, from column: Int32) -> ChatToolDetail? {
+        guard let input = optionalText(statement, column) else { return nil }
+        return ChatToolDetail(
+            input: input, explanation: optionalText(statement, column + 1),
+            output: optionalText(statement, column + 2),
+            exitCode: sqlite3_column_type(statement, column + 3) == SQLITE_NULL
+                ? nil : Int(sqlite3_column_int64(statement, column + 3)),
+            isOutputTrimmed: sqlite3_column_int64(statement, column + 4) != 0)
     }
 
     /// After the conversation's row, which the meta row references; a chat with no pick has none.
@@ -572,6 +661,77 @@ final class ChatHistoryStore {
     func setModel(_ model: AIModelSelection, id: UUID) {
         guard conversation(id: id) != nil else { return }
         _ = write(.model(model), of: id)
+    }
+
+    /// Like the model: written now for a saved chat, at its first save for a new one.
+    func setAgent(_ workspace: AgentWorkspace?, thread: AgentThread?, id: UUID) {
+        guard conversation(id: id) != nil else { return }
+        _ = saveAgent(workspace, thread: thread, of: id)
+    }
+
+    /// Folders a chat has worked in, newest first, so the folder menu can offer them again.
+    func recentAgentFolders(limit: Int) -> [URL] {
+        guard ensureDatabase(), let database,
+            let statement = prepare(
+                """
+                SELECT a.workspace FROM conversation_agents a
+                JOIN conversations c ON c.id = a.conversation_id
+                WHERE a.workspace IS NOT NULL ORDER BY c.updated_at DESC;
+                """, in: database)
+        else { return [] }
+        defer { sqlite3_finalize(statement) }
+        var folders: [URL] = []
+        while sqlite3_step(statement) == SQLITE_ROW, folders.count < limit {
+            guard
+                let workspace = try? JSONDecoder().decode(
+                    AgentWorkspace.self, from: Data(text(statement, 0).utf8)),
+                !folders.contains(workspace.folder)
+            else { continue }
+            folders.append(workspace.folder)
+        }
+        return folders
+    }
+
+    private func saveAgent(_ workspace: AgentWorkspace?, thread: AgentThread?, of id: UUID) -> Bool {
+        guard ensureDatabase(), let database else { return false }
+        let sql = """
+            INSERT INTO conversation_agents(conversation_id, workspace, thread) VALUES(?, ?, ?)
+            ON CONFLICT(conversation_id) DO UPDATE SET
+              workspace = excluded.workspace, thread = excluded.thread;
+            """
+        guard let statement = prepare(sql, in: database) else { return false }
+        defer { sqlite3_finalize(statement) }
+        bind(id.uuidString, to: statement, at: 1)
+        let encoder = JSONEncoder()
+        if let workspace, let data = try? encoder.encode(workspace), let text = String(bytes: data, encoding: .utf8) {
+            bind(text, to: statement, at: 2)
+        }
+        if let thread, let data = try? encoder.encode(thread), let text = String(bytes: data, encoding: .utf8) {
+            bind(text, to: statement, at: 3)
+        }
+        return sqlite3_step(statement) == SQLITE_DONE
+    }
+
+    private func agent(
+        forConversation id: UUID, in database: OpaquePointer
+    ) -> (workspace: AgentWorkspace?, thread: AgentThread?) {
+        guard
+            let statement = prepare(
+                "SELECT workspace, thread FROM conversation_agents WHERE conversation_id = ?;",
+                in: database)
+        else { return (nil, nil) }
+        defer { sqlite3_finalize(statement) }
+        bind(id.uuidString, to: statement, at: 1)
+        guard sqlite3_step(statement) == SQLITE_ROW else { return (nil, nil) }
+        let decoder = JSONDecoder()
+        let decode = { (column: Int32) -> Data? in
+            sqlite3_column_type(statement, column) == SQLITE_NULL
+                ? nil : Data(self.text(statement, column).utf8)
+        }
+        return (
+            decode(0).flatMap { try? decoder.decode(AgentWorkspace.self, from: $0) },
+            decode(1).flatMap { try? decoder.decode(AgentThread.self, from: $0) }
+        )
     }
 
     private func saveReasoning(of message: ChatMessage, in database: OpaquePointer) -> Bool {

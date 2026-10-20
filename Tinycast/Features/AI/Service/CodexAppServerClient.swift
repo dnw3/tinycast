@@ -29,6 +29,8 @@ final class CodexAppServerClient {
     var onExit: ((String) -> Void)?
     /// Answers a tool call's ask; nil, or a false answer, declines it.
     var onElicitation: ((CodexElicitation) async -> Bool)?
+    /// Set only on an agent's helper: anyone else's command or patch is declined as it always was.
+    var onApproval: ((CodexApproval) async -> AgentApprovalDecision)?
     /// A launch is about to replace a running process, whose threads go with it.
     var onRelaunch: (() -> Void)?
     /// The reader's command path and variables, asked at each launch so an edit takes the next one.
@@ -52,9 +54,21 @@ final class CodexAppServerClient {
     /// Bumped by `stop`, so a launch still reading the list does not start a process after it.
     private var generation = 0
 
-    init(codexHome: URL? = nil, workspace: URL) {
+    /// An agent's helper keeps the shell tool; every other helper launches without it.
+    private let runsCommands: Bool
+
+    init(codexHome: URL? = nil, workspace: URL, runsCommands: Bool = false) {
         self.codexHome = codexHome
         self.workspace = workspace
+        self.runsCommands = runsCommands
+    }
+
+    nonisolated static func launchFlags(runsCommands: Bool) -> [String] {
+        var flags = configurationFlags
+        if runsCommands, let index = flags.firstIndex(of: "features.shell_tool=false") {
+            flags.removeSubrange((index - 1)...index)
+        }
+        return flags
     }
 
     /// Process-scoped, never written to the reader's config; `plugins=false` drops plugin servers.
@@ -192,7 +206,7 @@ final class CodexAppServerClient {
         let stderr = Pipe()
         process.executableURL = executable
         process.arguments =
-            Self.configurationFlags
+            Self.launchFlags(runsCommands: runsCommands)
             + CodexMCPLaunch.arguments(servers: toolServers, disabling: foreign)
             + ["app-server"]
         process.currentDirectoryURL = workspace
@@ -342,6 +356,16 @@ final class CodexAppServerClient {
         case .notification(let method, let params):
             onNotification?(method, params)
         case .request(let id, let method, let params):
+            if let approval = CodexApproval(method: method, params: params), let onApproval {
+                let task = Task { [weak self] in
+                    let decision = await onApproval(approval)
+                    try? self?.send(
+                        CodexAppServerProtocol.response(
+                            id: id, result: CodexApproval.result(for: decision)))
+                }
+                elicitations.append((approval.threadID, task))
+                return
+            }
             guard method == "mcpServer/elicitation/request",
                 let elicitation = CodexElicitation(params: params), let onElicitation
             else {

@@ -51,6 +51,8 @@ enum Theme {
         static let codeBlock: CGFloat = 14
         /// A window-to-be in the room preview, rounded like a real window rather than a row.
         static let roomCard: CGFloat = 16
+        /// A sidebar slid out over AI Chat's transcript, concentric with the window's own corner.
+        static let aiChatSidebarPeek: CGFloat = 18
         static let keyCap: CGFloat = 6
         static let recorderKeyCap: CGFloat = 4
         static let tooltip: CGFloat = 8
@@ -64,6 +66,10 @@ enum Theme {
     enum Size {
         static let captureEditor = CGSize(width: 1000, height: 720)
         static let captureEditorMinimum = CGSize(width: 760, height: 480)
+        /// Where the editor's header starts in the title band: just past the traffic lights.
+        static let captureEditorTitleInset: CGFloat = 80
+        /// Backdrop kept around the image in the editor, so a capture always shows its edges.
+        static let captureCanvasMargin: CGFloat = 20
         static let captureWorkspaceBar = CGSize(width: 680, height: 232)
         static let captureWorkspaceOutputs = CGSize(width: 60, height: 312)
         static let captureScrollBar = CGSize(width: 280, height: 38)
@@ -78,6 +84,8 @@ enum Theme {
         static let captureVideoTimeline: CGFloat = 52
         static let captureGlyph: CGFloat = 16
         static let captureCompactGlyph: CGFloat = 14
+        /// Kept off a found scroll area's trailing edge, where an overlay scroller flashes in.
+        static let captureScrollerClearance: CGFloat = 16
         static let captureToolbarCustomization = CGSize(width: 540, height: 560)
         static let captureLoupePixels: CGFloat = 13
         static let captureLoupeCell: CGFloat = 8
@@ -225,6 +233,10 @@ enum Theme {
         static let aiChatWindowMinimum = CGSize(width: 680, height: 440)
         static let aiChatSidebarMinimum: CGFloat = 240
         static let aiChatSidebarMaximum: CGFloat = 340
+        /// Wider than the system's resize band, so resting short of the edge is enough.
+        static let aiChatSidebarPeekEdge: CGFloat = 12
+        /// A flick that runs this far past the window's left edge still counts as reaching it.
+        static let aiChatSidebarPeekOvershoot: CGFloat = 8
         /// The sidebar's search capsule, a row's height so it lines up with the list below it.
         static let aiChatSearchField: CGFloat = 28
         static let aiChatDetailMinimum: CGFloat = 440
@@ -237,6 +249,10 @@ enum Theme {
         /// One slot for every glyph on that row, so a plus and a brand mark weigh the same.
         static let aiChatComposerGlyph: CGFloat = 16
         static let chatContextGauge: CGFloat = 14
+        /// An approval's command or diff scrolls past this, so the card never buries a transcript.
+        static let chatApprovalDetail: CGFloat = 180
+        /// An opened step shows this many lines of a long block until asked for the rest.
+        static let chatToolPreviewLines = 12
         /// A source chip's title before it middle-truncates, so three chips share a row.
         static let chatSourceTitle: CGFloat = 200
         static let chatSourceBadge: CGFloat = 18
@@ -278,6 +294,8 @@ enum Theme {
         /// The confirmation HUD's width ceiling, and its distance above the screen bottom.
         static let hudMaxWidth: CGFloat = 420
         static let hudEdgeOffset: CGFloat = 48
+        /// The waiting HUD sits above the pill's slot, so a confirmation never covers it.
+        static let hudWaitingEdgeOffset: CGFloat = 96
         /// Questions and notices stay compact; controls keep the room their native widgets need.
         static let dialogCompactWidth: CGFloat = 290
         /// Tinycast's own control dialog: fixed width, height measured from its SwiftUI content.
@@ -345,6 +363,10 @@ enum Theme {
         static let hover: TimeInterval = 0.12
         static let menuChevron: TimeInterval = 0.34
         static let copyFeedback: TimeInterval = 1.2
+        /// A rest this long on the edge slides a hidden sidebar out; merely passing it never does.
+        static let sidebarPeekDwell: TimeInterval = 0.1
+        /// How long the pointer stays off a slid-out sidebar before it slides back.
+        static let sidebarPeekLinger: TimeInterval = 0.3
         static let chatFooter: TimeInterval = 0.12
         static let settingsReveal: TimeInterval = 0.28
         static let settingsFlash: TimeInterval = 2.0
@@ -519,6 +541,12 @@ enum Theme {
         static let dropTarget = Color.accentColor
         /// Progress tint: the message pill's spinner while the work behind it is still running.
         static let progress = Color.blue
+        /// An agent waiting on the reader: the HUD's hand, a sidebar row's dot, the menu bar's.
+        static let waiting = Color.blue
+        /// The editor's well, darker than the window so a capture of a white page shows its edges.
+        static let captureCanvas = adaptive(dark: .srgbInk(0, alpha: 0.28), light: .srgbInk(0, alpha: 0.06))
+        static let captureImageEdge = adaptive(dark: .srgbInk(1, alpha: 0.08), light: .srgbInk(0, alpha: 0.10))
+        static let captureImageShadow = adaptive(dark: .srgbInk(0, alpha: 0.45), light: .srgbInk(0, alpha: 0.18))
         /// The command output window's page: a flat surface the log sits directly on.
         static let terminalSurface = adaptive(
             dark: .srgbInk(0.07, alpha: 1), light: .srgbInk(0.99, alpha: 1))

@@ -79,6 +79,7 @@ enum SettingsFileSchema {
         case .aiRetention: return bind(ai, \.retention)
         case .aiOpensTo: return bind(ai, \.opensTo)
         case .aiNewChatAfter: return bind(ai, \.newChatAfter)
+        case .aiSidebarPeek: return bind(ai, \.sidebarPeekEnabled)
         case .aiToolRounds: return bind(ai, \.toolRounds)
         case .aiCommands: return launcher.commandsBinding(for: key, owner: .ai)
         case .quickActionCommands: return launcher.commandsBinding(for: key, owner: .quickActions)

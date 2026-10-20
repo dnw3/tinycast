@@ -53,8 +53,26 @@ struct ChatMarkdownTests {
         formulasTypesetByTheirStructure()
         wideFormulasShrinkToTheLine()
         equationsStillArrivingHoldTheirPlace()
+        diffsNameEachFileOnce()
         print("\(passes) passed, \(failures) failed")
         if failures > 0 { exit(1) }
+    }
+
+    static func diffsNameEachFileOnce() {
+        let diff = "--- /dev/null\n+++ /p/a.txt\n+alpha\n--- /p/b.txt\n+++ /p/b.txt\n@@ -1 +1 @@\n-old\n+new"
+        let named = ChatDiffText.attributed(diff) { before, after in
+            before == "/dev/null" ? "new \(after)" : after
+        }
+        expect(
+            String(named.characters) == "new /p/a.txt\n+alpha\n\n/p/b.txt\n@@ -1 +1 @@\n-old\n+new",
+            "each file's header pair becomes one line naming it, a blank line after the file before")
+        let runs = Array(named.runs)
+        expect(
+            runs.contains { $0.foregroundColor == Theme.Colors.Syntax.inserted }
+                && runs.contains { $0.foregroundColor == Theme.Colors.Syntax.deleted },
+            "added and removed lines keep the diff colours")
+        expect(String(ChatDiffText.attributed("+a\n-b").characters) == "+a\n-b",
+            "with nothing to name, a diff reads as it was sent")
     }
 
     static func render(

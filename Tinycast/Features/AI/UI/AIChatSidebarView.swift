@@ -55,6 +55,7 @@ struct AIChatSidebarView: View {
     @ViewBuilder private var list: some View {
         let sections = sections
         let answering = chats.answeringIDs
+        let waiting = Set(chats.waiting.map(\.session.id))
         let openID = chats.window.session.id
         if sections.isEmpty {
             emptyState.frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -65,6 +66,7 @@ struct AIChatSidebarView: View {
                         ForEach(section.conversations) { conversation in
                             row(
                                 conversation, isAnswering: answering.contains(conversation.id),
+                                isWaiting: waiting.contains(conversation.id),
                                 isSelected: conversation.id == openID
                             )
                             .tag(conversation.id)
@@ -101,7 +103,7 @@ struct AIChatSidebarView: View {
     }
 
     @ViewBuilder private func row(
-        _ conversation: ChatConversation, isAnswering: Bool, isSelected: Bool
+        _ conversation: ChatConversation, isAnswering: Bool, isWaiting: Bool, isSelected: Bool
     ) -> some View {
         if renaming == conversation.id {
             TextField("Chat name", text: $renameText, prompt: Text(conversation.title))
@@ -114,7 +116,8 @@ struct AIChatSidebarView: View {
                 }
         } else {
             ChatSidebarRow(
-                conversation: conversation, isAnswering: isAnswering, isSelected: isSelected)
+                conversation: conversation, isAnswering: isAnswering, isWaiting: isWaiting,
+                isSelected: isSelected)
         }
     }
 
@@ -168,6 +171,8 @@ struct AIChatSidebarView: View {
 private struct ChatSidebarRow: View {
     let conversation: ChatConversation
     let isAnswering: Bool
+    /// Its agent stopped to ask the reader something, which outranks still being at work.
+    let isWaiting: Bool
     let isSelected: Bool
     @State private var isHovered = false
 
@@ -177,7 +182,13 @@ private struct ChatSidebarRow: View {
                 .lineLimit(1)
                 .truncationMode(.tail)
             Spacer(minLength: 0)
-            if isAnswering {
+            if isWaiting {
+                Circle()
+                    .fill(Theme.Colors.waiting)
+                    .frame(width: Theme.Size.colorDot, height: Theme.Size.colorDot)
+                    .accessibilityElement()
+                    .accessibilityLabel(String(localized: "Waiting for you"))
+            } else if isAnswering {
                 ProgressView()
                     .controlSize(.mini)
                     .accessibilityLabel(String(localized: "Answering"))

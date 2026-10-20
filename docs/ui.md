@@ -52,7 +52,7 @@ These are the things that quietly break the look if changed. Preserve them unles
 - **In the palette, a hover label is Tinycast's `tooltip`, never `.help()`**: an AppKit tooltip never appears while the app sits inactive behind the non-activating panel. A Settings window activates the app, so `.help()` shows there and stays the label to use. The tooltip hangs above its control by default; a control in the palette header passes `edge: .bottom`, since above it is off the window, and a label may run to several lines — the chat's attachment pill lists every staged name.
   Native form controls opt into `dismissOnPress` to hide the label until the next hover.
 - **A transient readout is a HUD, not a dialog.** `VolumeHUDController`'s box is volume and mute only, since that one needs an actual level and number; every other success or info confirmation goes through `MessageHUDController`'s pill, whose leading glyph *is* its `DialogTone`. A pill has no subject to name, so the icon rule above does not apply to it — and that mapping stays file-scoped so nothing can reach for it when building a `DialogRequest`. A new HUD means a new presenter, not a second shape bolted onto an existing controller.
-- **Glass is for floating controls, with dialogs as the deliberate modal exception.** The action capsule, menu circle and `PopoverMenu` use it inside the palette; dialogs apply one system `.glassEffect(.regular)` to their root surface. Dialog buttons stay matte so their roles remain legible. Both HUDs keep the lighter `panelScrim` → `GlassEffectView()` → `clipShape` recipe.
+- **Glass is for floating controls, with dialogs as the deliberate modal exception.** The action capsule, menu circle and `PopoverMenu` use it inside the palette; dialogs apply one system `.glassEffect(.regular)` to their root surface. Dialog buttons stay matte so their roles remain legible. Every HUD keeps the lighter `panelScrim` → `GlassEffectView()` → `clipShape` recipe.
 
 ---
 
@@ -418,6 +418,20 @@ The capture windows — editor, recording, history preview and toolbar customiza
 transparent bar with the system title hidden, so the view draws its own title once. Their glass is
 `captureWindowSurface()`, which runs up under the bar; every other capture glass is `captureGlass`.
 
+The editor draws that title in the bar itself rather than in a row under it.
+`CaptureChrome.reserveTitleBand` gives the window an empty `unifiedCompact` toolbar only for its band
+— 40pt with the traffic lights centred, where the plain bar's 32 is too short for a 30pt tool — and the
+header starts at `captureEditorTitleInset` 80, just past the lights, sized to the band as measured from
+a view that still respects the safe area. `WindowDragBackground` behind the header lets its empty space
+drag the window, as a title bar's would. With a screenshot and its scrolling result both open, the
+title is one segmented switch, the screenshot first whichever is shown, instead of a label and a push
+button. The image sits in a well (`captureCanvas`, `radius.card`) with `captureCanvasMargin` 20 of it
+on every side — `NSScrollView.contentInsets`, so a fit leaves the margin and a long capture opens at
+its top-left with it — and carries a hairline (`captureImageEdge`) and a soft shadow
+(`captureImageShadow`) on its own layer, its path set so a canvas many screens tall costs no offscreen
+pass. Without the well a capture of a white page had no edges against the light window. The inline
+canvas on the desktop takes none of this: there the image is the desktop.
+
 ---
 
 ## The edge dissolve
@@ -518,6 +532,9 @@ Source: `Windows/Dialog/`, `Windows/HUD/`.
 
 Tinycast owns its dialogs; `NSAlert` is never used. `DialogController` is owned by `AppCore` (the
 sole owner rule) and is the only presenter, so every confirmation in the app looks and behaves alike.
+One question is asked inline instead: an agent's approval in AI Chat. A turn can ask many, each about
+the transcript a dialog would cover, so `AgentApprovalCard` rises above the composer and borrows the
+three axes below ([AI](features/ai.md#agent-mode)).
 
 - **Three independent axes.** The **icon** says _what_, the **tone** says _how serious_, the **button
   role** says _what happens if you click_. None of them derives another — that separation is the
@@ -639,9 +656,18 @@ sole owner rule) and is the only presenter, so every confirmation in the app loo
   dwell, so it is shown with `dwells: false` and stays up until something replaces it or
   `HUDPresenter.dismiss()` runs — the caller owns that, and `QuickActionCoordinator.produce` pairs the
   two with a `defer` so a throw or a cancellation cannot strand it.
-- **`HUDPresenter`** is what keeps those two controllers from duplicating each other: one panel at a
+- **AI Chat's waiting pill** (`AgentWaitingHUDController`, `AgentWaitingHUDView`) is the third HUD:
+  the same capsule, lit blue from a raised hand, saying which agent waits on what, with a `View`
+  button in `ModalActionButtonStyle`'s primary role nested in the pill's capsule at an equal `xs`
+  inset. It has no dwell — it leaves when the wait ends or the AI Chat window becomes key — and sits
+  at `edgeInset(hudWaitingEdgeOffset 96)`, a presenter of its own above the message pill's slot, so
+  a confirmation arriving meanwhile never covers it. Hovering turns the hand into an ✕ that waves it
+  off, as the progress pill's spinner turns into one. Every pill's surface is `HUDCapsule`
+  (`.hudCapsule(tint:isLit:)`): the glow from behind the leading mark, the scrim, the glass, the
+  capsule clip and the rim that fades across the message.
+- **`HUDPresenter`** is what keeps those controllers from duplicating each other: one panel at a
   time, replace rather than stack, fade in, sit out its dwell, fade away, centred horizontally on
-  a screen. The two HUDs differ only in their content, their anchor (`edgeInset(hudEdgeOffset 48)` for
+  a screen. The HUDs differ only in their content, their anchor (`edgeInset(hudEdgeOffset 48)` for
   the pill, `heightFraction(0.12)` for the box) and how long they dwell — so those are the presenter's
   three arguments. **It sizes its window from a local, never from `host.frame` after attaching the
   content view**: assigning a content view resizes it to the window's current content rect, which is

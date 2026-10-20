@@ -835,8 +835,10 @@ run ai-chat-test           Tinycast/Features/AI/Model/AIRequest.swift \
                            Tinycast/Features/AI/Model/AITool.swift \
                            Tinycast/Features/AI/Model/JSONValue.swift \
                            Tinycast/Features/AI/Model/ChatMessage.swift \
+                           Tinycast/Features/AI/Model/ChatToolDetail.swift \
                            Tinycast/Features/AI/Service/ChatToolUse+Localization.swift \
                            Tinycast/Features/AI/Model/ChatSession.swift \
+                           Tinycast/Features/AI/Model/Agent*.swift \
                            Tinycast/Features/AI/Model/ChatChoices.swift \
                            Tinycast/Features/AI/Model/ChatReferences.swift \
                            Tinycast/Features/AI/Model/ChatTitle.swift \
@@ -864,7 +866,9 @@ run chat-markdown-test     Tinycast/Platform/Appearance.swift \
                            Tinycast/Features/AI/Model/AITool.swift \
                            Tinycast/Features/AI/Model/JSONValue.swift \
                            Tinycast/Features/AI/Model/ChatMessage.swift \
+                           Tinycast/Features/AI/Model/ChatToolDetail.swift \
                            Tinycast/Features/AI/Service/ChatToolUse+Localization.swift \
+                           Tinycast/Features/AI/UI/ChatDiffText.swift \
                            Tinycast/Features/AI/Model/ChatChoices.swift \
                            Tinycast/Features/AI/Model/ChatReferences.swift \
                            Tinycast/Features/AI/Model/ChatCitations.swift \
@@ -896,6 +900,12 @@ run mcp-test               Tinycast/Features/Settings/AppSettingsKey.swift \
                            Tinycast/Features/MCP/Settings/MCPSettingsStore.swift \
                            Tinycast/Features/MCP/Service/MCPOAuth-Failure+Localization.swift \
                            Tinycast/Features/AI/Service/AIEndpointPolicy-ValidationError+Localization.swift
+run agent-test             Tinycast/Features/Settings/AppSettingsKey.swift \
+                           Tinycast/Features/AI/Model/*.swift \
+                           Tinycast/Features/AI/Service/AIEndpointPolicy-ValidationError+Localization.swift \
+                           Tinycast/Features/AI/Service/AIModelDiscovery-DiscoveryError+Localization.swift \
+                           Tinycast/Features/AI/Service/AIProviderError+Localization.swift \
+                           Tinycast/Features/AI/Service/ChatToolUse+Localization.swift
 run -O text-diff-test      Tinycast/Features/QuickActions/Model/TextDiffEngine.swift
 run index text-diff-performance Tinycast/Features/QuickActions/Model/TextDiffEngine.swift
 run quick-action-test      Tinycast/Features/Settings/AppSettingsKey.swift \
@@ -946,6 +956,8 @@ run mcp-oauth-test         Tinycast/Platform/ExecutableLocator.swift \
                            Tinycast/Features/AI/Model/AIProviderFailure.swift \
                            Tinycast/Features/AI/Model/AIThinkTagDecoder.swift \
                            Tinycast/Features/AI/Model/AIRequest.swift \
+                           Tinycast/Features/AI/Model/ChatMessage.swift \
+                           Tinycast/Features/AI/Model/ChatToolDetail.swift \
                            Tinycast/Features/AI/Service/AIProviderError+Localization.swift \
                            Tinycast/Features/AI/Model/JSONValue.swift \
                            Tinycast/Features/MCP/Model/*.swift \
@@ -963,6 +975,8 @@ run slow mcp-stdio-test    Tinycast/Platform/ExecutableLocator.swift \
                            Tinycast/Features/AI/Model/AIProviderFailure.swift \
                            Tinycast/Features/AI/Model/AIThinkTagDecoder.swift \
                            Tinycast/Features/AI/Model/AIRequest.swift \
+                           Tinycast/Features/AI/Model/ChatMessage.swift \
+                           Tinycast/Features/AI/Model/ChatToolDetail.swift \
                            Tinycast/Features/AI/Service/AIProviderError+Localization.swift \
                            Tinycast/Features/AI/Model/JSONValue.swift \
                            Tinycast/Features/MCP/Model/*.swift \

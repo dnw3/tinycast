@@ -176,6 +176,7 @@ private struct AIChatView: View {
                     status: chat.liveStatus,
                     usage: chat.usage,
                     surface: .palette,
+                    workingSince: chat.replyStartedAt,
                     onChoose: chat.isStreaming ? nil : onChoose)
             }
         }

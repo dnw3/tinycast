@@ -81,7 +81,9 @@ feature's doc, under its own `## Invariants`.
   a dark one only when the task is to change Dark. `AppAppearance` drives `NSApp.appearance`, and
   `.system` maps to `nil` so AppKit follows macOS on its own.
 - **Tinycast presents its own dialogs — never `NSAlert` or a system popover.** A question
-  goes through `DialogController`, a report through a HUD via `HUDPresenter`.
+  goes through `DialogController`, a report through a HUD via `HUDPresenter`. The one question asked
+  inline is an agent's approval in AI Chat: `AgentApprovalCard`, above the composer
+  ([ai.md](docs/features/ai.md#agent-mode)).
 - **A networked feature fetches on a private `.ephemeral`, `urlCache = nil` session**, never
   `URLSession.shared`, so its own cache file stays the only copy on disk. `CurrencyRateStore` is the
   reference — copy it rather than inventing a second shape. A flag that grants a capability is never

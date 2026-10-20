@@ -267,7 +267,8 @@ the tools and undoes the launch-level disabling, which is why it is not used. A 
 `mcpServer/elicitation/request`, decoded by `CodexElicitation` and answered `accept` or `decline`.
 The question names the tool by `_meta.tool_name` when Codex sends it, since the latest item started
 on that server is a different call whenever two run at once; only without it does that item's name
-stand in. Every other server request is declined as it always was. `item/started` and
+stand in. Every other server request is declined as it always was, except an agent turn's command
+and file-change approvals ([Agent mode](ai.md#agent-mode)). `item/started` and
 `item/completed` for an `mcpToolCall` become `.toolCall` and `.toolResult`.
 
 `ClaudeMCPLaunch` writes the same list as the CLI's own `mcpServers` record, into a file because
@@ -286,7 +287,7 @@ an allow rule `mcp__github` written for their own `github` server matches Tinyca
 source; both were verified against the real CLI with the allow rule and the bypass in the project's
 own settings. The reader's other settings — environment, proxy, `apiKeyHelper` — keep working,
 which `--setting-sources ""` would not have allowed. A `PreToolUse` hook that answers allow is the
-one thing this leaves open.
+one thing this leaves open; an agent turn closes it too, with `disableAllHooks`.
 
 `ClaudeControlProtocol` is the whole of that channel: `--permission-prompt-tool stdio` puts a
 `control_request` of subtype `can_use_tool` on stdout and takes a `control_response` of `allow`,
@@ -294,7 +295,8 @@ with the arguments untouched, or `deny` with a reason, on stdin. `updatedPermiss
 sent: it would have the CLI write its own settings, and only Tinycast's Settings may change a
 standing decision. Any other control request — a subtype Tinycast does not know, or a tool that is
 not one of its servers — gets the SDK's `error` response, because the CLI holds the turn until
-something answers. **It is the Agent SDK's wire format and is not documented for a host that is not
+something answers. The exception is an agent turn's question about one of Claude's own tools, which
+`ClaudeControlProtocol.agentRequest` hands to [Agent mode](ai.md#agent-mode). **It is the Agent SDK's wire format and is not documented for a host that is not
 the SDK**; a CLI release may change it, which is why everything about it is one type. The
 documented fallback is `--allowedTools "mcp__<handle>"` under `--permission-mode dontAsk`: the mode
 is what refuses every tool the list does not name, since an allow list alone denies nothing, and it

@@ -573,6 +573,32 @@
         }
       }
     },
+    "%@ needs your OK · %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@ needs your OK · %2$@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ 等待确认 · %2$@"
+          }
+        }
+      }
+    },
+    "%@ no longer has this chat's session. Send again to start a new one.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ 里已经没有这段对话的会话了。再发送一次即可开始新的会话。"
+          }
+        }
+      }
+    },
     "%@ of %@": {
       "localizations": {
         "zh-Hans": {
@@ -1161,6 +1187,16 @@
         }
       }
     },
+    "%@: an agent is waiting for you": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@：有 agent 在等待你确认"
+          }
+        }
+      }
+    },
     "%@: app %lld needs an “app” and a “display.id”": {
       "localizations": {
         "en": {
@@ -1434,6 +1470,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "%lld 个字符"
+          }
+        }
+      }
+    },
+    "%lld chats need your OK": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 个对话等待确认"
           }
         }
       }
@@ -1747,6 +1793,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "已勾选 %lld 个新扩展，勾选现有扩展可更新它。"
+          }
+        }
+      }
+    },
+    "%lld not allowed": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 个未允许"
           }
         }
       }
@@ -3660,6 +3716,16 @@
         }
       }
     },
+    "Allow": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "允许"
+          }
+        }
+      }
+    },
     "Allow Calendar Access…": {
       "localizations": {
         "zh-Hans": {
@@ -3677,6 +3743,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "请在系统设置中允许访问摄像头，或关闭摄像头后重试。"
+          }
+        }
+      }
+    },
+    "Allow Edits": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "允许直接修改"
           }
         }
       }
@@ -3948,6 +4024,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "另一个登录操作尚未完成，请先完成该操作。"
+          }
+        }
+      }
+    },
+    "Another window covers the capture region. Move it away, then choose Continue": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "另一个窗口挡住了截图区域。移开它，然后点“继续”"
           }
         }
       }
@@ -4439,6 +4525,16 @@
         }
       }
     },
+    "Ask First": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "询问"
+          }
+        }
+      }
+    },
     "Ask Quick AI": {
       "localizations": {
         "zh-Hans": {
@@ -4497,6 +4593,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "询问模式 · 仍使用你的 Cursor MCP 服务器"
+          }
+        }
+      }
+    },
+    "Asks before it edits files or runs commands": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "改文件、运行命令前先问你"
           }
         }
       }
@@ -4657,6 +4763,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "自动"
+          }
+        }
+      }
+    },
+    "Auto Edit": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自动编辑"
           }
         }
       }
@@ -5213,6 +5329,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "将图片前移"
+          }
+        }
+      }
+    },
+    "Bring the captured window to the front, then choose Continue": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "把被截取的窗口移到最前面，然后点“继续”"
           }
         }
       }
@@ -6041,6 +6167,16 @@
         }
       }
     },
+    "Capture Result": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "截图结果"
+          }
+        }
+      }
+    },
     "Capture Screenshot": {
       "extractionState": "manual",
       "localizations": {
@@ -6268,6 +6404,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "居中三分之二"
+          }
+        }
+      }
+    },
+    "Change ^[%lld file](inflect: true)": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "修改 %lld 个文件"
           }
         }
       }
@@ -6619,6 +6765,16 @@
         }
       }
     },
+    "Choose a folder for the agent to work in": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择 agent 工作的文件夹"
+          }
+        }
+      }
+    },
     "Choose a folder of Raycast script commands.": {
       "localizations": {
         "zh-Hans": {
@@ -6819,6 +6975,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "请在 AI 设置中选择默认模型。"
+          }
+        }
+      }
+    },
+    "Choose the folder the agent works in.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择 agent 工作的文件夹。"
           }
         }
       }
@@ -8558,17 +8724,6 @@
         }
       }
     },
-    "Could not align. Scroll back slightly, or select a region without fixed sidebars or scrollbars": {
-      "extractionState": "manual",
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "无法对齐。请稍向回滚动，或避开固定侧栏与滚动条重新选择区域。"
-          }
-        }
-      }
-    },
     "Could not connect to the local service. Start its app or check the socket path: %@": {
       "localizations": {
         "zh-Hans": {
@@ -8699,6 +8854,16 @@
         }
       }
     },
+    "Couldn't edit %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未能编辑 %@"
+          }
+        }
+      }
+    },
     "Couldn't enable text recognition for clipboard history.": {
       "localizations": {
         "zh-Hans": {
@@ -8769,12 +8934,32 @@
         }
       }
     },
+    "Couldn't read %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未能读取 %@"
+          }
+        }
+      }
+    },
     "Couldn't read %@.": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
             "value": "无法读取%@。"
+          }
+        }
+      }
+    },
+    "Couldn't run %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未能运行 %@"
           }
         }
       }
@@ -8795,6 +8980,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "无法保存房间"
+          }
+        }
+      }
+    },
+    "Couldn't search %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未能搜索 %@"
           }
         }
       }
@@ -8826,6 +9021,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "无法更新 %@。"
+          }
+        }
+      }
+    },
+    "Couldn't use %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未能使用 %@"
           }
         }
       }
@@ -9068,6 +9273,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "从头重新扫描所有范围。"
+          }
+        }
+      }
+    },
+    "Create": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "创建"
+          }
+        }
+      }
+    },
+    "Create %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新建 %@"
           }
         }
       }
@@ -9833,6 +10058,16 @@
         }
       }
     },
+    "Delete ^[%lld file](inflect: true)": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "删除 %lld 个文件"
+          }
+        }
+      }
+    },
     "Delete all chats?": {
       "localizations": {
         "zh-Hans": {
@@ -9859,6 +10094,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "直接删除可重建的项目"
+          }
+        }
+      }
+    },
+    "Delete · %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "删除 · %@"
           }
         }
       }
@@ -10067,6 +10312,56 @@
           "stringUnit": {
             "state": "translated",
             "value": "正在聆听"
+          }
+        }
+      }
+    },
+    "Didn't edit %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未修改 %@"
+          }
+        }
+      }
+    },
+    "Didn't read %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未读取 %@"
+          }
+        }
+      }
+    },
+    "Didn't run %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未运行 %@"
+          }
+        }
+      }
+    },
+    "Didn't search %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未搜索 %@"
+          }
+        }
+      }
+    },
+    "Didn't use %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未使用 %@"
           }
         }
       }
@@ -10720,6 +11015,16 @@
         }
       }
     },
+    "Earlier output wasn't kept": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更早的输出没有保留"
+          }
+        }
+      }
+    },
     "Earlier versions of Claude Code and Cursor’s agent. The current and newest stay.": {
       "localizations": {
         "zh-Hans": {
@@ -10884,12 +11189,52 @@
         }
       }
     },
+    "Edited %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已修改 %@"
+          }
+        }
+      }
+    },
+    "Editing %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在修改 %@"
+          }
+        }
+      }
+    },
     "Editor Caches": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
             "value": "编辑器缓存"
+          }
+        }
+      }
+    },
+    "Edits in “%@” go ahead unasked. Commands, deletions and outside edits still ask.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在“%@”里改文件不再逐个询问。运行命令、删除文件和文件夹外的修改仍会先问你。"
+          }
+        }
+      }
+    },
+    "Edits inside the folder; commands and deletions still ask": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件夹内直接改，运行命令和删除仍会先问你"
           }
         }
       }
@@ -14574,6 +14919,16 @@
         }
       }
     },
+    "In the AI Chat window, at the left edge. ⌘B keeps it shown.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 AI Chat 窗口中，指针移到左边缘即可滑出。按 ⌘B 可固定显示。"
+          }
+        }
+      }
+    },
     "In the menu, My Schedule and launcher search.": {
       "localizations": {
         "zh-Hans": {
@@ -16064,6 +16419,16 @@
         }
       }
     },
+    "Let the agent edit files without asking?": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "让 agent 直接改文件、不再逐个询问？"
+          }
+        }
+      }
+    },
     "Library": {
       "extractionState": "manual",
       "localizations": {
@@ -16454,6 +16819,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "有损"
+          }
+        }
+      }
+    },
+    "Lost the overlap. Scroll back a little to continue": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "接不上了，往回滚一点就能继续"
           }
         }
       }
@@ -17189,6 +17564,16 @@
         }
       }
     },
+    "Move %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移动 %@"
+          }
+        }
+      }
+    },
     "Move %@ down": {
       "localizations": {
         "zh-Hans": {
@@ -17779,6 +18164,16 @@
         }
       }
     },
+    "New file · %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新文件 · %@"
+          }
+        }
+      }
+    },
     "Next": {
       "localizations": {
         "zh-Hans": {
@@ -17964,6 +18359,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "没有可推出的磁盘"
+          }
+        }
+      }
+    },
+    "No Folder": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "不使用文件夹"
           }
         }
       }
@@ -18681,6 +19086,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "没有打开的窗口，输入应用名称即可添加"
+          }
+        }
+      }
+    },
+    "No output": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "没有输出"
           }
         }
       }
@@ -20500,6 +20915,16 @@
         }
       }
     },
+    "Or say what to do instead…": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "或者直接告诉它该怎么做…"
+          }
+        }
+      }
+    },
     "Organizer": {
       "localizations": {
         "zh-Hans": {
@@ -22055,7 +22480,23 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "已运行%@"
+            "value": "已运行 %@"
+          }
+        }
+      }
+    },
+    "Ran %@ · exit code %lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Ran %1$@ · exit code %2$lld"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已运行 %1$@ · 退出码 %2$lld"
           }
         }
       }
@@ -22131,6 +22572,46 @@
         }
       }
     },
+    "Read %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已读取 %@"
+          }
+        }
+      }
+    },
+    "Read Only": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "只读"
+          }
+        }
+      }
+    },
+    "Read outside the folder": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "读取文件夹外的内容"
+          }
+        }
+      }
+    },
+    "Reading %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在读取 %@"
+          }
+        }
+      }
+    },
     "Reading menu…": {
       "localizations": {
         "zh-Hans": {
@@ -22167,6 +22648,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "读取并替换其他应用中的所选文字。"
+          }
+        }
+      }
+    },
+    "Reads and searches; never changes anything": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "只看不改"
           }
         }
       }
@@ -22340,6 +22831,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "最近的对话"
+          }
+        }
+      }
+    },
+    "Recent Folders": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "最近的文件夹"
           }
         }
       }
@@ -23585,6 +24086,16 @@
         }
       }
     },
+    "Review Request in “%@”…": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "查看“%@”中的请求…"
+          }
+        }
+      }
+    },
     "Review first · Cleaned by %@ itself": {
       "localizations": {
         "zh-Hans": {
@@ -23965,6 +24476,16 @@
         }
       }
     },
+    "Run a command": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "运行命令"
+          }
+        }
+      }
+    },
     "Run as you in /bin/zsh, or the interpreter a #! line names. Use full executable paths.": {
       "localizations": {
         "zh-Hans": {
@@ -24001,6 +24522,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "运行中"
+          }
+        }
+      }
+    },
+    "Running %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在运行 %@"
           }
         }
       }
@@ -24536,16 +25067,6 @@
         }
       }
     },
-    "Scrolling Result": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "长截图结果"
-          }
-        }
-      }
-    },
     "Scrolling Screenshot": {
       "localizations": {
         "zh-Hans": {
@@ -25068,6 +25589,16 @@
         }
       }
     },
+    "Searched %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已搜索 %@"
+          }
+        }
+      }
+    },
     "Searched web": {
       "localizations": {
         "zh-Hans": {
@@ -25084,6 +25615,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "会在“下载”“桌面”“文稿”和“影片”中查找，不会预先勾选。"
+          }
+        }
+      }
+    },
+    "Searching %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在搜索 %@"
           }
         }
       }
@@ -25277,6 +25818,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "选择服务提供方"
+          }
+        }
+      }
+    },
+    "Select a region entirely inside the captured window": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选区需要完全落在被截取的窗口内"
           }
         }
       }
@@ -25860,6 +26411,16 @@
         }
       }
     },
+    "Show All %lld Lines": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "显示全部 %lld 行"
+          }
+        }
+      }
+    },
     "Show Apple menu items": {
       "extractionState": "manual",
       "localizations": {
@@ -25929,6 +26490,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "查看明细"
+          }
+        }
+      }
+    },
+    "Show Less": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "收起"
           }
         }
       }
@@ -26553,6 +27124,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "睡眠"
+          }
+        }
+      }
+    },
+    "Slide out a hidden sidebar": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "滑出隐藏的侧边栏"
           }
         }
       }
@@ -28097,6 +28679,16 @@
         }
       }
     },
+    "The agent works in %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "agent 在 %@ 里工作"
+          }
+        }
+      }
+    },
     "The app this quicklink opens with isn't installed any more.": {
       "extractionState": "manual",
       "localizations": {
@@ -28169,6 +28761,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "截图不完整或已损坏。"
+          }
+        }
+      }
+    },
+    "The captured window is unavailable. Select a region again": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "被截取的窗口已不可用，请重新选择区域"
+          }
+        }
+      }
+    },
+    "The captured window moved. Move it back, or select a region again": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "被截取的窗口移动了。把它移回原处，或重新选择区域"
           }
         }
       }
@@ -31592,6 +32204,16 @@
         }
       }
     },
+    "Use %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用 %@"
+          }
+        }
+      }
+    },
     "Use Command": {
       "localizations": {
         "zh-Hans": {
@@ -31770,6 +32392,16 @@
         }
       }
     },
+    "Used %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已使用 %@"
+          }
+        }
+      }
+    },
     "Uses %@": {
       "localizations": {
         "zh-Hans": {
@@ -31786,6 +32418,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "使用此 Mac 上已登录的 %@ 命令，不会保存其密钥。"
+          }
+        }
+      }
+    },
+    "Using %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在使用 %@"
           }
         }
       }
@@ -31981,6 +32623,16 @@
         }
       }
     },
+    "View": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "查看"
+          }
+        }
+      }
+    },
     "Virtual Machines": {
       "localizations": {
         "zh-Hans": {
@@ -32075,6 +32727,76 @@
           "stringUnit": {
             "state": "translated",
             "value": "正在等待登录…"
+          }
+        }
+      }
+    },
+    "Waiting for you": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "等待你确认"
+          }
+        }
+      }
+    },
+    "Waiting for your approval: %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "等待你确认：%@"
+          }
+        }
+      }
+    },
+    "Waiting to edit %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "等待修改 %@"
+          }
+        }
+      }
+    },
+    "Waiting to read %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "等待读取 %@"
+          }
+        }
+      }
+    },
+    "Waiting to run %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "等待运行 %@"
+          }
+        }
+      }
+    },
+    "Waiting to search %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "等待搜索 %@"
+          }
+        }
+      }
+    },
+    "Waiting to use %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "等待使用 %@"
           }
         }
       }
@@ -32985,6 +33707,16 @@
         }
       }
     },
+    "edited ^[%lld file](inflect: true)": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "修改了 %lld 个文件"
+          }
+        }
+      }
+    },
     "github.com/abue-ammar/tinycast": {
       "shouldTranslate": false
     },
@@ -33346,6 +34078,26 @@
     "px": {
       "shouldTranslate": false
     },
+    "ran ^[%lld command](inflect: true)": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "运行了 %lld 条命令"
+          }
+        }
+      }
+    },
+    "read ^[%lld file](inflect: true)": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "读取了 %lld 个文件"
+          }
+        }
+      }
+    },
     "room": {
       "extractionState": "manual",
       "localizations": {
@@ -33380,6 +34132,16 @@
     "sRGB": {
       "extractionState": "manual",
       "shouldTranslate": false
+    },
+    "searched ^[%lld time](inflect: true)": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索了 %lld 次"
+          }
+        }
+      }
     },
     "settings pane": {
       "extractionState": "manual",
@@ -33498,6 +34260,16 @@
         }
       }
     },
+    "used ^[%lld tool](inflect: true)": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用了 %lld 个工具"
+          }
+        }
+      }
+    },
     "xhigh": {
       "extractionState": "manual",
       "localizations": {
@@ -33590,12 +34362,48 @@
         }
       }
     },
+    "“%@” didn't finish": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“%@”未能完成"
+          }
+        }
+      }
+    },
     "“%@” has a value Tinycast can't use": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
             "value": "“%@”的值无法用于 Tinycast"
+          }
+        }
+      }
+    },
+    "“%@” is done": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“%@”已完成"
+          }
+        }
+      }
+    },
+    "“%@” is done · %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "“%1$@” is done · %2$@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“%1$@”已完成 · %2$@"
           }
         }
       }

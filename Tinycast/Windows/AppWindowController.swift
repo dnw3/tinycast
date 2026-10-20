@@ -17,7 +17,8 @@ final class AppWindowController: NSObject, NSWindowDelegate {
     private let minimumSize: CGSize
     private let isResizable: Bool
     private let autosaveName: String?
-    private let activation: ActivationPolicy
+    /// `nil` keeps Tinycast an accessory while the window is open: no Dock icon, no ⌘Tab entry.
+    private let activation: ActivationPolicy?
     private let closesOnEscape: Bool
     private var window: NSWindow?
     /// Rebuilt with the window, so a chrome's state never outlives the window it decorated.
@@ -26,7 +27,7 @@ final class AppWindowController: NSObject, NSWindowDelegate {
     /// The opening size is also the resize floor unless a smaller `minimumSize` is named.
     init(
         title: String, contentSize: CGSize, minimumSize: CGSize? = nil, resizable: Bool = false,
-        autosaveName: String? = nil, activation: ActivationPolicy, closesOnEscape: Bool = false
+        autosaveName: String? = nil, activation: ActivationPolicy?, closesOnEscape: Bool = false
     ) {
         self.title = title
         self.contentSize = contentSize
@@ -61,7 +62,7 @@ final class AppWindowController: NSObject, NSWindowDelegate {
         let window = makeWindow(content: contentViewController(), chrome: chrome)
         self.chrome = chrome
         self.window = window
-        activation.windowDidOpen(window)
+        activation?.windowDidOpen(window)
         raise(window)
         return true
     }
@@ -76,6 +77,12 @@ final class AppWindowController: NSObject, NSWindowDelegate {
 
     func close() {
         window?.close()
+    }
+
+    /// Hung from the window as a sheet, so a panel picked from its menus can never open behind it.
+    func runSheet(_ panel: NSSavePanel) async -> NSApplication.ModalResponse {
+        guard let window else { return panel.runModal() }
+        return await panel.beginSheetModal(for: window)
     }
 
     /// The title bar sits inside the frame but outside the layout area, so it is added back.
@@ -98,7 +105,7 @@ final class AppWindowController: NSObject, NSWindowDelegate {
         guard let window else { return }
         self.window = nil
         self.chrome = nil
-        activation.windowDidClose(window)
+        activation?.windowDidClose(window)
     }
 
     // MARK: - Private

@@ -151,8 +151,11 @@ enum AIStreamEvent: Equatable, Sendable {
     /// What a transport emits; the loop consumes it and never passes it on to the transcript.
     case toolCallRequested(AIToolCall)
     /// What the loop emits in its place, already carrying what a row has to show.
-    case toolCall(id: String, origin: String, title: String)
-    case toolResult(id: String, isError: Bool)
+    case toolCall(
+        id: String, origin: String, title: String, kind: ChatToolUse.Kind? = nil,
+        detail: ChatToolDetail? = nil)
+    /// `output` and `exitCode` are an agent's step's; a server's call reports neither.
+    case toolResult(id: String, isError: Bool, output: String? = nil, exitCode: Int? = nil)
     case usage(AIUsage)
     case finished
 }

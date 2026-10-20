@@ -10,10 +10,16 @@ final class ChatGPTSubscriptionManager {
 
     private let client: CodexAppServerClient
     let turns: CodexTurnRunner
+    /// An agent's helper keeps its shell tool, so a plain chat never runs on one that has it.
+    private let agentClient: CodexAppServerClient
+    let agentTurns: CodexTurnRunner
     /// Forwarded to the app-server's launch; a change takes effect at its next start.
     @ObservationIgnored var launchSettings: () -> InstalledAILaunch {
         get { client.launchSettings }
-        set { client.launchSettings = newValue }
+        set {
+            client.launchSettings = newValue
+            agentClient.launchSettings = newValue
+        }
     }
 
     private(set) var phase = ChatGPTSubscription.Phase.idle
@@ -25,12 +31,15 @@ final class ChatGPTSubscriptionManager {
 
     @ObservationIgnored private var operationTask: Task<Void, Never>?
     @ObservationIgnored private var idleTask: Task<Void, Never>?
+    @ObservationIgnored private var agentIdleTask: Task<Void, Never>?
 
     init(supportDirectory: URL = AppPaths.applicationSupport()) {
         let root = supportDirectory.appending(path: "InstalledAI/Codex", directoryHint: .isDirectory)
-        client = CodexAppServerClient(
-            workspace: root.appending(path: "Workspace", directoryHint: .isDirectory))
+        let workspace = root.appending(path: "Workspace", directoryHint: .isDirectory)
+        client = CodexAppServerClient(workspace: workspace)
         turns = CodexTurnRunner(client: client)
+        agentClient = CodexAppServerClient(workspace: workspace, runsCommands: true)
+        agentTurns = CodexTurnRunner(client: agentClient, runsAgents: true)
         turns.connect = { [weak self] servers in
             guard let self else { throw CancellationError() }
             try await self.ensureConnected(toolServers: servers)
@@ -44,6 +53,21 @@ final class ChatGPTSubscriptionManager {
             self?.forget()
             self?.phase = .failed(message)
         }
+        agentTurns.connect = { [weak self] servers in
+            guard let self else { throw CancellationError() }
+            try await self.ensureAgentConnected(toolServers: servers)
+            return self.models
+        }
+        agentTurns.onTurnEnded = { [weak self] in self?.agentTurnDidEnd() }
+        agentClient.onNotification = { [weak self] method, params in
+            guard let self else { return }
+            if method == "account/updated" {
+                self.handleNotification(method: method, params: params)
+            } else {
+                self.agentTurns.handle(method: method, params: params)
+            }
+        }
+        agentClient.onExit = { [weak self] _ in self?.agentTurns.reset() }
     }
 
     var account: ChatGPTSubscription.Account? {
@@ -68,16 +92,26 @@ final class ChatGPTSubscriptionManager {
         forget()
         phase = .idle
         idleTask?.cancel()
+        agentIdleTask?.cancel()
         client.stop()
+        agentClient.stop()
     }
 
     /// A helper launched with a server no longer offered stops now, not ten idle minutes later.
     func dropWithdrawnServers(keeping offered: Set<String>) {
-        guard !turns.isActive, client.toolServers.contains(where: { !offered.contains($0.handle) })
-        else { return }
-        idleTask?.cancel()
-        turns.reset()
-        client.stop()
+        let withdrawn = { (helper: CodexAppServerClient) in
+            helper.toolServers.contains(where: { !offered.contains($0.handle) })
+        }
+        if !turns.isActive, withdrawn(client) {
+            idleTask?.cancel()
+            turns.reset()
+            client.stop()
+        }
+        if !agentTurns.isActive, withdrawn(agentClient) {
+            agentIdleTask?.cancel()
+            agentTurns.reset()
+            agentClient.stop()
+        }
     }
 
     /// What a turn needs before it starts: a running server and confirmed access.
@@ -86,15 +120,42 @@ final class ChatGPTSubscriptionManager {
         // A changed list relaunches, since it is fixed at exec; access outlives the process.
         try await client.start(toolServers: toolServers)
         guard access == nil else { return }
-        guard try await verifyAccess() else {
+        guard try await verifyAccess(on: client) else {
+            throw AIProviderError.unavailable(
+                String(localized: "Sign in with `codex login`, then check Codex again."))
+        }
+    }
+
+    private func ensureAgentConnected(toolServers: [AIToolServer]) async throws {
+        agentIdleTask?.cancel()
+        try await agentClient.start(toolServers: toolServers)
+        guard access == nil else { return }
+        guard try await verifyAccess(on: agentClient) else {
             throw AIProviderError.unavailable(
                 String(localized: "Sign in with `codex login`, then check Codex again."))
         }
     }
 
     private func turnDidEnd() {
-        Task { [weak self] in await self?.loadRateLimits() }
+        Task { [weak self] in
+            guard let self else { return }
+            await self.loadRateLimits(on: self.client)
+        }
         scheduleIdleShutdown()
+    }
+
+    private func agentTurnDidEnd() {
+        Task { [weak self] in
+            guard let self else { return }
+            await self.loadRateLimits(on: self.agentClient)
+        }
+        agentIdleTask?.cancel()
+        agentIdleTask = Task { [weak self] in
+            try? await Task.sleep(for: Self.idleShutdown)
+            guard !Task.isCancelled, let self, !self.agentTurns.isActive else { return }
+            self.agentTurns.reset()
+            self.agentClient.stop()
+        }
     }
 
     @discardableResult
@@ -114,7 +175,7 @@ final class ChatGPTSubscriptionManager {
         do {
             try await client.startForCheck()
             executable = client.executable
-            guard try await verifyAccess() else { return }
+            guard try await verifyAccess(on: client) else { return }
             scheduleIdleShutdown()
         } catch {
             apply(error)
@@ -122,14 +183,14 @@ final class ChatGPTSubscriptionManager {
     }
 
     /// A check and a turn reach the same verdict, so neither leaves a signed-out server running.
-    private func verifyAccess() async throws -> Bool {
-        guard try await restoreAccess() else {
+    private func verifyAccess(on helper: CodexAppServerClient) async throws -> Bool {
+        guard try await restoreAccess(on: helper) else {
             phase = .signedOut
-            client.stop()
+            helper.stop()
             return false
         }
         phase = .connected
-        await loadModelsAndLimits()
+        await loadModelsAndLimits(on: helper)
         return true
     }
 
@@ -144,9 +205,9 @@ final class ChatGPTSubscriptionManager {
         }
     }
 
-    private func loadModelsAndLimits() async {
+    private func loadModelsAndLimits(on helper: CodexAppServerClient) async {
         do {
-            let response = try await client.request(
+            let response = try await helper.request(
                 method: "model/list", params: ["includeHidden": false, "limit": 100])
             models = (response["data"]?.arrayValue ?? []).compactMap { value in
                 guard let raw = value.objectValue, let id = raw["model"]?.stringValue else {
@@ -170,12 +231,12 @@ final class ChatGPTSubscriptionManager {
         } catch {
             models = []
         }
-        await loadRateLimits()
+        await loadRateLimits(on: helper)
     }
 
-    private func loadRateLimits() async {
+    private func loadRateLimits(on helper: CodexAppServerClient) async {
         do {
-            let response = try await client.request(method: "account/rateLimits/read")
+            let response = try await helper.request(method: "account/rateLimits/read")
             guard let limits = response["rateLimits"]?.objectValue else {
                 rateLimits = nil
                 return
@@ -200,8 +261,8 @@ final class ChatGPTSubscriptionManager {
             })
     }
 
-    private func restoreAccess() async throws -> Bool {
-        let response = try await client.request(
+    private func restoreAccess(on helper: CodexAppServerClient) async throws -> Bool {
+        let response = try await helper.request(
             method: "account/read", params: ["refreshToken": false])
         if let rawAccount = response["account"]?.objectValue {
             let type = rawAccount["type"]?.stringValue ?? "unknown"
@@ -232,6 +293,7 @@ final class ChatGPTSubscriptionManager {
         models = []
         rateLimits = nil
         turns.reset()
+        agentTurns.reset()
     }
 
     private func apply(_ error: Error) {
@@ -263,8 +325,10 @@ struct CodexInstalledProvider: AIProvider {
     let effort: String?
     /// Set only by chat: a quick action has nothing to call and arms no server.
     var toolServers: AIToolServerSession?
+    /// Set only by an agent chat, whose `turns` is the helper that keeps a shell.
+    var agent: AgentSession?
 
     func stream(_ request: AIRequest) -> AIProviderStream {
-        turns.stream(request, model: model, effort: effort, toolServers: toolServers)
+        turns.stream(request, model: model, effort: effort, toolServers: toolServers, agent: agent)
     }
 }

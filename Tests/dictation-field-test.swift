@@ -266,12 +266,13 @@ struct DictationFieldTest {
         let dictation: DictationCoordinator
         @State private var handle = ComposerTextViewHandle()
         @State private var targeted = false
+        @State private var composing = false
 
         var body: some View {
             @Bindable var chat = chat
             ChatComposerTextView(
                 text: $chat.text, focusKey: chat.id, maximumTextHeight: 180, handle: handle,
-                isFileDragTargeted: $targeted, onDropFiles: { _ in },
+                isFileDragTargeted: $targeted, isComposing: $composing, onDropFiles: { _ in },
                 onInvalidate: { dictation.cancel(in: $0) }, onSubmit: {})
         }
     }

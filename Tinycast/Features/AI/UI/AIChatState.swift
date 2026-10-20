@@ -4,9 +4,22 @@ import Observation
 @MainActor
 @Observable
 final class AIChatState {
-    private(set) var session = ChatSession()
+    private(set) var session = ChatSession() {
+        didSet { if session.id != oldValue.id { agentGrants = AgentGrants() } }
+    }
     private(set) var isStreaming = false
+    /// What an agent is waiting on, shown above the composer; any others wait behind it.
+    private(set) var pendingApproval: AgentApprovalRequest?
+    /// The card's place among questions asked since the queue was last empty, as in "2 / 3".
+    private(set) var approvalPosition = (index: 0, count: 0)
+    @ObservationIgnored private var approvals: [
+        (request: AgentApprovalRequest, reply: CheckedContinuation<AgentApprovalDecision, Never>)
+    ] = []
+    /// What the reader allowed for the rest of this chat; never stored, never told to a CLI.
+    @ObservationIgnored private(set) var agentGrants = AgentGrants()
     private(set) var isThinking = false
+    /// When the reply in flight began, so an agent's status can say how long it has worked.
+    private(set) var replyStartedAt: Date?
     private(set) var notice: String?
     /// Files staged for the next message; they go out with whatever is typed next.
     private(set) var pendingAttachments: [ChatAttachment] = []
@@ -26,8 +39,8 @@ final class AIChatState {
     @ObservationIgnored private var pendingReasoning = ""
     /// When the reply's latest stretch of thinking began, so its fold can say for how long.
     @ObservationIgnored private var reasoningStartedAt: Date?
-    /// Told when a reply ends whole, which is when a chat has something to be named by.
-    @ObservationIgnored var onReplyFinished: (@MainActor (AIChatState) -> Void)?
+    /// Told how a reply ended on its own, complete or failed; one the reader stops never reports.
+    @ObservationIgnored var onReplyEnded: (@MainActor (AIChatState, ChatMessage.State) -> Void)?
     @ObservationIgnored private var flushTask: Task<Void, Never>?
     @ObservationIgnored private var lastFlush = ContinuousClock().now
 
@@ -64,6 +77,77 @@ final class AIChatState {
         history.setModel(model, id: session.id)
     }
 
+    /// A new folder is a new place to work: the CLI's session and this chat's grants stay behind.
+    func setAgent(_ workspace: AgentWorkspace?) {
+        if session.agent?.folder != workspace?.folder {
+            session.agentThread = nil
+            agentGrants = AgentGrants()
+        }
+        session.agent = workspace
+        history.setAgent(workspace, thread: session.agentThread, id: session.id)
+    }
+
+    func setAgentThread(_ thread: AgentThread?) {
+        session.agentThread = thread
+        history.setAgent(session.agent, thread: thread, id: session.id)
+    }
+
+    /// One question at a time, in the order the agent asked them.
+    func requestApproval(_ request: AgentApprovalRequest) async -> AgentApprovalDecision {
+        await withCheckedContinuation { reply in
+            approvals.append((request, reply))
+            if pendingApproval == nil { pendingApproval = request }
+            approvalPosition.count += 1
+        }
+    }
+
+    func answerApproval(_ decision: AgentApprovalDecision) {
+        guard !approvals.isEmpty else { return }
+        let answered = approvals.removeFirst()
+        if decision == .allowForChat, let workspace = session.agent {
+            agentGrants.record(answered.request, in: workspace)
+        }
+        answered.reply.resume(returning: decision)
+        if !decision.allows { decline(answered.request.id) }
+        approvalPosition.index += 1
+        // A grant just given may cover what was waiting behind it.
+        while let next = approvals.first, let workspace = session.agent,
+            agentGrants.covers(next.request, in: workspace)
+        {
+            approvals.removeFirst().reply.resume(returning: .allow)
+            approvalPosition.index += 1
+        }
+        pendingApproval = approvals.first?.request
+        if approvals.isEmpty { approvalPosition = (0, 0) }
+    }
+
+    /// A turn that ends, or is stopped, leaves nothing waiting for an answer it will never use.
+    private func refuseApprovals() {
+        let waiting = approvals
+        approvals = []
+        pendingApproval = nil
+        approvalPosition = (0, 0)
+        for item in waiting {
+            item.reply.resume(returning: .deny)
+            decline(item.request.id)
+        }
+    }
+
+    /// An approval's ID is its call's, so the row says it never ran rather than that it failed.
+    private func decline(_ callID: String) {
+        guard var message = session.messages.last, message.role == .assistant,
+            let index = message.toolUses.lastIndex(where: { $0.callID == callID }),
+            message.toolUses[index].state == .running
+        else { return }
+        message.toolUses[index].state = .declined
+        session.replaceLast(with: message)
+    }
+
+    /// The reply in flight, awaited by a redirect before it sends what the reader typed instead.
+    func replyEnded() async {
+        await replyTask?.value
+    }
+
     /// Asks again for the last reply; the question and its attachments go out as they first did.
     @discardableResult
     func regenerate(
@@ -89,6 +173,7 @@ final class AIChatState {
         session.append(ChatMessage(role: .assistant, text: "", state: .streaming))
         isStreaming = true
         isThinking = false
+        replyStartedAt = Date()
         reasoningStartedAt = nil
         history.save(session)
 
@@ -156,6 +241,7 @@ final class AIChatState {
     }
 
     func cancel() {
+        refuseApprovals()
         replyGeneration += 1
         replyTask?.cancel()
         replyTask = nil
@@ -163,7 +249,7 @@ final class AIChatState {
             discardPendingText()
             return
         }
-        finishLast(state: .failed, fallback: "Cancelled")
+        finishLast(state: .failed, fallback: "Cancelled", reports: false)
     }
 
     func startNewChat() {
@@ -243,19 +329,23 @@ final class AIChatState {
             }
             message.searches = message.searches.map { Self.completed($0) }
             session.replaceLast(with: message)
-        case .toolCall(let id, let origin, let title):
+        case .toolCall(let id, let origin, let title, let kind, let detail):
             flushPendingText()
             guard var message = session.messages.last, message.role == .assistant else { return }
             isThinking = false
             message.toolUses.append(
                 ChatToolUse(
                     callID: id, origin: origin, title: title, state: .running,
-                    textOffset: message.text.count, sequence: message.nextSequence))
+                    textOffset: message.text.count, sequence: message.nextSequence, kind: kind,
+                    detail: detail))
             session.replaceLast(with: message)
-        case .toolResult(let id, let isError):
+        case .toolResult(let id, let isError, let output, let exitCode):
             guard var message = session.messages.last, message.role == .assistant else { return }
-            guard let index = message.toolUses.lastIndex(where: { $0.callID == id }) else { return }
+            guard let index = message.toolUses.lastIndex(where: { $0.callID == id }),
+                message.toolUses[index].state != .declined || !isError
+            else { return }
             message.toolUses[index].state = isError ? .failed : .completed
+            message.toolUses[index].detail?.record(output: output, exitCode: exitCode)
             session.replaceLast(with: message)
         case .toolCallRequested:
             break
@@ -313,7 +403,7 @@ final class AIChatState {
         pendingReasoning = ""
     }
 
-    private func finishLast(state: ChatMessage.State, fallback: String) {
+    private func finishLast(state: ChatMessage.State, fallback: String, reports: Bool = true) {
         flushPendingText()
         discardPendingText()
         guard var message = session.messages.last, message.role == .assistant else { return }
@@ -329,10 +419,12 @@ final class AIChatState {
         message.toolUses = message.toolUses.map { Self.settled($0) }
         session.replaceLast(with: message)
         history.save(session)
+        refuseApprovals()
         isStreaming = false
         isThinking = false
+        replyStartedAt = nil
         replyTask = nil
-        if state == .complete { onReplyFinished?(self) }
+        if reports { onReplyEnded?(self, state) }
     }
 
     /// Thinking after answer text is a new stretch, pinned where the answer paused for it.

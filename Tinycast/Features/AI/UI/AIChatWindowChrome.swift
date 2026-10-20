@@ -12,17 +12,23 @@ final class AIChatWindowChrome: NSObject, WindowChrome, NSToolbarDelegate, NSSea
     private let coordinator: AIChatCoordinator
     private let chats: AIChatSurfacesState
     private let find: ChatFindState
+    private let peek: AIChatSidebarPeek
     private weak var window: NSWindow?
     private var keyMonitor: Any?
     private let searchItem: NSSearchToolbarItem
     private let actionsButton: NSButton
+    private var sidebarItem: NSToolbarItem?
 
     private var chat: AIChatState { chats.window }
 
-    init(coordinator: AIChatCoordinator, chats: AIChatSurfacesState, find: ChatFindState) {
+    init(
+        coordinator: AIChatCoordinator, chats: AIChatSurfacesState, find: ChatFindState,
+        peek: AIChatSidebarPeek
+    ) {
         self.coordinator = coordinator
         self.chats = chats
         self.find = find
+        self.peek = peek
         searchItem = NSSearchToolbarItem(itemIdentifier: Self.search)
         actionsButton = NSButton(
             image: NSImage(
@@ -68,6 +74,7 @@ final class AIChatWindowChrome: NSObject, WindowChrome, NSToolbarDelegate, NSSea
 
         installKeyMonitor()
         observeTitle()
+        observeSidebarBadge()
     }
 
     // MARK: - NSToolbarDelegate
@@ -89,10 +96,13 @@ final class AIChatWindowChrome: NSObject, WindowChrome, NSToolbarDelegate, NSSea
     ) -> NSToolbarItem? {
         switch identifier {
         case Self.sidebar:
-            return button(
+            let item = button(
                 identifier, symbol: "sidebar.left", label: String(localized: "Sidebar"),
                 toolTip: String(localized: "Show or Hide Sidebar") + "  ⌘B",
                 action: #selector(toggleSidebar))
+            item.showsIndicator = sidebarIndicates
+            sidebarItem = item
+            return item
         case Self.newChat:
             return button(
                 identifier, symbol: "square.and.pencil", label: String(localized: "New Chat"),
@@ -171,6 +181,21 @@ final class AIChatWindowChrome: NSObject, WindowChrome, NSToolbarDelegate, NSSea
         }
     }
 
+    /// Lit on the button that brings back the rows a waiting chat's dot is on.
+    private var sidebarIndicates: Bool {
+        chats.waiting.contains { $0 !== chat } && peek.isCollapsed && !peek.isShown
+    }
+
+    /// Read before the item is, so a toolbar not yet built still arms the observation.
+    private func observeSidebarBadge() {
+        withObservationTracking {
+            let indicates = sidebarIndicates
+            sidebarItem?.showsIndicator = indicates
+        } onChange: { [weak self] in
+            Task { @MainActor in self?.observeSidebarBadge() }
+        }
+    }
+
     /// The Actions menu's chords work with it closed too, so the window claims them before AppKit.
     private func installKeyMonitor() {
         keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
@@ -182,6 +207,11 @@ final class AIChatWindowChrome: NSObject, WindowChrome, NSToolbarDelegate, NSSea
     }
 
     private func handle(_ event: NSEvent, in window: NSWindow) -> Bool {
+        // Before the sidebar's own field or the window can take it: a slid-out sidebar slides back.
+        if event.keyCode == 53, peek.isShown {
+            peek.hide()
+            return true
+        }
         let modifiers = event.modifierFlags.intersection([.command, .option, .control, .shift])
         let key = (ASCIIKeyboardLayout.character(for: event) ?? event.charactersIgnoringModifiers)?
             .lowercased()

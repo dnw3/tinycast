@@ -86,8 +86,8 @@ bottom with the model picker. ⌘J hands a Quick AI conversation to the window.
   text offset, so `segments` places it where it happened, like a search or a tool call; each block
   is timed until the answer resumes. The transcript folds each under "Thought for Ns", drawing
   `ChatReasoning.displayText` — the stored text without the blank lines a route closes it with;
-  `message_thinking` keeps them; `requestMessages` never sends them back. A route that only says
-  it is thinking still just shows "Thinking…". How much there is to read is the route's call:
+  `message_thinking` keeps them; `requestMessages` never sends them back. A live fold is titled
+  by its summary's bolded heading where Codex writes one. How much there is to read is the route's call:
   Claude streams full summaries, while Grok's CLI sends a line or two in the clear and the rest of
   its reasoning encrypted, so a Grok fold is short by design, not by truncation. An OpenAI-shaped
   route also counts a `<think>…</think>` block that opens its content, and only there, so a
@@ -160,6 +160,8 @@ bottom with the model picker. ⌘J hands a Quick AI conversation to the window.
   launch that cannot read the reader's list, or cannot address a name on it, does not start. A turn
   that arms none keeps `approvalPolicy: "never"`; a turn that arms some uses `"untrusted"`, where
   a tool call becomes an elicitation Tinycast answers from the reader's own trust setting.
+  A chat with a folder runs on a second app-server, launched the same way but keeping the shell
+  tool, under its own sandbox and approvals; see [Agent mode](#agent-mode).
 - **Tool calling is a decorator, except where the CLI is the client.** `AIToolLoopProvider` wraps a
   route and re-streams the turn until the model stops asking, so a route with no tools behaves
   exactly as it did and `AIChatState` reduces one more pair of events. Codex and the Claude command
@@ -190,7 +192,7 @@ bottom with the model picker. ⌘J hands a Quick AI conversation to the window.
   bodies are `AIRequestBody`'s, in `Model/`, precisely so a wrong shape fails a harness rather than a
   conversation.
 - **Grok, OpenCode and Cursor are text transports, not agents, and so is Claude with no server to
-  run.** Claude runs one turn with no tools, browser integration, slash commands or persisted
+  run and no folder.** Claude runs one turn with no tools, browser integration, slash commands or persisted
   session — but never `--bare`, which reads neither
   OAuth nor the keychain and so refuses the very sign-in this route reuses. Given servers by
   [MCP](mcp.md) it becomes an agent for that turn and only over those: `--tools ""` still withholds
@@ -198,7 +200,8 @@ bottom with the model picker. ⌘J hands a Quick AI conversation to the window.
   `--disallowedTools "*"` comes off because it removes the MCP tools too, `--max-turns` carries
   the round cap instead of the constant 1, or is left out on Unlimited, and
   `--permission-mode default` with an ask rule per server keeps the reader's own allow rules and
-  default mode from answering before Tinycast does.
+  default mode from answering before Tinycast does. Given a folder it runs as
+  [Agent mode](#agent-mode) describes instead.
   Grok runs with `--deny *`,
   `dontAsk` permissions and a workspace sandbox, and never `--always-approve`, so a user's always-approve
   config cannot arm tools for this route. OpenCode 2 runs `--standalone`, so its private server
@@ -224,6 +227,13 @@ bottom with the model picker. ⌘J hands a Quick AI conversation to the window.
   its display to `omitted` unless one is named explicitly, and the `showThinkingSummaries` setting
   is read only by an interactive session. Without it Sonnet and Opus stream every thinking block
   empty, so the fold would show one opening line.
+- **An agent works only in its chat's folder, and asks Tinycast before it changes anything.** A
+  Codex or Claude chat given a folder (`ChatSession.agent`, an `AgentWorkspace` of folder and
+  `AgentMode`) runs agent turns with the CLI's own tools; see [Agent mode](#agent-mode). Every
+  question the CLI asks goes to `AgentApprovalPolicy` first and, when it is the reader's call, to
+  the card above the composer. A delete is asked about every time, in every mode. Allow This Chat is
+  `AgentGrants` on `AIChatState`: never stored and never written into a CLI's settings, so it holds
+  for that chat, that folder and that run of the app only. Quick AI never runs an agent turn.
 - **A conversation is live in one place at a time.** `AIChatSurfacesState` holds Quick AI's
   `AIChatState`, the window's, and any window chat left mid-reply. Opening a chat anywhere takes the
   live state from wherever it already is — ⌘J moves Quick AI's whole state object, reply, staged
@@ -285,6 +295,9 @@ bottom with the model picker. ⌘J hands a Quick AI conversation to the window.
   upserted on its own so no write clobbers another; `message_details` is its per-message twin, for a
   question's `@server` scope and a reply's usage. Both tables are `CREATE TABLE IF NOT EXISTS` with
   `ON DELETE CASCADE`, so they needed no migration and a deleted chat takes its facts with it.
+  `conversation_agents` (a chat's folder, mode and CLI session), `message_tool_kinds` (an agent
+  step's kind) and `message_tool_details` (what a step was given and gave back) are built the same
+  way.
 - **Pinned chats are the ones asked to be kept.** Retention skips them, and so does Delete All Chats
   — which says so in its confirmation — the way a clipboard clear keeps its pins.
 - **Retention is enforced only while AI is on.** `Keep conversations` prunes on the enable transition
@@ -397,6 +410,13 @@ a debug description written for a log, so each case maps to a plain sentence ins
 
 ## Chat surfaces
 
+While a reply is in flight, in Quick AI and the window alike, its last line says what it is doing
+and for how long: a spinner, "Working…" — or "Thinking…" while the route says it is thinking without
+sharing the thought — and the time since the reply began (`replyStartedAt`), ticking each second.
+The line steps aside while something else visibly moves: a running tool, a thought or a search
+still arriving (`ChatMessage.tailShowsProgress`), or answer text, unless thinking resumed under it.
+Every Codex turn asks for `summary: "auto"`; without it the app-server announces no reasoning at all.
+
 ### Quick AI
 
 The built-in `Quick AI` launcher command enters `AIScreen`, and carries a bindable global shortcut
@@ -427,7 +447,10 @@ already holds it, and Continue in AI Chat (`⌘J`) takes it to the window either
 
 The `AI Chat` command (`command:ai-chat-window`, `HotKeyAction.command(.aiChat)`) opens a titled
 `AppWindowController` window owned by `AIChatCoordinator`, autosaved as `AIChatWindow`, and closes it
-again when it is already key, the way Escape does. It is built the way Settings is — an
+again when it is already key, the way Escape does. Unlike Settings it never makes Tinycast a Dock app
+(`activation: nil`), so it has no Dock icon or ⌘Tab entry: summoned from a full-screen app it floats
+over that app's Space, and a regular app's input-method candidates — drawn in Tinycast's own process —
+cannot reach another app's full-screen Space, so typing Chinese there showed marked text with no candidates. It is built the way Settings is — an
 `AIChatSplitViewController` with a native sidebar item, here collapsible, and a unified toolbar whose title is the open chat's — so it takes the system's own sidebar, toolbar and
 menus rather than the palette's scrim. `AIChatWindowChrome` owns the toolbar — the sidebar toggle
 and New Chat as two round buttons at the sidebar's trailing edge, then Find in Chat and Actions
@@ -494,7 +517,8 @@ and the Actions menu's own chords, and dies with the window.
   (`⌘F`) and AI Settings (`⌥⌘,`) — plus what only a saved chat has: Copy Chat, Pin and Delete.
   `AIChatActionsMenu` builds it per open from the chat's state, as an `NSMenu` hung under the
   toolbar button whether the click or ⌘K opened it.
-  Escape closes the window; an open menu, active search or rename takes Escape first. The
+  Escape closes the window; an open menu, a slid-out sidebar, active search or rename takes Escape
+  first. The
   sidebar clears a nonempty filter before a second Escape closes. Closing leaves a reply streaming;
   the next open follows `Opens to`, except that a chat holding a draft or staged files is kept.
 
@@ -502,17 +526,34 @@ and the Actions menu's own chords, and dies with the window.
   first and then bucketed by day like Clipboard. The open chat is the selected row; ⌃⇥ / ⌃⇧⇥ open
   the next or previous one, wrapping, over every saved chat whatever the filter shows. ⌘B shows or
   hides the sidebar. A new chat has none until its first message saves it, so starting one or
-  leaving an empty one never adds or drops a row under the pointer. A row shows a spinner while its reply streams, else a pin when
+  leaving an empty one never adds or drops a row under the pointer. A row shows a blue dot while its
+  agent waits on a card, else a spinner while its reply streams, else a pin when
   pinned. Its content fills the whole cell, so hover — a fainter fill in the selection's own
   shape — never blinks off crossing between rows.
+  A hidden sidebar slides out when the pointer rests within `aiChatSidebarPeekEdge` 12pt of the
+  window's left edge, wider than the system's resize band, or a flick overshoots it by no more than
+  `aiChatSidebarPeekOvershoot` 8pt, for `sidebarPeekDwell`: `AIChatSidebarPeekEdge` lays a second
+  `AIChatSidebarView` over the transcript, from the window's top as the pinned one stands, solid
+  under its glass so the transcript never reads through the list. It slides back
+  `sidebarPeekLinger` after the pointer leaves it, unless its filter or a rename is being typed in,
+  or at once on Escape. Only a pointer already inside the
+  key window counts, never with a button held, so passing to another app or ending a drag at the
+  edge does nothing, and AI › Slide out a hidden sidebar turns it off. ⌘B or the sidebar button
+  while it is out pins it: `AIChatSplitViewController.toggleSidebar` uncollapses the real sidebar
+  in place, unanimated, so nothing slides twice. `AIChatSidebarPeek` is the window's one record of
+  collapsed, width and shown, fed by the split item's `isCollapsed` KVO.
   The context menu pins, renames in place, copies or exports the chat as Markdown
-  (`ChatSession.markdownTranscript`), and deletes one or all through `DialogController`; ⌫ deletes
+  (`ChatSession.markdownTranscript`, its save panel a sheet on the window), and deletes one or all
+  through `DialogController`; ⌫ deletes
   the selected chat the same way.
 - **Transcript**: `ChatTranscriptView` with `surface: .window`, which drops the palette's edge
   dissolve and thin scrollbar (both are measured against the palette's bars) and centres the column
   at `aiChatReadingWidth`. The last finished reply offers Regenerate beside Copy: `AIChatState`
   drops only a trailing reply and asks again with the question and its attachments, of whichever
   model is selected now.
+  While a scrolling capture reads a Tinycast window (`AIChatCoordinator.isScrollCaptured`), Jump to
+  Latest stays hidden and hovering changes nothing (`chatHoverStill`): no reply's Copy and Regenerate
+  fade in, and no step row lights, so the capture sees only content moving.
 - **Composer** (`AIChatDetailView`): one pane of untinted Liquid Glass at `Radius.dialog`, stacked
   under the transcript rather than floated over it, holding the staged files, the text and one row of
   controls, the glass on a background layer.
@@ -521,8 +562,10 @@ and the Actions menu's own chords, and dies with the window.
   `insertNewline:` only outside input-method composition, so Return sends and ⇧↩ or ⌥↩ breaks the
   line without Return ever stealing an IME's confirm. It grows with its text to 15 lines or 30% of
   the pane's height, whichever is fewer, in whole lines, then scrolls; resizing the window recomputes
-  the cap. The row: a `+` menu (Attach Files…, an `NSOpenPanel`; Web Search when the route offers it;
-  the Tools submenu), an accent Search pill while web search is on, whose click turns it off, then
+  the cap. The row: a `+` menu (Attach Files…, an `NSOpenPanel` hung from the window as a sheet, as the
+  folder menu's Choose Folder… is, so neither opens behind it; Web Search when the route offers it;
+  the Tools submenu), on Codex and Claude the folder menu and, once a folder is set, the mode menu
+  ([Agent mode](#agent-mode)), an accent Search pill while web search is on, whose click turns it off, then
   the model menu, the reasoning menu (a word with no glyph, always shown, disabled for a model with no
   efforts, so the row never changes shape), the context ring, the mic while Dictation is on, and
   Send/Stop. Every control is `aiChatComposerControl` tall with one `aiChatComposerGlyph` slot and
@@ -547,6 +590,14 @@ and the Actions menu's own chords, and dies with the window.
   Quick Actions write into it in process, as they do into a note.
   Switching chats or closing the window cancels dictation targeting its composer before the editor
   is rebound or torn down; a queued transcript cannot land in another chat or a closed editor.
+- **An agent's question rises from the composer, where the suggestion chips sit.**
+  `AgentApprovalCard` is the one question in Tinycast not asked through `DialogController`: a turn
+  can ask many, each about the transcript just above it, and a modal dialog would cover what it
+  asks about. It takes the dialog's three axes — the glyph says what, red marks only a delete, the
+  button roles colour the buttons — and shows the command, diff or path itself, scrolled past
+  `chatApprovalDetail`. Its keys belong to the composer while it is up ([Agent mode](#agent-mode)),
+  whose placeholder says that typing redirects, and whose Send disc sends that text rather than
+  stopping the reply.
 
 `AIChatState` turns provider-neutral stream events into one live assistant message. Thinking state is
 shown without entering the transcript, partial text is preserved on failure, cancellation invalidates
@@ -674,6 +725,24 @@ window, and every chat action either surface sends — is the nineteenth feature
   button, shows an arrow too while it sits over reply text.
 - Collapse the sidebar with the toolbar button or ⌘B; ⌘N and ⌘Q (Close Window) still work, and ⌘Q with
   Settings in front closes Settings instead.
+- With the sidebar collapsed, move the pointer from the transcript to the window's left edge and
+  rest it: the sidebar slides out over the transcript, and back 0.3s after the pointer leaves it or
+  on Escape. Entering the window at that edge from outside, or dragging there, does nothing. ⌘B
+  while it is out pins it without a second slide.
+- In an agent chat, ask for a command that fails and an edit: hover a step and click it. The
+  command opens with its output and the exit code on its row; the edit opens as a diff named by
+  its path in the folder, its row counting "+N −M". A long output shows its last lines and Show All.
+- With a card up in an agent chat, switch to another app: a pill asks for the reader's OK, the
+  menu-bar icon shows a blue dot and its menu a Review Request row. View returns to the card. With
+  the sidebar hidden, a card up in another chat lights the sidebar button. A turn that finishes
+  while the window is closed says so in the message pill.
+- Choose Claude or Codex, then a folder from the composer's folder menu. In Ask First, ask it to add
+  a line to a file: a card rises above the composer with the diff, Return allows, and the row says
+  "Edited". Ask for a command: ⌥↩ allows it for the chat, and the same command later runs unasked.
+  Ask it to delete a file: the card is red, offers no Allow This Chat, and ignores Return. Type an
+  instruction while a card is up and press Return: the request is refused and the text is sent next.
+  Read Only refuses every change without a card; Auto Edit asks once in a Tinycast dialog, then edits
+  without cards but still asks before a command or a delete.
 - Escape closes AI Chat with the composer focused, preserving its draft and any streaming reply.
   Menus and rename fields cancel first; the sidebar clears a nonempty filter, then closes on the
   next Escape. Find in Chat cancels before a second Escape closes the window.
@@ -686,8 +755,11 @@ window, and every chat action either surface sends — is the nineteenth feature
   prefix of a streaming block scans in order and inside its own bounds),
   `ai-chat-test` (`ChatSession`, `MarkdownBlock` with its math delimiters, LaTeX subset and
   mid-stream hold-back, `ChatHistoryStore` with renames and pins,
-  `AIToolLoopProvider`, regenerate, `ChatReasoning`'s display text, the window's open policy and
-  `AIChatSurfacesState`'s one-live-place rule),
+  `AIToolLoopProvider`, regenerate, `ChatReasoning`'s display text, the window's open policy,
+  `AIChatSurfacesState`'s one-live-place rule, an agent chat's folder, session and step kinds on disk,
+  and the approval queue), `agent-test` (`AgentApprovalPolicy` and `AgentGrants` in every mode,
+  Claude's agent launch, settings, control answers and decoded frames, and Codex's approvals,
+  sandbox policies and rows),
   and `apple-intelligence-test` (status copy, snapshot deltas,
   transcript assembly and error mapping, plus an optional real generation enabled with
   `TINYCAST_TEST_APPLE_INTELLIGENCE=1` when this Mac can run one), all in
@@ -742,6 +814,8 @@ was never the process's to begin with. See [MCP](mcp.md) for what goes on the la
 
 `CodexTurnRunner` is the generation half behind `CodexInstalledProvider`.
 
+An agent chat's thread is the exception to what follows; see [Agent mode](#agent-mode).
+
 It keeps an ephemeral thread per conversation while the helper stays running, preserving the web
 search context for follow-ups. A successful reply allows the next request to continue that thread
 only when its prior transcript, model, instructions and web-search permission still match. A
@@ -767,7 +841,8 @@ out as `image` input parts with data URLs, and as `input_image` when prior turns
 `InstalledCLITurnRunner` handles Claude, Grok, OpenCode and Cursor behind the same provider protocol. It
 frames Tinycast's instructions and bounded conversation history as stdin (or a private `--prompt-file` for
 Grok, whose CLI requires a path), consumes newline-delimited JSON, and never puts prompt text on the
-process command line. Claude uses stream JSON, `--effort` and no session persistence, and takes every
+process command line. Claude uses stream JSON, `--effort` and, outside [Agent mode](#agent-mode), no
+session persistence, and takes every
 turn as one framed `stream-json` user line. With servers armed it keeps stdin open for the consent
 channel and closes it on the CLI's own result frame; writes are chained rather than concurrent,
 because two racing the same pipe would interleave a line.
@@ -785,6 +860,109 @@ the local chat under `~/.cursor/chats/<workspace>/<session_id>` because the CLI 
 Every other turn finishes on its own completion frame; the cleanups run detached after the child exits, so
 housekeeping never holds the composer shut.
 Cancellation terminates the child process; only one installed-CLI turn can own a runner at a time.
+
+## Agent mode
+
+A chat on the Codex or Claude route can be given a folder from the composer's folder menu, and a mode
+beside it. With no folder, none of this applies and the chat is the chat it always was. Quick AI never
+runs an agent turn: the palette has nowhere to show an approval yet. The folder and mode belong to the
+chat (`conversation_agents`), and neither menu can change them while a reply streams.
+
+| Mode | Claude | Codex |
+| --- | --- | --- |
+| Read Only | `--tools Read,Glob,Grep` | `readOnly` sandbox; `approvalPolicy: never`, or `untrusted` while a server is armed |
+| Ask First | adds `Edit`, `Write`, `Bash`, `TodoWrite`; `--permission-mode default`; ask rules for `Bash`, `Edit`, `Write` | `workspaceWrite` with only the folder writable; `approvalPolicy: untrusted` |
+| Auto Edit | as Ask First, with `--permission-mode acceptEdits` and an ask rule for `Bash` alone | as Ask First; Tinycast accepts each patch that stays in the folder |
+
+- **The network stays off.** Codex's sandbox has `networkAccess: false` in every mode, and Claude is
+  offered no `WebFetch`, `WebSearch` or `Task`: a fetch or a subagent is a second channel nobody
+  approved. Codex never gets `on-request`, which lets a sandboxed command run unasked.
+- **Claude keeps the reader's sign-in and nothing that could answer for Tinycast.**
+  `--setting-sources user` loads `~/.claude/settings.json`, where a gateway sign-in may live, and
+  leaves out the folder's own project settings, whose hooks or allow rules can arrive with a cloned
+  repository. `--settings` adds `disableAllHooks` and the mode's ask rules, which outrank any allow
+  rule the reader has. Never `--restricted`: it skips the user settings, and the sign-in with them.
+  Every question is a `can_use_tool` control request on the stdin pipe
+  (`--permission-prompt-tool stdio`), and no answer carries `updatedPermissions`.
+- **Codex's agent has an app-server of its own.** `ChatGPTSubscriptionManager.agentClient` launches
+  like the chat helper but keeps the shell tool, so a chat with no folder never gains one. Its
+  `item/commandExecution/requestApproval` and `item/fileChange/requestApproval` requests are answered
+  `accept` or `decline`, never `acceptForSession`, because Tinycast keeps its own grants. The patch a
+  file-change question is about is the one its item announced on `item/started`. Its instructions
+  ask for `apply_patch` rather than a shell edit, so a change arrives as a diff Auto Edit can accept;
+  left alone, the model appends with `printf`, which is a command and asks.
+- **The card speaks the reader's language.** `AgentInstructions` holds both CLIs' boundary and asks
+  for each command's description, and any reason for a change, in Tinycast's interface language —
+  `Bundle.main.preferredLocalizations`, named in English — since the card shows them beside the command.
+- **One question at a time.** `AIChatState.requestApproval` queues them in arrival order, and
+  `AgentApprovalCard` shows the first, with its place in the queue when more are waiting. A grant
+  answers whatever it covers that was queued behind it. Stopping, switching chats or the reply ending
+  refuses the rest.
+- **`AgentApprovalPolicy` answers what needs no reader.** Read Only refuses anything that changes a
+  file; a look inside the folder goes through — a read Claude asks about, or a command whose
+  `commandActions` Codex reads as only reading, searching or listing, which `untrusted` otherwise
+  puts to the reader down to every `cat`; a chat grant allows what it covers; Auto Edit allows a
+  patch that starts and ends inside the folder and deletes nothing; everything else asks. A grant is an exact command line, edits inside
+  the folder, a path read outside it or a tool by name, and it ends with the chat, a new folder or a
+  relaunch. A delete is never granted and never auto-accepted, and its card has no Allow This Chat.
+- **Typing is an answer too.** With a card up and the composer focused, Return on an empty field
+  allows, ⌥↩ allows for the chat, Escape refuses instead of closing the window, and Return with text
+  refuses and sends that text next: Claude's refusal carries `interrupt`, Codex's turn is
+  interrupted, and the text goes once the turn has ended. A delete takes a click.
+- **Sessions are the CLI's.** An agent turn keeps its session — Claude under `~/.claude/projects`,
+  named with `--session-id` and continued with `--resume`; Codex as a non-ephemeral thread under
+  `~/.codex/sessions`, continued with `thread/resume` — and `AgentThread` records it with its route
+  and folder. Another route or folder starts a new session, handed the chat so far as text, and so
+  does a session the CLI no longer has. Deleting a chat does not yet delete its CLI session.
+- **Rows say what a step did.** `ChatToolUse.Kind` (read, search, edit, command, other) titles an
+  agent's own steps — "Read a.txt", "Ran npm test" — and a finished run folds into one line that
+  counts them by kind. An MCP call has no kind and is named by its server, as before. Codex runs
+  every command as `/bin/bash -lc '…'`, its quoting mixed; `ShellWords.script` splits the line as a
+  shell would and shows the script inside, on the row and on the card alike. A command that exited
+  non-zero says so — "Ran ls x · exit code 1" — and a step that failed with no exit code says it
+  could not run, so the warning glyph never sits beside "Ran".
+- **A step keeps the whole of what it was given and gave back.** `ChatToolDetail` holds the full
+  command, path, pattern or unified diff, Claude's own `description` of a command, the output and
+  the exit code, saved in `message_tool_details`. Codex's `commandExecution` brings
+  `aggregatedOutput` and `exitCode`; Claude's `tool_result` brings its text, and a failed Bash run
+  opens it with "Exit code N", read as the number. Only the presentation knows tool names, and only
+  the ones Tinycast itself offers: `--tools` is Claude's allowlist, and Codex's steps are the
+  protocol's item types. Anything else — an MCP call on any route, a tool a newer CLI adds, a field
+  it renames — keeps its raw input as JSON and its result as text, so nothing is lost when the
+  shape is unknown. Output keeps its last `outputLimit` characters from a line start; input keeps
+  its first `inputLimit`. Like the transcript it is the chat's own record: deleted with it, and
+  never sent back to a model.
+- **A step opens onto what it kept.** A row holding a `ChatToolDetail` is a button: hovering shows
+  its chevron, and a click lays `ChatToolDetailView` under it — the card a reply's code block sits
+  on — with Claude's sentence, the input beside a copy button, a hairline, then the output; a
+  command that printed nothing says so. An edit's input is its diff in `ChatDiffText`'s colours,
+  the ones its approval card uses, each file named once by its path in the chat's folder
+  (`chatAgentWorkspace`), and its row counts the change: "+3 −1". What an edit printed is left out
+  unless it failed. A block past `chatToolPreviewLines` shows its first lines — or a command's
+  output its last — and Show All; never a second scroll view inside the transcript's own.
+- **An agent's status stays under its text.** A reply's working line (see
+  [Chat surfaces](#chat-surfaces)) gives way to answer text arriving, but an agent can go quiet
+  after a sentence while it writes its next command, so in an agent chat the line stays below its
+  text too (`statusFollowsText`).
+- **A row under its card waits, and a refused one never ran.** An approval's ID is its call's —
+  Codex's `itemId`, Claude's `tool_use_id` — so the row the card asks about shows a raised hand and
+  "Waiting to run …" instead of a spinner (`chatAwaitedCall`). A refusal marks that row
+  `ChatToolUse.State.declined` at once: "Didn't run …", neither done nor failed, kept on disk, and
+  never overwritten by the error the CLI reports for it; a folded run ends "· 1 not allowed".
+- **A waiting agent finds the reader.** `AIChatSurfacesState.waiting` lists the chats a card is up
+  in, the window's own first. Each one's sidebar row shows a blue dot (`Colors.waiting`) instead of
+  the spinner, and with the sidebar hidden its button carries the system's indicator badge while a
+  chat other than the open one waits. When the AI Chat window is not key — closed, behind another
+  app, or behind Settings — `AgentWaitingHUDController` keeps a pill up with no dwell, at
+  `hudWaitingEdgeOffset` above the message pill's slot: "Claude Code needs your OK · Run a command",
+  or "2 chats need your OK". View brings the chat into the window and the window forward; hovering
+  turns the hand into an ✕ that waves the pill off until a question it has not shown arrives. The
+  menu-bar item gets a blue dot beside its icon and its menu a "Review Request in …" row per waiting
+  chat: the one mark a feature may put on that item.
+- **A turn that ends out of sight says so.** `AIChatState.onReplyEnded` reports how a reply ended on
+  its own — complete or failed, never one the reader stopped — so naming and this share one hook.
+  An agent chat that ends anywhere but open in the key window raises the message pill:
+  "“Tidy Downloads” is done · Edited 2 files", or, in red, that it didn't finish.
 
 ## Web search and attachments
 
@@ -971,7 +1149,9 @@ last two are standing instructions and the switch that sends them, both of which
 answer and must not arrive on another Mac unread. `aiRetention`, `aiOpensTo` and `aiNewChatAfter`
 join them: all three are decisions about conversations that never leave the Mac that had them, and
 an import must not arrive carrying an instruction to delete them. `aiToolRounds` stays behind too: it
-limits what a tool-driven reply may spend, and an import must not raise that unasked.
+limits what a tool-driven reply may spend, and an import must not raise that unasked. So does
+`aiSidebarPeek`, which belongs with the window settings, none of which travel; `settings.json`
+carries it as `ai.sidebarPeek`.
 `aiShownModels` and `aiDisabledRoutes` name this Mac's own tools, connections and their models, which
 another Mac may not have. `aiInstalledOverrides` names a command to run and the variables to run it
 with, and an import must never decide which program a Mac launches. None of the three has a

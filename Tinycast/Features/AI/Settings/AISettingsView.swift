@@ -161,6 +161,10 @@ struct AISettingsView: View {
                     SettingsRowTitle(.aiConversations, "Start a new conversation after")
                 }
             }
+            Toggle(isOn: $settings.sidebarPeekEnabled) {
+                SettingsRowTitle(.aiConversations, "Slide out a hidden sidebar")
+                Text("In the AI Chat window, at the left edge. ⌘B keeps it shown.")
+            }
             Picker(selection: $settings.retention) {
                 ForEach(AIRetention.allCases) { Text(LocalizedStringKey($0.title)).tag($0) }
             } label: {

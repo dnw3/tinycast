@@ -311,6 +311,9 @@ enum SettingsSearchCatalog {
             .aiConversations, "Start a new conversation after",
             keywords: ["idle", "timeout", "fresh"]),
         .init(
+            .aiConversations, "Slide out a hidden sidebar",
+            keywords: ["sidebar", "hover", "edge", "peek", "collapse", "window"]),
+        .init(
             .aiConversations, "Keep conversations",
             keywords: ["retention", "delete", "history", "privacy"]),
         .init(

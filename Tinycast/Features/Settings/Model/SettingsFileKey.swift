@@ -48,6 +48,7 @@ enum SettingsFileKey: String, CaseIterable, Sendable {
     case aiRetention = "ai.retentionDays"
     case aiOpensTo = "ai.opensTo"
     case aiNewChatAfter = "ai.newChatAfterMinutes"
+    case aiSidebarPeek = "ai.sidebarPeek"
     case aiToolRounds = "ai.toolRounds"
     case aiCommands = "ai.commands"
     case quickActionCommands = "quickActions.commands"

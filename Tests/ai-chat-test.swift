@@ -69,6 +69,11 @@ struct AIChatTests {
         citationsCloseTheSentenceThatCitedThem()
         toolScopeSwitchesServersPerChat()
         await usageIsKeptWithTheReplyThatReportedIt()
+        agentWorkspacesPersistWithTheirChat()
+        await approvalsWaitInLineAndGrantsClearTheQueue()
+        await refusedStepsSayTheyNeverRan()
+        await waitingChatsPutTheOpenOneFirst()
+        await stepsKeepWhatTheyPrintedOnDisk()
 
         print("\(passes) passed, \(failures) failed")
         if failures > 0 { exit(1) }
@@ -292,11 +297,12 @@ struct AIChatTests {
             "and arms every round with the tools it wraps, which the turn itself never carried")
         expect(invoker.calls.map(\.name) == ["fs__read"], "and runs exactly what was asked for")
         expect(
-            events.contains(.toolCall(id: "c1", origin: "Files", title: "read")),
-            "the transcript is told which tool ran, in words a row can show")
+            events.contains(
+                .toolCall(id: "c1", origin: "Files", title: "read", detail: ChatToolDetail(input: "{}"))),
+            "the transcript is told which tool ran, in words a row can show, and with what")
         expect(
-            events.contains(.toolResult(id: "c1", isError: false)),
-            "and told when it came back")
+            events.contains(.toolResult(id: "c1", isError: false, output: "file contents")),
+            "and told when it came back, and what it gave back")
         expect(
             !events.contains(where: {
                 if case .toolCallRequested = $0 { return true }; return false
@@ -1371,13 +1377,13 @@ extension AIChatTests {
         expect(AIRequest(messages: []).conversationID == nil, "standalone generations have no chat context")
     }
 
-    /// Naming hangs off this hook, so a state made after it is set must be told too.
+    /// Naming and background reports hang off this hook, so a state made later is told too.
     static func everyStateReportsAFinishedReply() async {
         let (store, directory) = temporaryStore("finished")
         defer { try? FileManager.default.removeItem(at: directory) }
         let chats = AIChatSurfacesState(history: store)
-        var finished: [UUID] = []
-        chats.onReplyFinished = { finished.append($0.session.id) }
+        var ended: [(id: UUID, state: ChatMessage.State)] = []
+        chats.onReplyEnded = { ended.append(($0.session.id, $1)) }
         chats.window.send("Hi", using: ScriptedProvider(rounds: [[.text("Yo"), .finished]]))
         await settle(chats.window)
         chats.newWindowChat()
@@ -1385,10 +1391,15 @@ extension AIChatTests {
         await settle(chats.window)
         chats.quickAI.send("Quick", using: ScriptedProvider(rounds: [[.text("Yo"), .finished]]))
         await settle(chats.quickAI)
-        expect(finished.count == 3, "every surface's replies reach the hook, got \(finished.count)")
+        expect(
+            ended.count == 3 && ended.allSatisfy { $0.state == .complete },
+            "every surface's replies reach the hook, got \(ended.count)")
         chats.quickAI.send("Fails", using: ScriptedProvider(rounds: [[.text("Half")]]))
         await settle(chats.quickAI)
-        expect(finished.count == 3, "a reply that failed is not one to name a chat by")
+        expect(ended.last?.state == .failed, "a reply that failed reports how it ended")
+        chats.quickAI.send("Stopped", using: HeldProvider(opening: [.text("Part")]))
+        chats.quickAI.cancel()
+        expect(ended.count == 4, "a reply the reader stopped is never reported")
     }
 
     static func theWindowFollowsTheOpenPolicy() async {
@@ -1811,6 +1822,184 @@ extension AIChatTests {
     }
 
     /// Replies stream on a task; a few turns of the main actor let the scripted events land.
+    static func agentWorkspacesPersistWithTheirChat() {
+        let (store, directory) = temporaryStore("agents")
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let folder = URL(fileURLWithPath: "/Users/reader/project")
+        let chat = AIChatState(history: store)
+        chat.setAgent(AgentWorkspace(folder: folder, mode: .autoEdit))
+        chat.send("Tidy the folder", using: ScriptedProvider(rounds: []))
+        chat.setAgentThread(AgentThread(route: "claude", folder: folder.path, id: "s1"))
+        let reopened = ChatHistoryStore(directory: directory)
+        let loaded = reopened.session(id: chat.session.id)
+        expect(loaded?.agent == AgentWorkspace(folder: folder, mode: .autoEdit),
+            "a chat reopens in its folder and mode")
+        expect(loaded?.agentThread?.id == "s1", "and continues the CLI's own session")
+        expect(reopened.recentAgentFolders(limit: 6) == [folder], "the folder is offered again")
+
+        chat.setAgent(AgentWorkspace(folder: URL(fileURLWithPath: "/Users/reader/other"), mode: .ask))
+        expect(chat.session.agentThread == nil, "a new folder leaves the old session behind")
+        expect(ChatHistoryStore(directory: directory).session(id: chat.session.id)?.agentThread == nil,
+            "on disk too")
+        chat.setAgent(nil)
+        expect(ChatHistoryStore(directory: directory).session(id: chat.session.id)?.agent == nil,
+            "no folder is a chat again")
+
+        var session = ChatSession()
+        session.append(ChatMessage(role: .user, text: "go"))
+        session.append(
+            ChatMessage(
+                role: .assistant, text: "done", state: .complete,
+                toolUses: [
+                    ChatToolUse(
+                        callID: "c1", origin: "", title: "a.txt", state: .completed, textOffset: 0,
+                        sequence: 0, kind: .read),
+                    ChatToolUse(
+                        callID: "c2", origin: "Files", title: "write", state: .completed, textOffset: 0,
+                        sequence: 1)
+                ]))
+        store.save(session)
+        let kinds = ChatHistoryStore(directory: directory).session(id: session.id)?.messages[1].toolUses
+            .map(\.kind)
+        expect(kinds == [.read, nil], "an agent's step keeps its kind, a server's call keeps none")
+    }
+
+    static func approvalsWaitInLineAndGrantsClearTheQueue() async {
+        let (store, directory) = temporaryStore("approvals")
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let chat = AIChatState(history: store)
+        chat.setAgent(AgentWorkspace(folder: URL(fileURLWithPath: "/Users/reader/project"), mode: .ask))
+        let tests = AgentApprovalRequest(id: "1", action: .command("npm test"))
+        let again = AgentApprovalRequest(id: "2", action: .command("npm test"))
+        let clean = AgentApprovalRequest(id: "3", action: .command("rm -rf build"))
+        let first = Task { await chat.requestApproval(tests) }
+        let second = Task { await chat.requestApproval(again) }
+        let third = Task { await chat.requestApproval(clean) }
+        for _ in 0..<50 where chat.approvalPosition.count < 3 { await Task.yield() }
+        expect(chat.pendingApproval == tests, "the first question is shown first")
+        expect(chat.approvalPosition == (0, 3), "as the first of three")
+
+        chat.answerApproval(.allowForChat)
+        expect(chat.pendingApproval == clean, "a grant answers what it covers that was waiting")
+        expect(chat.approvalPosition == (2, 3), "and the count moves past it")
+        chat.answerApproval(.deny)
+        expect(chat.pendingApproval == nil && chat.approvalPosition == (0, 0), "an empty queue shows nothing")
+        let answers = [await first.value, await second.value, await third.value]
+        expect(answers == [.allowForChat, .allow, .deny],
+            "the first allowed for the chat, its repeat on that grant, the other command refused")
+
+        let late = Task { await chat.requestApproval(clean) }
+        for _ in 0..<50 where chat.pendingApproval == nil { await Task.yield() }
+        chat.cancel()
+        let refused = await late.value
+        expect(refused == .deny, "stopping the reply refuses what it was waiting on")
+        expect(chat.pendingApproval == nil, "and leaves no card behind")
+    }
+
+    static func refusedStepsSayTheyNeverRan() async {
+        let (store, directory) = temporaryStore("declined")
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let chat = AIChatState(history: store)
+        chat.setAgent(AgentWorkspace(folder: URL(fileURLWithPath: "/Users/reader/project"), mode: .ask))
+        let provider = HeldProvider(opening: [.toolCall(id: "c1", origin: "", title: "rm -rf build", kind: .command)])
+        chat.send("Clean up", using: provider)
+        for _ in 0..<50 where chat.session.messages.last?.toolUses.isEmpty != false {
+            try? await Task.sleep(for: .milliseconds(10))
+        }
+        let question = Task {
+            await chat.requestApproval(AgentApprovalRequest(id: "c1", action: .command("rm -rf build")))
+        }
+        for _ in 0..<50 where chat.pendingApproval == nil { await Task.yield() }
+        chat.answerApproval(.deny)
+        _ = await question.value
+        expect(chat.session.messages.last?.toolUses.first?.state == .declined,
+            "a refused step is marked as never run the moment it is refused")
+        provider.send(.toolResult(id: "c1", isError: true))
+        provider.finish()
+        await settle(chat)
+        expect(chat.session.messages.last?.toolUses.first?.state == .declined,
+            "the error the CLI reports for it does not turn it into a failure")
+        let reloaded = ChatHistoryStore(directory: directory).session(id: chat.session.id)
+        expect(reloaded?.messages.last?.toolUses.first?.state == .declined, "and it stays refused on disk")
+
+        let read = ChatToolUse(
+            callID: "a", origin: "", title: "a.txt", state: .completed, textOffset: 0, sequence: 0, kind: .read)
+        let refused = ChatToolUse(
+            callID: "b", origin: "", title: "rm", state: .declined, textOffset: 0, sequence: 1, kind: .command)
+        expect(refused.label == "Didn't run rm", "a refused command says it did not run")
+        expect(refused.awaitingLabel == "Waiting to run rm", "a step under its card says it waits")
+        expect([read, refused].completedLabel == "Read 1 file · 1 not allowed",
+            "a run counts what ran by kind, then what was refused")
+        expect([refused].completedLabel == "1 not allowed", "a run of refusals is only that")
+        expect([read, refused].failedCount == 0, "a refusal is not a failure")
+    }
+
+    static func waitingChatsPutTheOpenOneFirst() async {
+        let (store, directory) = temporaryStore("waiting")
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let chats = AIChatSurfacesState(history: store)
+        let workspace = AgentWorkspace(folder: URL(fileURLWithPath: "/Users/reader/project"), mode: .ask)
+        let parked = chats.window
+        parked.setAgent(workspace)
+        parked.send("Tidy up", using: HeldProvider(opening: []))
+        let first = Task {
+            await parked.requestApproval(AgentApprovalRequest(id: "1", action: .command("ls")))
+        }
+        for _ in 0..<50 where parked.pendingApproval == nil { await Task.yield() }
+        expect(chats.waiting.map(\.session.id) == [parked.session.id], "a question makes its chat wait")
+
+        chats.newWindowChat()
+        let open = chats.window
+        open.setAgent(workspace)
+        open.send("Build it", using: HeldProvider(opening: []))
+        let second = Task {
+            await open.requestApproval(AgentApprovalRequest(id: "2", action: .command("make")))
+        }
+        for _ in 0..<50 where open.pendingApproval == nil { await Task.yield() }
+        expect(
+            chats.waiting.map(\.session.id) == [open.session.id, parked.session.id],
+            "the open chat leads, and one moved aside still waits behind it")
+
+        parked.answerApproval(.deny)
+        open.cancel()
+        _ = await (first.value, second.value)
+        expect(chats.waiting.isEmpty, "an answer or a stop ends the wait")
+        parked.cancel()
+    }
+
+    static func stepsKeepWhatTheyPrintedOnDisk() async {
+        let (store, directory) = temporaryStore("tool-details")
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let chat = AIChatState(history: store)
+        let provider = HeldProvider(opening: [
+            .toolCall(
+                id: "c1", origin: "", title: "ls nope", kind: .command,
+                detail: ChatToolDetail(input: "ls nope", explanation: "列出一个不存在的目录"))
+        ])
+        chat.send("List it", using: provider)
+        expect(chat.replyStartedAt != nil, "a reply in flight knows when it began")
+        for _ in 0..<50 where chat.session.messages.last?.toolUses.isEmpty != false {
+            try? await Task.sleep(for: .milliseconds(10))
+        }
+        provider.send(.toolResult(id: "c1", isError: true, output: "ls: nope: No such file", exitCode: 1))
+        provider.finish()
+        await settle(chat)
+        expect(chat.replyStartedAt == nil, "and forgets once it has ended")
+        let use = chat.session.messages.last?.toolUses.first
+        expect(use?.detail?.output == "ls: nope: No such file" && use?.detail?.exitCode == 1,
+            "a step's result lands on its row")
+        expect(use?.label == "Ran ls nope · exit code 1", "a command that exited non-zero says with what")
+        let reloaded = ChatHistoryStore(directory: directory).session(id: chat.session.id)
+        expect(reloaded?.messages.last?.toolUses.first?.detail == use?.detail,
+            "the whole command, its sentence, output and exit code are kept on disk")
+        let unknown = ChatToolUse(
+            callID: "x", origin: "", title: "ls", state: .failed, textOffset: 0, sequence: 0, kind: .command)
+        expect(unknown.label == "Couldn't run ls", "a failure with no exit code does not claim it ran")
+        let read = ChatToolUse(
+            callID: "y", origin: "", title: "a.txt", state: .failed, textOffset: 0, sequence: 1, kind: .read)
+        expect(read.label == "Couldn't read a.txt", "nor does a read that failed")
+    }
+
     static func settle(_ chat: AIChatState) async {
         for _ in 0..<50 where chat.isStreaming {
             try? await Task.sleep(for: .milliseconds(10))
@@ -1835,6 +2024,34 @@ final class StalledProvider: AIProvider, @unchecked Sendable {
             continuation.yield(.finished)
             continuation.finish()
         }
+    }
+}
+
+/// Opens with its events and stays open until finished, so a test can act in the middle of a reply.
+final class HeldProvider: AIProvider, @unchecked Sendable {
+    private let lock = NSLock()
+    private let opening: [AIStreamEvent]
+    private var continuation: AIProviderStream.Continuation?
+
+    init(opening: [AIStreamEvent]) {
+        self.opening = opening
+    }
+
+    func stream(_ request: AIRequest) -> AIProviderStream {
+        AIProviderStream { continuation in
+            for event in opening { continuation.yield(event) }
+            lock.withLock { self.continuation = continuation }
+        }
+    }
+
+    func send(_ event: AIStreamEvent) {
+        lock.withLock { continuation }?.yield(event)
+    }
+
+    func finish() {
+        let continuation = lock.withLock { self.continuation }
+        continuation?.yield(.finished)
+        continuation?.finish()
     }
 }
 

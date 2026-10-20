@@ -160,7 +160,7 @@ final class InstalledAIManager {
 
     func provider(
         kind: InstalledAIKind, model: String, effort: String?,
-        toolServers: AIToolServerSession? = nil
+        toolServers: AIToolServerSession? = nil, agent: AgentSession? = nil
     ) throws -> any AIProvider {
         guard kind != .codex else {
             throw AIProviderError.unavailable(
@@ -177,7 +177,8 @@ final class InstalledAIManager {
         }
         return InstalledCLIProvider(
             kind: kind, executable: status.executable, model: model, effort: effort,
-            workspace: workspace, launch: launchSettings(kind), toolServers: toolServers)
+            workspace: workspace, launch: launchSettings(kind), toolServers: toolServers,
+            agent: kind == .claude ? agent : nil)
     }
 
     private enum Command {

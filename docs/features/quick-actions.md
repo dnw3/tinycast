@@ -156,8 +156,8 @@ Its footer speaks the same button language as a dialog's — `ModalActionButtonS
 as the `.primary` role — so every borderless surface answers in one voice rather than dropping Aqua
 controls onto vibrancy.
 
-It could not have been built on `HUDPresenter`: `HUDPanel` sets `ignoresMouseEvents` and returns
-`false` from `canBecomeKey`, so it is click-through and hosts no buttons. Nor on `DialogAccessory`,
+It could not have been built on `HUDPresenter`: `HUDPanel` returns `false` from `canBecomeKey`, so
+a pill can take a click but never ↵, ⌘C or esc. Nor on `DialogAccessory`,
 which is a closed two-case enum measured once at present time — a growing stream would clip.
 
 Non-activating, so the target app keeps its selection while the panel holds key. Keys go through

@@ -49,18 +49,27 @@ final class CodexTurnRunner {
         /// The tool an elicitation is about: the item that names it always starts before the ask.
         var startedTools: [String: String] = [:]
         var spentCalls = 0
+        let agent: AgentSession?
+        /// A patch's ask names only its item, whose changes arrived when it started.
+        var fileChanges: [String: [AgentApprovalRequest.FileChange]] = [:]
+        /// Messages between an agent's steps would otherwise run together as one paragraph.
+        var messageItem: String?
 
         init(
             continuation: AIProviderStream.Continuation, servers: [AIToolServer],
-            session: AIToolServerSession?, conversationID: UUID?
+            session: AIToolServerSession?, conversationID: UUID?, agent: AgentSession?
         ) {
             self.continuation = continuation
             self.servers = servers
             self.session = session
             self.conversationID = conversationID
+            self.agent = agent
         }
 
-        var roundCap: Int? { session == nil ? 1 : session?.rounds }
+        var roundCap: Int? {
+            if let agent { return agent.rounds }
+            return session == nil ? 1 : session?.rounds
+        }
     }
 
     /// Reference identity for one stream, handed out before its turn exists.
@@ -72,10 +81,16 @@ final class CodexTurnRunner {
     /// Threads whose Stop beat the turn's ID; the first ID to name one spends its Stop.
     private var pendingInterruptThreadIDs: Set<String> = []
 
-    init(client: CodexAppServerClient) {
+    /// `runsAgents` only for the helper launched with its shell tool; it alone answers approvals.
+    init(client: CodexAppServerClient, runsAgents: Bool = false) {
         self.client = client
         client.onElicitation = { [weak self] elicitation in
             await self?.consent(to: elicitation) ?? false
+        }
+        if runsAgents {
+            client.onApproval = { [weak self] approval in
+                await self?.approve(approval) ?? .deny
+            }
         }
         client.onRelaunch = { [weak self] in self?.endStrandedTurns() }
     }
@@ -84,14 +99,14 @@ final class CodexTurnRunner {
 
     nonisolated func stream(
         _ request: AIRequest, model: String, effort: String?,
-        toolServers: AIToolServerSession? = nil
+        toolServers: AIToolServerSession? = nil, agent: AgentSession? = nil
     ) -> AIProviderStream {
         AIProviderStream { continuation in
             let token = TurnToken()
             let task = Task { [weak self] in
                 await self?.startTurn(
                     request, model: model, effort: effort, toolServers: toolServers,
-                    continuation: continuation, token: token)
+                    agent: agent, continuation: continuation, token: token)
             }
             continuation.onTermination = { [weak self] _ in
                 task.cancel()
@@ -128,6 +143,10 @@ final class CodexTurnRunner {
         switch method {
         case "item/agentMessage/delta":
             guard let delta = params["delta"]?.stringValue, !delta.isEmpty else { return }
+            if turn.agent != nil, let item = params["itemId"]?.stringValue {
+                if let previous = turn.messageItem, previous != item { continuation.yield(.text("\n\n")) }
+                turn.messageItem = item
+            }
             if turn.conversation != nil { turn.reply += delta }
             continuation.yield(.text(delta))
         // The summary, not raw reasoning: the raw stream is off by default and would repeat it.
@@ -143,6 +162,13 @@ final class CodexTurnRunner {
             case "webSearch": continuation.yield(.searching(item["query"]?.stringValue))
             case "reasoning": continuation.yield(.thinking)
             case "mcpToolCall": startToolCall(item, in: turn, key: key)
+            case "commandExecution", "fileChange":
+                guard turn.agent != nil, let event = CodexAgentTurn.toolCall(for: item) else { return }
+                if let id = item["id"]?.stringValue, item["type"]?.stringValue == "fileChange" {
+                    turn.fileChanges[id] = CodexApproval.changes(in: item)
+                }
+                continuation.yield(event)
+                spend(turn, key: key)
             default: break
             }
         case "item/completed":
@@ -151,8 +177,15 @@ final class CodexTurnRunner {
             case "webSearch": continuation.yield(.searched(item["query"]?.stringValue))
             case "mcpToolCall":
                 guard let id = item["id"]?.stringValue else { return }
+                let output =
+                    ChatToolDetail.text(of: item["result"]?.objectValue?["content"])
+                    ?? item["error"]?.objectValue?["message"]?.stringValue
                 continuation.yield(
-                    .toolResult(id: id, isError: item["status"]?.stringValue != "completed"))
+                    .toolResult(
+                        id: id, isError: item["status"]?.stringValue != "completed", output: output))
+            case "commandExecution", "fileChange":
+                guard turn.agent != nil, let event = CodexAgentTurn.toolResult(for: item) else { return }
+                continuation.yield(event)
             default: break
             }
         case "turn/started":
@@ -201,7 +234,12 @@ final class CodexTurnRunner {
         turn.continuation.yield(
             .toolCall(
                 id: id, origin: origin ?? AIToolServerRow.label(name),
-                title: AIToolServerRow.label(item["tool"]?.stringValue ?? "")))
+                title: AIToolServerRow.label(item["tool"]?.stringValue ?? ""),
+                detail: ChatToolDetail(input: (item["arguments"] ?? .object([:])).jsonText)))
+        spend(turn, key: key)
+    }
+
+    private func spend(_ turn: Turn, key: ObjectIdentifier) {
         turn.spentCalls += 1
         guard let roundCap = turn.roundCap, turn.spentCalls > roundCap else { return }
         // Finished before the interrupt, whose own cleanup would otherwise name a different reason.
@@ -219,6 +257,22 @@ final class CodexTurnRunner {
         else { return false }
         let tool = elicitation.namedTool ?? turn.startedTools[handle] ?? elicitation.toolName
         return await session.consent(AIToolServerCall(handle: handle, tool: tool))
+    }
+
+    /// An agent turn's command or patch, put to its chat; a turn that is no agent's declines.
+    private func approve(_ approval: CodexApproval) async -> AgentApprovalDecision {
+        guard let turn = turns.values.first(where: { $0.threadID == approval.threadID }),
+            let agent = turn.agent
+        else { return .deny }
+        let decision = await agent.approve(
+            approval.request(changes: turn.fileChanges[approval.itemID] ?? []))
+        // A redirect ends the turn here, so what the reader typed instead can start the next one.
+        if case .redirect = decision, let key = turns.first(where: { $0.value === turn })?.key {
+            turn.continuation.yield(.finished)
+            turn.continuation.finish()
+            interrupt(turn, key: key)
+        }
+        return decision
     }
 
     /// The server list is fixed at launch, so a turn armed with another one ends the live threads.
@@ -253,6 +307,7 @@ final class CodexTurnRunner {
         model: String,
         effort: String?,
         toolServers: AIToolServerSession?,
+        agent: AgentSession?,
         continuation: AIProviderStream.Continuation,
         token: TurnToken
     ) async {
@@ -287,7 +342,7 @@ final class CodexTurnRunner {
             }
             let turn = Turn(
                 continuation: continuation, servers: servers, session: toolServers,
-                conversationID: request.conversationID)
+                conversationID: request.conversationID, agent: agent)
             turns[key] = turn
             tookOwnership = true
 
@@ -307,6 +362,14 @@ final class CodexTurnRunner {
                 "sandboxPolicy": ["type": "readOnly", "networkAccess": false],
                 "input": turnInput(for: request.messages[promptIndex])
             ]
+            if let agent {
+                turnParameters["cwd"] = agent.workspace.folder.path
+                turnParameters["approvalPolicy"] = CodexAgentTurn.approvalPolicy(
+                    for: agent.workspace.mode, armed: !servers.isEmpty)
+                turnParameters["sandboxPolicy"] = CodexAgentTurn.sandboxPolicy(for: agent.workspace).jsonObject
+            }
+            // Without it no reasoning item starts, and the status cannot say Thinking.
+            turnParameters["summary"] = "auto"
             if let effort { turnParameters["effort"] = effort }
             let turnTask = Task { [client] in
                 try await client.request(
@@ -339,6 +402,11 @@ final class CodexTurnRunner {
     private func prepareThread(
         for request: AIRequest, promptIndex: Int, model: String, turn: Turn, key: ObjectIdentifier
     ) async throws {
+        if let agent = turn.agent {
+            try await prepareAgentThread(
+                agent, for: request, promptIndex: promptIndex, model: model, turn: turn, key: key)
+            return
+        }
         let instructions = developerInstructions(for: request, hasTools: !turn.servers.isEmpty)
         let history = request.messages[..<promptIndex].filter { $0.role != .system }.map {
             AIMessage(role: $0.role, text: $0.text)
@@ -386,6 +454,56 @@ final class CodexTurnRunner {
         }
         turn.conversation?.messages.append(
             AIMessage(role: .user, text: request.messages[promptIndex].text))
+    }
+
+    /// Kept on disk so it outlives an idle stop; a thread the server lost starts over with history.
+    private func prepareAgentThread(
+        _ agent: AgentSession, for request: AIRequest, promptIndex: Int, model: String, turn: Turn,
+        key: ObjectIdentifier
+    ) async throws {
+        var parameters: [String: Any] = [
+            "model": model,
+            "cwd": agent.workspace.folder.path,
+            "approvalPolicy": CodexAgentTurn.approvalPolicy(
+                for: agent.workspace.mode, armed: !turn.servers.isEmpty),
+            "sandbox": CodexAgentTurn.threadSandbox(for: agent.workspace.mode),
+            "config": ["web_search": request.webSearch ? "live" : "disabled"],
+            "developerInstructions": agentInstructions(for: request, agent: agent)
+        ]
+        if let resume = agent.resume {
+            var resumed = parameters
+            resumed["threadId"] = resume
+            if let response = try? await client.request(method: "thread/resume", params: resumed),
+                let threadID = response["thread"]?.objectValue?["id"]?.stringValue
+            {
+                guard turns[key] === turn, !Task.isCancelled else { return }
+                turn.threadID = threadID
+                return
+            }
+        }
+        parameters["ephemeral"] = false
+        let response = try await client.request(method: "thread/start", params: parameters)
+        guard let threadID = response["thread"]?.objectValue?["id"]?.stringValue else {
+            throw CodexAppServerClient.ClientError.requestFailed(
+                String(localized: "Codex returned no generation thread."))
+        }
+        guard turns[key] === turn, !Task.isCancelled else { return }
+        turn.threadID = threadID
+        let items = historyItems(from: request.messages[..<promptIndex])
+        if !items.isEmpty {
+            _ = try await client.request(
+                method: "thread/inject_items", params: ["threadId": threadID, "items": items])
+        }
+        agent.started(threadID)
+    }
+
+    private func agentInstructions(for request: AIRequest, agent: AgentSession) -> String {
+        let boundary = AgentInstructions.codex(folder: agent.workspace.folder.path, language: agent.language)
+        let search = request.webSearch ? Self.webSearchInstructions : Self.noWebSearchInstructions
+        let own = ([request.instructions] + request.messages.map { $0.role == .system ? $0.text : nil })
+            .compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+        return ([boundary, search] + own).joined(separator: "\n\n")
     }
 
     private func developerInstructions(for request: AIRequest, hasTools: Bool) -> String {

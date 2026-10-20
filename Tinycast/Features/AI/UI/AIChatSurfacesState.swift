@@ -13,10 +13,10 @@ final class AIChatSurfacesState {
     private let history: ChatHistoryStore
 
     /// Handed to every state, so a chat that finishes its first answer can be named wherever it is.
-    @ObservationIgnored var onReplyFinished: (@MainActor (AIChatState) -> Void)? {
+    @ObservationIgnored var onReplyEnded: (@MainActor (AIChatState, ChatMessage.State) -> Void)? {
         didSet {
             for state in [quickAI, window] + answeringElsewhere.values {
-                state.onReplyFinished = onReplyFinished
+                state.onReplyEnded = onReplyEnded
             }
         }
     }
@@ -29,13 +29,20 @@ final class AIChatSurfacesState {
 
     private func makeState() -> AIChatState {
         let state = AIChatState(history: history)
-        state.onReplyFinished = onReplyFinished
+        state.onReplyEnded = onReplyEnded
         return state
     }
 
     /// Conversations with a reply still arriving, wherever they are shown.
     var answeringIDs: Set<UUID> {
         Set(live.filter(\.isStreaming).map(\.session.id))
+    }
+
+    /// Chats an agent has stopped to ask the reader something, the window's own first.
+    var waiting: [AIChatState] {
+        let parked = answeringElsewhere.values.filter { $0.pendingApproval != nil }
+        return [window].filter { $0.pendingApproval != nil }
+            + parked.sorted { $0.session.updatedAt < $1.session.updatedAt }
     }
 
     /// Whoever holds `id` right now, so a second surface never edits the same transcript.

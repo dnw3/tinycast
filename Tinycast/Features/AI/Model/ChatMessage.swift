@@ -57,6 +57,16 @@ struct ChatMessage: Identifiable, Equatable, Sendable {
         state == .streaming && offset == count - 1
     }
 
+    /// A running step, or a thought or search still arriving, already shows the reply at work.
+    var tailShowsProgress: Bool {
+        switch segments.last {
+        case .tools(let uses): uses.isLive
+        case .reasoning(let block): block.duration == nil
+        case .search(let search): !search.isComplete
+        case .text, nil: false
+        }
+    }
+
     /// The next search or call's place among the reply's: with no text between, offsets tie.
     var nextSequence: Int { searches.count + toolUses.count }
 
@@ -113,6 +123,17 @@ struct ChatToolUse: Equatable, Hashable, Sendable {
         case running
         case completed
         case failed
+        /// The reader refused it, so it never ran: neither done nor a failure.
+        case declined
+    }
+
+    /// What an agent's own tool did; an MCP call has none and is named by its server instead.
+    enum Kind: String, Equatable, Hashable, Sendable {
+        case read
+        case search
+        case edit
+        case command
+        case other
     }
 
     let callID: String
@@ -122,6 +143,9 @@ struct ChatToolUse: Equatable, Hashable, Sendable {
     /// Characters of reply text that had arrived when the call started.
     let textOffset: Int
     let sequence: Int
+    var kind: Kind?
+    /// The whole of what the step was given and what it gave back; a row saved before has none.
+    var detail: ChatToolDetail?
 
 }
 
@@ -129,6 +153,7 @@ extension Array where Element == ChatToolUse {
     var runningCall: ChatToolUse? { last { $0.state == .running } }
     var isLive: Bool { runningCall != nil }
     var failedCount: Int { count { $0.state == .failed } }
+    var declinedCount: Int { count { $0.state == .declined } }
 
 }
 
@@ -143,6 +168,14 @@ struct ChatReasoning: Equatable, Hashable, Sendable {
     var displayText: String {
         guard let last = text.lastIndex(where: { !$0.isWhitespace }) else { return "" }
         return String(text[...last])
+    }
+
+    /// Codex opens each summary part with a bolded line, which names what it is thinking about.
+    var heading: String? {
+        text.split(whereSeparator: \.isNewline).reversed().lazy
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .first { $0.count > 4 && $0.hasPrefix("**") && $0.hasSuffix("**") }
+            .map { String($0.dropFirst(2).dropLast(2)) }
     }
 }
 

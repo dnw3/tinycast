@@ -7,11 +7,12 @@ struct InstalledCLIProvider: AIProvider {
     @MainActor
     init(
         kind: InstalledAIKind, executable: URL?, model: String, effort: String?, workspace: URL,
-        launch: InstalledAILaunch = InstalledAILaunch(), toolServers: AIToolServerSession? = nil
+        launch: InstalledAILaunch = InstalledAILaunch(), toolServers: AIToolServerSession? = nil,
+        agent: AgentSession? = nil
     ) {
         runner = InstalledCLITurnRunner(
             kind: kind, executable: executable, model: model, effort: effort,
-            workspace: workspace, launch: launch, toolServers: toolServers)
+            workspace: workspace, launch: launch, toolServers: toolServers, agent: agent)
     }
 
     func stream(_ request: AIRequest) -> AIProviderStream {
@@ -52,6 +53,12 @@ private final class InstalledCLITurnRunner {
     private let workspace: URL
     private let launch: InstalledAILaunch
     private let toolServers: AIToolServerSession?
+    /// Claude's own tools in the chat's folder; the private workspace still holds the turn's files.
+    private let agent: AgentSession?
+    private var agentSessionID = ""
+    private var agentInstructionsSuffix: String?
+    /// A redirect stopped the turn, so the error frame ending it is the end the reader asked for.
+    private var interrupted = false
 
     private var token: TurnToken?
     private var process: Process?
@@ -73,7 +80,8 @@ private final class InstalledCLITurnRunner {
 
     init(
         kind: InstalledAIKind, executable: URL?, model: String, effort: String?, workspace: URL,
-        launch: InstalledAILaunch, toolServers: AIToolServerSession? = nil
+        launch: InstalledAILaunch, toolServers: AIToolServerSession? = nil,
+        agent: AgentSession? = nil
     ) {
         self.kind = kind
         self.launch = launch
@@ -82,7 +90,11 @@ private final class InstalledCLITurnRunner {
         self.effort = effort
         self.workspace = workspace
         self.toolServers = toolServers
+        self.agent = agent
     }
+
+    /// Where the CLI runs: the chat's folder for an agent, the private workspace otherwise.
+    private var workingDirectory: URL { agent?.workspace.folder ?? workspace }
 
     nonisolated func stream(_ request: AIRequest) -> AIProviderStream {
         AIProviderStream { continuation in
@@ -157,7 +169,11 @@ private final class InstalledCLITurnRunner {
         }
 
         activeServers = await resolvedToolServers()
-        let prompt = prompt(for: request)
+        agentSessionID = agent?.resume ?? UUID().uuidString.lowercased()
+        agentInstructionsSuffix = request.instructions
+        let prompt =
+            agent.map { ClaudeAgentLaunch.message(for: request.messages, resuming: $0.resume != nil) }
+            ?? prompt(for: request)
         let images = request.messages.last { $0.role == .user }?.images ?? []
         var files: [URL] = []
         var configURL: URL?
@@ -210,7 +226,7 @@ private final class InstalledCLITurnRunner {
         let stdout = Pipe()
         let stderr = Pipe()
         process.executableURL = executable
-        process.currentDirectoryURL = workspace
+        process.currentDirectoryURL = workingDirectory
         process.environment = environment(for: executable)
         process.standardInput = kind == .grok ? FileHandle.nullDevice : stdin
         process.arguments = arguments(
@@ -262,6 +278,7 @@ private final class InstalledCLITurnRunner {
         self.token = token
         exitStatus = nil
         outputClosed = false
+        interrupted = false
         self.continuation = continuation
         guard kind != .grok else { return }
         input = stdin.fileHandleForWriting
@@ -277,7 +294,7 @@ private final class InstalledCLITurnRunner {
             return
         }
         // A tool loop answers on the same pipe, so an armed turn keeps stdin open for it.
-        write(line, closing: activeServers.isEmpty)
+        write(line, closing: activeServers.isEmpty && agent == nil)
     }
 
     /// A pipe write past the buffer blocks until the child drains it, so never on the main actor.
@@ -335,10 +352,23 @@ private final class InstalledCLITurnRunner {
     }
 
     /// Nothing to call is one request; an armed turn takes the reader's cap, which may be none.
-    private var roundCap: Int? { activeServers.isEmpty ? 1 : toolServers?.rounds }
+    private var roundCap: Int? {
+        if let agent { return agent.rounds }
+        return activeServers.isEmpty ? 1 : toolServers?.rounds
+    }
 
     private func arguments(promptFile: URL?, mcpConfig: URL?, attachments: [URL]) -> [String] {
         switch kind {
+        case .claude where agent != nil:
+            guard let agent else { return [] }
+            return ClaudeAgentLaunch.arguments(
+                model: model, effort: effort, workspace: agent.workspace, session: agentSessionID,
+                resuming: agent.resume != nil, rounds: roundCap,
+                instructions: [AgentInstructions.claude(language: agent.language), agentInstructionsSuffix]
+                    .compactMap { $0 }
+                    .joined(separator: "\n\n"),
+                mcpConfiguration: mcpConfig?.path, handles: activeServers.map(\.handle),
+                managedMCPPolicy: InstalledAIManager.hasManagedMCPPolicy)
         case .claude:
             var result = [
                 "-p",
@@ -418,7 +448,7 @@ private final class InstalledCLITurnRunner {
     /// OpenCode takes its directory from `PWD` ahead of the real working directory.
     private func environment(for executable: URL) -> [String: String] {
         ExecutableLocator.environment(
-            running: executable, adding: ["PWD": workspace.path],
+            running: executable, adding: ["PWD": workingDirectory.path],
             inherited: launch.inherited(for: kind)
         ).merging(kind.managedEnvironment) { _, managed in managed }
     }
@@ -460,7 +490,8 @@ private final class InstalledCLITurnRunner {
             guard !line.isEmpty else { continue }
             apply(
                 InstalledAIStreamDecoder.decode(
-                    Data(line), kind: kind, servers: activeServers), token: token)
+                    Data(line), kind: kind, servers: activeServers, agent: agent != nil),
+                token: token)
         }
         if outputBuffer.count > Self.maximumPartialLineBytes {
             fail(String(localized: "\(kind.title) returned an oversized response."))
@@ -468,8 +499,19 @@ private final class InstalledCLITurnRunner {
     }
 
     private func apply(_ frame: InstalledAIStreamFrame, token: TurnToken) {
-        if let sessionID = frame.sessionID { turnSessionID = sessionID }
+        if let sessionID = frame.sessionID {
+            if let agent {
+                // The session exists on disk from its first frame, so a stopped turn still resumes.
+                if agent.resume == nil { agent.started(sessionID) }
+            } else {
+                turnSessionID = sessionID
+            }
+        }
         if let request = frame.controlRequest {
+            answer(request, token: token)
+            return
+        }
+        if let request = frame.agentRequest {
             answer(request, token: token)
             return
         }
@@ -485,6 +527,9 @@ private final class InstalledCLITurnRunner {
             fail(
                 roundCap.map { String(localized: "Stopped after \($0) rounds of tool calls.") }
                     ?? String(localized: "\(kind.title) could not finish the response."))
+        } else if interrupted, frame.error != nil || frame.failedKind != nil {
+            finish()
+            write(Data(), closing: true)
         } else if let error = frame.error {
             fail(error)
         } else if let failedKind = frame.failedKind {
@@ -513,6 +558,23 @@ private final class InstalledCLITurnRunner {
                         to: request, allowed: allowed,
                         message: String(localized: "The user declined this tool call."))
                 else { return }
+                self.write(line, closing: false)
+            })
+    }
+
+    /// A built-in tool's question goes to the chat; the CLI holds the turn until it is answered.
+    private func answer(_ request: ClaudeControlProtocol.AgentRequest, token: TurnToken) {
+        guard let agent else { return }
+        let approval = ClaudeAgentTool.approval(
+            id: request.toolUseID ?? request.id, name: request.toolName, input: request.input,
+            fileExists: { FileManager.default.fileExists(atPath: $0) })
+        consents.append(
+            Task { [weak self] in
+                let decision = await agent.approve(approval)
+                guard let self, self.token === token,
+                    let line = ClaudeControlProtocol.response(to: request, decision: decision)
+                else { return }
+                if case .redirect = decision { self.interrupted = true }
                 self.write(line, closing: false)
             })
     }
@@ -560,6 +622,11 @@ private final class InstalledCLITurnRunner {
     }
 
     private func fail(_ message: String) {
+        var message = message
+        if let agent, agent.resume != nil, message.contains("No conversation found") {
+            agent.lost()
+            message = String(localized: "\(kind.title) no longer has this chat's session. Send again to start a new one.")
+        }
         continuation?.finish(throwing: AIProviderError.responseFailed(message))
         continuation = nil
         process?.terminate()
@@ -658,6 +725,7 @@ private final class InstalledCLITurnRunner {
         turnSessionID = nil
         exitStatus = nil
         outputClosed = false
+        interrupted = false
         removePrivateFiles()
         activeExecutable = nil
         activeServers = []

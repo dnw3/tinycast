@@ -136,7 +136,8 @@ store starts the helper on demand and reaps it after the selected idle delay or 
 
 `TinycastApp` (`@main`) declares only two `MenuBarExtra` scenes — Tinycast's own item and the
 calendar's, each inserted by one preference and independent of the other; everything else visible is
-driven imperatively from AppKit. Extension menu extras are dynamic `NSStatusItem`s owned entirely by
+driven imperatively from AppKit. No feature can hide Tinycast's own item; the one mark a feature may
+put on it is AI Chat's blue dot while an agent waits on the reader. Extension menu extras are dynamic `NSStatusItem`s owned entirely by
 `Features/Extensions/`, through `ExtensionManager`, with no scene or lifecycle wiring in the core.
 
 - **Command palette** — a borderless floating `NSPanel` (`Palette/PalettePanel.swift`) hosting SwiftUI
@@ -184,7 +185,9 @@ driven imperatively from AppKit. Extension menu extras are dynamic `NSStatusItem
   [features/calendar.md](features/calendar.md).
 - **HUDs** are separate, because a dialog asks and a HUD reports: `MessageHUDController` (the pill) and
   `VolumeHUDController` (the level box), both over a shared `HUDPresenter` that owns the
-  one-at-a-time, auto-dismiss and fade policy. See [ui.md](ui.md#dialogs--hud).
+  one-at-a-time, auto-dismiss and fade policy, plus AI Chat's `AgentWaitingHUDController`, a pill
+  over a presenter of its own that stays up while an agent waits on the reader. See
+  [ui.md](ui.md#dialogs--hud).
 
 `NSAlert` is never used, and that is load-bearing. Appearance is a setting: `AppCore.applyAppearance()`
 assigns `NSApp.appearance` from `AppSettings.appearance`, and `.system` assigns `nil` so AppKit follows

@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Tinycast Agent 模式 · 交互原型</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main id="agent-studio" class="studio" data-theme="dark">
+    <header class="review-header">
+      <div class="review-brand"><span class="brand-mark">t</span><div><strong>Tinycast <span>Agent 模式</span></strong><p>交互设计 · v0.1 草案 · 2026-10-19</p></div></div>
+      <div class="review-actions">
+        <span class="prototype-badge">交互原型</span>
+        <button id="theme-toggle" class="review-button" type="button">浅色外观</button>
+        <a href="../agent-interaction.md">交互设计 ↗</a>
+      </div>
+    </header>
+    <nav class="review-navigation" id="scene-nav" aria-label="设计场景"></nav>
+    <div class="review-context">
+      <div><span class="scenario-dot"></span><span id="scene-caption"></span></div>
+      <div>
+        <label for="failure">异常路径</label>
+        <select id="failure">
+          <option value="none">正常流程</option>
+          <option value="login">CLI 未登录</option>
+          <option value="folder">文件夹无权访问</option>
+          <option value="cmdfail">命令执行失败</option>
+          <option value="switch">中途切换 agent</option>
+        </select>
+        <button class="review-button" id="apply-failure" type="button">演示</button>
+      </div>
+    </div>
+    <section id="desktop" aria-label="模拟 macOS 桌面">
+      <div class="wallpaper" aria-hidden="true"><i></i><i></i><i></i></div>
+      <div class="menubar" aria-hidden="true">
+        <div><b>Tinycast</b><span>文件</span><span>编辑</span><span>窗口</span></div>
+        <div><span class="tc" id="menubar-tc"><svg class="i" viewBox="0 0 24 24"><path d="M8 5h8M12 5v14M7 19h10"/></svg><i class="badge"></i></span><span>100%</span><span>周日 10:24</span></div>
+      </div>
+      <div id="scene-root"></div>
+    </section>
+    <footer class="review-footer">
+      <div><strong id="flow-label"></strong><span id="flow-detail"></span></div>
+      <div id="demo-controls"></div>
+    </footer>
+    <p class="prototype-note">仅演示交互：内容均为虚构，不读写任何文件，不调用任何 CLI、模型或飞书。顶部场景导航、异常注入和底部模拟按钮是评审工具，不进入产品。键盘可直接操作：↵ 允许 · ⌥↵ 本次对话都允许 · ⎋ 拒绝（面板里 ⎋ 仍是收起）· ⌘K 操作菜单 · 运行中 ↵ 排队、⌘↵ 插话 · ⌘B 显示或收起侧边栏。</p>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>

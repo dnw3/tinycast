@@ -1,12 +1,33 @@
 import SwiftUI
 
-/// Tinycast's own menu-bar item. It carries no feature state, so no feature can hide or reshape it.
+/// Tinycast's own menu-bar item: no feature can hide it, and only a waiting agent marks it.
 struct MenuBarLabel: View {
     let appName: String
 
     var body: some View {
-        Image("MenuBarIcon")
-            .accessibilityLabel(appName)
+        if AppCore.shared.aiChats.waiting.isEmpty {
+            Image("MenuBarIcon")
+                .accessibilityLabel(appName)
+        } else {
+            HStack(spacing: Theme.Spacing.xs) {
+                Image("MenuBarIcon")
+                Image(nsImage: waitingDot)
+            }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(String(localized: "\(appName): an agent is waiting for you"))
+        }
+    }
+
+    /// Not a template, so the status bar keeps it blue rather than ink it like the icon.
+    private var waitingDot: NSImage {
+        let size = NSSize(width: Theme.Size.colorDot, height: Theme.Size.colorDot)
+        let image = NSImage(size: size, flipped: false) { rect in
+            NSColor(Theme.Colors.waiting).setFill()
+            NSBezierPath(ovalIn: rect).fill()
+            return true
+        }
+        image.isTemplate = false
+        return image
     }
 }
 
@@ -30,6 +51,12 @@ struct MenuBarMenu: View {
         }
         if AppCore.shared.captureCoordinator.recording != nil {
             Button("Stop Recording") { AppCore.shared.captureCoordinator.finishRecording() }
+        }
+        ForEach(AppCore.shared.aiChats.waiting, id: \.session.id) { chat in
+            let coordinator = AppCore.shared.aiChatCoordinator
+            Button("Review Request in “\(coordinator.title(of: chat))”…") {
+                coordinator.showWaiting(chat)
+            }
         }
         Divider()
         Button("Check for Updates...") { AppCore.shared.updateCoordinator.checkForUpdates() }

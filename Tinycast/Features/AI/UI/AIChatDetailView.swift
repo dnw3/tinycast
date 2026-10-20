@@ -53,7 +53,15 @@ struct AIChatDetailView: View {
                     }
                 }
             VStack(alignment: .leading, spacing: Theme.Spacing.md) {
-                if !suggestions.isEmpty, chat.draft.isEmpty {
+                if let request = chat.pendingApproval, let workspace = chat.session.agent {
+                    AgentApprovalCard(
+                        request: request, workspace: workspace,
+                        agent: coordinator.agentKind(for: chat)?.title ?? "",
+                        position: chat.approvalPosition, onAnswer: { chat.answerApproval($0) }
+                    )
+                    .id(request.id)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                } else if !suggestions.isEmpty, chat.draft.isEmpty {
                     ChatSuggestionChips(choices: suggestions) { coordinator.send($0, in: chat) }
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
@@ -68,6 +76,7 @@ struct AIChatDetailView: View {
             .padding(.top, Theme.Spacing.sm)
             .animation(.snappy, value: suggestions)
             .animation(.snappy, value: chat.draft.isEmpty)
+            .animation(.snappy, value: chat.pendingApproval?.id)
         }
     }
 
@@ -84,6 +93,8 @@ struct AIChatDetailView: View {
             ChatTranscriptView(
                 messages: chat.session.messages, status: chat.liveStatus, usage: chat.usage,
                 surface: .window,
+                workingSince: chat.replyStartedAt, statusFollowsText: coordinator.isAgentChat(chat),
+                isScrollCaptured: coordinator.isScrollCaptured,
                 onRegenerate: chat.isStreaming ? nil : { coordinator.regenerate(in: chat) },
                 find: find.isSearching
                     ? ChatFindHighlight(
@@ -93,6 +104,8 @@ struct AIChatDetailView: View {
             )
             // A switched chat is a new scroll: its own tail-following, opening at its latest line.
             .id(chat.session.id)
+            .environment(\.chatAwaitedCall, chat.pendingApproval?.id)
+            .environment(\.chatAgentWorkspace, chat.session.agent)
             .overlay(alignment: .topTrailing) {
                 if find.isSearching {
                     FindCounter(
@@ -126,10 +139,17 @@ private struct AIChatComposer: View {
     @Binding var showsContext: Bool
     @Binding var isDropTargeted: Bool
     @State private var editor = ComposerTextViewHandle()
+    @State private var isComposing = false
 
     private var canSend: Bool {
         !chat.draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             || !chat.pendingAttachments.isEmpty
+    }
+
+    /// Typed while an agent waits: the request is refused and the text goes to the agent instead.
+    private var redirects: Bool {
+        chat.pendingApproval != nil
+            && !chat.draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     var body: some View {
@@ -143,17 +163,22 @@ private struct AIChatComposer: View {
             }
             chips
             ZStack(alignment: .topLeading) {
-                if chat.draft.isEmpty {
-                    Text("Ask anything…")
-                        .foregroundStyle(.tertiary)
-                        .allowsHitTesting(false)
+                if chat.draft.isEmpty, !isComposing {
+                    Text(
+                        chat.pendingApproval == nil
+                            ? String(localized: "Ask anything…")
+                            : String(localized: "Or say what to do instead…")
+                    )
+                    .foregroundStyle(.tertiary)
+                    .allowsHitTesting(false)
                 }
                 ChatComposerTextView(
                     text: $chat.draft, focusKey: chat.session.id,
                     maximumTextHeight: maximumTextHeight, handle: editor,
-                    isFileDragTargeted: $isDropTargeted,
+                    isFileDragTargeted: $isDropTargeted, isComposing: $isComposing,
                     onDropFiles: { coordinator.attach(files: $0, to: chat) },
-                    onInvalidate: { coordinator.dictation.cancel(in: $0) }, onSubmit: submit)
+                    onInvalidate: { coordinator.dictation.cancel(in: $0) }, onSubmit: submitFromKeyboard,
+                    onAlternateSubmit: allowForChat, onEscape: deny)
             }
             // The text's edge is the + glyph's, which sits centred in its own hover square.
             .padding(.horizontal, Theme.Spacing.sm)
@@ -200,6 +225,17 @@ private struct AIChatComposer: View {
         let searches = coordinator.capabilities(for: chat).webSearch
         return HStack(spacing: Theme.Spacing.xxs) {
             AIAddMenu(chat: chat, coordinator: coordinator, settings: settings, offersSearch: searches)
+            if coordinator.agentKind(for: chat) != nil {
+                let workspace = chat.session.agent
+                AgentFolderMenu(
+                    chat: chat, folder: workspace?.folder, recents: coordinator.recentAgentFolders,
+                    coordinator: coordinator
+                )
+                .layoutPriority(-1)
+                if let workspace {
+                    AgentModeMenu(chat: chat, mode: workspace.mode, coordinator: coordinator)
+                }
+            }
             if searches, settings.webSearchEnabled {
                 WebSearchPill(settings: settings, isCompact: compactSearch)
                     .transition(.opacity.combined(with: .scale(scale: 0.9)))
@@ -222,9 +258,10 @@ private struct AIChatComposer: View {
     /// A solid disc, so Send is the one strong mark on a row of quiet controls.
     private var sendButton: some View {
         let enabled = chat.isStreaming || canSend
+        let stops = chat.isStreaming && !redirects
         return Button(action: submit) {
-            Image(systemName: chat.isStreaming ? "stop.fill" : "arrow.up")
-                .font(chat.isStreaming ? Theme.Typography.composerStop : Theme.Typography.composerSend)
+            Image(systemName: stops ? "stop.fill" : "arrow.up")
+                .font(stops ? Theme.Typography.composerStop : Theme.Typography.composerSend)
                 .contentTransition(.symbolEffect(.replace))
                 .foregroundStyle(enabled ? Theme.Colors.composerSendInk : Theme.Colors.textTertiary)
                 .frame(width: Theme.Size.aiChatComposerControl, height: Theme.Size.aiChatComposerControl)
@@ -236,16 +273,38 @@ private struct AIChatComposer: View {
         .buttonStyle(.plain)
         .disabled(!enabled)
         .animation(.easeOut(duration: Theme.Duration.hover), value: enabled)
-        .help(chat.isStreaming ? String(localized: "Stop Response") : String(localized: "Send  ↵"))
-        .accessibilityLabel(chat.isStreaming ? String(localized: "Stop Response") : String(localized: "Send"))
+        .help(stops ? String(localized: "Stop Response") : String(localized: "Send  ↵"))
+        .accessibilityLabel(stops ? String(localized: "Stop Response") : String(localized: "Send"))
     }
 
     private func submit() {
-        if chat.isStreaming {
+        if redirects {
+            coordinator.redirect(chat.draft, in: chat)
+            chat.draft = ""
+        } else if chat.isStreaming {
             coordinator.stopResponse(in: chat)
         } else if coordinator.send(chat.draft, in: chat) {
             chat.draft = ""
         }
+    }
+
+    /// Return on an empty field answers the card; a delete is the one answer it never gives.
+    private func submitFromKeyboard() {
+        guard let request = chat.pendingApproval, !redirects else { return submit() }
+        if !request.deletes { chat.answerApproval(.allow) }
+    }
+
+    private func allowForChat() -> Bool {
+        guard let request = chat.pendingApproval, let workspace = chat.session.agent, !redirects
+        else { return false }
+        if AgentGrants.admits(request, in: workspace) { chat.answerApproval(.allowForChat) }
+        return true
+    }
+
+    private func deny() -> Bool {
+        guard chat.pendingApproval != nil else { return false }
+        chat.answerApproval(.deny)
+        return true
     }
 }
 
@@ -505,6 +564,122 @@ private struct AIReasoningPicker: View {
             efforts.isEmpty
                 ? String(localized: "This model has no reasoning setting")
                 : String(localized: "Change reasoning effort"))
+    }
+}
+
+/// Where this chat's agent works; with no folder the chat stays a chat.
+private struct AgentFolderMenu: View {
+    let chat: AIChatState
+    /// Handed in, like the model picker's selection, rather than read from the streaming session.
+    let folder: URL?
+    let recents: [URL]
+    let coordinator: AIChatCoordinator
+
+    var body: some View {
+        let folders = folder.map { [$0] + recents.filter { $0 != folder } } ?? recents
+        Menu {
+            if !folders.isEmpty {
+                Section("Recent Folders") {
+                    ForEach(folders, id: \.self) { url in
+                        Toggle(
+                            isOn: Binding(
+                                get: { url == folder },
+                                set: { if $0 { coordinator.setAgentFolder(url, in: chat) } })
+                        ) {
+                            Label(title(of: url, among: folders), systemImage: "folder")
+                        }
+                    }
+                }
+            }
+            Button("Choose Folder…", systemImage: "folder.badge.plus") {
+                coordinator.chooseAgentFolder(for: chat)
+            }
+            if let folder {
+                Button("Show in Finder", systemImage: "arrow.up.right.square") {
+                    NSWorkspace.shared.activateFileViewerSelecting([folder])
+                }
+            }
+            Divider()
+            Toggle(
+                "No Folder",
+                isOn: Binding(
+                    get: { folder == nil },
+                    set: { if $0 { coordinator.setAgentFolder(nil, in: chat) } }))
+        } label: {
+            ComposerControlLabel(title: folder?.lastPathComponent ?? String(localized: "No Folder")) {
+                ComposerSymbol(name: "folder")
+                    .foregroundStyle(folder == nil ? Theme.Colors.textTertiary : Theme.Colors.textSecondary)
+            }
+        }
+        .composerMenu()
+        .disabled(chat.isStreaming)
+        .help(
+            folder.map { String(localized: "The agent works in \(($0.path as NSString).abbreviatingWithTildeInPath)") }
+                ?? String(localized: "Choose a folder for the agent to work in"))
+    }
+
+    /// Two folders of one name are told apart by their paths.
+    private func title(of url: URL, among folders: [URL]) -> String {
+        let name = url.lastPathComponent
+        let clashes = folders.contains { $0 != url && $0.lastPathComponent == name }
+        return clashes ? (url.path as NSString).abbreviatingWithTildeInPath : name
+    }
+}
+
+/// How freely the agent acts in its folder; the widest mode asks once before it is chosen.
+private struct AgentModeMenu: View {
+    let chat: AIChatState
+    let mode: AgentMode
+    let coordinator: AIChatCoordinator
+
+    var body: some View {
+        Menu {
+            ForEach(AgentMode.allCases, id: \.self) { option in
+                Toggle(
+                    isOn: Binding(
+                        get: { option == mode },
+                        set: { chosen in
+                            guard chosen else { return }
+                            Task { await coordinator.setAgentMode(option, in: chat) }
+                        })
+                ) {
+                    Label(option.title, systemImage: option.symbol)
+                }
+            }
+            Divider()
+            Text(mode.summary)
+        } label: {
+            ComposerControlLabel(title: mode.title) { ComposerSymbol(name: mode.symbol) }
+        }
+        .composerMenu()
+        .disabled(chat.isStreaming)
+        .help(mode.summary)
+    }
+}
+
+extension AgentMode {
+    fileprivate var title: String {
+        switch self {
+        case .readOnly: String(localized: "Read Only")
+        case .ask: String(localized: "Ask First")
+        case .autoEdit: String(localized: "Auto Edit")
+        }
+    }
+
+    fileprivate var symbol: String {
+        switch self {
+        case .readOnly: "eye"
+        case .ask: "hand.raised"
+        case .autoEdit: "bolt"
+        }
+    }
+
+    fileprivate var summary: String {
+        switch self {
+        case .readOnly: String(localized: "Reads and searches; never changes anything")
+        case .ask: String(localized: "Asks before it edits files or runs commands")
+        case .autoEdit: String(localized: "Edits inside the folder; commands and deletions still ask")
+        }
     }
 }
 

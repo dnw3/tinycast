@@ -26,6 +26,10 @@ final class AISettingsStore {
             defaults.set(systemPromptEnabled, forKey: AppSettingsKey.aiSystemPromptEnabled.rawValue)
         }
     }
+    /// On by default: a hidden sidebar slides out when the pointer reaches the window's left edge.
+    var sidebarPeekEnabled: Bool {
+        didSet { defaults.set(sidebarPeekEnabled, forKey: AppSettingsKey.aiSidebarPeek.rawValue) }
+    }
     /// Forever by default, so upgrading deletes nothing the reader did not ask to lose.
     var retention: AIRetention {
         didSet { defaults.set(retention.rawValue, forKey: AppSettingsKey.aiRetention.rawValue) }
@@ -92,6 +96,8 @@ final class AISettingsStore {
         systemPrompt = defaults.string(forKey: AppSettingsKey.aiSystemPrompt.rawValue) ?? ""
         systemPromptEnabled =
             defaults.object(forKey: AppSettingsKey.aiSystemPromptEnabled.rawValue) as? Bool ?? true
+        sidebarPeekEnabled =
+            defaults.object(forKey: AppSettingsKey.aiSidebarPeek.rawValue) as? Bool ?? true
         // Unset reads as 0, which no retention case carries — `forever` is negative on purpose.
         retention =
             AIRetention(rawValue: defaults.integer(forKey: AppSettingsKey.aiRetention.rawValue))

@@ -11,7 +11,8 @@ enum AIProviderFactory {
         installedAI: InstalledAIManager,
         keyStore: KeychainSecretStore = .aiAPIKeys,
         guardrails: SystemLanguageModel.Guardrails = .default,
-        toolServers: AIToolServerSession? = nil
+        toolServers: AIToolServerSession? = nil,
+        agent: AgentSession? = nil
     ) throws -> any AIProvider {
         switch selection {
         case .appleIntelligence:
@@ -28,14 +29,14 @@ enum AIProviderFactory {
                 throw AIProviderError.unavailable(String(localized: "Codex is disabled in AI Settings."))
             }
             return CodexInstalledProvider(
-                turns: subscription.turns, model: model, effort: effort,
-                toolServers: toolServers)
+                turns: agent == nil ? subscription.turns : subscription.agentTurns, model: model,
+                effort: effort, toolServers: toolServers, agent: agent)
         case .claude(let model, let effort):
             guard settings.enabledInstalledProviders.contains(.claude) else {
                 throw AIProviderError.unavailable(String(localized: "Claude is disabled in AI Settings."))
             }
             return try installedAI.provider(
-                kind: .claude, model: model, effort: effort, toolServers: toolServers)
+                kind: .claude, model: model, effort: effort, toolServers: toolServers, agent: agent)
         case .grok(let model, let effort):
             guard settings.enabledInstalledProviders.contains(.grok) else {
                 throw AIProviderError.unavailable(String(localized: "Grok is disabled in AI Settings."))

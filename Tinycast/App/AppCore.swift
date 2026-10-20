@@ -385,7 +385,7 @@ final class AppCore {
             hotKeys.onDictationPressed = { [weak self] in self?.dictationCoordinator.pressed() }
             hotKeys.onDictationReleased = { [weak self] in self?.dictationCoordinator.released() }
             hotKeys.onDictationCancelled = { [weak self] in self?.dictationCoordinator.cancel() }
-            hotKeys.onRunCommand = { [weak self] id in self?.launcherCoordinator.runCommand(id) }
+            hotKeys.onRunCommand = { [weak self] id in self?.launcherCoordinator.runCommand(id, fromShortcut: true) }
             hotKeys.onRunCustomCommand = { [weak self] id in
                 self?.customCommandCoordinator.runCustomCommand(id: id)
             }

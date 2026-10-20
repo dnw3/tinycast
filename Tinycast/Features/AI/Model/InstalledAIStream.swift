@@ -8,21 +8,23 @@ struct InstalledAIStreamFrame: Equatable, Sendable {
     var completed = false
     /// A tool call the CLI is holding open; the runner answers it and the turn carries on.
     var controlRequest: ClaudeControlProtocol.Request?
+    var agentRequest: ClaudeControlProtocol.AgentRequest?
     var unsupportedRequestID: String?
     /// The round cap ended the turn. Only the runner knows the number to say it with.
     var stoppedAtRoundCap = false
 }
 
 enum InstalledAIStreamDecoder {
+    /// `agent` says the turn runs Claude's own tools, so their questions and rows are decoded too.
     static func decode(
-        _ data: Data, kind: InstalledAIKind, servers: [AIToolServer] = []
+        _ data: Data, kind: InstalledAIKind, servers: [AIToolServer] = [], agent: Bool = false
     ) -> InstalledAIStreamFrame {
         guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
             let type = object["type"] as? String
         else { return InstalledAIStreamFrame() }
         switch kind {
         case .openCode: return openCode(object, type: type)
-        case .claude: return claude(object, type: type, servers: servers)
+        case .claude: return claude(object, type: type, servers: servers, agent: agent)
         case .cursor: return cursor(object, type: type)
         case .grok: return grok(object, type: type)
         case .codex: return InstalledAIStreamFrame()
@@ -74,16 +76,27 @@ enum InstalledAIStreamDecoder {
     }
 
     private static func claude(
-        _ object: [String: Any], type: String, servers: [AIToolServer]
+        _ object: [String: Any], type: String, servers: [AIToolServer], agent: Bool = false
     ) -> InstalledAIStreamFrame {
         var frame = InstalledAIStreamFrame()
-        if !servers.isEmpty, type == "control_request" {
-            frame.controlRequest = ClaudeControlProtocol.request(object)
-            frame.unsupportedRequestID = ClaudeControlProtocol.unsupportedRequestID(object)
+        // Only an agent's session is kept; every other Claude turn runs without persistence.
+        if agent, type == "system", object["subtype"] as? String == "init",
+            let sessionID = object["session_id"] as? String, !sessionID.isEmpty
+        {
+            frame.sessionID = sessionID
             return frame
         }
-        if !servers.isEmpty, type == "assistant" || type == "user" {
-            frame.events = toolEvents(in: object, servers: servers)
+        let armed = agent || !servers.isEmpty
+        if armed, type == "control_request" {
+            frame.controlRequest = ClaudeControlProtocol.request(object)
+            frame.agentRequest = agent ? ClaudeControlProtocol.agentRequest(object) : nil
+            if frame.controlRequest == nil, frame.agentRequest == nil {
+                frame.unsupportedRequestID = ClaudeControlProtocol.unsupportedRequestID(object)
+            }
+            return frame
+        }
+        if armed, type == "assistant" || type == "user" {
+            frame.events = toolEvents(in: object, servers: servers, agent: agent)
             return frame
         }
         // Summaries arrive as several thinking blocks; a break keeps them from running together.
@@ -117,7 +130,8 @@ enum InstalledAIStreamDecoder {
             return frame
         }
         if object["is_error"] as? Bool == true {
-            frame.error = object["result"] as? String
+            // A run that never reached the model, like a lost session's, says why in `errors`.
+            frame.error = (object["result"] as? String).flatMap { $0.isEmpty ? nil : $0 } ?? failure(of: object)
             frame.failedKind = .claude
             return frame
         }
@@ -130,7 +144,7 @@ enum InstalledAIStreamDecoder {
 
     /// `tool_use` and `tool_result` blocks, as the two events a transcript row is built from.
     private static func toolEvents(
-        in object: [String: Any], servers: [AIToolServer]
+        in object: [String: Any], servers: [AIToolServer], agent: Bool = false
     ) -> [AIStreamEvent] {
         guard let message = object["message"] as? [String: Any],
             let content = message["content"] as? [[String: Any]]
@@ -138,15 +152,30 @@ enum InstalledAIStreamDecoder {
         return content.compactMap { block in
             switch block["type"] as? String {
             case "tool_use":
-                guard let id = block["id"] as? String, let name = block["name"] as? String,
-                    let call = ClaudeMCPLaunch.route(name)
-                else { return nil }
+                guard let id = block["id"] as? String, let name = block["name"] as? String else {
+                    return nil
+                }
+                let input = JSONValue(block["input"] ?? [String: Any]())
+                guard let call = ClaudeMCPLaunch.route(name) else {
+                    guard agent, let row = ClaudeAgentTool.row(name: name, input: input) else {
+                        return nil
+                    }
+                    return .toolCall(
+                        id: id, origin: "", title: row.title, kind: row.kind,
+                        detail: ClaudeAgentTool.detail(name: name, input: input))
+                }
                 return .toolCall(
                     id: id, origin: AIToolServerRow.title(of: call.handle, in: servers),
-                    title: AIToolServerRow.label(call.tool))
+                    title: AIToolServerRow.label(call.tool), detail: ChatToolDetail(input: input.jsonText))
             case "tool_result":
                 guard let id = block["tool_use_id"] as? String else { return nil }
-                return .toolResult(id: id, isError: block["is_error"] as? Bool == true)
+                let isError = block["is_error"] as? Bool == true
+                guard let text = ChatToolDetail.text(of: block["content"].map(JSONValue.init)) else {
+                    return .toolResult(id: id, isError: isError)
+                }
+                let result = ClaudeAgentTool.result(text, isError: isError)
+                return .toolResult(
+                    id: id, isError: isError, output: result.output, exitCode: result.exitCode)
             default:
                 return nil
             }
@@ -187,13 +216,14 @@ enum InstalledAIStreamDecoder {
             frame.sessionID = sessionID
         }
         if type == "result", object["is_error"] as? Bool == true {
-            frame.error = grokFailure(object)
+            frame.error = failure(of: object)
             frame.failedKind = .grok
         }
         return frame
     }
 
-    private static func grokFailure(_ object: [String: Any]) -> String? {
+    /// The cause an error result names: its `errors`, else its `result`.
+    private static func failure(of object: [String: Any]) -> String? {
         if let errors = object["errors"] as? [Any] {
             let lines = errors.compactMap { item -> String? in
                 guard let text = item as? String else { return nil }
