@@ -6,6 +6,14 @@ enum ScrollStitchPolicy {
         let lanes: Int
         let rgb: [UInt8]
         var originalRGB: [UInt8]?
+        /// Where the pointer was along the scroll axis, when it was over the region.
+        var pointer: Int?
+
+        /// Lines a hover may have changed: whatever is under the pointer lights as content passes.
+        func nearPointer(_ start: Int, _ end: Int) -> Bool {
+            guard let pointer else { return false }
+            return start < pointer + ScrollStitchPolicy.hoverReach && end > pointer - ScrollStitchPolicy.hoverReach
+        }
 
         func difference(
             to other: Frame, shift: Int, start: Int, end: Int, stride step: Int, textured: Bool = false,
@@ -35,7 +43,25 @@ enum ScrollStitchPolicy {
             }
             return count == 0 ? 255 : Double(sum) / Double(count)
         }
+
+        /// The widest swing of any channel along one lane, so a blank stretch can be told apart.
+        func activity(lane: Int, start: Int, end: Int) -> Int {
+            let lower = max(0, start), upper = min(length, end)
+            guard lower < upper else { return 0 }
+            var minimum = [255, 255, 255], maximum = [0, 0, 0]
+            for line in lower..<upper {
+                for channel in 0..<3 {
+                    let value = Int(rgb[(line * lanes + lane) * 3 + channel])
+                    minimum[channel] = min(minimum[channel], value)
+                    maximum[channel] = max(maximum[channel], value)
+                }
+            }
+            return (0..<3).map { maximum[$0] - minimum[$0] }.max() ?? 0
+        }
     }
+
+    /// About 48pt either side at 2×: a hovered row's highlight, and controls beside the pointer.
+    static let hoverReach = 96
 
     enum Decision: Equatable, Sendable {
         case duplicate
@@ -91,25 +117,45 @@ enum ScrollStitchPolicy {
             return (candidate.0, current.difference(to: previous, shift: candidate.0,
                 start: lower, end: upper, stride: 1, textured: true))
         }.sorted { $0.1 < $1.1 }
-        guard let best = candidates.first, best.1 < 5 else { return .uncertain }
-        let bestError = patchError(previous: previous, current: current,
-            shift: best.0, start: start, end: end)
+        // At the end of the search range the true shift may lie just beyond it, one line off.
+        guard let best = candidates.first, abs(best.0) < maximum else { return .uncertain }
+        let fit = fit(previous: previous, current: current, shift: best.0, start: start, end: end)
+        guard fit.consistent, fit.error < 8 else { return .uncertain }
         let alternatives = candidates.prefix(32).filter { abs($0.0 - best.0) > 3 }
         guard !alternatives.isEmpty, alternatives.allSatisfy({ candidate in
             patchError(previous: previous, current: current, shift: candidate.0, start: start, end: end)
-                > bestError * 1.8 + 1.5
+                > fit.error * 1.8 + 1.5
         }) else { return .uncertain }
-        let lower = max(start, start - best.0), upper = min(end, end - best.0)
-        guard
-            (0..<current.lanes).allSatisfy({ lane in
-                current.difference(
-                    to: previous, shift: best.0, start: lower, end: upper, stride: 1,
-                    selectedLanes: lane..<(lane + 1)) < 5
-            })
-        else {
-            return .uncertain
-        }
         return best.0 > 0 ? .append(offset: best.0, fixedLeading: leading, fixedTrailing: trailing) : .reverse
+    }
+
+    /// Strict everywhere but under the pointer, where a hover changes content in place.
+    private static func fit(
+        previous: Frame, current: Frame, shift: Int, start: Int, end: Int
+    ) -> (error: Double, consistent: Bool) {
+        let lower = max(start, start - shift), upper = min(end, end - shift)
+        var errors: [Double] = []
+        var consistent = true
+        for lane in 0..<current.lanes {
+            var changed = 0
+            for line in stride(from: lower, to: upper, by: 16) {
+                let window = min(upper, line + 32)
+                guard !current.nearPointer(line, window), !previous.nearPointer(line + shift, window + shift),
+                    current.activity(lane: lane, start: line, end: window) >= 16
+                        || previous.activity(lane: lane, start: line + shift, end: window + shift) >= 16
+                else { continue }
+                let error = current.difference(
+                    to: previous, shift: shift, start: line, end: window, stride: 1,
+                    selectedLanes: lane..<(lane + 1))
+                // Blank windows match at any shift; on a sparse page they would hide a line's slip.
+                errors.append(error)
+                if error > 12 { changed += 1 }
+            }
+            // One window is a caret blinking; a lane changed in more never moved with the rest.
+            if changed > 1 { consistent = false }
+        }
+        errors.sort()
+        return (errors.dropLast(errors.count / 20).last ?? 255, consistent)
     }
 
     private static func patchError(previous: Frame, current: Frame, shift: Int, start: Int, end: Int) -> Double {

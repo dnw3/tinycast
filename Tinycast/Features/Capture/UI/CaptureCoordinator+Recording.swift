@@ -50,7 +50,8 @@ extension CaptureCoordinator {
             else {
                 throw CaptureScreenService.Failure.displayChanged
             }
-            let target = try await CaptureScreenService.target(screen: screen, scrolling: false)
+            let target = try await CaptureScreenService.target(
+                screen: screen, scrolling: false, includedWindowIDs: self.contentWindowIDs())
             let windowID =
                 workspace.request.scope == .window
                 ? editor.document.pieces.first.flatMap { workspace.sourceWindows[$0.raster] } : nil

@@ -163,7 +163,7 @@ final class LauncherCoordinator {
     }
 
     /// The one funnel a built-in command runs through, from a palette row or its global shortcut.
-    func runCommand(_ id: CommandID) {
+    func runCommand(_ id: CommandID, fromShortcut: Bool = false) {
         switch id {
         case .quickAI:
             core.quickAICoordinator.show()
@@ -176,7 +176,7 @@ final class LauncherCoordinator {
             core.quickActionCoordinator.run(.rewrite)
         case .captureScreenshot, .captureFullscreen, .captureScrollingScreenshot, .captureRecording, .captureText,
             .captureAndTranslate, .editClipboardImage, .pinClipboardImage, .captureHistory:
-            core.captureCoordinator.open(id)
+            core.captureCoordinator.open(id, fromShortcut: fromShortcut)
         case .translate:
             core.translationCoordinator.open()
         case .summarize:

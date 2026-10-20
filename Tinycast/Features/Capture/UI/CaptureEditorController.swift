@@ -23,6 +23,7 @@ final class CaptureEditorController: NSObject, NSWindowDelegate {
         window.isReleasedWhenClosed = false
         window.isRestorable = false
         CaptureChrome.adopt(window)
+        CaptureChrome.reserveTitleBand(window)
         window.contentMinSize = CGSize(
             width: metrics.scaled(Theme.Size.captureEditorMinimum.width),
             height: metrics.scaled(Theme.Size.captureEditorMinimum.height))

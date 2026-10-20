@@ -5,7 +5,16 @@
 - `AppCore` owns one `CaptureCoordinator`; views call the coordinator through their environment.
   Commands, settings and clipboard image actions share that owner. Startup never starts capture or requests permission.
 - Screen capture uses macOS 26+ ScreenCaptureKit. Tinycast's controls are excluded; ordinary display/region
-  screenshots include existing pins as frozen desktop pixels. Scrolling and recording exclude pins. Permission is requested
+  screenshots include existing pins as frozen desktop pixels, and every other window Tinycast's process has on
+  screen the same way — AI Chat, Settings, Notes, Quick Action and Translation panels with their child windows,
+  and what the system draws there for it, such as input-method candidates, tooltips and the menu bar icon —
+  which window selection picks like any app's (`screenshotWindowIDs`). The launcher, clipboard history included, is captured
+  when a global shortcut starts the capture: it hides only under the overlay, whose frozen desktop shows it; a
+  capture run from a launcher row hides it first. HUD toasts and dialogs never are — a toast is often the last
+  capture's own, a dialog may be its question still fading out. Scrolling and recording take the same windows
+  except pins and the launcher (`contentWindowIDs`), so AI Chat scrolls through or records like any app's
+  window; the capture's own controls and region border, made after the filter, never enter a frame.
+  Permission is requested
   only after a capture command; granting it does not automatically retry an earlier capture.
 - Model contains Foundation value types only. Documents, annotations, geometry, registration decisions,
   revisions and undo contain no decoded images or environment access.
@@ -180,21 +189,51 @@ multi-Space, keyboard, Retina quality and VoiceOver behavior remain in the accep
 
 The scrolling icon starts manual vertical capture directly from a selected region. Its menu offers
 Vertical, Horizontal and Adjust Region; direction and region preparation remain available before sampling.
-Screen/window captures first require a region inside the scrolling content; the previous selection is
-hidden so the first drag creates the new region. Starting refreshes the ScreenCaptureKit filter to exclude
+A picked window — the scrolling icon on its selection, or a window clicked in scrolling mode — starts at
+once from its own scrolling content, so the reader only scrolls: in Tinycast's own windows the largest
+scroll view less its content insets and the toolbar (`contentLayoutRect`), elsewhere the
+`AXScrollArea` under the window's center when Accessibility is granted. The area stops
+`captureScrollerClearance` short of its trailing edge, where an overlay scroller flashes in while the
+content moves. A screen capture, or a window whose scroll area cannot be found, first requires a region
+inside the scrolling content; the previous selection is hidden so the first drag creates the new region.
+A drawn region that strays past the window under its center is trimmed to that window, rounded inward
+(`CaptureGeometry.innerPixels`), rather than reading as outside it at once. Starting refreshes the ScreenCaptureKit filter to exclude
 the Dock. The original desktop workspace is retained until a result is accepted or cancellation restores it;
 annotations are not baked into scrolling frames.
-The result window provides Back to Screenshot / Scrolling Result, preserving each image and undo stack.
+The result window switches between Screenshot and Scrolling Screenshot with one segmented control in its
+title bar, preserving each image and undo stack.
 Closing checks both unsaved results. Canceling without keeping a result restores the retained screenshot in its original desktop workspace.
 
-`ScrollCaptureSession` serializes stable-frame sampling, RGB registration, strip writes and incremental
-preview updates. It requires two stable samples, matches against the last accepted frame and rejects
-ambiguous displacement. Duplicate and reverse frames do not grow the result; a reverse frame shows
-Scroll forward in a notice under the bar for three seconds, cleared by the next appended strip. Along-axis fixed headers
-stay in the first strip; the previous fixed footer is removed before a new strip and footer are appended.
-Independent per-lane checks reject inconsistent cross-axis content, including sampled fixed sidebars.
-Uncertain content pauses with the last valid result and a Select Again path; it is never force-stitched.
-This conservative detection still needs the real browser/PDF/native-list corpus before AC-04 can pass.
+`ScrollCaptureSession` serializes sampling, RGB registration, strip writes and incremental preview
+updates. It samples again 10ms after each sample while anything moves, about every 55ms in all, and
+every 150ms once ten samples in a row were at rest, reading the captured image in memory (`ScrollFrameReader.sample(_:axis:)`); only strips reach the
+disk, each cut from its own frame (`strip(_:rect:to:)`). A frame reaches back two thirds of the region,
+and a single trackpad flick moves further than that, which is why the frames in motion are used, not
+only the ones at rest. `ScrollTracker` decides which become strips:
+
+- The first strip is a frame at rest, two samples alike, so nothing half-drawn starts the capture.
+- Every later sample is matched against the last strip's frame. The newest one that lines up waits as
+  pending, and is written as soon as the content rests or a later frame no longer reaches back to the
+  last strip; that later frame is then measured from the one just written. Scrolling back a little keeps
+  the furthest pending frame, and finishing writes it.
+- After two samples in a row that do not line up, a lasting notice under the bar asks to scroll back a
+  little; the next frame that lines up clears it and capture carries on by itself. Nothing pauses for
+  this, and nothing is force-stitched meanwhile. A frame above the last strip shows Scroll forward for
+  three seconds instead.
+
+Matching is strict except where the pointer is. Each sample records the pointer's line while it is
+over the region, and the 32-line windows within `hoverReach` (96 lines, about 48pt at 2×) of it in
+either frame are left out, since whatever sits under a resting pointer lights up as content passes.
+Everywhere else a lane may differ in at most one window — a caret blinking — so a fixed sidebar, a
+floating button or a layout that repeats at a different line still makes the match uncertain; a
+tolerance spread over the whole region was tried and took a page that repeats every few lines for a
+shift it never made. The fit is the 95th-percentile error of the windows that show anything, since
+blank ones match at any shift and would hide a line's slip on a sparse page, and a best shift at the
+very end of the search range is uncertain too, because the true one may lie a line beyond it. AI Chat holds its hover effects still while a scrolling
+capture reads it (`chatHoverStill`), so no Copy button the pointer happens to rest on is stitched in.
+Duplicate and reverse frames do not grow the result. Along-axis fixed headers stay in the first strip;
+the previous fixed footer is removed before a new strip and footer are appended. This detection still
+needs the real browser/PDF/native-list corpus before AC-04 can pass.
 
 Manual is the default and needs no Accessibility grant. Auto Scroll is an explicit choice for each
 session, checks Accessibility and revalidates the original PID/window/frame/visible region immediately
@@ -206,15 +245,19 @@ capture also excludes the system Dock from its ScreenCaptureKit filter. The visi
 that same set of excluded application PIDs, so a desktop-sized Dock surface cannot pause capture or
 enter the output. Application exclusions come from the full shareable-content list, because an
 on-screen-only list can omit Tinycast while its launcher is hidden. Missing self-identity fails closed;
-only on-screen windows remain eligible capture targets. Ordinary screenshots retain their original filter. Visible
+only on-screen windows remain eligible capture targets. Tinycast's content windows are taken back by
+window ID (`includedWindowIDs`), into the filter and the visibility policy alike: each is a target, or
+covers a region, as any app's window would, while its other windows stay invisible to both. Ordinary screenshots retain their original filter. Visible
 application windows above the target still pause capture, including windows from the same target app.
 Starting a scrolling session activates the selected window's application, which can differ from the app
 that was active before the command. History actions capture a fresh focus-return target.
 Visibility failures distinguish inactive, moved, outside and obscured targets. A bounded Capture log
 records the failed check and window/PID metadata, without screen contents or window titles.
 The control bar is placed outside the region, otherwise selection fails with a request to leave space.
-Return/Escape/Space work when controls have key focus; a configured capture hotkey finishes independently
-of page focus. No progress percentage or claim of reaching the bottom is inferred from duplicate frames.
+Return/Escape/Space work when controls have key focus — Escape through the panel's `cancelOperation`,
+since the shortcut inside its menu answers only while the menu is open; a configured capture hotkey
+finishes independently of page focus. A Tinycast window under capture activates Tinycast and hands the
+keys to the controls (`activateScrollTarget`): AI Chat closes on Escape, and the wheel still reaches it. No progress percentage or claim of reaching the bottom is inferred from duplicate frames.
 Reopening Tinycast raises the active scrolling or recording controls instead of opening the launcher.
 These nonactivating panels take keyboard focus without activating Tinycast over the captured application.
 Continue and Auto Scroll reactivate the original captured application before resuming target checks.

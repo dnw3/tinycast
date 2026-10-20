@@ -24,8 +24,12 @@ final class ScrollCaptureSession {
     var notice = String(localized: "Scroll inside the selected region")
     var preview: CGImage?
     private var task: Task<Void, Never>?
-    private var accepted: ScrollStitchPolicy.Frame?
-    private var candidate: ScrollStitchPolicy.Frame?
+    private var tracker = ScrollTracker<CGImage>()
+    /// The frame behind the last strip on disk, where matching starts over if a write is dropped.
+    private var committed: ScrollStitchPolicy.Frame?
+    /// Samples in a row at rest; the loop slows down once the content has settled.
+    private var restingSamples = 0
+    private var lastAutomaticScroll = ContinuousClock.now
     private var stopped = false
     private var generation = 0
     private let speed: Int
@@ -52,22 +56,36 @@ final class ScrollCaptureSession {
             while !Task.isCancelled, !self.stopped {
                 do {
                     if !self.paused { try await self.sample() }
-                    try await Task.sleep(for: .milliseconds(300))
+                    try await Task.sleep(for: self.cadence)
                 } catch is CancellationError { return } catch { self.pause(Bundle.main.localizedString(forKey: error.localizedDescription, value: nil, table: nil)) }
             }
         }
     }
 
+    /// Quick while anything moves, so a flick never outruns the overlap; slower once it rests.
+    private var cadence: Duration { .milliseconds(restingSamples > 10 ? 150 : 10) }
+
+    /// The pointer's line in a frame while it is over the region, where hovering changes content.
+    private var pointerLine: Int? {
+        guard let location = CGEvent(source: nil)?.location else { return nil }
+        let x = location.x - target.display.frame.minX - region.minX
+        let y = location.y - target.display.frame.minY - region.minY
+        guard (0..<region.width).contains(x), (0..<region.height).contains(y) else { return nil }
+        return Int((axis == .vertical ? y : x) * target.scale)
+    }
+
     func stop() async {
         cancel()
         await task?.value
+        // The newest frame that lined up is content the reader scrolled to, so finishing keeps it.
+        if let strip = tracker.flush() { _ = try? await write(strip, generation: nil) }
         Self.logger.notice("""
             Scroll stopped: pieces=\(self.document.pieces.count), \
             width=\(self.document.size.width), height=\(self.document.size.height)
             """)
         task = nil
-        accepted = nil
-        candidate = nil
+        tracker = ScrollTracker()
+        committed = nil
         preview = nil
     }
 
@@ -78,14 +96,15 @@ final class ScrollCaptureSession {
         setHint(nil)
     }
 
-    private func setHint(_ text: String?) {
+    /// A lasting hint stays until whatever it describes is over, rather than for three seconds.
+    private func setHint(_ text: String?, lasting: Bool = false) {
         hintExpiry?.cancel()
         hintExpiry = nil
         if hint != text {
             hint = text
             onHintChange?()
         }
-        guard text != nil else { return }
+        guard text != nil, !lasting else { return }
         hintExpiry = Task { [weak self] in
             try? await Task.sleep(for: .seconds(3))
             guard !Task.isCancelled else { return }
@@ -97,7 +116,6 @@ final class ScrollCaptureSession {
         generation += 1
         paused = true
         automatic = false
-        candidate = nil
         notice = reason
         setHint(nil)
         onPauseChange?(true)
@@ -106,7 +124,6 @@ final class ScrollCaptureSession {
     func resume() {
         generation += 1
         paused = false
-        candidate = nil
         notice = String(localized: "Scroll inside the selected region")
         onPauseChange?(false)
     }
@@ -114,55 +131,52 @@ final class ScrollCaptureSession {
     private func sample() async throws {
         let generation = generation
         guard validateTarget() else { return }
-        let temporary = directory.appendingPathComponent("candidate-\(UUID())")
-        defer { try? FileManager.default.removeItem(at: temporary) }
         let image = try await CaptureScreenService.image(target: target, rect: region, cursor: false)
-        let axis = axis
-        let frame = try await CaptureWork.run {
-            _ = try CaptureImageSource.store(image, at: temporary)
-            return try ScrollFrameReader.sample(directory: temporary, axis: axis)
+        let axis = axis, tracker = tracker, pointer = pointerLine
+        let (observed, steps) = try await CaptureWork.run {
+            var tracker = tracker
+            var frame = try ScrollFrameReader.sample(image, axis: axis)
+            frame.pointer = pointer
+            let steps = tracker.observe(frame, payload: image, match: ScrollStitchPolicy.match)
+            return (tracker, steps)
         }
         try Task.checkCancellation()
         guard !paused, generation == self.generation else { return }
-        guard let candidate, ScrollStitchPolicy.stable(candidate, frame) else {
-            self.candidate = frame
-            return
-        }
-        let stable = ContinuousClock.now
-        if let accepted {
-            let decision = try await CaptureWork.run {
-                ScrollStitchPolicy.match(previous: accepted, current: frame)
-            }
-            guard !paused, generation == self.generation else { return }
-            switch decision {
-            case .duplicate: notice = String(localized: "No new content found")
-            case .reverse:
+        self.tracker = observed
+        restingSamples = observed.resting ? restingSamples + 1 : 0
+        for step in steps {
+            switch step {
+            case .commit(let strip):
+                let started = ContinuousClock.now
+                guard try await write(strip, generation: generation) else {
+                    self.tracker.restart(from: committed)
+                    return
+                }
+                CapturePerformance.completed("scroll-preview-ready", since: started)
+            case .backward:
                 notice = String(localized: "Scroll forward to add more content")
                 setHint(notice)
-            case .uncertain:
-                Self.logger.notice("Scroll alignment uncertain: pieces=\(self.document.pieces.count)")
-                pause(String(localized: "Could not align. Scroll back slightly, or select a region without fixed sidebars or scrollbars"))
-            case .append(let offset, _, let trailing):
-                guard try await append(temporary, offset: offset, trailing: trailing) else { return }
+            case .lost:
+                Self.logger.notice("Scroll alignment lost: pieces=\(self.document.pieces.count)")
+                notice = String(localized: "Lost the overlap. Scroll back a little to continue")
+                setHint(notice, lasting: true)
+            case .found:
+                notice = String(localized: "Scroll inside the selected region")
                 setHint(nil)
-                self.accepted = frame
-                CapturePerformance.completed("scroll-preview-ready", since: stable)
             }
-        } else {
-            guard try await append(temporary, offset: nil, trailing: 0) else { return }
-            accepted = frame
-            CapturePerformance.completed("scroll-preview-ready", since: stable)
         }
-        self.candidate = frame
-        if automatic, !paused { scrollTarget() }
+        if automatic, !paused, ContinuousClock.now - lastAutomaticScroll >= .milliseconds(300) {
+            scrollTarget()
+        }
     }
 
-    private func append(_ source: URL, offset: Int?, trailing: Int) async throws -> Bool {
-        let generation = generation
-        let metadata = try CaptureRasterStore.read(at: source)
+    /// A nil generation is the finishing flush, which no pause can overtake.
+    private func write(_ strip: ScrollTracker<CGImage>.Strip, generation: Int?) async throws -> Bool {
+        let image = strip.payload
         let raster = UUID().uuidString
         let plan = try CaptureScrollAppend.plan(
-            document: document, frame: metadata.size, raster: raster, offset: offset, trailing: trailing)
+            document: document, frame: try CapturePixelSize(width: image.width, height: image.height),
+            raster: raster, offset: strip.offset, trailing: strip.trailing)
         let destination = directory.appendingPathComponent(raster)
         let previous = preview, previousSize = document.size, directory = directory
         let nextPreview = try await CaptureWork.run {
@@ -172,22 +186,21 @@ final class ScrollCaptureSession {
             guard available > Int(plan.source.width * plan.source.height * 4) + 32_000_000 else {
                 throw CocoaError(.fileWriteOutOfSpace)
             }
-            try ScrollFrameReader.strip(from: source, rect: plan.source, to: destination)
+            try ScrollFrameReader.strip(image, rect: plan.source, to: destination)
             return try CaptureRenderer.scrollPreview(
                 previous: previous, previousSize: previousSize, document: plan.document, directory: directory)
         }
-        try Task.checkCancellation()
-        guard !paused, generation == self.generation else {
+        if let generation, paused || generation != self.generation {
             try? FileManager.default.removeItem(at: destination)
             return false
         }
         document = plan.document
         preview = nextPreview
+        committed = strip.frame
         Self.logger.info("""
             Scroll appended: pieces=\(self.document.pieces.count), \
             width=\(self.document.size.width), height=\(self.document.size.height)
             """)
-        notice = String(localized: "Scroll inside the selected region")
         onPauseChange?(false)
         return true
     }
@@ -207,7 +220,7 @@ final class ScrollCaptureSession {
             width: region.width, height: region.height)
         let assessment = CaptureScreenService.assessTarget(
             windowID: targetWindowID, pid: targetPID, frame: targetFrame, region: quartzRegion,
-            excludedPIDs: target.excludedPIDs)
+            excludedPIDs: target.excludedPIDs, includedWindowIDs: target.includedWindowIDs)
         guard assessment.status == .visible else { pause(assessment.status.message); return false }
         return true
     }
@@ -227,6 +240,6 @@ final class ScrollCaptureSession {
         event.location = CGPoint(
             x: target.display.frame.minX + region.midX, y: target.display.frame.minY + region.midY)
         event.post(tap: .cgSessionEventTap)
-        candidate = nil
+        lastAutomaticScroll = .now
     }
 }

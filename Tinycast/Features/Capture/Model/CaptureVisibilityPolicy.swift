@@ -3,17 +3,6 @@ import Foundation
 enum CaptureVisibilityPolicy {
     enum Status: String, Sendable {
         case visible, inactive, excluded, missing, moved, outside, obscured
-
-        var message: String {
-            switch self {
-            case .visible: "Scroll inside the selected region"
-            case .inactive: "Bring the captured window to the front, then choose Continue"
-            case .excluded, .missing: "The captured window is unavailable. Select a region again"
-            case .moved: "The captured window moved. Move it back, or select a region again"
-            case .outside: "Select a region entirely inside the captured window"
-            case .obscured: "Another window covers the capture region. Move it away, then choose Continue"
-            }
-        }
     }
 
     struct Assessment: Sendable {
@@ -29,12 +18,15 @@ enum CaptureVisibilityPolicy {
         var alpha: Double = 1
     }
 
+    /// `includedWindowIDs` are an excluded app's windows taken like any other's: Tinycast's own.
     static func assess(
         windowID: UInt32, pid: Int32, frame: CGRect, region: CGRect,
-        excludedPIDs: Set<Int32>, frontmostPID: Int32?, cursorLayer: Int, windows: [Window]
+        excludedPIDs: Set<Int32>, includedWindowIDs: Set<UInt32> = [], frontmostPID: Int32?,
+        cursorLayer: Int, windows: [Window]
     ) -> Assessment {
+        let counts = { (id: UInt32, pid: Int32) in !excludedPIDs.contains(pid) || includedWindowIDs.contains(id) }
         guard frontmostPID == pid else { return Assessment(status: .inactive) }
-        guard !excludedPIDs.contains(pid) else { return Assessment(status: .excluded) }
+        guard counts(windowID, pid) else { return Assessment(status: .excluded) }
         for window in windows {
             guard window.alpha > 0, window.layer < cursorLayer else { continue }
             if window.id == windowID {
@@ -42,7 +34,7 @@ enum CaptureVisibilityPolicy {
                 guard window.frame == frame else { return Assessment(status: .moved) }
                 return Assessment(status: window.frame.contains(region) ? .visible : .outside)
             }
-            if !excludedPIDs.contains(window.pid), window.layer >= 0, window.frame.intersects(region) {
+            if counts(window.id, window.pid), window.layer >= 0, window.frame.intersects(region) {
                 return Assessment(status: .obscured, obstructingWindow: window)
             }
         }

@@ -77,7 +77,8 @@ final class CaptureCoordinator {
         }
     }
 
-    func open(_ command: CommandID) {
+    /// `fromShortcut`: Tinycast's own surfaces on screen, the launcher too, are what to capture.
+    func open(_ command: CommandID, fromShortcut: Bool = false) {
         let started = ContinuousClock.now
         guard settings.preferences.enabled else { return }
         completionThumbnail.close()
@@ -115,7 +116,7 @@ final class CaptureCoordinator {
             }
             guard let screen = NSScreen.underCursor else { return }
             try await Signposts.interval("Capture Prepare") {
-                try await self.prepare(screen: screen, command: command)
+                try await self.prepare(screen: screen, command: command, keepingPalette: fromShortcut)
             }
             CapturePerformance.completed("selection-ready", since: started)
         }
@@ -246,8 +247,18 @@ final class CaptureCoordinator {
     }
 
     private func resumeScroll(_ scroll: ScrollCaptureSession) {
-        NSRunningApplication(processIdentifier: scroll.targetPID)?.activate()
+        activateScrollTarget(scroll.targetPID)
         scroll.resume()
+    }
+
+    /// Tinycast's own window under capture keeps the keys on the controls: its Escape closes it.
+    func activateScrollTarget(_ pid: pid_t) {
+        guard pid == ProcessInfo.processInfo.processIdentifier else {
+            NSRunningApplication(processIdentifier: pid)?.activate()
+            return
+        }
+        NSApp.activate()
+        _ = scrollPanel.focusExisting()
     }
 
     func restartScroll() {

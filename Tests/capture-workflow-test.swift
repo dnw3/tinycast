@@ -16,6 +16,8 @@ struct CaptureWorkflowTests {
         try selection(in: root)
         visibility()
         stitching()
+        tracking()
+        try liveFrames(in: root)
         try CaptureScrollFixture.verify(in: root)
         try leases(in: root)
         try strips(in: root)
@@ -498,6 +500,30 @@ struct CaptureWorkflowTests {
         let floating = Window(id: 96, pid: 42, frame: dock.frame, layer: dock.layer)
         precondition(!visibleWithDock(floating, excludedPIDs: [96190, dock.pid]))
         precondition(!visibleWithDock(dock, excludedPIDs: [96190, dock.pid, target.pid]))
+
+        let chat = Window(id: 31, pid: controls.pid, frame: target.frame, layer: 0)
+        let settings = Window(id: 32, pid: controls.pid, frame: region, layer: 0)
+        func own(_ windows: [Window], included: Set<UInt32>) -> CaptureVisibilityPolicy.Status {
+            CaptureVisibilityPolicy.assess(
+                windowID: chat.id, pid: chat.pid, frame: chat.frame, region: region,
+                excludedPIDs: [controls.pid], includedWindowIDs: included, frontmostPID: chat.pid,
+                cursorLayer: cursorLayer, windows: windows
+            ).status
+        }
+        precondition(own([chat], included: []) == .excluded, "Tinycast's own windows stay out unless taken back")
+        precondition(
+            own([controls, chat], included: [chat.id]) == .visible,
+            "AI Chat taken back is a target, and the capture's own controls over it do not cover it")
+        precondition(
+            own([settings, chat], included: [chat.id, settings.id]) == .obscured,
+            "another of Tinycast's windows taken back covers the region like any app's")
+        precondition(
+            own([settings, chat], included: [chat.id]) == .visible,
+            "one the capture leaves out never shows, so it covers nothing")
+        precondition(
+            CaptureGeometry.innerPixels(CGRect(x: 10.25, y: 5.5, width: 100.5, height: 50.25), scale: 2)
+                == CGRect(x: 21, y: 11, width: 200, height: 100),
+            "a region trimmed to a window rounds inward, so it never pokes past the window's edge")
     }
 
     static func stitching() {
@@ -530,6 +556,133 @@ struct CaptureWorkflowTests {
         precondition(
             ScrollStitchPolicy.match(
                 previous: wide, current: .init(length: 300, lanes: 32, rgb: sidebar)) == .uncertain)
+    }
+
+    /// A page taller than any frame, so a frame can be cut at any scroll position.
+    static func page(_ top: Int, length: Int = 300, lanes: Int = 8, changed: Range<Int>? = nil)
+        -> ScrollStitchPolicy.Frame
+    {
+        var rgb: [UInt8] = []
+        for y in 0..<length {
+            for x in 0..<lanes {
+                var hash = UInt32((y + top) * 7949 + x * 3571 + 127)
+                hash = (hash ^ (hash >> 16)) &* 0x45d9f3b
+                for channel in 0..<3 {
+                    // A hover lights one lane's short run in place; the page under it did not move.
+                    let lit = changed?.contains(y) == true && x == 2
+                    rgb.append(lit ? 250 : UInt8(truncatingIfNeeded: hash >> (channel * 8)))
+                }
+            }
+        }
+        return .init(length: length, lanes: lanes, rgb: rgb)
+    }
+
+    static func tracking() {
+        var hovered = page(120, length: 800, changed: 280..<320), still = page(0, length: 800)
+        precondition(
+            ScrollStitchPolicy.match(previous: still, current: hovered) == .uncertain,
+            "Content that changed in place is a mismatch like any other")
+        hovered.pointer = 300
+        still.pointer = 300
+        precondition(
+            ScrollStitchPolicy.match(previous: still, current: hovered)
+                == .append(offset: 120, fixedLeading: 0, fixedTrailing: 0),
+            "unless the pointer is over it, where a hover lights whatever passes beneath")
+        var lit = page(120, lanes: 32).rgb
+        for line in 0..<300 {
+            for channel in 0..<3 { lit[(line * 32 + 5) * 3 + channel] = page(0, lanes: 32).rgb[(line * 32 + 5) * 3 + channel] }
+        }
+        precondition(
+            ScrollStitchPolicy.match(previous: page(0, lanes: 32), current: .init(length: 300, lanes: 32, rgb: lit))
+                == .uncertain,
+            "A lane that never moves is a fixed sidebar however much else lines up")
+
+        func sparse(_ top: Int) -> ScrollStitchPolicy.Frame {
+            var rgb: [UInt8] = []
+            for y in 0..<300 {
+                for x in 0..<8 {
+                    let line = y + top
+                    var hash = UInt32((line / 23) * 7949 + x * 3571 + 127)
+                    hash = (hash ^ (hash >> 16)) &* 0x45d9f3b
+                    rgb += [UInt8](repeating: line % 23 < 3 && hash % 3 != 0 ? 220 : 30, count: 3)
+                }
+            }
+            return .init(length: 300, lanes: 8, rgb: rgb)
+        }
+        guard case .append(150, _, _) = ScrollStitchPolicy.match(previous: sparse(0), current: sparse(150)) else {
+            preconditionFailure("Sparse lines on a plain page register")
+        }
+        precondition(
+            ScrollStitchPolicy.match(previous: sparse(0), current: sparse(195)) == .uncertain,
+            "A shift one line past the search range is never taken a line short, however little that line differs")
+
+        var tracker = ScrollTracker<Int>()
+        func observe(_ top: Int) -> [ScrollTracker<Int>.Step] {
+            tracker.observe(page(top), payload: top, match: ScrollStitchPolicy.match)
+        }
+        func commits(_ steps: [ScrollTracker<Int>.Step]) -> [Int?] {
+            steps.compactMap { if case .commit(let strip) = $0 { strip.offset } else { nil } }
+        }
+        precondition(observe(0).isEmpty, "A first frame alone never starts a capture")
+        precondition(commits(observe(0)) == [nil], "Content at rest starts it whole")
+        // One flick moves 600 lines in steps of 150; a frame reaches back about 194.
+        var written: [Int?] = []
+        for top in [150, 300, 450, 600] { written += commits(observe(top)) }
+        precondition(
+            written == [150, 150, 150], "The last frame that still lines up is written before the overlap is lost")
+        precondition(tracker.pending?.payload == 600, "and the newest waits")
+        precondition(commits(observe(600)) == [150], "Rest writes what was waiting")
+        precondition(observe(600).isEmpty, "and nothing more while nothing moves")
+
+        precondition(observe(1100).isEmpty, "A frame too far to line up says nothing at first")
+        let lost = observe(1200)
+        precondition(lost.contains { if case .lost = $0 { true } else { false } }, "A run of them says it lost the overlap")
+        let found = observe(700)
+        precondition(
+            found.contains { if case .found = $0 { true } else { false } } && tracker.pending?.payload == 700,
+            "Scrolling back within reach finds it again, and goes on from there")
+
+        precondition(observe(760).isEmpty && observe(730).isEmpty, "Moving on, then back a little")
+        precondition(tracker.pending?.payload == 760, "keeps the furthest frame waiting")
+        precondition(tracker.flush()?.offset == 160 && tracker.pending == nil, "Finishing writes what was waiting")
+        precondition(
+            observe(650).contains { if case .backward = $0 { true } else { false } },
+            "Scrolling above the last strip asks to scroll forward")
+    }
+
+    static func liveFrames(in root: URL) throws {
+        let width = 40, height = 120
+        var pixels = [UInt8](repeating: 255, count: width * height * 4)
+        for y in 0..<height {
+            for x in 0..<width {
+                for channel in 0..<3 { pixels[(y * width + x) * 4 + channel] = UInt8((y * 2 + x + channel * 7) % 256) }
+            }
+        }
+        let provider = CGDataProvider(data: Data(pixels) as CFData)!
+        let image = CGImage(
+            width: width, height: height, bitsPerComponent: 8, bitsPerPixel: 32, bytesPerRow: width * 4,
+            space: CGColorSpace(name: CGColorSpace.sRGB)!,
+            bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedLast.rawValue), provider: provider,
+            decode: nil, shouldInterpolate: false, intent: .defaultIntent)!
+        let frame = try ScrollFrameReader.sample(image, axis: .vertical)
+        precondition(frame.length == height && frame.lanes == 10, "A frame keeps every line and a lane per four columns")
+        precondition(
+            Array(frame.originalRGB?[0..<3] ?? []) == Array(pixels[0..<3]),
+            "Its first line is the image's top row, not its bottom")
+        let wide = try ScrollFrameReader.sample(image, axis: .horizontal)
+        precondition(wide.length == width, "A sideways frame runs along the columns")
+        let directory = root.appendingPathComponent("live-strip")
+        try ScrollFrameReader.strip(image, rect: CGRect(x: 0, y: 80, width: width, height: 40), to: directory)
+        let reader = try CaptureRasterReader(directory: directory)
+        var row = [UInt8](repeating: 0, count: reader.raster.size.rowBytes)
+        try row.withUnsafeMutableBytes { try reader.read(row: 0, into: $0) }
+        precondition(
+            reader.raster.size.height == 40 && Array(row[0..<3]) == Array(pixels[(80 * width) * 4..<(80 * width) * 4 + 3]),
+            "A strip cut from a live frame starts at the line it was cut from")
+        do {
+            try ScrollFrameReader.strip(image, rect: CGRect(x: 0, y: 100, width: width, height: 40), to: directory)
+            preconditionFailure("a strip past the frame was written")
+        } catch CaptureRasterError.invalidRow {}
     }
 
     static func strips(in root: URL) throws {

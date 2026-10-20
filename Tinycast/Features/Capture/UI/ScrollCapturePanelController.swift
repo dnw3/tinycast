@@ -30,6 +30,7 @@ final class ScrollCapturePanelController {
         let panel = Panel(
             contentRect: placement.collapsed,
             styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
+        panel.onCancel = { [weak coordinator] in coordinator?.cancelScroll() }
         panel.title = String(localized: "Scrolling Capture")
         panel.level = .floating
         panel.isFloatingPanel = true
@@ -89,8 +90,13 @@ final class ScrollCapturePanelController {
     }
 
     private final class Panel: NSPanel {
+        /// Escape on the focused controls; the shortcut in their menu works only while it is open.
+        var onCancel: (() -> Void)?
+
         override var canBecomeKey: Bool { true }
         override var canBecomeMain: Bool { false }
+
+        override func cancelOperation(_ sender: Any?) { onCancel?() }
     }
 
     private final class BorderView: NSView {

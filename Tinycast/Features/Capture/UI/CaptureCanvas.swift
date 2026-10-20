@@ -16,6 +16,7 @@ struct CaptureCanvas: NSViewRepresentable {
             let clip = ClipView()
             clip.drawsBackground = false
             scroll.contentView = clip
+            scroll.automaticallyAdjustsContentInsets = false
         }
         let canvas = Canvas(state: state)
         canvas.fixedScale = fixedScale
@@ -24,7 +25,17 @@ struct CaptureCanvas: NSViewRepresentable {
         return scroll
     }
 
+    /// The backdrop around the image in the editor, so the image never touches the well's edge.
+    private func margin(_ scroll: NSScrollView, context: Context) {
+        guard fixedScale == nil else { return }
+        let margin = context.environment.metrics.scaled(Theme.Size.captureCanvasMargin)
+        let insets = NSEdgeInsets(top: margin, left: margin, bottom: margin, right: margin)
+        guard scroll.contentInsets.top != margin else { return }
+        scroll.contentInsets = insets
+    }
+
     func updateNSView(_ scroll: NSScrollView, context: Context) {
+        margin(scroll, context: context)
         _ = state.document.revision
         _ = state.selected
         _ = state.tool
@@ -41,6 +52,7 @@ struct CaptureCanvas: NSViewRepresentable {
         }
         canvas.fixedScale = fixedScale
         canvas.moveSelection = moveSelection
+        canvas.framesImage = fixedScale == nil
         canvas.refresh()
     }
 
@@ -69,6 +81,20 @@ struct CaptureCanvas: NSViewRepresentable {
     private final class Canvas: NSView {
         let state: CaptureEditorState
         var fixedScale: CGFloat?
+        /// In the editor window the image floats on the well; on the desktop it is the desktop.
+        var framesImage = false {
+            didSet {
+                guard framesImage != oldValue else { return }
+                wantsLayer = framesImage
+                layer?.masksToBounds = !framesImage
+                updateShadowColor()
+                layer?.shadowOpacity = framesImage ? 1 : 0
+                layer?.shadowRadius = Theme.Spacing.md
+                layer?.shadowOffset = CGSize(width: 0, height: -Theme.Spacing.xxs)
+                updateShadowPath()
+                needsDisplay = true
+            }
+        }
         var moveSelection: ((CGSize, Bool) -> Void)?
         private var zoom: CGFloat { fixedScale ?? state.zoom }
         private var movingSelection = false
@@ -152,6 +178,28 @@ struct CaptureCanvas: NSViewRepresentable {
         required init?(coder: NSCoder) { nil }
         isolated deinit { loading?.cancel(); loadingPreview?.cancel(); fitting?.cancel(); sampling?.cancel() }
         override var isFlipped: Bool { true }
+
+        override func setFrameSize(_ newSize: NSSize) {
+            super.setFrameSize(newSize)
+            updateShadowPath()
+        }
+
+        /// A path, so the shadow of a canvas many screens tall costs no offscreen pass.
+        private func updateShadowPath() {
+            layer?.shadowPath = framesImage ? CGPath(rect: bounds, transform: nil) : nil
+        }
+
+        override func viewDidChangeEffectiveAppearance() {
+            super.viewDidChangeEffectiveAppearance()
+            updateShadowColor()
+        }
+
+        /// A layer keeps a fixed colour, so the shadow resolves against this view's appearance.
+        private func updateShadowColor() {
+            effectiveAppearance.performAsCurrentDrawingAppearance {
+                layer?.shadowColor = NSColor(Theme.Colors.captureImageShadow).cgColor
+            }
+        }
         override var acceptsFirstResponder: Bool { true }
 
         override func viewDidMoveToWindow() {
@@ -206,16 +254,21 @@ struct CaptureCanvas: NSViewRepresentable {
                         : state.document.axis == .horizontal
                             ? .height
                             : CaptureViewportPolicy.preferredFit(image: state.document.outputBounds.size))
+                let insets = scroll.contentInsets
                 let zoom = CaptureViewportPolicy.scale(
                     image: state.document.outputBounds.size,
-                    viewport: scroll.contentSize, fit: fit)
+                    viewport: CGSize(
+                        width: max(1, scroll.contentSize.width - insets.left - insets.right),
+                        height: max(1, scroll.contentSize.height - insets.top - insets.bottom)),
+                    fit: fit)
                 fitting?.cancel()
                 fitting = Task { [weak self] in
                     await Task.yield()
                     guard !Task.isCancelled, let self else { return }
                     self.state.zoom = zoom
                     self.refresh()
-                    let proposed = CGRect(origin: .zero, size: scroll.contentSize)
+                    let proposed = CGRect(
+                        origin: CGPoint(x: -insets.left, y: -insets.top), size: scroll.contentSize)
                     scroll.contentView.scroll(to: scroll.contentView.constrainBoundsRect(proposed).origin)
                     scroll.reflectScrolledClipView(scroll.contentView)
                 }
@@ -433,6 +486,12 @@ struct CaptureCanvas: NSViewRepresentable {
                 context.strokePath()
             }
             context.restoreGState()
+            if framesImage {
+                NSColor(Theme.Colors.captureImageEdge).setStroke()
+                let edge = NSBezierPath(rect: bounds.insetBy(dx: 0.5, dy: 0.5))
+                edge.lineWidth = Theme.Size.hairline
+                edge.stroke()
+            }
         }
 
         private func drawImage(_ image: CGImage, rect: CGRect, context: CGContext) {

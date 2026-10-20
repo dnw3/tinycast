@@ -10,6 +10,8 @@ enum CaptureScreenService {
         let filter: SCContentFilter
         let windows: [SCWindow]
         let excludedPIDs: Set<pid_t>
+        /// Tinycast's own windows the filter takes back, so a capture treats them as any app's.
+        let includedWindowIDs: Set<CGWindowID>
         let screenFrame: CGRect
         let scale: CGFloat
     }
@@ -33,15 +35,16 @@ enum CaptureScreenService {
         let excludedPIDs = Set(excluded.map(\.processID))
         let filter = SCContentFilter(
             display: display, excludingApplications: excluded,
-            exceptingWindows: scrolling ? [] : content.windows.filter { includedWindowIDs.contains($0.windowID) })
+            exceptingWindows: content.windows.filter { includedWindowIDs.contains($0.windowID) })
         filter.includeMenuBar = true
         return Target(
             display: display, filter: filter,
             windows: content.windows.filter {
-                $0.isOnScreen && !excludedPIDs.contains($0.owningApplication?.processID ?? 0)
-                    && $0.windowLayer == 0
+                $0.isOnScreen && $0.windowLayer == 0
+                    && (!excludedPIDs.contains($0.owningApplication?.processID ?? 0)
+                        || includedWindowIDs.contains($0.windowID))
             },
-            excludedPIDs: excludedPIDs,
+            excludedPIDs: excludedPIDs, includedWindowIDs: includedWindowIDs,
             screenFrame: screen.frame, scale: CGFloat(filter.pointPixelScale))
     }
 
@@ -83,7 +86,8 @@ enum CaptureScreenService {
     }
 
     static func assessTarget(
-        windowID: CGWindowID, pid: pid_t, frame: CGRect, region: CGRect, excludedPIDs: Set<pid_t>
+        windowID: CGWindowID, pid: pid_t, frame: CGRect, region: CGRect, excludedPIDs: Set<pid_t>,
+        includedWindowIDs: Set<CGWindowID>
     ) -> CaptureVisibilityPolicy.Assessment {
         let windows =
             CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID)
@@ -102,7 +106,7 @@ enum CaptureScreenService {
         let frontmost = NSWorkspace.shared.frontmostApplication?.processIdentifier
         let assessment = CaptureVisibilityPolicy.assess(
             windowID: windowID, pid: pid, frame: frame, region: region,
-            excludedPIDs: excludedPIDs,
+            excludedPIDs: excludedPIDs, includedWindowIDs: includedWindowIDs,
             frontmostPID: frontmost,
             cursorLayer: Int(CGWindowLevelForKey(.cursorWindow)), windows: snapshots)
         if assessment.status != .visible {

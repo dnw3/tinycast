@@ -2,7 +2,29 @@ import AppKit
 import ScreenCaptureKit
 
 extension CaptureCoordinator {
-    func prepare(screen: NSScreen, command: CommandID) async throws {
+    /// All Tinycast shows is desktop, its system-drawn windows too; toasts and dialogs never are.
+    func screenshotWindowIDs(keepingPalette: Bool) -> Set<CGWindowID> {
+        func omitted(_ window: NSWindow) -> Bool {
+            if let parent = window.parent, omitted(parent) { return true }
+            return window.level >= .screenSaver || window is HUDPanel || window is DialogPanel
+                || !keepingPalette && window is PalettePanel
+        }
+        let omittedIDs = NSApp.windows.filter(omitted).map { CGWindowID($0.windowNumber) }
+        let ownPID = ProcessInfo.processInfo.processIdentifier
+        let onScreen = CGWindowListCopyWindowInfo([.optionOnScreenOnly], kCGNullWindowID) as? [[String: Any]] ?? []
+        let shown = onScreen.compactMap { info -> CGWindowID? in
+            guard info[kCGWindowOwnerPID as String] as? pid_t == ownPID else { return nil }
+            return info[kCGWindowNumber as String] as? CGWindowID
+        }
+        return Set(pins.compactMap(\.windowID)).union(shown).subtracting(omittedIDs)
+    }
+
+    /// AI Chat, Settings, Notes and the like, which scrolling and recording treat as any app's.
+    func contentWindowIDs() -> Set<CGWindowID> {
+        screenshotWindowIDs(keepingPalette: false).subtracting(pins.compactMap(\.windowID))
+    }
+
+    func prepare(screen: NSScreen, command: CommandID, keepingPalette: Bool = false) async throws {
         try await prepare(
             screen: screen,
             request: CaptureRequest(
@@ -10,10 +32,11 @@ extension CaptureCoordinator {
                     ? .scrolling : command == .captureRecording ? .recording : .screenshot,
                 scope: command == .captureFullscreen ? .screen : .region,
                 action: command == .captureText ? .text : command == .captureAndTranslate ? .translate : .edit
-            ))
+            ), keepingPalette: keepingPalette)
     }
 
-    func prepare(screen: NSScreen, request: CaptureRequest) async throws {
+    func prepare(screen: NSScreen, request: CaptureRequest, keepingPalette: Bool = false) async throws {
+        let keepsPalette = keepingPalette && request.mode == .screenshot && core.paletteCoordinator.isVisible
         clearSelection()
         let session = CaptureSessionState(id: UUID())
         selectionSession = session
@@ -32,11 +55,12 @@ extension CaptureCoordinator {
             else { throw CaptureScreenService.Failure.displayChanged }
             return try await CaptureScreenService.target(
                 screen: screen, scrolling: request.mode == .scrolling,
-                includedWindowIDs: request.mode == .screenshot ? Set(self.pins.compactMap(\.windowID)) : [])
+                includedWindowIDs: request.mode == .screenshot
+                    ? self.screenshotWindowIDs(keepingPalette: keepsPalette) : self.contentWindowIDs())
         }()
         await Task.yield()
         let paletteStarted = ContinuousClock.now
-        core.paletteCoordinator.hidePalette(restoreFocus: false)
+        if !keepsPalette { core.paletteCoordinator.hidePalette(restoreFocus: false) }
         CapturePerformance.completed("selection-palette", since: paletteStarted)
         let target = try await pendingTarget
         CapturePerformance.completed("selection-target", since: targetStarted)
@@ -68,6 +92,8 @@ extension CaptureCoordinator {
         self.workspace = workspace
         let presentationStarted = ContinuousClock.now
         overlay.show(self, workspace: workspace)
+        // Under the overlay, whose frozen desktop already shows it, so it never visibly blinks out.
+        if keepsPalette { core.paletteCoordinator.hidePalette(restoreFocus: false) }
         CapturePerformance.completed("selection-present", since: presentationStarted)
         presented = true
         prepareSource(workspace: workspace, images: [(image, raster)])
@@ -150,7 +176,11 @@ extension CaptureCoordinator {
         guard let workspace, !workspace.busy else { return }
         if workspace.preparation.deferSelection(.window(window.windowID)) { return }
         run { [weak self] in
-            try await self?.captureWindow(window, workspace: workspace)
+            guard let self else { return }
+            try await self.captureWindow(window, workspace: workspace)
+            // Picked in scrolling mode, a window starts from its own scrolling content at once.
+            guard workspace.request.mode == .scrolling, self.workspace === workspace else { return }
+            try await self.scrollWindow(window, axis: workspace.axis, returnMode: .scrolling)
         }
     }
 
@@ -260,6 +290,10 @@ extension CaptureCoordinator {
         guard let workspace else { return }
         let originalMode = workspace.request.mode
         workspace.axis = axis
+        if let window = pickedWindow(in: workspace) {
+            run { [weak self] in try await self?.scrollWindow(window, axis: axis, returnMode: originalMode) }
+            return
+        }
         if workspace.request.scope != .region
             || editor?.document.pieces.first?.raster != workspace.document.pieces.first?.raster
         {
@@ -270,59 +304,153 @@ extension CaptureCoordinator {
     }
 
     func startSelectedScroll(returnMode: CaptureRequest.Mode? = nil) {
+        guard let start = scrollStart() else { return }
+        run { [weak self] in try await self?.startScroll(start, returnMode: returnMode) }
+    }
+
+    /// What a selection hands a scrolling session, when it can start one at all.
+    private struct ScrollStart {
+        let workspace: CaptureWorkspaceState
+        let editor: CaptureEditorState
+        let rect: CGRect
+        let screen: NSScreen
+        let pixels: CGRect
+    }
+
+    private func scrollStart() -> ScrollStart? {
         guard let workspace, let editor, !workspace.busy, !editor.busy,
             !workspace.selectingTarget, !workspace.requiresScrollRegion,
             let rect = workspace.frame(for: editor.document),
             let screen = NSScreen.screens.first(where: { $0.frame == workspace.target.screenFrame }),
             let pixels = CaptureGeometry.pixels(
                 rect, screen: CGRect(origin: .zero, size: screen.frame.size), scale: workspace.target.scale)
-        else { return }
-        run { [weak self] in
-            guard let self else { return }
-            editor.finishEditing()
-            workspace.busy = true
-            var started = false
-            defer {
-                workspace.busy = false
-                if !started {
-                    if let returnMode { workspace.request.mode = returnMode }
-                    self.overlay.resume()
-                }
-            }
-            let target = try await CaptureScreenService.target(screen: screen, scrolling: true)
-            let point = CGPoint(x: screen.frame.minX + rect.midX, y: screen.frame.minY + rect.midY)
-            guard let window = CaptureScreenService.window(at: point, target: target),
-                let pid = window.owningApplication?.processID
-            else { throw CaptureScreenService.Failure.unavailable }
-            let repository = self.repository, id = UUID()
-            let source = try await CaptureWork.run {
-                try CaptureSource(directory: try repository.create(id: id))
-            }
-            try Task.checkCancellation()
-            guard self.workspace === workspace else { throw CancellationError() }
-            let region = CGRect(
-                x: pixels.minX / target.scale, y: pixels.minY / target.scale,
-                width: pixels.width / target.scale, height: pixels.height / target.scale)
-            let size = try CapturePixelSize(width: Int(pixels.width), height: Int(pixels.height))
-            let session = ScrollCaptureSession(
-                document: .init(
-                    id: id, createdAt: Date(), size: size, pieces: [], axis: workspace.axis,
-                    captureScale: Double(target.scale)),
-                source: source, target: target, region: region, windowID: window.windowID,
-                pid: pid, windowFrame: window.frame, axis: workspace.axis,
-                speed: self.settings.preferences.scrollSpeed)
-            try self.scrollPanel.show(session, coordinator: self)
-            self.overlay.suspend()
-            self.otherResult = editor
-            self.retainedWorkspace = workspace
-            self.editor = nil
-            self.scrollSource = source
-            self.scroll = session
-            self.clearSelection()
-            NSRunningApplication(processIdentifier: pid)?.activate()
-            session.start()
-            started = true
+        else { return nil }
+        return ScrollStart(workspace: workspace, editor: editor, rect: rect, screen: screen, pixels: pixels)
+    }
+
+    /// The window a click picked: it scrolls from its own content, with no region drawn first.
+    private func pickedWindow(in workspace: CaptureWorkspaceState) -> SCWindow? {
+        guard workspace.request.scope == .window, let raster = editor?.document.pieces.first?.raster,
+            let id = workspace.sourceWindows[raster]
+        else { return nil }
+        return workspace.target.windows.first { $0.windowID == id }
+    }
+
+    /// Where the window's content scrolls is the region; past that, the reader only scrolls.
+    private func scrollWindow(
+        _ window: SCWindow, axis: CaptureDocument.Axis, returnMode: CaptureRequest.Mode
+    ) async throws {
+        let area = await scrollArea(of: window, axis: axis)
+        try Task.checkCancellation()
+        guard let workspace else { return }
+        setCaptureMode(.scrolling)
+        // Not found, the reader draws the region as before.
+        guard let area else { return }
+        let screen = workspace.target.screenFrame
+        selectRegion(area.offsetBy(dx: -screen.minX, dy: -screen.minY))
+        guard let start = scrollStart() else { return }
+        try await startScroll(start, returnMode: returnMode)
+    }
+
+    /// A window's scrolling content in global AppKit points, short of where its scroller shows.
+    private func scrollArea(of window: SCWindow, axis: CaptureDocument.Axis) async -> CGRect? {
+        let top = NSScreen.primary?.frame.maxY ?? 0
+        let appKit = { (quartz: CGRect) in
+            CGRect(x: quartz.minX, y: top - quartz.maxY, width: quartz.width, height: quartz.height)
         }
+        let found: CGRect?
+        if let own = NSApp.window(withWindowNumber: Int(window.windowID)) {
+            found = Self.largestScrollView(in: own)
+        } else if let pid = window.owningApplication?.processID {
+            let center = CGPoint(x: window.frame.midX, y: window.frame.midY)
+            let area = try? await CaptureWork.run { try CaptureElementAccess.scrollArea(pid: pid, at: center) }
+            found = area.flatMap { $0 }.map(appKit)
+        } else {
+            found = nil
+        }
+        guard var area = found?.intersection(appKit(window.frame)), !area.isEmpty else { return nil }
+        let clearance = Theme.Size.captureScrollerClearance
+        switch axis {
+        case .vertical: area.size.width -= clearance
+        case .horizontal:
+            area.origin.y += clearance
+            area.size.height -= clearance
+        }
+        return area.width > clearance * 4 && area.height > clearance * 4 ? area : nil
+    }
+
+    /// Tinycast's own windows need no Accessibility: the largest scroll view, clear of its toolbar.
+    private static func largestScrollView(in window: NSWindow) -> CGRect? {
+        var largest: CGRect?
+        func visit(_ view: NSView) {
+            if let scroll = view as? NSScrollView, !scroll.isHiddenOrHasHiddenAncestor {
+                let insets = scroll.contentInsets
+                var frame = scroll.convert(scroll.bounds, to: nil)
+                frame.origin.x += insets.left
+                frame.origin.y += insets.bottom
+                frame.size.width -= insets.left + insets.right
+                frame.size.height -= insets.top + insets.bottom
+                frame = frame.intersection(window.contentLayoutRect)
+                if frame.width * frame.height > (largest.map { $0.width * $0.height } ?? 0) { largest = frame }
+            }
+            view.subviews.forEach(visit)
+        }
+        window.contentView.map(visit)
+        return largest.map(window.convertToScreen)
+    }
+
+    private func startScroll(_ start: ScrollStart, returnMode: CaptureRequest.Mode?) async throws {
+        let workspace = start.workspace, editor = start.editor, screen = start.screen
+        let rect = start.rect
+        var pixels = start.pixels
+        editor.finishEditing()
+        workspace.busy = true
+        var started = false
+        defer {
+            workspace.busy = false
+            if !started {
+                if let returnMode { workspace.request.mode = returnMode }
+                self.overlay.resume()
+            }
+        }
+        let target = try await CaptureScreenService.target(
+            screen: screen, scrolling: true, includedWindowIDs: self.contentWindowIDs())
+        let point = CGPoint(x: screen.frame.minX + rect.midX, y: screen.frame.minY + rect.midY)
+        guard let window = CaptureScreenService.window(at: point, target: target),
+            let pid = window.owningApplication?.processID
+        else { throw CaptureScreenService.Failure.unavailable }
+        // A drag that strays past the window's edge would otherwise read as leaving it at once.
+        let edge = window.frame.offsetBy(dx: -target.display.frame.minX, dy: -target.display.frame.minY)
+        pixels = pixels.intersection(CaptureGeometry.innerPixels(edge, scale: target.scale))
+        guard !pixels.isEmpty else { throw CaptureScreenService.Failure.unavailable }
+        let repository = self.repository, id = UUID()
+        let source = try await CaptureWork.run {
+            try CaptureSource(directory: try repository.create(id: id))
+        }
+        try Task.checkCancellation()
+        guard self.workspace === workspace else { throw CancellationError() }
+        let region = CGRect(
+            x: pixels.minX / target.scale, y: pixels.minY / target.scale,
+            width: pixels.width / target.scale, height: pixels.height / target.scale)
+        let size = try CapturePixelSize(width: Int(pixels.width), height: Int(pixels.height))
+        let session = ScrollCaptureSession(
+            document: .init(
+                id: id, createdAt: Date(), size: size, pieces: [], axis: workspace.axis,
+                captureScale: Double(target.scale)),
+            source: source, target: target, region: region, windowID: window.windowID,
+            pid: pid, windowFrame: window.frame, axis: workspace.axis,
+            speed: self.settings.preferences.scrollSpeed)
+        try self.scrollPanel.show(session, coordinator: self)
+        self.overlay.suspend()
+        self.otherResult = editor
+        self.retainedWorkspace = workspace
+        self.editor = nil
+        self.scrollSource = source
+        self.scroll = session
+        self.clearSelection()
+        self.activateScrollTarget(pid)
+        session.start()
+        started = true
     }
 
     func swapCaptureResult() {

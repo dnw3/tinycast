@@ -26,6 +26,13 @@ enum CaptureGeometry {
             height: ceil((screen.maxY - local.minY) * scale) - top)
     }
 
+    /// Whole pixels that stay inside `rect`, so a region trimmed to a window never pokes past it.
+    static func innerPixels(_ rect: CGRect, scale: CGFloat) -> CGRect {
+        let left = ceil(rect.minX * scale), top = ceil(rect.minY * scale)
+        return CGRect(
+            x: left, y: top, width: floor(rect.maxX * scale) - left, height: floor(rect.maxY * scale) - top)
+    }
+
     static func integralCrop(_ rect: CGRect, in bounds: CGRect) -> CGRect? {
         guard valid(rect), valid(bounds) else { return nil }
         let result = rect.integral.intersection(bounds)

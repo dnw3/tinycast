@@ -12,6 +12,15 @@ enum CaptureChrome {
         window.titlebarSeparatorStyle = .none
     }
 
+    /// An empty compact toolbar, only for its 40pt band: a header row fits beside the lights.
+    static func reserveTitleBand(_ window: NSWindow) {
+        let toolbar = NSToolbar(identifier: "CaptureTitleBand")
+        toolbar.allowsUserCustomization = false
+        toolbar.allowsDisplayModeCustomization = false
+        window.toolbar = toolbar
+        window.toolbarStyle = .unifiedCompact
+    }
+
     static func barShape(_ metrics: InterfaceMetrics) -> RoundedRectangle {
         RoundedRectangle(cornerRadius: metrics.radius.row, style: .continuous)
     }

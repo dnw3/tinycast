@@ -1,70 +1,53 @@
+import CoreGraphics
 import Foundation
 
 enum ScrollFrameReader {
+    /// Drawn as a stored raster is, so a sample sees the pixels its strip will be cut from.
     nonisolated static func sample(
-        directory: URL, axis: CaptureDocument.Axis
+        _ image: CGImage, axis: CaptureDocument.Axis
     ) throws -> ScrollStitchPolicy.Frame {
-        let reader = try CaptureRasterReader(directory: directory)
-        let size = reader.raster.size
+        let size = try CapturePixelSize(width: image.width, height: image.height)
+        var pixels = [UInt8](repeating: 0, count: size.rowBytes * size.height)
+        let drawn = pixels.withUnsafeMutableBytes { buffer -> Bool in
+            guard
+                let context = CGContext(
+                    data: buffer.baseAddress, width: size.width, height: size.height, bitsPerComponent: 8,
+                    bytesPerRow: size.rowBytes, space: CGColorSpace(name: CGColorSpace.sRGB)!,
+                    bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
+            else { return false }
+            context.draw(image, in: CGRect(x: 0, y: 0, width: size.width, height: size.height))
+            return true
+        }
+        guard drawn else { throw CaptureRasterError.invalidSize }
         let vertical = axis == .vertical
         let length = vertical ? size.height : size.width
         let cross = vertical ? size.width : size.height
         let lanes = min(32, max(1, cross / 4))
         var rgb = [UInt8](repeating: 0, count: length * lanes * 3)
         var originalRGB = rgb
-        var cache: [Int: [UInt8]] = [:]
-        func rows(around y: Int) throws -> [[UInt8]] {
-            let lower = max(0, y - 2), upper = min(size.height - 1, y + 2)
-            cache = cache.filter { (lower...upper).contains($0.key) }
-            return try (-2...2).map { delta in
-                let rowIndex = min(size.height - 1, max(0, y + delta))
-                if let row = cache[rowIndex] { return row }
-                var row = [UInt8](repeating: 0, count: size.rowBytes)
-                try row.withUnsafeMutableBytes { try reader.read(row: rowIndex, into: $0) }
-                cache[rowIndex] = row
-                return row
-            }
-        }
         let positions = (0..<lanes).map { $0 * (cross - 1) / max(1, lanes - 1) }
-        if vertical {
-            for y in 0..<size.height {
-                try Task.checkCancellation()
-                let rows = try rows(around: y)
-                for (lane, x) in positions.enumerated() {
-                    for channel in 0..<3 {
-                        originalRGB[(y * lanes + lane) * 3 + channel] = rows[2][x * 4 + channel]
+        pixels.withUnsafeBufferPointer { pixels in
+            for line in 0..<length {
+                for (lane, across) in positions.enumerated() {
+                    let x = vertical ? across : line, y = vertical ? line : across
+                    let offset = (line * lanes + lane) * 3
+                    var sum = (0, 0, 0)
+                    for dy in -2...2 {
+                        let row = min(size.height - 1, max(0, y + dy)) * size.rowBytes
+                        for dx in -2...2 {
+                            let pixel = row + min(size.width - 1, max(0, x + dx)) * 4
+                            sum.0 += Int(pixels[pixel]); sum.1 += Int(pixels[pixel + 1]); sum.2 += Int(pixels[pixel + 2])
+                        }
                     }
-                    average(rows, x: x, width: size.width, into: &rgb, offset: (y * lanes + lane) * 3)
-                }
-            }
-        } else {
-            for (lane, y) in positions.enumerated() {
-                try Task.checkCancellation()
-                let rows = try rows(around: y)
-                for x in 0..<size.width {
-                    for channel in 0..<3 {
-                        originalRGB[(x * lanes + lane) * 3 + channel] = rows[2][x * 4 + channel]
-                    }
-                    average(rows, x: x, width: size.width, into: &rgb, offset: (x * lanes + lane) * 3)
+                    rgb[offset] = UInt8(sum.0 / 25)
+                    rgb[offset + 1] = UInt8(sum.1 / 25)
+                    rgb[offset + 2] = UInt8(sum.2 / 25)
+                    let center = y * size.rowBytes + x * 4
+                    for channel in 0..<3 { originalRGB[offset + channel] = pixels[center + channel] }
                 }
             }
         }
         return ScrollStitchPolicy.Frame(length: length, lanes: lanes, rgb: rgb, originalRGB: originalRGB)
-    }
-
-    private nonisolated static func average(
-        _ rows: [[UInt8]], x: Int, width: Int, into rgb: inout [UInt8], offset: Int
-    ) {
-        var red = 0, green = 0, blue = 0
-        for row in rows {
-            for delta in -2...2 {
-                let pixel = min(width - 1, max(0, x + delta)) * 4
-                red += Int(row[pixel]); green += Int(row[pixel + 1]); blue += Int(row[pixel + 2])
-            }
-        }
-        rgb[offset] = UInt8(red / 25)
-        rgb[offset + 1] = UInt8(green / 25)
-        rgb[offset + 2] = UInt8(blue / 25)
     }
 
     nonisolated static func strip(from source: URL, rect: CGRect, to destination: URL) throws {
@@ -83,5 +66,14 @@ enum ScrollFrameReader {
                         start: $0.baseAddress!.advanced(by: Int(rect.minX) * 4), count: output.count))
             }
         }
+    }
+
+    /// A live frame's strip: only the strip's lines are written, never the whole frame.
+    nonisolated static func strip(_ image: CGImage, rect: CGRect, to destination: URL) throws {
+        guard CaptureGeometry.valid(rect), rect == rect.integral,
+            CGRect(x: 0, y: 0, width: image.width, height: image.height).contains(rect),
+            let cropped = image.cropping(to: rect)
+        else { throw CaptureRasterError.invalidRow }
+        _ = try CaptureImageSource.store(cropped, at: destination)
     }
 }

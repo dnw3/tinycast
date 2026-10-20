@@ -37,7 +37,7 @@ extension CaptureCoordinator {
         for current in screens {
             try Task.checkCancellation()
             let target = try await CaptureScreenService.target(
-                screen: current, scrolling: false, includedWindowIDs: Set(pins.compactMap(\.windowID)))
+                screen: current, scrolling: false, includedWindowIDs: screenshotWindowIDs(keepingPalette: false))
             let estimated = target.screenFrame.width * target.screenFrame.height * target.scale * target.scale
             guard estimated <= Double(64_000_000 - pixels) else { throw CaptureRasterError.invalidSize }
             let image = try await CaptureScreenService.image(

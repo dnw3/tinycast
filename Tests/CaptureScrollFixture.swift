@@ -49,7 +49,7 @@ enum CaptureScrollFixture {
                         }
                     }
                 }
-                let frame = try ScrollFrameReader.sample(directory: source, axis: .vertical)
+                let frame = try sample(source, axis: .vertical)
                 var displacement: Int?, trailing = 0
                 if let previous {
                     let decision = ScrollStitchPolicy.match(previous: previous, current: frame)
@@ -96,8 +96,8 @@ enum CaptureScrollFixture {
         _ = try CaptureImageSource.load(fixtures.appendingPathComponent("fixed-header-before.png"), at: before)
         let size = try CaptureImageSource.load(fixtures.appendingPathComponent("fixed-header-after.png"), at: after)
         try browserRegions(before: before, after: after, size: size, in: root)
-        let first = try ScrollFrameReader.sample(directory: before, axis: .vertical)
-        let second = try ScrollFrameReader.sample(directory: after, axis: .vertical)
+        let first = try sample(before, axis: .vertical)
+        let second = try sample(after, axis: .vertical)
         precondition(ScrollStitchPolicy.stable(first, first))
         precondition(ScrollStitchPolicy.match(previous: first, current: first) == .duplicate)
         guard case .append(let offset, let leading, let trailing) =
@@ -118,6 +118,26 @@ enum CaptureScrollFixture {
         }
     }
 
+    /// A stored frame sampled as a session samples the live image it was captured as.
+    private static func sample(_ directory: URL, axis: CaptureDocument.Axis) throws -> ScrollStitchPolicy.Frame {
+        let reader = try CaptureRasterReader(directory: directory)
+        let size = reader.raster.size
+        var pixels = [UInt8](repeating: 0, count: size.rowBytes * size.height)
+        try pixels.withUnsafeMutableBytes { buffer in
+            for row in 0..<size.height {
+                let start = row * size.rowBytes
+                try reader.read(row: row, into: UnsafeMutableRawBufferPointer(rebasing: buffer[start..<(start + size.rowBytes)]))
+            }
+        }
+        let image = CGImage(
+            width: size.width, height: size.height, bitsPerComponent: 8, bitsPerPixel: 32,
+            bytesPerRow: size.rowBytes, space: CGColorSpace(name: CGColorSpace.sRGB)!,
+            bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedLast.rawValue),
+            provider: CGDataProvider(data: Data(pixels) as CFData)!, decode: nil, shouldInterpolate: false,
+            intent: .defaultIntent)!
+        return try ScrollFrameReader.sample(image, axis: axis)
+    }
+
     private static func browserRegions(before: URL, after: URL, size: CapturePixelSize, in root: URL) throws {
         let regions = [
             CGRect(x: 8, y: 0, width: size.width - 16, height: size.height),
@@ -129,8 +149,8 @@ enum CaptureScrollFixture {
             let croppedAfter = root.appendingPathComponent("browser-region-after-\(index)")
             try ScrollFrameReader.strip(from: before, rect: region, to: croppedBefore)
             try ScrollFrameReader.strip(from: after, rect: region, to: croppedAfter)
-            let first = try ScrollFrameReader.sample(directory: croppedBefore, axis: .vertical)
-            let second = try ScrollFrameReader.sample(directory: croppedAfter, axis: .vertical)
+            let first = try sample(croppedBefore, axis: .vertical)
+            let second = try sample(croppedAfter, axis: .vertical)
             let decision = ScrollStitchPolicy.match(previous: first, current: second)
             guard case .append(let offset, _, let trailing) = decision,
                 (279...280).contains(offset), trailing == 0 else {
