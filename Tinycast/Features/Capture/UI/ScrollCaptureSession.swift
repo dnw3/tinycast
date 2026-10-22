@@ -39,6 +39,8 @@ final class ScrollCaptureSession {
     @ObservationIgnored private var scrollMonitors: [Any] = []
     /// The overlap is gone; the reader may scroll back to it, or go on and leave a gap.
     private(set) var lost = false
+    /// Turned to scroll back from where it began, so the result's newest lines are its first.
+    private(set) var growsAtStart = false
     @ObservationIgnored private var bridgeRequested = false
     @ObservationIgnored private var latest: (frame: ScrollStitchPolicy.Frame, image: CGImage)?
     private(set) var diagnostics: ScrollDiagnosticsRecorder?
@@ -231,6 +233,7 @@ final class ScrollCaptureSession {
                     : String(localized: "Scroll forward to add more content")
                 setHint(notice)
             case .reversing:
+                growsAtStart = true
                 notice = String(localized: "Scrolling back: new content is added at the start")
                 setHint(notice)
             case .lost:

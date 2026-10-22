@@ -51,7 +51,7 @@ enum ScrollFrameReader {
         return ScrollStitchPolicy.Frame(length: length, lanes: lanes, rgb: rgb, originalRGB: originalRGB)
     }
 
-    /// Extra lines to retake so the seam falls where both frames agree and nothing is drawn, between lines.
+    /// Extra lines to retake so the seam falls where both frames agree and nothing is drawn.
     nonisolated static func seam(
         previous: CGImage, current: CGImage, shift: Int, retaken: Int, axis: CaptureDocument.Axis, atStart: Bool
     ) -> Int {
@@ -62,7 +62,7 @@ enum ScrollFrameReader {
         guard room > 0 else { return 0 }
         var best = (extra: 0, score: Int.max)
         for extra in 0...room {
-            // Forward, the cut is the earlier frame's line that many above its retaken end; back, below its start.
+            // Forward, the cut is that many above the earlier frame's retaken end; back, below its start.
             let earlier = atStart ? retaken + extra : length - retaken - extra - 1
             let later = atStart ? earlier + shift : earlier - shift
             guard (0..<length).contains(later) else { continue }

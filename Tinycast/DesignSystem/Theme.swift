@@ -74,7 +74,7 @@ enum Theme {
         static let captureWorkspaceOutputs = CGSize(width: 60, height: 312)
         static let captureScrollBar = CGSize(width: 280, height: 38)
         static let captureScrollDetails: CGFloat = 72
-        static let captureScrollPreview: CGFloat = 48
+        static let captureScrollThumbnail: CGFloat = 112
         static let captureCountdown = CGSize(width: 240, height: 48)
         static let captureRecordingBar = CGSize(width: 380, height: 88)
         static let captureTextEditor = CGSize(width: 320, height: 140)

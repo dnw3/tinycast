@@ -18,6 +18,7 @@ struct CaptureWorkflowTests {
         stitching()
         tracking()
         stillOverlays()
+        previewPlacement()
         try liveFrames(in: root)
         try CaptureScrollFixture.verify(in: root)
         try leases(in: root)
@@ -370,6 +371,31 @@ struct CaptureWorkflowTests {
             screen: CGRect(x: 0, y: 0, width: 1728, height: 1117), gap: 8)
         precondition(!corner.outputs.intersects(CGRect(x: 1670, y: 30, width: 40, height: 50)))
         precondition(!corner.outputs.intersects(corner.tools))
+    }
+
+    static func previewPlacement() {
+        let screen = CGRect(x: 0, y: 0, width: 1_500, height: 900)
+        let controls = CGRect(x: 600, y: 820, width: 280, height: 38)
+        let region = CGRect(x: 400, y: 100, width: 700, height: 700)
+        precondition(
+            CaptureControlPlacement.scrollingPreview(region: region, width: 112, controls: controls, screens: [screen], gap: 12)
+                == CGRect(x: 1_112, y: 100, width: 112, height: 700),
+            "The live preview stands beside the region, as tall as it")
+        let right = CGRect(x: 700, y: 100, width: 790, height: 700)
+        precondition(
+            CaptureControlPlacement.scrollingPreview(region: right, width: 112, controls: controls, screens: [screen], gap: 12)
+                == CGRect(x: 576, y: 100, width: 112, height: 700),
+            "or on the other side when that one has no room")
+        let wide = CGRect(x: 20, y: 100, width: 1_460, height: 700)
+        precondition(
+            CaptureControlPlacement.scrollingPreview(region: wide, width: 112, controls: controls, screens: [screen], gap: 12)
+                == nil,
+            "and nowhere when neither side has")
+        let beside = CGRect(x: 1_112, y: 100, width: 300, height: 700)
+        precondition(
+            CaptureControlPlacement.scrollingPreview(region: region, width: 112, controls: beside, screens: [screen], gap: 12)
+                == CGRect(x: 276, y: 100, width: 112, height: 700),
+            "never over the controls")
     }
 
     static func frame(offset: Int, fixed: Int = 0, lanes: Int = 8) -> ScrollStitchPolicy.Frame {

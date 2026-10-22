@@ -12,7 +12,11 @@ enum CaptureRenderer {
         guard let piece = atStart ? document.pieces.first : document.pieces.last else {
             throw CaptureRasterError.invalidTile
         }
-        let scale = min(1, 240 / max(document.bounds.width, document.bounds.height))
+        // Sharp across a strip about 128pt wide at 2×, however long the result grows along the scroll.
+        let vertical = document.axis != .horizontal
+        let across = vertical ? document.bounds.width : document.bounds.height
+        let along = vertical ? document.bounds.height : document.bounds.width
+        let scale = min(1, 256 / across, 6_000 / along)
         let width = max(1, Int(document.bounds.width * scale)),
             height = max(1, Int(document.bounds.height * scale))
         guard
@@ -22,31 +26,34 @@ enum CaptureRenderer {
                 bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
         else { throw CaptureRasterError.invalidSize }
         if let previous {
-            let vertical = document.axis != .horizontal
             let moved = atStart
                 ? CGFloat(vertical ? document.size.height - previousSize.height : document.size.width - previousSize.width)
                 : 0
+            let fitted = CGSize(
+                width: CGFloat(previousSize.width) * scale, height: CGFloat(previousSize.height) * scale)
+            // Copied pixel for pixel at a whole-pixel offset: redrawn at fractions, it blurred and lined each seam.
+            let unscaled = abs(CGFloat(previous.width) - fitted.width) <= 1 && abs(CGFloat(previous.height) - fitted.height) <= 1
+            let size = unscaled ? CGSize(width: previous.width, height: previous.height) : fitted
+            let shift = (moved * scale).rounded()
             context.draw(
                 previous,
                 in: CGRect(
-                    x: vertical ? 0 : moved * scale,
-                    y: CGFloat(height) - CGFloat(previousSize.height) * scale - (vertical ? moved * scale : 0),
-                    width: CGFloat(previousSize.width) * scale, height: CGFloat(previousSize.height) * scale))
+                    x: vertical ? 0 : shift, y: CGFloat(height) - size.height - (vertical ? shift : 0),
+                    width: size.width, height: size.height))
         }
         let size = try CapturePixelSize(width: Int(piece.source.width), height: Int(piece.source.height))
         let strip = CaptureDocument(
             id: document.id, createdAt: document.createdAt, size: size,
             pieces: [.init(raster: piece.raster, source: piece.source, origin: .zero)])
-        let image = try preview(document: strip, directory: directory, maximum: 240)
-        context.clear(
-            CGRect(
-                x: piece.origin.x * scale, y: CGFloat(height) - piece.bounds.maxY * scale,
-                width: piece.source.width * scale, height: piece.source.height * scale))
-        context.draw(
-            image,
-            in: CGRect(
-                x: piece.origin.x * scale, y: CGFloat(height) - piece.bounds.maxY * scale,
-                width: piece.source.width * scale, height: piece.source.height * scale))
+        let image = try preview(
+            document: strip, directory: directory,
+            maximum: max(1, Int((max(piece.source.width, piece.source.height) * scale).rounded(.up))))
+        let placed = CGRect(
+            x: piece.origin.x * scale, y: CGFloat(height) - piece.bounds.maxY * scale,
+            width: piece.source.width * scale, height: piece.source.height * scale
+        ).integral
+        context.clear(placed)
+        context.draw(image, in: placed)
         guard let result = context.makeImage() else { throw CaptureRasterError.invalidSize }
         return result
     }

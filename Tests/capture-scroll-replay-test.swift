@@ -188,6 +188,9 @@ struct CaptureScrollReplayTests {
         return (document, verdicts)
     }
 
+    /// The live preview as the session builds it, strip by strip, kept for a replayed recording.
+    nonisolated(unsafe) static var preview: CGImage?
+
     static func stitch(_ shots: [Shot], in directory: URL) throws -> (CaptureDocument, [String]) {
         var tracker = ScrollTracker<CGImage>()
         var document: CaptureDocument?
@@ -208,6 +211,9 @@ struct CaptureScrollReplayTests {
                 atStart: strip.reversed)
             before = strip.payload
             try ScrollFrameReader.strip(strip.payload, rect: plan.source, to: directory.appendingPathComponent(raster))
+            preview = try CaptureRenderer.scrollPreview(
+                previous: preview, previousSize: current.pieces.isEmpty ? plan.document.size : current.size,
+                document: plan.document, directory: directory, atStart: strip.reversed)
             document = plan.document
         }
         for shot in shots {
@@ -236,7 +242,7 @@ struct CaptureScrollReplayTests {
     static func replay(_ folder: URL, in root: URL) throws -> CaptureDocument {
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         let names = try FileManager.default.contentsOfDirectory(atPath: folder.path)
-            .filter { $0.hasSuffix(".png") && $0 != "replay.png" }.sorted()
+            .filter { $0.hasSuffix(".png") && $0 != "replay.png" && $0 != "preview.png" }.sorted()
         let frames = names.compactMap { name -> Shot? in
             guard let source = CGImageSourceCreateWithURL(folder.appendingPathComponent(name) as CFURL, nil),
                 let image = CGImageSourceCreateImageAtIndex(source, 0, nil)
@@ -244,8 +250,15 @@ struct CaptureScrollReplayTests {
             let marks = ScrollDiagnosticsRecorder.marks(inFrameNamed: name)
             return Shot(image: image, pointer: marks.pointer, travel: marks.travel)
         }
+        preview = nil
         let (document, verdicts) = try stitch(frames, in: root)
         for (name, verdict) in zip(names, verdicts) where !verdict.isEmpty { print(name, verdict) }
+        if let preview {
+            let target = CGImageDestinationCreateWithURL(
+                folder.appendingPathComponent("preview.png") as CFURL, UTType.png.identifier as CFString, 1, nil)!
+            CGImageDestinationAddImage(target, preview, nil)
+            precondition(CGImageDestinationFinalize(target))
+        }
         print("Stitched \(document.size.width) × \(document.size.height) from \(document.pieces.count) strips")
         let composite = try CaptureCompositeReader(document: document, directory: root)
         var pixels = Data()

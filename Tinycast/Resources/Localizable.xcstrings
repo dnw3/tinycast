@@ -6333,6 +6333,16 @@
         }
       }
     },
+    "Captured so far": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已拼接的内容"
+          }
+        }
+      }
+    },
     "Captures the screen and records video.": {
       "localizations": {
         "zh-Hans": {
@@ -26560,6 +26570,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "收起"
+          }
+        }
+      }
+    },
+    "Show Live Preview": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "显示实时预览"
           }
         }
       }
