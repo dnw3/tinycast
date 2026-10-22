@@ -229,6 +229,14 @@ final class CaptureCoordinator {
         }
     }
 
+    func recordScrollDiagnostics() {
+        guard let scroll else { return }
+        do {
+            try scroll.recordDiagnostics(
+                in: AppPaths.applicationSupport().appendingPathComponent("captures/diagnostics"))
+        } catch { report(error) }
+    }
+
     func toggleAutomaticScroll() {
         guard let scroll else { return }
         if scroll.automatic { scroll.automatic = false; return }

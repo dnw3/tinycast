@@ -195,6 +195,9 @@ run -O capture-workflow-test $CAPTURE/Model/*.swift $CAPTURE/Service/*.swift \
                            Tinycast/Platform/TextRecognition/TextRecognitionResult.swift \
                            Tinycast/Platform/ScreenTarget.swift Tinycast/Platform/Compression/Zlib.swift \
                            Tests/CaptureFixture.swift Tests/CaptureScrollFixture.swift
+run -O capture-scroll-replay-test $CAPTURE/Model/*.swift $CAPTURE/Service/*.swift \
+                           Tinycast/Platform/TextRecognition/TextRecognitionResult.swift \
+                           Tinycast/Platform/ScreenTarget.swift Tinycast/Platform/Compression/Zlib.swift
 run capture-annotation-style-test $CAPTURE/Model/*.swift $CAPTURE/Service/*.swift \
                            Tinycast/Platform/TextRecognition/TextRecognitionResult.swift \
                            Tinycast/Platform/ScreenTarget.swift Tinycast/Platform/Compression/Zlib.swift

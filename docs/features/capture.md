@@ -228,7 +228,10 @@ frames is held — a sidebar, a floating button — and so is one part still and
 one, its rim; held windows may make up at most a third of the region, since a region mostly still is a
 pane scrolling inside it. At either end of the overlap, rows where most lanes settle in neither frame —
 an edge fade, a dimmed band — are left out too, up to a sixth of the frame; at the bottom they widen the
-fixed trailing rows, so each append retakes them from the newer frame and no seam keeps faded lines.
+fixed trailing rows, so each append retakes them from the newer frame and no seam keeps faded lines;
+a row counts as off by the fit's own bar, so a faint fade is either left out or passes. The trailing
+rows retaken never shrink within a session (`ScrollTracker.settle`), since retaking fewer than the last
+strip did would leave that strip's footer or fade inside the result.
 Everywhere else a lane may differ in at most one window — a caret blinking — so a layout that repeats
 at a different line still makes the match uncertain: a lane that moved does not line up at the wrong
 shift, nor at none. A tolerance spread over the whole region was tried and took a page that repeats
@@ -241,6 +244,14 @@ capture reads it (`chatHoverStill`), so no Copy button the pointer happens to re
 Duplicate and reverse frames do not grow the result. Along-axis fixed headers stay in the first strip;
 the previous fixed footer is removed before a new strip and footer are appended. This detection still
 needs the real browser/PDF/native-list corpus before AC-04 can pass.
+
+Record Diagnostic Frames, in the controls' More menu, writes every later sample of that session as it
+was captured, named with the pointer's line, plus one verdict line each in `trace.tsv`, to
+`captures/diagnostics/scroll-<time>` under Application Support; Finder shows the folder when the
+session ends. Writes queue behind sampling rather than slow it, stop after
+`ScrollDiagnosticsRecorder.frameLimit` frames, and nothing deletes them but the reader. It is off for
+every new session, since the frames are screen contents. `capture-scroll-replay-test` replays such a
+folder with `TINYCAST_SCROLL_REPLAY`.
 
 Manual is the default and needs no Accessibility grant. Auto Scroll is an explicit choice for each
 session, checks Accessibility and revalidates the original PID/window/frame/visible region immediately

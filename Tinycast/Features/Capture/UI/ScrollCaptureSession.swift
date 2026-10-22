@@ -32,6 +32,10 @@ final class ScrollCaptureSession {
     private var lastAutomaticScroll = ContinuousClock.now
     private var stopped = false
     private var generation = 0
+    private(set) var diagnostics: ScrollDiagnosticsRecorder?
+    private var diagnosticFrames = 0
+    /// Frames are written in order behind sampling, so recording never slows the capture it watches.
+    private var diagnosticWrites: Task<Void, Never>?
     private let speed: Int
 
     init(
@@ -74,9 +78,17 @@ final class ScrollCaptureSession {
         return Int((axis == .vertical ? y : x) * target.scale)
     }
 
+    /// Opt-in for one session only: the frames are screen contents, kept until the reader deletes them.
+    func recordDiagnostics(in root: URL) throws {
+        guard diagnostics == nil else { return }
+        diagnostics = try ScrollDiagnosticsRecorder.create(in: root, date: Date())
+    }
+
     func stop() async {
         cancel()
         await task?.value
+        await diagnosticWrites?.value
+        if let diagnostics { NSWorkspace.shared.activateFileViewerSelecting([diagnostics.directory]) }
         // The newest frame that lined up is content the reader scrolled to, so finishing keeps it.
         if let strip = tracker.flush() { _ = try? await write(strip, generation: nil) }
         Self.logger.notice("""
@@ -141,6 +153,7 @@ final class ScrollCaptureSession {
             return (tracker, steps)
         }
         try Task.checkCancellation()
+        record(image, pointer: pointer, resting: observed.resting, steps: steps)
         guard !paused, generation == self.generation else { return }
         self.tracker = observed
         restingSamples = observed.resting ? restingSamples + 1 : 0
@@ -167,6 +180,26 @@ final class ScrollCaptureSession {
         }
         if automatic, !paused, ContinuousClock.now - lastAutomaticScroll >= .milliseconds(300) {
             scrollTarget()
+        }
+    }
+
+    private func record(
+        _ image: CGImage, pointer: Int?, resting: Bool, steps: [ScrollTracker<CGImage>.Step]
+    ) {
+        guard let diagnostics, diagnosticFrames < ScrollDiagnosticsRecorder.frameLimit else { return }
+        diagnosticFrames += 1
+        let index = diagnosticFrames, previous = diagnosticWrites
+        let verdict = ([resting ? "rest" : "moving"] + steps.map { step in
+            switch step {
+            case .commit(let strip): "commit \(strip.offset.map(String.init) ?? "whole") trailing \(strip.trailing)"
+            case .backward: "backward"
+            case .lost: "lost"
+            case .found: "found"
+            }
+        }).joined(separator: " ")
+        diagnosticWrites = Task.detached {
+            await previous?.value
+            try? diagnostics.record(image, index: index, pointer: pointer, verdict: verdict)
         }
     }
 

@@ -22901,6 +22901,16 @@
         }
       }
     },
+    "Record Diagnostic Frames": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "记录诊断帧"
+          }
+        }
+      }
+    },
     "Record Hotkey": {
       "localizations": {
         "zh-Hans": {

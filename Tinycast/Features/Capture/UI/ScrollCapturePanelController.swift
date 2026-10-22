@@ -183,6 +183,8 @@ final class ScrollCapturePanelController {
                                     resize(session.paused || value || session.hint != nil)
                                     details.shown = value
                                 }))
+                        Button("Record Diagnostic Frames") { coordinator.recordScrollDiagnostics() }
+                            .disabled(session.diagnostics != nil)
                         Button("Select Again…") { coordinator.restartScroll() }
                         Button("Cancel Scrolling…") { coordinator.cancelScroll() }
                             .keyboardShortcut(.escape, modifiers: [])

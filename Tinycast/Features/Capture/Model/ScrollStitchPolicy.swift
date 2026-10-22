@@ -199,7 +199,8 @@ enum ScrollStitchPolicy {
         func settled(_ row: Int) -> Bool? {
             let judged = windows[row].compactMap { $0 }
             guard judged.count >= 2 else { return nil }
-            let off = judged.filter { if case .moved(let error) = $0 { error > 12 } else { true } }
+            // Off by the fit's own bar, so a faint fade is either left out or passes, never half of each.
+            let off = judged.filter { if case .moved(let error) = $0 { error >= 8 } else { true } }
             return off.count * 2 < judged.count
         }
         // An edge fade or dimming sits over moving content, so its lines settle in neither frame.

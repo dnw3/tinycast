@@ -29,6 +29,8 @@ struct ScrollTracker<Payload: Sendable>: Sendable {
     private(set) var resting = false
     private var last: ScrollStitchPolicy.Frame?
     private var misses = 0
+    /// The result's last lines that may be a footer or fade; every later strip retakes at least these.
+    private var unreliable = 0
 
     mutating func observe(
         _ frame: ScrollStitchPolicy.Frame, payload: Payload,
@@ -45,7 +47,7 @@ struct ScrollTracker<Payload: Sendable>: Sendable {
         var steps: [Step] = []
         var decision = match(accepted, frame)
         if let pending, !decision.appends {
-            steps.append(.commit(pending))
+            steps.append(.commit(settle(pending)))
             self.accepted = pending.frame
             self.pending = nil
             decision = match(pending.frame, frame)
@@ -56,7 +58,7 @@ struct ScrollTracker<Payload: Sendable>: Sendable {
             // Scrolling back a little keeps the furthest frame, so nothing already seen is dropped.
             if let pending, let ahead = pending.offset, ahead > offset { strip = pending }
             if resting {
-                steps.append(.commit(strip))
+                steps.append(.commit(settle(strip)))
                 self.accepted = strip.frame
                 pending = nil
             } else {
@@ -82,7 +84,14 @@ struct ScrollTracker<Payload: Sendable>: Sendable {
         defer { pending = nil }
         guard let pending else { return nil }
         accepted = pending.frame
-        return pending
+        return settle(pending)
+    }
+
+    /// A strip retaking fewer lines than the last would leave that one's footer or fade inside the result.
+    private mutating func settle(_ strip: Strip) -> Strip {
+        guard let offset = strip.offset else { return strip }
+        unreliable = min(strip.frame.length - offset, max(unreliable, strip.trailing))
+        return Strip(frame: strip.frame, payload: strip.payload, offset: offset, trailing: unreliable)
     }
 
     /// After a pause or an unwritten strip, matching starts over from the last strip on disk.
