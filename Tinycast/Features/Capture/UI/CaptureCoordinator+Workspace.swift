@@ -336,19 +336,24 @@ extension CaptureCoordinator {
         return workspace.target.windows.first { $0.windowID == id }
     }
 
-    /// The picked window is the region as picked: sidebars and bars that stay put are matched around.
+    /// The picked window is the region as picked, started without touching what is on screen first.
     private func scrollWindow(_ window: SCWindow, returnMode: CaptureRequest.Mode) async throws {
-        guard let workspace else { return }
-        setCaptureMode(.scrolling)
+        guard let workspace, let editor, !workspace.busy, !editor.busy,
+            let screen = NSScreen.screens.first(where: { $0.frame == workspace.target.screenFrame })
+        else { return }
         let top = NSScreen.primary?.frame.maxY ?? 0
-        let screen = workspace.target.screenFrame
-        let frame = CGRect(
-            x: window.frame.minX, y: top - window.frame.maxY, width: window.frame.width, height: window.frame.height)
-        let area = frame.intersection(screen)
-        // Off this display, the reader draws the region as before.
-        guard !area.isEmpty else { return }
-        selectRegion(area.offsetBy(dx: -screen.minX, dy: -screen.minY))
-        guard let start = scrollStart() else { return }
+        let rect = CGRect(
+            x: window.frame.minX, y: top - window.frame.maxY, width: window.frame.width, height: window.frame.height
+        ).intersection(screen.frame).offsetBy(dx: -screen.frame.minX, dy: -screen.frame.minY)
+        guard !rect.isEmpty,
+            let pixels = CaptureGeometry.pixels(
+                rect, screen: CGRect(origin: .zero, size: screen.frame.size), scale: workspace.target.scale)
+        else {
+            // Off this display, the reader draws the region as before.
+            setCaptureMode(.scrolling)
+            return
+        }
+        let start = ScrollStart(workspace: workspace, editor: editor, rect: rect, screen: screen, pixels: pixels)
         try await startScroll(start, returnMode: returnMode)
     }
 
