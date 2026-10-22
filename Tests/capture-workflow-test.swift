@@ -533,7 +533,7 @@ struct CaptureWorkflowTests {
         precondition(
             ScrollStitchPolicy.match(previous: first, current: second)
                 == .append(offset: 60, fixedLeading: 0, fixedTrailing: ScrollStitchPolicy.edgeClearance))
-        precondition(ScrollStitchPolicy.match(previous: second, current: first) == .reverse)
+        guard case .reverse = ScrollStitchPolicy.match(previous: second, current: first) else { preconditionFailure("Matched the other way, the shift reads back") }
         precondition(ScrollStitchPolicy.match(previous: first, current: frame(offset: 260)) == .uncertain)
         precondition(
             ScrollStitchPolicy.match(

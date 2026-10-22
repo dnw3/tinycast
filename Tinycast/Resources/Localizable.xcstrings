@@ -3520,6 +3520,16 @@
         }
       }
     },
+    "Adds what is on screen now and leaves out what was scrolled past": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "把当前画面接上去，中间滚过的部分会缺失"
+          }
+        }
+      }
+    },
     "Add…": {
       "localizations": {
         "zh-Hans": {
@@ -13756,6 +13766,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Go 模块缓存"
+          }
+        }
+      }
+    },
+    "Go On from Here": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "从这里继续"
           }
         }
       }
@@ -32949,6 +32969,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "欢迎使用 Tinycast"
+          }
+        }
+      }
+    },
+    "Went on past a gap: what was scrolled past is missing there": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已从这里继续：中间滚过的部分在长图里缺失"
           }
         }
       }

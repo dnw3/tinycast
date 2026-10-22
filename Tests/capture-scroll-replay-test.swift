@@ -42,6 +42,24 @@ struct CaptureScrollReplayTests {
         let (_, backVerdicts) = try verify(window, back.map { Shot(window, top: $0, travel: $0) }, in: root.appendingPathComponent("back"))
         precondition(backVerdicts.contains { $0.hasPrefix("reversing") }, "Scrolling back turns the capture: \(backVerdicts)")
         try verify(window, back.map { Shot(window, top: $0, pointer: 600, travel: $0) }, in: root.appendingPathComponent("back-pointer"))
+        // Back well past what the last strip reaches, then on again: matching follows the reader both ways.
+        let roundTrip = [0, 0, 300, 600, 900, 1_200, 1_200, 1_000, 800, 600, 400, 200, 200, 400, 600, 900, 1_200, 1_500, 1_500]
+        try verify(window, roundTrip.map { Shot(window, top: $0, travel: $0) }, in: root.appendingPathComponent("round"))
+        // A jump past the frame matched from lands within an earlier strip, which places it again.
+        let jump = [0, 0, 300, 600, 900, 900, 100, 100, 400, 700, 1_000, 1_300, 1_300]
+        let (_, jumpVerdicts) = try verify(window, jump.map { Shot(window, top: $0) }, in: root.appendingPathComponent("jump"))
+        precondition(!jumpVerdicts.contains { $0.contains("lost") }, "\(jumpVerdicts)")
+        // Past any overlap, the reader may go on and leave a gap, which is then plain to see.
+        var tracker = ScrollTracker<Int>()
+        for top in [0, 0] { _ = tracker.observe(try ScrollFrameReader.sample(window.frame(top: top, pointer: nil), axis: .vertical), payload: top, match: ScrollStitchPolicy.match) }
+        let distant = try ScrollFrameReader.sample(window.frame(top: 2_000, pointer: nil), axis: .vertical)
+        _ = tracker.observe(distant, payload: 2_000, match: ScrollStitchPolicy.match)
+        let lost = tracker.observe(distant, payload: 2_000, match: ScrollStitchPolicy.match)
+        precondition(lost.contains { if case .lost = $0 { true } else { false } }, "\(lost)")
+        guard let bridged = tracker.bridge(distant, payload: 2_000), bridged.offset == window.height, bridged.trailing == 0
+        else { preconditionFailure("Going on past a gap adds the frame whole after the result's end") }
+        let after = tracker.observe(try ScrollFrameReader.sample(window.frame(top: 2_300, pointer: nil), axis: .vertical), payload: 2_300, match: ScrollStitchPolicy.match)
+        precondition(!after.contains { if case .lost = $0 { true } else { false } } && tracker.pending?.offset == 300, "and matching goes on from it: \(after)")
         // A step past the overlap is lost, never taken at whatever shift fits a little.
         let far = [0, 0, 480, 480].map { Shot(window, top: $0, pointer: 600, travel: $0) }
         let (_, farVerdicts) = try verify(window, far, in: root.appendingPathComponent("far"), allowsLoss: true)

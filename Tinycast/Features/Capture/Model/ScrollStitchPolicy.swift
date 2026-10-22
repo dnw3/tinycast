@@ -108,7 +108,8 @@ enum ScrollStitchPolicy {
     enum Decision: Equatable, Sendable {
         case duplicate
         case append(offset: Int, fixedLeading: Int, fixedTrailing: Int)
-        case reverse
+        /// Lines above the frame it was matched from.
+        case reverse(offset: Int)
         case uncertain
     }
 
@@ -184,7 +185,7 @@ enum ScrollStitchPolicy {
             patchError(previous: previous, current: current, shift: candidate.0, start: start, end: end)
                 > fit.error * 1.8 + 1.5
         }) else { return .uncertain }
-        guard best.0 > 0 else { return .reverse }
+        guard best.0 > 0 else { return .reverse(offset: -best.0) }
         // A fade over a short line can slip between lanes, so lines by the edge come from the newer frame.
         let retaken = min(length - best.0, max(trailing, fit.unsettled) + edgeClearance)
         return .append(offset: best.0, fixedLeading: leading, fixedTrailing: retaken)

@@ -229,6 +229,11 @@ final class CaptureCoordinator {
         }
     }
 
+    /// Going on leaves out what was scrolled past, so it is only ever the reader's choice.
+    func bridgeScroll() {
+        scroll?.requestBridge()
+    }
+
     func recordScrollDiagnostics() {
         guard let scroll else { return }
         do {

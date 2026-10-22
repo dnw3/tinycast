@@ -35,6 +35,10 @@ final class ScrollCaptureSession {
     /// Pixels the scroll events over the region have moved the content by, while every one was precise.
     private var travel: Double? = 0
     @ObservationIgnored private var scrollMonitors: [Any] = []
+    /// The overlap is gone; the reader may scroll back to it, or go on and leave a gap.
+    private(set) var lost = false
+    @ObservationIgnored private var bridgeRequested = false
+    @ObservationIgnored private var latest: (frame: ScrollStitchPolicy.Frame, image: CGImage)?
     private(set) var diagnostics: ScrollDiagnosticsRecorder?
     private var diagnosticFrames = 0
     /// Frames are written in order behind sampling, so recording never slows the capture it watches.
@@ -168,19 +172,42 @@ final class ScrollCaptureSession {
         onPauseChange?(false)
     }
 
+    /// Taken up by the sampling loop, so going on never races a sample already in flight.
+    func requestBridge() {
+        guard lost else { return }
+        bridgeRequested = true
+    }
+
+    private func bridge(generation: Int) async throws {
+        bridgeRequested = false
+        var bridged = tracker
+        guard let latest, let strip = bridged.bridge(latest.frame, payload: latest.image) else { return }
+        tracker = bridged
+        lost = false
+        guard try await write(strip, generation: generation) else {
+            tracker.restart(from: committed)
+            return
+        }
+        Self.logger.notice("Scroll bridged a gap: pieces=\(self.document.pieces.count)")
+        notice = String(localized: "Went on past a gap: what was scrolled past is missing there")
+        setHint(notice)
+    }
+
     private func sample() async throws {
         let generation = generation
         guard validateTarget() else { return }
+        if bridgeRequested { try await bridge(generation: generation) }
         let image = try await CaptureScreenService.image(target: target, rect: region, cursor: false)
         let axis = axis, tracker = tracker, pointer = pointerLine, travel = travel.map { Int($0.rounded()) }
-        let (observed, steps) = try await CaptureWork.run {
+        let (observed, steps, frame) = try await CaptureWork.run {
             var tracker = tracker
             var frame = try ScrollFrameReader.sample(image, axis: axis)
             frame.pointer = pointer
             frame.travel = travel
             let steps = tracker.observe(frame, payload: image, match: ScrollStitchPolicy.match)
-            return (tracker, steps)
+            return (tracker, steps, frame)
         }
+        latest = (frame, image)
         try Task.checkCancellation()
         record(image, pointer: pointer, travel: travel, resting: observed.resting, steps: steps)
         guard !paused, generation == self.generation else { return }
@@ -189,6 +216,7 @@ final class ScrollCaptureSession {
         for step in steps {
             switch step {
             case .commit(let strip):
+                lost = false
                 let started = ContinuousClock.now
                 guard try await write(strip, generation: generation) else {
                     self.tracker.restart(from: committed)
@@ -204,6 +232,7 @@ final class ScrollCaptureSession {
                 notice = String(localized: "Scrolling back: new content is added at the start")
                 setHint(notice)
             case .lost:
+                lost = true
                 Self.logger.notice("Scroll alignment lost: pieces=\(self.document.pieces.count)")
                 let now = observed.reversed ? travel.map { -$0 } : travel
                 let gone = observed.accepted?.travel.flatMap { from in now.map { abs($0 - from) } }
@@ -212,6 +241,7 @@ final class ScrollCaptureSession {
                     : String(localized: "Lost the overlap. Scroll back a little to continue")
                 setHint(notice, lasting: true)
             case .found:
+                lost = false
                 notice = String(localized: "Scroll inside the selected region")
                 setHint(nil)
             }

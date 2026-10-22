@@ -133,8 +133,15 @@ final class ScrollCapturePanelController {
             VStack(spacing: metrics.spacing.xs) {
                 bar
                 if !expanded, let hint = session.hint {
-                    Text(hint).lineLimit(2).foregroundStyle(Theme.Colors.textPrimary)
-                        .captureNotice(metrics)
+                    HStack(spacing: metrics.spacing.sm) {
+                        Text(hint).lineLimit(2).foregroundStyle(Theme.Colors.textPrimary)
+                        if session.lost {
+                            Button("Go On from Here") { coordinator.bridgeScroll() }
+                                .buttonStyle(.modalAction(.standard, fillsWidth: false))
+                                .tooltip(String(localized: "Adds what is on screen now and leaves out what was scrolled past"))
+                        }
+                    }
+                    .captureNotice(metrics)
                 }
             }
             .frame(maxHeight: .infinity, alignment: .top)

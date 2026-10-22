@@ -58,7 +58,7 @@ enum CaptureScrollFixture {
                     }
                     displacement = shift
                     trailing = fixedTrailing
-                    precondition(ScrollStitchPolicy.match(previous: frame, current: previous) == .reverse)
+                    precondition(ScrollStitchPolicy.match(previous: frame, current: previous) == .reverse(offset: 83))
                 }
                 let raster = UUID().uuidString
                 let plan = try CaptureScrollAppend.plan(
@@ -105,7 +105,7 @@ enum CaptureScrollFixture {
         else { preconditionFailure("Fixed-header browser frames must register despite text rasterization differences") }
         // A blank margin and the edge clearance are retaken from the newer frame; no pixel changes.
         precondition((279...280).contains(offset) && (62...70).contains(leading) && trailing <= 32 + ScrollStitchPolicy.edgeClearance, "\(offset) \(leading) \(trailing)")
-        precondition(ScrollStitchPolicy.match(previous: second, current: first) == .reverse)
+        guard case .reverse = ScrollStitchPolicy.match(previous: second, current: first) else { preconditionFailure("Matched the other way, the shift reads back") }
         let strip = root.appendingPathComponent("browser-strip")
         try ScrollFrameReader.strip(from: after,
             rect: CGRect(x: 0, y: size.height - offset, width: size.width, height: offset), to: strip)
@@ -157,7 +157,7 @@ enum CaptureScrollFixture {
                 (279...280).contains(offset), trailing <= 32 + ScrollStitchPolicy.edgeClearance else {
                 preconditionFailure("Browser region \(region) failed: \(decision)")
             }
-            precondition(ScrollStitchPolicy.match(previous: second, current: first) == .reverse)
+            guard case .reverse = ScrollStitchPolicy.match(previous: second, current: first) else { preconditionFailure("Matched the other way, the shift reads back") }
         }
     }
 }
