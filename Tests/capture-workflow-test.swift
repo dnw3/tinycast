@@ -532,13 +532,13 @@ struct CaptureWorkflowTests {
         precondition(ScrollStitchPolicy.match(previous: first, current: first) == .duplicate)
         precondition(
             ScrollStitchPolicy.match(previous: first, current: second)
-                == .append(offset: 60, fixedLeading: 0, fixedTrailing: 0))
+                == .append(offset: 60, fixedLeading: 0, fixedTrailing: ScrollStitchPolicy.edgeClearance))
         precondition(ScrollStitchPolicy.match(previous: second, current: first) == .reverse)
         precondition(ScrollStitchPolicy.match(previous: first, current: frame(offset: 260)) == .uncertain)
         precondition(
             ScrollStitchPolicy.match(
                 previous: frame(offset: 0, fixed: 24), current: frame(offset: 80, fixed: 24))
-                == .append(offset: 80, fixedLeading: 24, fixedTrailing: 0))
+                == .append(offset: 80, fixedLeading: 24, fixedTrailing: ScrollStitchPolicy.edgeClearance))
         let pattern = frame(offset: 0)
         func repeated(_ offset: Int) -> ScrollStitchPolicy.Frame {
             let rgb = (0..<pattern.length).flatMap { row in
@@ -556,11 +556,11 @@ struct CaptureWorkflowTests {
         }
         precondition(
             ScrollStitchPolicy.match(previous: wide, current: .init(length: 300, lanes: 32, rgb: sidebar))
-                == .append(offset: 60, fixedLeading: 0, fixedTrailing: 0),
+                == .append(offset: 60, fixedLeading: 0, fixedTrailing: ScrollStitchPolicy.edgeClearance),
             "A sidebar that stays put while the page moves is left out of the match")
     }
 
-    /// Whatever sits still over a moving page: an edge fade, a floating button, a pane that never scrolls.
+    /// What sits still over a moving page: an edge fade, a floating button, a pane that never moves.
     static func stillOverlays() {
         func covered(_ top: Int, fade: (top: Int, bottom: Int) = (0, 0), still: (lanes: Range<Int>, lines: Range<Int>)? = nil)
             -> ScrollStitchPolicy.Frame
@@ -587,7 +587,7 @@ struct CaptureWorkflowTests {
             ScrollStitchPolicy.match(previous: covered(0, fade: (0, 60)), current: covered(150, fade: (0, 60)))
         else { preconditionFailure("A fade over the bottom edge moves with neither the page nor the screen") }
         precondition(
-            (60...120).contains(trailing),
+            (60...120).contains(trailing - ScrollStitchPolicy.edgeClearance),
             "and is replaced from the next frame, so no seam keeps the faded lines: \(trailing)")
         guard case .append(150, _, _) =
             ScrollStitchPolicy.match(previous: covered(0, fade: (48, 48)), current: covered(150, fade: (48, 48)))
@@ -595,18 +595,31 @@ struct CaptureWorkflowTests {
         let button = (lanes: 20..<23, lines: 500..<580)
         precondition(
             ScrollStitchPolicy.match(previous: covered(0, still: button), current: covered(150, still: button))
-                == .append(offset: 150, fixedLeading: 0, fixedTrailing: 0),
+                == .append(offset: 150, fixedLeading: 0, fixedTrailing: ScrollStitchPolicy.edgeClearance),
             "A floating button stays put while the page passes beneath it")
         let sidebar = (lanes: 0..<14, lines: 0..<800)
         precondition(
             ScrollStitchPolicy.match(previous: covered(0, still: sidebar), current: covered(150, still: sidebar))
-                == .append(offset: 150, fixedLeading: 0, fixedTrailing: 0),
+                == .append(offset: 150, fixedLeading: 0, fixedTrailing: ScrollStitchPolicy.edgeClearance),
             "A sidebar nearly half the window wide stays out of the search and the match")
-        let pane = (lanes: 0..<26, lines: 0..<800)
-        precondition(
-            ScrollStitchPolicy.match(previous: covered(0, still: pane), current: covered(150, still: pane))
-                == .uncertain,
-            "A region mostly still has too little moving to trust, so it is never stitched")
+        let wide = (lanes: 0..<22, lines: 0..<800)
+        guard case .append(150, _, _) =
+            ScrollStitchPolicy.match(previous: covered(0, still: wide), current: covered(150, still: wide))
+        else { preconditionFailure("A sidebar holding seven in ten windows still leaves the page to vouch for the shift") }
+        let pane = (lanes: 0..<27, lines: 0..<800)
+        if case .append = ScrollStitchPolicy.match(previous: covered(0, still: pane), current: covered(150, still: pane)) {
+            preconditionFailure("Past four in five held still, the windows that moved are too few to trust")
+        }
+        var patch = covered(0, still: (lanes: 0..<32, lines: 0..<800)).rgb
+        let moved = covered(150).rgb
+        for line in 300..<348 {
+            for channel in 0..<3 { patch[(line * 32 + 31) * 3 + channel] = moved[(line * 32 + 31) * 3 + channel] }
+        }
+        let patched = ScrollStitchPolicy.match(
+            previous: covered(0, still: (lanes: 0..<32, lines: 0..<800)), current: .init(length: 800, lanes: 32, rgb: patch))
+        if case .append = patched {
+            preconditionFailure("A patch a few windows tall is too little that moved to vouch for any shift")
+        }
     }
 
     /// A page taller than any frame, so a frame can be cut at any scroll position.
@@ -637,7 +650,7 @@ struct CaptureWorkflowTests {
         still.pointer = 300
         precondition(
             ScrollStitchPolicy.match(previous: still, current: hovered)
-                == .append(offset: 120, fixedLeading: 0, fixedTrailing: 0),
+                == .append(offset: 120, fixedLeading: 0, fixedTrailing: ScrollStitchPolicy.edgeClearance),
             "unless the pointer is over it, where a hover lights whatever passes beneath")
         var lit = page(120, lanes: 32).rgb
         for line in 0..<300 {
@@ -645,7 +658,7 @@ struct CaptureWorkflowTests {
         }
         precondition(
             ScrollStitchPolicy.match(previous: page(0, lanes: 32), current: .init(length: 300, lanes: 32, rgb: lit))
-                == .append(offset: 120, fixedLeading: 0, fixedTrailing: 0),
+                == .append(offset: 120, fixedLeading: 0, fixedTrailing: ScrollStitchPolicy.edgeClearance),
             "A lane that never moves is a fixed sidebar, left out while the rest lines up")
 
         func sparse(_ top: Int) -> ScrollStitchPolicy.Frame {

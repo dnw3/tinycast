@@ -220,41 +220,50 @@ only the ones at rest. `ScrollTracker` decides which become strips:
   three seconds instead.
 
 Matching is strict except where the pointer is, or where something sits still over the page. Lanes
-stay `edgeMargin` clear of both region edges, where an overlay scroller moves at its own pace. Each
-sample records the pointer's line while it is over the region, and the 32-line windows within
-`hoverReach` (96 lines, about 48pt at 2×) of it in either frame are hovered, since whatever sits under
-a resting pointer lights up as content passes: they still mark an edge band, but count toward the fit
-only when the scroll events confirm the shift, and then only where they line up.
+stay `edgeMargin` clear of both region edges, where an overlay scroller moves at its own pace. A
+leading bar is a run of lines no lane of which moved (`Frame.fixed`): a glass title bar tints with the
+page beneath it, so the average may differ up to `barTolerance`, but a line of sparse text that moved in
+one lane is no bar, and a leading band taken too deep would narrow the search past the true shift. The
+trailing band only needs the average, since one taken too deep only retakes lines. Each sample records
+the pointer's line while it is over the region, and the 32-line windows within `hoverReach` (96 lines,
+about 48pt at 2×) of it in either frame are hovered, since whatever sits under a resting pointer lights
+up as content passes: they still mark an edge band, but count toward the fit only when the scroll events
+confirm the shift, and then only where they line up. A window that lines up only at the same line in
+both frames is held — a sidebar, a floating button — and so is one part still and part moving beside a
+held one, its rim. A wide sidebar holds about seven windows in ten still; past four in five, the windows
+that moved are a sliver that happened to line up, and the shift is uncertain. At either end of the
+overlap, rows where a third of the lanes that are not held settle in neither frame — an edge fade, a
+dimmed band — are left out, out to the last such row within a sixth of the frame, since the deepest fade
+often lies over blank and passes. Below them `edgeClearance` (64 lines) is always retaken from the newer
+frame, because a fade over a short line can slip between lanes; at the bottom all of it widens the
+trailing rows, so each append retakes them and no seam keeps faded lines. Everywhere else a lane may
+differ in at most one window — a caret blinking — so a layout that repeats at a different line still
+makes the match uncertain: a lane that moved does not line up at the wrong shift, nor at none. A
+tolerance spread over the whole region was tried and took a page that repeats every few lines for a
+shift it never made, and a part-still window counts only as a held window's rim because a sparse page
+otherwise matched a near-repeat. The fit is the 95th-percentile error of the windows that show anything,
+since blank ones match at any shift and would hide a line's slip on a sparse page; a best shift within a
+window's stride of the end of the search range is uncertain too, because the true one may lie beyond it
+and a sliver of overlap that lines up there proves nothing. Recorded AI Chat frames found such a shift
+taken 105 lines short.
 
 The session watches scroll-wheel events over the region, through a global monitor and, for Tinycast's
 own windows, a local one; neither needs Accessibility. Each sample carries the travel they add up to,
 in pixels (`Frame.travel`), until a wheel's notch arrives, whose lines an app sizes as it likes and which
-ends the travel for the session. The difference between two frames is a second witness: a best shift
-within `slack` of it (a quarter, at least 24 lines, either way, since an app renders behind the events
-and a capture lands after them) is confirmed, which admits hovered line-ups and a fit error under 12
-rather than 8. Travel said to reach past the search range confirms nothing, since an app may scroll
-slower than its events; it never rejects a shift by itself, so an app scrolling at its own ratio only
-loses the witness. Whatever the witness, fewer than `minimumEvidence` (12) windows that moved with the
-page leave a shift uncertain: three windows once carried a shift past the range. When the overlap is
-lost after travel of half the frame or more, the notice says the scroll was too fast rather than only
-that it was lost. A window that lines up only at the same line in both
-frames is held — a sidebar, a floating button — and so is one part still and part moving beside a held
-one, its rim; held windows may make up at most a third of the region, since a region mostly still is a
-pane scrolling inside it. At either end of the overlap, rows where most lanes settle in neither frame —
-an edge fade, a dimmed band — are left out too, up to a sixth of the frame; at the bottom they widen the
-fixed trailing rows, so each append retakes them from the newer frame and no seam keeps faded lines;
-a row counts as off by the fit's own bar, so a faint fade is either left out or passes. The trailing
-rows retaken never shrink within a session (`ScrollTracker.settle`), since retaking fewer than the last
-strip did would leave that strip's footer or fade inside the result.
-Everywhere else a lane may differ in at most one window — a caret blinking — so a layout that repeats
-at a different line still makes the match uncertain: a lane that moved does not line up at the wrong
-shift, nor at none. A tolerance spread over the whole region was tried and took a page that repeats
-every few lines for a shift it never made, and a part-still window counts only as a held window's rim
-because a sparse page otherwise matched a near-repeat. The fit is the 95th-percentile error of the
-windows that show anything, since blank ones match at any shift and would hide a line's slip on a
-sparse page, and a best shift at the very end of the search range is uncertain too, because the true
-one may lie a line beyond it. AI Chat holds its hover effects still while a scrolling
-capture reads it (`chatHoverStill`), so no Copy button the pointer happens to rest on is stitched in.
+ends the travel for the session. On recorded AI Chat frames the travel ran anywhere from one to six times
+the content's move, frame to frame, so its size is a weak witness and its direction a strong one. A best
+shift within `slack` of it (a quarter, at least 24 lines, either way) is confirmed, which admits hovered
+line-ups and a fit error under 12 rather than 8, and the lines within that slack join the refined search,
+since a coarse pass can miss a large shift between sparse lines. Travel said to reach past the search
+range confirms nothing. Travel of 200 lines or more the other way rejects a shift; nothing else about the
+travel does, so an app scrolling at its own ratio only loses the witness. Fewer than `minimumEvidence`
+(12) windows that moved with the page leave a shift uncertain. A frame at rest that no longer matches,
+with no travel since the frame it is matched from, replaces that frame (`ScrollTracker`): the picture
+changed in place, as a window does turning key a moment into the capture. When the overlap is lost after
+travel of half the frame or more, the notice says the scroll was too fast rather than only that it was
+lost.
+
+AI Chat holds its hover effects still while a scrolling capture reads it (`chatHoverStill`), so no Copy button the pointer happens to rest on is stitched in.
 Duplicate and reverse frames do not grow the result. Along-axis fixed headers stay in the first strip;
 the previous fixed footer is removed before a new strip and footer are appended. This detection still
 needs the real browser/PDF/native-list corpus before AC-04 can pass.

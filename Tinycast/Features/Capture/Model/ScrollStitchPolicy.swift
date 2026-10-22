@@ -46,6 +46,20 @@ enum ScrollStitchPolicy {
             return count == 0 ? 255 : Double(sum) / Double(count)
         }
 
+        /// A bar's line: glass may tint it, but no lane shows the moved edge sparse text in one lane would.
+        func fixed(line: Int, in other: Frame) -> Bool {
+            var sum = 0
+            for lane in 0..<lanes {
+                let here = (line * lanes + lane) * 3, there = (line * other.lanes + lane) * 3
+                for channel in 0..<3 {
+                    let difference = abs(Int(rgb[here + channel]) - Int(other.rgb[there + channel]))
+                    if difference > 24 { return false }
+                    sum += difference
+                }
+            }
+            return Double(sum) / Double(lanes * 3) < ScrollStitchPolicy.barTolerance
+        }
+
         /// Summed channel difference of one lane between a line here and a line in another frame.
         func distance(to other: Frame, lane: Int, line: Int, previous: Int) -> Int {
             let here = (line * lanes + lane) * 3, there = (previous * other.lanes + lane) * 3
@@ -70,6 +84,12 @@ enum ScrollStitchPolicy {
 
     /// About 48pt either side at 2×: a hovered row's highlight, and controls beside the pointer.
     static let hoverReach = 96
+
+    /// About 32pt at 2×: deeper than the fades a page draws at its scrolling edge.
+    static let edgeClearance = 64
+
+    /// A glass bar tints with the page scrolling beneath it, about 1.5 a channel on average.
+    static let barTolerance = 3.0
 
     /// Windows that moved with the page, below which a shift has too little picture to vouch for it.
     static let minimumEvidence = 12
@@ -102,15 +122,11 @@ enum ScrollStitchPolicy {
         let originalCurrent = Frame(length: current.length, lanes: current.lanes,
             rgb: current.originalRGB ?? current.rgb)
         var leading = 0, trailing = 0
-        while leading < limit,
-            originalCurrent.difference(to: originalPrevious,
-                shift: 0, start: leading, end: leading + 1, stride: 1) < 1.2
-        {
-            leading += 1
-        }
+        // Too deep a leading band narrows the search; too deep a trailing one only retakes lines.
+        while leading < limit, originalCurrent.fixed(line: leading, in: originalPrevious) { leading += 1 }
         while trailing < limit,
             originalCurrent.difference(to: originalPrevious,
-                shift: 0, start: length - trailing - 1, end: length - trailing, stride: 1) < 1.2
+                shift: 0, start: length - trailing - 1, end: length - trailing, stride: 1) < barTolerance
         {
             trailing += 1
         }
@@ -133,15 +149,22 @@ enum ScrollStitchPolicy {
             candidates.append((shift, score))
         }
         candidates.sort { $0.1 < $1.1 }
-        candidates = candidates.prefix(32).map { candidate in
-            let lower = max(start, start - candidate.0), upper = min(end, end - candidate.0)
-            return (candidate.0, current.difference(to: previous, shift: candidate.0,
+        var refined = Set(candidates.prefix(32).map(\.0))
+        // A coarse pass can miss a large shift between sparse lines while bars still match a tiny one.
+        if let expected {
+            let lowest = max(-maximum, expected - slack(expected)), highest = min(maximum, expected + slack(expected))
+            if lowest <= highest { refined.formUnion((lowest...highest).filter { abs($0) >= 2 }) }
+        }
+        candidates = refined.map { shift in
+            let lower = max(start, start - shift), upper = min(end, end - shift)
+            return (shift, current.difference(to: previous, shift: shift,
                 start: lower, end: upper, stride: 1, textured: true, selectedLanes: moving))
         }.sorted { $0.1 < $1.1 }
-        // At the end of the search range the true shift may lie just beyond it, one line off.
-        guard let best = candidates.first, abs(best.0) < maximum else { return .uncertain }
-        // The scroll events are a second witness, so a shift they confirm may lean on less of the picture.
-        // Said to have gone past the range, nothing within it is confirmed; an app may scroll slower than told.
+        // Near the range's end the true shift may lie beyond it; a sliver lining up there proves nothing.
+        guard let best = candidates.first, abs(best.0) < maximum - 16 else { return .uncertain }
+        // The events' size runs anywhere from one to six times the move, but never the wrong way round.
+        if let expected, abs(expected) >= 200, (expected > 0) != (best.0 > 0) { return .uncertain }
+        // Events said to pass the range confirm nothing in it: an app may scroll slower than they tell.
         let confirmed = expected.map { abs($0) < maximum && agrees(best.0, expected: $0) } ?? false
         let fit = fit(previous: previous, current: current, shift: best.0, start: start, end: end, hover: confirmed)
         guard fit.consistent, fit.error < (confirmed ? 12 : 8) else { return .uncertain }
@@ -150,9 +173,10 @@ enum ScrollStitchPolicy {
             patchError(previous: previous, current: current, shift: candidate.0, start: start, end: end)
                 > fit.error * 1.8 + 1.5
         }) else { return .uncertain }
-        return best.0 > 0
-            ? .append(offset: best.0, fixedLeading: leading, fixedTrailing: max(trailing, fit.unsettled))
-            : .reverse
+        guard best.0 > 0 else { return .reverse }
+        // A fade over a short line can slip between lanes, so lines by the edge come from the newer frame.
+        let retaken = min(length - best.0, max(trailing, fit.unsettled) + edgeClearance)
+        return .append(offset: best.0, fixedLeading: leading, fixedTrailing: retaken)
     }
 
     private enum Window {
@@ -164,7 +188,7 @@ enum ScrollStitchPolicy {
         case hovered(Double)
     }
 
-    /// Strict wherever the page moved, except under the pointer, where a hover changes content in place.
+    /// Strict wherever the page moved, except under the pointer, where a hover lights content in place.
     private static func fit(
         previous: Frame, current: Frame, shift: Int, start: Int, end: Int, hover: Bool
     ) -> (error: Double, consistent: Bool, unsettled: Int) {
@@ -216,8 +240,12 @@ enum ScrollStitchPolicy {
             }
         }
         func settled(_ row: Int) -> Bool? {
-            let judged = windows[row].compactMap { $0 }
-            guard judged.count >= 2 else { return nil }
+            // A sidebar sits still beside the page; only what moved, or tried to, can show a fade.
+            let judged = windows[row].compactMap { window -> Window? in
+                if case .held = window { return nil }
+                return window
+            }
+            guard !judged.isEmpty else { return nil }
             // Off by the fit's own bar, so a faint fade is either left out or passes, never half of each.
             let off = judged.filter {
                 switch $0 {
@@ -225,46 +253,35 @@ enum ScrollStitchPolicy {
                 case .held, .edge: true
                 }
             }
-            return off.count * 2 < judged.count
+            // A fade over sparse text shows in only the lanes that have any; a third of them is enough.
+            return off.count * 3 < judged.count
         }
-        // An edge fade or dimming sits over moving content, so its lines settle in neither frame.
+        // An edge fade settles in neither frame, its deepest lines may pass: a band runs to its last miss.
         let reach = min(lines.count / 3, current.length / 6 / 16)
-        var top = 0
-        for row in 0..<reach {
-            guard let settled = settled(row) else { continue }
-            if settled { break }
-            top = row + 1
-        }
-        var bottom = lines.count
-        for row in stride(from: lines.count - 1, through: max(top, lines.count - reach), by: -1) {
-            guard let settled = settled(row) else { continue }
-            if settled { break }
-            bottom = row
-        }
+        let top = ((0..<reach).last { settled($0) == false } ?? -1) + 1
+        let bottom = (max(top, lines.count - reach)..<lines.count).first { settled($0) == false } ?? lines.count
         let kept = windows[top..<bottom]
         var errors: [Double] = []
-        var held = 0, judged = 0
-        var consistent = true
+        var held = 0
+        var agreeing = true
         for lane in 0..<current.lanes {
             var changed = 0
             for window in kept.compactMap({ $0[lane] }) {
+                switch window {
                 // A hover lights whatever passes beneath the pointer, so only a confirmed line-up counts.
-                if case .hovered(let error) = window {
-                    guard hover, error < 8 else { continue }
-                    judged += 1
+                case .hovered(let error): if hover, error < 8 { errors.append(error) }
+                case .moved(let error):
                     errors.append(error)
-                    continue
+                    if error > 12 { changed += 1 }
+                case .held: held += 1
+                case .edge: break
                 }
-                judged += 1
-                guard case .moved(let error) = window else { held += 1; continue }
-                errors.append(error)
-                if error > 12 { changed += 1 }
             }
             // One window is a caret blinking; a lane changed in more never moved with the rest.
-            if changed > 1 { consistent = false }
+            if changed > 1 { agreeing = false }
         }
-        // A sidebar may fill much of a window; a region mostly still has too little moving to trust.
-        if held * 3 > judged * 2 || errors.count < minimumEvidence { consistent = false }
+        // A wide sidebar holds about seven in ten still; past four in five, what moved is a lucky sliver.
+        let consistent = agreeing && errors.count >= minimumEvidence && held * 5 <= (held + errors.count) * 4
         errors.sort()
         // A window's stride short of the band, where the faintest fade still passed as settled.
         let unsettled =

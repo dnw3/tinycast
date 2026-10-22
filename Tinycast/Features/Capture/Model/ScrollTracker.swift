@@ -52,6 +52,14 @@ struct ScrollTracker<Payload: Sendable>: Sendable {
             self.pending = nil
             decision = match(pending.frame, frame)
         }
+        // Nothing scrolled, yet the picture changed, as a window turning key does: match from the newest.
+        if decision == .uncertain, resting, pending == nil, let travel = frame.travel,
+            travel == self.accepted?.travel
+        {
+            self.accepted = frame
+            misses = 0
+            return steps
+        }
         switch decision {
         case .append(let offset, _, let trailing):
             var strip = Strip(frame: frame, payload: payload, offset: offset, trailing: trailing)
@@ -87,7 +95,7 @@ struct ScrollTracker<Payload: Sendable>: Sendable {
         return settle(pending)
     }
 
-    /// A strip retaking fewer lines than the last would leave that one's footer or fade inside the result.
+    /// Retaking fewer lines than the last strip would leave its footer or fade inside the result.
     private mutating func settle(_ strip: Strip) -> Strip {
         guard let offset = strip.offset else { return strip }
         unreliable = min(strip.frame.length - offset, max(unreliable, strip.trailing))

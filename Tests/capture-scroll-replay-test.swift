@@ -4,8 +4,7 @@ import Foundation
 import ImageIO
 import UniformTypeIdentifiers
 
-/// Scrolling capture end to end on rendered window frames: sampling, tracking, strips and the composite.
-/// `TINYCAST_SCROLL_REPLAY=<recorded folder>` replays a Record Diagnostic Frames folder instead.
+/// Scrolling capture end to end on rendered frames; `TINYCAST_SCROLL_REPLAY` replays a recording.
 @main
 struct CaptureScrollReplayTests {
     static func main() throws {
@@ -32,6 +31,12 @@ struct CaptureScrollReplayTests {
         }
         let lit = quick.enumerated().map { Shot(window, top: $1, pointer: 600, travel: $1 + $0 % 2 * 50, hover: true) }
         try verify(window, lit, in: root.appendingPathComponent("hover"), comparesPixels: false)
+        // Rendered glass passes either way; its tolerance was set on recorded AI Chat frames, kept local.
+        try verify(window, tops.map { Shot(window, top: $0, glass: true) }, in: root.appendingPathComponent("glass"))
+        // The window turns key a moment into the capture: nothing scrolled, so it is the same place.
+        let turning = [0, 0, 0].map { Shot(window, top: $0, travel: 0, key: false) }
+            + ([0, 0, 0] + tops.dropFirst(2)).map { Shot(window, top: $0, travel: $0) }
+        try verify(window, turning, in: root.appendingPathComponent("key"), comparesPixels: false)
         // A step past the overlap is lost, never taken at whatever shift fits a little.
         let far = [0, 0, 480, 480].map { Shot(window, top: $0, pointer: 600, travel: $0) }
         let (_, farVerdicts) = try verify(window, far, in: root.appendingPathComponent("far"), allowsLoss: true)
@@ -76,8 +81,11 @@ struct CaptureScrollReplayTests {
         let pointer: Int?
         let travel: Int?
 
-        init(_ window: ChatWindow, top: Int, pointer: Int? = nil, travel: Int? = nil, hover: Bool = false) {
-            image = window.frame(top: top, pointer: hover ? pointer : nil)
+        init(
+            _ window: ChatWindow, top: Int, pointer: Int? = nil, travel: Int? = nil, hover: Bool = false,
+            glass: Bool = false, key: Bool = true
+        ) {
+            image = window.frame(top: top, pointer: hover ? pointer : nil, glass: glass, key: key)
             self.top = top
             self.pointer = pointer
             self.travel = travel
@@ -196,7 +204,7 @@ struct CaptureScrollReplayTests {
     }
 }
 
-/// An AI Chat-like window: title bar, sidebar, composer, edge fades, an overlay scroller and a button.
+/// Like AI Chat: title bar, sidebar, composer, edge fades, overlay scroller and floating button.
 struct ChatWindow {
     let width = 1_400, height = 1_000
     let sidebar = 340, contentTop = 100, contentBottom = 840, fade = 48
@@ -246,7 +254,8 @@ struct ChatWindow {
         return Data(page[start..<(start + columns.count * 4)])
     }
 
-    func frame(top: Int, pointer: Int?) -> CGImage {
+    /// `glass` tints the title bar with the page; `key` false greys the sidebar, as before activation.
+    func frame(top: Int, pointer: Int?, glass: Bool = false, key: Bool = true) -> CGImage {
         let context = ChatWindow.context(width: width, height: height)
         func fill(_ rect: CGRect, _ gray: CGFloat, alpha: CGFloat = 1) {
             context.setFillColor(red: gray, green: gray, blue: gray + 0.01, alpha: alpha)
@@ -263,15 +272,22 @@ struct ChatWindow {
             fill(CGRect(x: sidebar, y: contentTop + step, width: contentWidth, height: 1), background.0, alpha: alpha)
             fill(CGRect(x: sidebar, y: contentBottom - 1 - step, width: contentWidth, height: 1), background.0, alpha: alpha)
         }
-        fill(CGRect(x: 0, y: 0, width: sidebar, height: height), 0.93)
+        fill(CGRect(x: 0, y: 0, width: sidebar, height: height), key ? 0.93 : 0.97)
         fill(CGRect(x: 16, y: 180, width: sidebar - 32, height: 44), 0.85)
         let font = CTFontCreateWithName("Helvetica" as CFString, 24, nil)
-        let ink = [kCTFontAttributeName: font, kCTForegroundColorAttributeName: CGColor(gray: 0.3, alpha: 1)] as CFDictionary
+        let ink = [kCTFontAttributeName: font, kCTForegroundColorAttributeName: CGColor(gray: key ? 0.3 : 0.6, alpha: 1)]
+            as CFDictionary
         for (index, title) in ["Snake Game", "天气查询", "统计代码行数", "文件列表", "FLAC 格式"].enumerated() {
             context.textPosition = CGPoint(x: 28, y: CGFloat(height - 212 - index * 64))
             CTLineDraw(CTLineCreateWithAttributedString(CFAttributedStringCreate(nil, title as CFString, ink)), context)
         }
         fill(CGRect(x: sidebar, y: 0, width: contentWidth, height: contentTop), 0.99)
+        if glass, top > 0 {
+            let beneath = pageImage.cropping(to: CGRect(x: 0, y: max(0, top - contentTop), width: contentWidth, height: contentTop))!
+            context.setAlpha(0.08)
+            context.draw(beneath, in: CGRect(x: sidebar, y: height - contentTop, width: contentWidth, height: contentTop))
+            context.setAlpha(1)
+        }
         context.textPosition = CGPoint(x: CGFloat(sidebar + 40), y: CGFloat(height - 62))
         CTLineDraw(CTLineCreateWithAttributedString(CFAttributedStringCreate(nil, "Snake Game Code" as CFString, ink)), context)
         fill(CGRect(x: sidebar, y: contentBottom, width: contentWidth, height: height - contentBottom), 0.99)

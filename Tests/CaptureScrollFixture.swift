@@ -103,7 +103,8 @@ enum CaptureScrollFixture {
         guard case .append(let offset, let leading, let trailing) =
             ScrollStitchPolicy.match(previous: first, current: second)
         else { preconditionFailure("Fixed-header browser frames must register despite text rasterization differences") }
-        precondition((279...280).contains(offset) && (62...66).contains(leading) && trailing == 0)
+        // A blank margin and the edge clearance are retaken from the newer frame; no pixel changes.
+        precondition((279...280).contains(offset) && (62...70).contains(leading) && trailing <= 32 + ScrollStitchPolicy.edgeClearance, "\(offset) \(leading) \(trailing)")
         precondition(ScrollStitchPolicy.match(previous: second, current: first) == .reverse)
         let strip = root.appendingPathComponent("browser-strip")
         try ScrollFrameReader.strip(from: after,
@@ -153,7 +154,7 @@ enum CaptureScrollFixture {
             let second = try sample(croppedAfter, axis: .vertical)
             let decision = ScrollStitchPolicy.match(previous: first, current: second)
             guard case .append(let offset, _, let trailing) = decision,
-                (279...280).contains(offset), trailing == 0 else {
+                (279...280).contains(offset), trailing <= 32 + ScrollStitchPolicy.edgeClearance else {
                 preconditionFailure("Browser region \(region) failed: \(decision)")
             }
             precondition(ScrollStitchPolicy.match(previous: second, current: first) == .reverse)
