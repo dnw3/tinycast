@@ -42,6 +42,18 @@ struct CaptureScrollReplayTests {
         let (_, backVerdicts) = try verify(window, back.map { Shot(window, top: $0, travel: $0) }, in: root.appendingPathComponent("back"))
         precondition(backVerdicts.contains { $0.hasPrefix("reversing") }, "Scrolling back turns the capture: \(backVerdicts)")
         try verify(window, back.map { Shot(window, top: $0, pointer: 600, travel: $0) }, in: root.appendingPathComponent("back-pointer"))
+        // The seam moves off a line of text onto the blank between lines.
+        func blank(_ retaken: Int) -> Bool {
+            let row = window.pageRow(window.height - retaken - 1 - window.contentTop, columns: window.comparedColumns)
+            return Set(stride(from: 0, to: row.count, by: 4).map { row[$0] }).count == 1
+        }
+        let inked = (200..<300).first { !blank($0) }!
+        let extra = ScrollFrameReader.seam(
+            previous: window.frame(top: 0, pointer: nil), current: window.frame(top: 280, pointer: nil), shift: 280,
+            retaken: inked, axis: .vertical, atStart: false)
+        precondition(
+            extra > 0 && extra <= ScrollFrameReader.seamReach && blank(inked + extra),
+            "A seam through text moves to a blank line: \(inked) + \(extra)")
         // Back well past what the last strip reaches, then on again: matching follows the reader both ways.
         let roundTrip = [0, 0, 300, 600, 900, 1_200, 1_200, 1_000, 800, 600, 400, 200, 200, 400, 600, 900, 1_200, 1_500, 1_500]
         try verify(window, roundTrip.map { Shot(window, top: $0, travel: $0) }, in: root.appendingPathComponent("round"))
@@ -180,13 +192,21 @@ struct CaptureScrollReplayTests {
         var tracker = ScrollTracker<CGImage>()
         var document: CaptureDocument?
         var verdicts: [String] = []
+        var before: CGImage?
         func write(_ strip: ScrollTracker<CGImage>.Strip) throws {
             let size = try CapturePixelSize(width: strip.payload.width, height: strip.payload.height)
             let current = document ?? CaptureDocument(id: UUID(), createdAt: Date(), size: size, pieces: [], axis: .vertical)
             let raster = UUID().uuidString
+            // As the session does: a seam moved between lines must not change a pixel of the result.
+            let extra = before.flatMap { before in strip.offset.map { offset in
+                ScrollFrameReader.seam(
+                    previous: before, current: strip.payload, shift: offset, retaken: strip.trailing, axis: .vertical,
+                    atStart: strip.reversed)
+            } } ?? 0
             let plan = try CaptureScrollAppend.plan(
-                document: current, frame: size, raster: raster, offset: strip.offset, trailing: strip.trailing,
+                document: current, frame: size, raster: raster, offset: strip.offset, trailing: strip.trailing + extra,
                 atStart: strip.reversed)
+            before = strip.payload
             try ScrollFrameReader.strip(strip.payload, rect: plan.source, to: directory.appendingPathComponent(raster))
             document = plan.document
         }

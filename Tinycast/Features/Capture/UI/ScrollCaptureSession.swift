@@ -27,6 +27,8 @@ final class ScrollCaptureSession {
     private var tracker = ScrollTracker<CGImage>()
     /// The frame behind the last strip on disk, where matching starts over if a write is dropped.
     private var committed: ScrollStitchPolicy.Frame?
+    /// The picture of that frame, against which the next seam is placed.
+    @ObservationIgnored private var committedImage: CGImage?
     /// Samples in a row at rest; the loop slows down once the content has settled.
     private var restingSamples = 0
     private var lastAutomaticScroll = ContinuousClock.now
@@ -274,11 +276,17 @@ final class ScrollCaptureSession {
 
     /// A nil generation is the finishing flush, which no pause can overtake.
     private func write(_ strip: ScrollTracker<CGImage>.Strip, generation: Int?) async throws -> Bool {
-        let image = strip.payload
+        let image = strip.payload, axis = axis, before = committedImage
         let raster = UUID().uuidString
+        let extra = try await CaptureWork.run {
+            guard let before, let offset = strip.offset else { return 0 }
+            return ScrollFrameReader.seam(
+                previous: before, current: image, shift: offset, retaken: strip.trailing, axis: axis,
+                atStart: strip.reversed)
+        }
         let plan = try CaptureScrollAppend.plan(
             document: document, frame: try CapturePixelSize(width: image.width, height: image.height),
-            raster: raster, offset: strip.offset, trailing: strip.trailing, atStart: strip.reversed)
+            raster: raster, offset: strip.offset, trailing: strip.trailing + extra, atStart: strip.reversed)
         let destination = directory.appendingPathComponent(raster)
         let previous = preview, previousSize = document.size, directory = directory
         let nextPreview = try await CaptureWork.run {
@@ -300,6 +308,7 @@ final class ScrollCaptureSession {
         document = plan.document
         preview = nextPreview
         committed = strip.frame
+        committedImage = image
         Self.logger.info("""
             Scroll appended: pieces=\(self.document.pieces.count), \
             width=\(self.document.size.width), height=\(self.document.size.height)

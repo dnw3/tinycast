@@ -156,7 +156,7 @@ struct ScrollTracker<Payload: Sendable>: Sendable {
         return nil
     }
 
-    /// Upside down from here on: the first strip becomes the end, and what was added since is climbed over.
+    /// Upside down from here on: the first strip is the end, and what was added since is climbed over.
     private mutating func turn(_ frame: Frame, payload: Payload, match: Match) -> [Step] {
         guard let accepted else { return [] }
         reversed = true
