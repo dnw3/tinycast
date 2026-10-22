@@ -11,6 +11,17 @@ enum ScrollStitchPolicy {
         /// Lines the scroll events had moved the content by when this frame was taken, when they all told.
         var travel: Int?
 
+        /// Upside down along the axis, so scrolling back reads as scrolling on to the same matching.
+        func reversed() -> Frame {
+            func flip(_ values: [UInt8]) -> [UInt8] {
+                (0..<length).reversed().flatMap { line in values[(line * lanes * 3)..<((line + 1) * lanes * 3)] }
+            }
+            var frame = Frame(length: length, lanes: lanes, rgb: flip(rgb), originalRGB: originalRGB.map(flip))
+            frame.pointer = pointer.map { length - 1 - $0 }
+            frame.travel = travel.map { -$0 }
+            return frame
+        }
+
         /// Lines a hover may have changed: whatever is under the pointer lights as content passes.
         func nearPointer(_ start: Int, _ end: Int) -> Bool {
             guard let pointer else { return false }
@@ -253,8 +264,11 @@ enum ScrollStitchPolicy {
                 case .held, .edge: true
                 }
             }
-            // A fade over sparse text shows in only the lanes that have any; a third of them is enough.
-            return off.count * 3 < judged.count
+            // A fade lies against a bar and may cross one lane of sparse text there; elsewhere, a third.
+            let line = lines[row]
+            let barred = (start > 4 && line < start + edgeClearance)
+                || (end < current.length - 4 && line + 32 + shift > end - edgeClearance)
+            return barred ? off.isEmpty : off.count * 3 < judged.count
         }
         // An edge fade settles in neither frame, its deepest lines may pass: a band runs to its last miss.
         let reach = min(lines.count / 3, current.length / 6 / 16)

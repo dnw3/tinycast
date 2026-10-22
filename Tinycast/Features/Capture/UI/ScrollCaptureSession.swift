@@ -196,11 +196,17 @@ final class ScrollCaptureSession {
                 }
                 CapturePerformance.completed("scroll-preview-ready", since: started)
             case .backward:
-                notice = String(localized: "Scroll forward to add more content")
+                notice = observed.reversed
+                    ? String(localized: "Keep scrolling back to add more content")
+                    : String(localized: "Scroll forward to add more content")
+                setHint(notice)
+            case .reversing:
+                notice = String(localized: "Scrolling back: new content is added at the start")
                 setHint(notice)
             case .lost:
                 Self.logger.notice("Scroll alignment lost: pieces=\(self.document.pieces.count)")
-                let gone = observed.accepted?.travel.flatMap { from in travel.map { abs($0 - from) } }
+                let now = observed.reversed ? travel.map { -$0 } : travel
+                let gone = observed.accepted?.travel.flatMap { from in now.map { abs($0 - from) } }
                 notice = gone.map { $0 * 2 >= (axis == .vertical ? image.height : image.width) } == true
                     ? String(localized: "Scrolled too fast to line up. Scroll back a little, then slower")
                     : String(localized: "Lost the overlap. Scroll back a little to continue")
@@ -227,6 +233,7 @@ final class ScrollCaptureSession {
             case .backward: "backward"
             case .lost: "lost"
             case .found: "found"
+            case .reversing: "reversing"
             }
         }).joined(separator: " ")
         diagnosticWrites = Task.detached {
@@ -241,7 +248,7 @@ final class ScrollCaptureSession {
         let raster = UUID().uuidString
         let plan = try CaptureScrollAppend.plan(
             document: document, frame: try CapturePixelSize(width: image.width, height: image.height),
-            raster: raster, offset: strip.offset, trailing: strip.trailing)
+            raster: raster, offset: strip.offset, trailing: strip.trailing, atStart: strip.reversed)
         let destination = directory.appendingPathComponent(raster)
         let previous = preview, previousSize = document.size, directory = directory
         let nextPreview = try await CaptureWork.run {
@@ -253,7 +260,8 @@ final class ScrollCaptureSession {
             }
             try ScrollFrameReader.strip(image, rect: plan.source, to: destination)
             return try CaptureRenderer.scrollPreview(
-                previous: previous, previousSize: previousSize, document: plan.document, directory: directory)
+                previous: previous, previousSize: previousSize, document: plan.document, directory: directory,
+                atStart: strip.reversed)
         }
         if let generation, paused || generation != self.generation {
             try? FileManager.default.removeItem(at: destination)

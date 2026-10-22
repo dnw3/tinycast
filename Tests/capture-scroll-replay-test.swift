@@ -37,6 +37,11 @@ struct CaptureScrollReplayTests {
         let turning = [0, 0, 0].map { Shot(window, top: $0, travel: 0, key: false) }
             + ([0, 0, 0] + tops.dropFirst(2)).map { Shot(window, top: $0, travel: $0) }
         try verify(window, turning, in: root.appendingPathComponent("key"), comparesPixels: false)
+        // Started at the bottom and scrolled back: the frames turn over and the result grows at its start.
+        let back = tops.map { 2_900 - $0 }
+        let (_, backVerdicts) = try verify(window, back.map { Shot(window, top: $0, travel: $0) }, in: root.appendingPathComponent("back"))
+        precondition(backVerdicts.contains { $0.hasPrefix("reversing") }, "Scrolling back turns the capture: \(backVerdicts)")
+        try verify(window, back.map { Shot(window, top: $0, pointer: 600, travel: $0) }, in: root.appendingPathComponent("back-pointer"))
         // A step past the overlap is lost, never taken at whatever shift fits a little.
         let far = [0, 0, 480, 480].map { Shot(window, top: $0, pointer: 600, travel: $0) }
         let (_, farVerdicts) = try verify(window, far, in: root.appendingPathComponent("far"), allowsLoss: true)
@@ -71,6 +76,23 @@ struct CaptureScrollReplayTests {
             FileManager.default.fileExists(atPath: recorder.directory.appendingPathComponent("replay.png").path)
                 && trace.split(separator: "\n").count == tops.count,
             "and leaves its stitched result and one trace line per frame beside the frames")
+        let repository = CaptureRepository(root: root.appendingPathComponent("repository"))
+        for day in 0..<6 {
+            let folder = repository.diagnostics.appendingPathComponent("scroll-\(day)")
+            try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+            try FileManager.default.setAttributes(
+                [.modificationDate: Date().addingTimeInterval(-Double(day) * 86_400 - 60)], ofItemAtPath: folder.path)
+        }
+        try FileManager.default.createDirectory(
+            at: repository.diagnostics.appendingPathComponent("unrelated"), withIntermediateDirectories: true)
+        _ = try repository.create(id: UUID())
+        let kept = try FileManager.default.contentsOfDirectory(atPath: repository.diagnostics.path).sorted()
+        precondition(
+            kept == ["scroll-0", "scroll-1", "scroll-2", "unrelated"],
+            "Recordings past three days, or past the newest three, go when a capture starts: \(kept)")
+        try repository.reclaimDiagnostics(now: Date(), keeping: 1)
+        let left = try FileManager.default.contentsOfDirectory(atPath: repository.diagnostics.path).sorted()
+        precondition(left == ["scroll-0", "unrelated"], "and a new recording makes room for itself: \(left)")
         print("Scrolling replay of a chat window with sidebar, bars, fades, scroller, button and pointer passed")
     }
 
@@ -119,8 +141,9 @@ struct CaptureScrollReplayTests {
         let (document, verdicts) = try stitch(shots, in: directory)
         if !allowsLoss {
             precondition(!verdicts.contains { $0.contains("lost") }, "A frame lost the overlap: \(verdicts)")
+            let reach = shots.map(\.top).max()! - shots.map(\.top).min()!
             precondition(
-                document.size.height == window.height + shots.last!.top,
+                document.size.height == window.height + reach,
                 "The capture grows by exactly the distance scrolled: \(document.size.height), \(verdicts)")
         }
         guard comparesPixels else { return (document, verdicts) }
@@ -129,7 +152,7 @@ struct CaptureScrollReplayTests {
         let width = columns.count * 4
         for row in (window.contentTop + window.fade)..<(document.size.height - window.height + window.contentBottom - window.fade) {
             let actual = try composite.read(rect: CGRect(x: columns.lowerBound, y: row, width: columns.count, height: 1))
-            let expected = window.pageRow(row - window.contentTop, columns: columns)
+            let expected = window.pageRow(shots.map(\.top).min()! + row - window.contentTop, columns: columns)
             precondition(actual.count == width && actual == expected, "Stitched row \(row) differs from the page, \(verdicts)")
         }
         return (document, verdicts)
@@ -144,7 +167,8 @@ struct CaptureScrollReplayTests {
             let current = document ?? CaptureDocument(id: UUID(), createdAt: Date(), size: size, pieces: [], axis: .vertical)
             let raster = UUID().uuidString
             let plan = try CaptureScrollAppend.plan(
-                document: current, frame: size, raster: raster, offset: strip.offset, trailing: strip.trailing)
+                document: current, frame: size, raster: raster, offset: strip.offset, trailing: strip.trailing,
+                atStart: strip.reversed)
             try ScrollFrameReader.strip(strip.payload, rect: plan.source, to: directory.appendingPathComponent(raster))
             document = plan.document
         }
@@ -160,6 +184,7 @@ struct CaptureScrollReplayTests {
                 case .backward: "backward"
                 case .lost: "lost"
                 case .found: "found"
+                case .reversing: "reversing"
                 }
             }.joined(separator: " "))
         }

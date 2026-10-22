@@ -8,6 +8,8 @@ struct ScrollTracker<Payload: Sendable>: Sendable {
         /// Lines past the last strip; nil for the first, which is the whole frame.
         let offset: Int?
         let trailing: Int
+        /// Taken while scrolling back: the strip goes before the result, and `frame` is upside down.
+        var reversed = false
     }
 
     enum Step: Sendable {
@@ -18,6 +20,8 @@ struct ScrollTracker<Payload: Sendable>: Sendable {
         case lost
         /// Lined up again after being lost.
         case found
+        /// Scrolled back from the very start, so the result now grows before its first strip.
+        case reversing
     }
 
     /// A single miss can be a frame caught mid-change; a run of them is worth telling the reader.
@@ -31,11 +35,19 @@ struct ScrollTracker<Payload: Sendable>: Sendable {
     private var misses = 0
     /// The result's last lines that may be a footer or fade; every later strip retakes at least these.
     private var unreliable = 0
+    /// Frames now arrive upside down to matching, since the reader scrolls back from where it started.
+    private(set) var reversed = false
+    /// Lines added past the first strip; past half a frame, scrolling back is only scrolling back.
+    private var grown = 0
+    /// Lines a turned capture must climb before anything lies above the result's first line.
+    private var headroom = 0
+    private var backwardRun = 0
 
     mutating func observe(
         _ frame: ScrollStitchPolicy.Frame, payload: Payload,
         match: (ScrollStitchPolicy.Frame, ScrollStitchPolicy.Frame) -> ScrollStitchPolicy.Decision
     ) -> [Step] {
+        let frame = reversed ? frame.reversed() : frame
         resting = last.map { ScrollStitchPolicy.stable($0, frame) } ?? false
         last = frame
         guard let accepted else {
@@ -47,7 +59,7 @@ struct ScrollTracker<Payload: Sendable>: Sendable {
         var steps: [Step] = []
         var decision = match(accepted, frame)
         if let pending, !decision.appends {
-            steps.append(.commit(settle(pending)))
+            if let settled = settle(pending) { steps.append(.commit(settled)) }
             self.accepted = pending.frame
             self.pending = nil
             decision = match(pending.frame, frame)
@@ -60,20 +72,53 @@ struct ScrollTracker<Payload: Sendable>: Sendable {
             misses = 0
             return steps
         }
+        // Twice above the first strip, little added yet: turn the frames over and grow the other way.
+        if decision == .reverse, turnable, self.pending == nil {
+            backwardRun += 1
+            if backwardRun >= 2, let accepted = self.accepted {
+                reversed = true
+                headroom = grown
+                unreliable = 0
+                self.accepted = accepted.reversed()
+                let turned = frame.reversed()
+                last = turned
+                steps.append(.reversing)
+                return steps + observeTurned(turned, payload: payload, match: match)
+            }
+        } else {
+            backwardRun = 0
+        }
+        return steps + resolve(decision, frame: frame, payload: payload)
+    }
+
+    private mutating func observeTurned(
+        _ frame: ScrollStitchPolicy.Frame, payload: Payload,
+        match: (ScrollStitchPolicy.Frame, ScrollStitchPolicy.Frame) -> ScrollStitchPolicy.Decision
+    ) -> [Step] {
+        guard let accepted else { return [] }
+        misses = 0
+        return resolve(match(accepted, frame), frame: frame, payload: payload)
+    }
+
+    private mutating func resolve(
+        _ decision: ScrollStitchPolicy.Decision, frame: ScrollStitchPolicy.Frame, payload: Payload
+    ) -> [Step] {
+        var steps: [Step] = []
         switch decision {
         case .append(let offset, _, let trailing):
-            var strip = Strip(frame: frame, payload: payload, offset: offset, trailing: trailing)
+            var strip = Strip(frame: frame, payload: payload, offset: offset, trailing: trailing, reversed: reversed)
             // Scrolling back a little keeps the furthest frame, so nothing already seen is dropped.
             if let pending, let ahead = pending.offset, ahead > offset { strip = pending }
             if resting {
-                steps.append(.commit(settle(strip)))
+                if let settled = settle(strip) { steps.append(.commit(settled)) }
                 self.accepted = strip.frame
                 pending = nil
             } else {
                 pending = strip
             }
         case .reverse:
-            steps.append(.backward)
+            // While the capture may still turn, scrolling back may be where the reader means to go.
+            if !turnable { steps.append(.backward) }
         case .duplicate, .uncertain:
             break
         }
@@ -87,6 +132,10 @@ struct ScrollTracker<Payload: Sendable>: Sendable {
         return steps
     }
 
+    private var turnable: Bool {
+        !reversed && grown * 2 < (accepted?.length ?? 0)
+    }
+
     /// The pending frame, written when the capture finishes rather than lost with it.
     mutating func flush() -> Strip? {
         defer { pending = nil }
@@ -95,11 +144,18 @@ struct ScrollTracker<Payload: Sendable>: Sendable {
         return settle(pending)
     }
 
-    /// Retaking fewer lines than the last strip would leave its footer or fade inside the result.
-    private mutating func settle(_ strip: Strip) -> Strip {
-        guard let offset = strip.offset else { return strip }
+    /// Retakes at least the last strip's lines; nil while a turned capture climbs over its own start.
+    private mutating func settle(_ strip: Strip) -> Strip? {
+        guard var offset = strip.offset else { return strip }
+        if strip.reversed, headroom > 0 {
+            guard offset > headroom else { headroom -= offset; return nil }
+            offset -= headroom
+            headroom = 0
+        }
+        if !strip.reversed { grown += offset }
         unreliable = min(strip.frame.length - offset, max(unreliable, strip.trailing))
-        return Strip(frame: strip.frame, payload: strip.payload, offset: offset, trailing: unreliable)
+        return Strip(
+            frame: strip.frame, payload: strip.payload, offset: offset, trailing: unreliable, reversed: strip.reversed)
     }
 
     /// After a pause or an unwritten strip, matching starts over from the last strip on disk.

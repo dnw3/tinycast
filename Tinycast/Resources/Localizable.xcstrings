@@ -15769,6 +15769,16 @@
         }
       }
     },
+    "Keep scrolling back to add more content": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "继续往回滚以添加内容"
+          }
+        }
+      }
+    },
     "Keep this recording?": {
       "localizations": {
         "zh-Hans": {
@@ -25104,6 +25114,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "长截图"
+          }
+        }
+      }
+    },
+    "Scrolling back: new content is added at the start": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在往回滚：新内容会加在开头"
           }
         }
       }

@@ -232,8 +232,9 @@ final class CaptureCoordinator {
     func recordScrollDiagnostics() {
         guard let scroll else { return }
         do {
-            try scroll.recordDiagnostics(
-                in: AppPaths.applicationSupport().appendingPathComponent("captures/diagnostics"))
+            // Room for this one among the few kept.
+            try repository.reclaimDiagnostics(now: Date(), keeping: CaptureRepository.diagnosticsKept - 1)
+            try scroll.recordDiagnostics(in: repository.diagnostics)
         } catch { report(error) }
     }
 

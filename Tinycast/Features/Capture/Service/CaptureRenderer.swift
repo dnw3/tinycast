@@ -4,10 +4,14 @@ import Foundation
 import ImageIO
 
 enum CaptureRenderer {
+    /// `atStart`: the new strip is the result's first piece, and what was there before moved along.
     nonisolated static func scrollPreview(
-        previous: CGImage?, previousSize: CapturePixelSize, document: CaptureDocument, directory: URL
+        previous: CGImage?, previousSize: CapturePixelSize, document: CaptureDocument, directory: URL,
+        atStart: Bool = false
     ) throws -> CGImage {
-        guard let piece = document.pieces.last else { throw CaptureRasterError.invalidTile }
+        guard let piece = atStart ? document.pieces.first : document.pieces.last else {
+            throw CaptureRasterError.invalidTile
+        }
         let scale = min(1, 240 / max(document.bounds.width, document.bounds.height))
         let width = max(1, Int(document.bounds.width * scale)),
             height = max(1, Int(document.bounds.height * scale))
@@ -18,10 +22,15 @@ enum CaptureRenderer {
                 bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
         else { throw CaptureRasterError.invalidSize }
         if let previous {
+            let vertical = document.axis != .horizontal
+            let moved = atStart
+                ? CGFloat(vertical ? document.size.height - previousSize.height : document.size.width - previousSize.width)
+                : 0
             context.draw(
                 previous,
                 in: CGRect(
-                    x: 0, y: CGFloat(height) - CGFloat(previousSize.height) * scale,
+                    x: vertical ? 0 : moved * scale,
+                    y: CGFloat(height) - CGFloat(previousSize.height) * scale - (vertical ? moved * scale : 0),
                     width: CGFloat(previousSize.width) * scale, height: CGFloat(previousSize.height) * scale))
         }
         let size = try CapturePixelSize(width: Int(piece.source.width), height: Int(piece.source.height))
