@@ -32,6 +32,9 @@ final class ScrollCaptureSession {
     private var lastAutomaticScroll = ContinuousClock.now
     private var stopped = false
     private var generation = 0
+    /// Pixels the scroll events over the region have moved the content by, while every one was precise.
+    private var travel: Double? = 0
+    @ObservationIgnored private var scrollMonitors: [Any] = []
     private(set) var diagnostics: ScrollDiagnosticsRecorder?
     private var diagnosticFrames = 0
     /// Frames are written in order behind sampling, so recording never slows the capture it watches.
@@ -55,6 +58,7 @@ final class ScrollCaptureSession {
     }
 
     func start() {
+        watchScrolling()
         task = Task { [weak self] in
             guard let self else { return }
             while !Task.isCancelled, !self.stopped {
@@ -105,7 +109,31 @@ final class ScrollCaptureSession {
         stopped = true
         automatic = false
         task?.cancel()
+        scrollMonitors.forEach(NSEvent.removeMonitor)
+        scrollMonitors = []
         setHint(nil)
+    }
+
+    /// The scroll events say how far the content went, which matching takes as a second witness.
+    private func watchScrolling() {
+        guard scrollMonitors.isEmpty else { return }
+        let otherApps = NSEvent.addGlobalMonitorForEvents(matching: .scrollWheel) { [weak self] event in
+            self?.scrolled(event)
+        }
+        // The global monitor never sees this app's own windows, and AI Chat is one of them.
+        let thisApp = NSEvent.addLocalMonitorForEvents(matching: .scrollWheel) { [weak self] event in
+            self?.scrolled(event)
+            return event
+        }
+        scrollMonitors = [otherApps, thisApp].compactMap { $0 }
+    }
+
+    private func scrolled(_ event: NSEvent) {
+        guard let travel, pointerLine != nil else { return }
+        // A wheel's notches scroll by however many lines the app chooses, so they tell nothing exact.
+        guard event.hasPreciseScrollingDeltas else { self.travel = nil; return }
+        let delta = axis == .vertical ? event.scrollingDeltaY : event.scrollingDeltaX
+        self.travel = travel - delta * target.scale
     }
 
     /// A lasting hint stays until whatever it describes is over, rather than for three seconds.
@@ -144,16 +172,17 @@ final class ScrollCaptureSession {
         let generation = generation
         guard validateTarget() else { return }
         let image = try await CaptureScreenService.image(target: target, rect: region, cursor: false)
-        let axis = axis, tracker = tracker, pointer = pointerLine
+        let axis = axis, tracker = tracker, pointer = pointerLine, travel = travel.map { Int($0.rounded()) }
         let (observed, steps) = try await CaptureWork.run {
             var tracker = tracker
             var frame = try ScrollFrameReader.sample(image, axis: axis)
             frame.pointer = pointer
+            frame.travel = travel
             let steps = tracker.observe(frame, payload: image, match: ScrollStitchPolicy.match)
             return (tracker, steps)
         }
         try Task.checkCancellation()
-        record(image, pointer: pointer, resting: observed.resting, steps: steps)
+        record(image, pointer: pointer, travel: travel, resting: observed.resting, steps: steps)
         guard !paused, generation == self.generation else { return }
         self.tracker = observed
         restingSamples = observed.resting ? restingSamples + 1 : 0
@@ -171,7 +200,10 @@ final class ScrollCaptureSession {
                 setHint(notice)
             case .lost:
                 Self.logger.notice("Scroll alignment lost: pieces=\(self.document.pieces.count)")
-                notice = String(localized: "Lost the overlap. Scroll back a little to continue")
+                let gone = observed.accepted?.travel.flatMap { from in travel.map { abs($0 - from) } }
+                notice = gone.map { $0 * 2 >= (axis == .vertical ? image.height : image.width) } == true
+                    ? String(localized: "Scrolled too fast to line up. Scroll back a little, then slower")
+                    : String(localized: "Lost the overlap. Scroll back a little to continue")
                 setHint(notice, lasting: true)
             case .found:
                 notice = String(localized: "Scroll inside the selected region")
@@ -184,7 +216,7 @@ final class ScrollCaptureSession {
     }
 
     private func record(
-        _ image: CGImage, pointer: Int?, resting: Bool, steps: [ScrollTracker<CGImage>.Step]
+        _ image: CGImage, pointer: Int?, travel: Int?, resting: Bool, steps: [ScrollTracker<CGImage>.Step]
     ) {
         guard let diagnostics, diagnosticFrames < ScrollDiagnosticsRecorder.frameLimit else { return }
         diagnosticFrames += 1
@@ -199,7 +231,7 @@ final class ScrollCaptureSession {
         }).joined(separator: " ")
         diagnosticWrites = Task.detached {
             await previous?.value
-            try? diagnostics.record(image, index: index, pointer: pointer, verdict: verdict)
+            try? diagnostics.record(image, index: index, pointer: pointer, travel: travel, verdict: verdict)
         }
     }
 

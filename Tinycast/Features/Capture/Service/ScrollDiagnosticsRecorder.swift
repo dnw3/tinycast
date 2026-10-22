@@ -19,27 +19,32 @@ struct ScrollDiagnosticsRecorder: Sendable {
         return ScrollDiagnosticsRecorder(directory: directory)
     }
 
-    /// The name carries the pointer's line, which matching needs and the pixels alone do not show.
-    nonisolated static func frameName(index: Int, pointer: Int?) -> String {
-        String(format: "%05d_p%d.png", index, pointer ?? -1)
+    /// The name carries what matching needs and the pixels alone do not show: pointer line and travel.
+    nonisolated static func frameName(index: Int, pointer: Int?, travel: Int?) -> String {
+        String(format: "%05d_p%d", index, pointer ?? -1) + (travel.map { "_t\($0)" } ?? "") + ".png"
     }
 
-    /// The pointer line a frame was recorded with, or nil when the pointer was outside the region.
-    nonisolated static func pointer(inFrameNamed name: String) -> Int? {
-        guard let marker = name.range(of: "_p"), name.hasSuffix(".png") else { return nil }
-        let value = Int(name[marker.upperBound..<name.index(name.endIndex, offsetBy: -4)]) ?? -1
-        return value >= 0 ? value : nil
+    /// The pointer line and scroll travel a frame was recorded with, each nil when it was not known.
+    nonisolated static func marks(inFrameNamed name: String) -> (pointer: Int?, travel: Int?) {
+        guard name.hasSuffix(".png") else { return (nil, nil) }
+        var pointer: Int?, travel: Int?
+        for part in name.dropLast(4).split(separator: "_") {
+            if part.hasPrefix("p"), let value = Int(part.dropFirst()), value >= 0 { pointer = value }
+            if part.hasPrefix("t"), let value = Int(part.dropFirst()) { travel = value }
+        }
+        return (pointer, travel)
     }
 
-    nonisolated func record(_ image: CGImage, index: Int, pointer: Int?, verdict: String) throws {
-        let url = directory.appendingPathComponent(Self.frameName(index: index, pointer: pointer))
+    nonisolated func record(_ image: CGImage, index: Int, pointer: Int?, travel: Int?, verdict: String) throws {
+        let name = Self.frameName(index: index, pointer: pointer, travel: travel)
+        let url = directory.appendingPathComponent(name)
         guard
             let destination = CGImageDestinationCreateWithURL(
                 url as CFURL, UTType.png.identifier as CFString, 1, nil)
         else { throw CocoaError(.fileWriteUnknown) }
         CGImageDestinationAddImage(destination, image, nil)
         guard CGImageDestinationFinalize(destination) else { throw CocoaError(.fileWriteUnknown) }
-        let line = Data("\(Self.frameName(index: index, pointer: pointer))\t\(verdict)\n".utf8)
+        let line = Data("\(name)\t\(verdict)\n".utf8)
         let trace = directory.appendingPathComponent("trace.tsv")
         if let handle = try? FileHandle(forWritingTo: trace) {
             defer { try? handle.close() }

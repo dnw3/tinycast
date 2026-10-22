@@ -25066,6 +25066,16 @@
         }
       }
     },
+    "Scrolled too fast to line up. Scroll back a little, then slower": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "滚得太快，接不上了。往回滚一点，再慢一些"
+          }
+        }
+      }
+    },
     "Scrolling Capture": {
       "extractionState": "manual",
       "localizations": {

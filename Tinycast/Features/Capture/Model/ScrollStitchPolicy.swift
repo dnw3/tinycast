@@ -8,6 +8,8 @@ enum ScrollStitchPolicy {
         var originalRGB: [UInt8]?
         /// Where the pointer was along the scroll axis, when it was over the region.
         var pointer: Int?
+        /// Lines the scroll events had moved the content by when this frame was taken, when they all told.
+        var travel: Int?
 
         /// Lines a hover may have changed: whatever is under the pointer lights as content passes.
         func nearPointer(_ start: Int, _ end: Int) -> Bool {
@@ -69,12 +71,20 @@ enum ScrollStitchPolicy {
     /// About 48pt either side at 2×: a hovered row's highlight, and controls beside the pointer.
     static let hoverReach = 96
 
+    /// Windows that moved with the page, below which a shift has too little picture to vouch for it.
+    static let minimumEvidence = 12
+
     enum Decision: Equatable, Sendable {
         case duplicate
         case append(offset: Int, fixedLeading: Int, fixedTrailing: Int)
         case reverse
         case uncertain
     }
+
+    /// The give around what the scroll events said: an app renders behind them, a capture lands after.
+    static func slack(_ expected: Int) -> Int { max(24, abs(expected) / 4) }
+
+    static func agrees(_ shift: Int, expected: Int) -> Bool { abs(shift - expected) <= slack(expected) }
 
     static func match(previous: Frame, current: Frame) -> Decision {
         guard previous.length == current.length, previous.lanes == current.lanes,
@@ -114,6 +124,7 @@ enum ScrollStitchPolicy {
         }
         var candidates: [(Int, Double)] = []
         let maximum = (end - start) * 2 / 3
+        let expected = previous.travel.flatMap { from in current.travel.map { $0 - from } }
         for shift in -maximum...maximum where abs(shift) >= 2 {
             let lower = max(start, start - shift), upper = min(end, end - shift)
             let score = current.difference(
@@ -129,8 +140,11 @@ enum ScrollStitchPolicy {
         }.sorted { $0.1 < $1.1 }
         // At the end of the search range the true shift may lie just beyond it, one line off.
         guard let best = candidates.first, abs(best.0) < maximum else { return .uncertain }
-        let fit = fit(previous: previous, current: current, shift: best.0, start: start, end: end)
-        guard fit.consistent, fit.error < 8 else { return .uncertain }
+        // The scroll events are a second witness, so a shift they confirm may lean on less of the picture.
+        // Said to have gone past the range, nothing within it is confirmed; an app may scroll slower than told.
+        let confirmed = expected.map { abs($0) < maximum && agrees(best.0, expected: $0) } ?? false
+        let fit = fit(previous: previous, current: current, shift: best.0, start: start, end: end, hover: confirmed)
+        guard fit.consistent, fit.error < (confirmed ? 12 : 8) else { return .uncertain }
         let alternatives = candidates.prefix(32).filter { abs($0.0 - best.0) > 3 }
         guard !alternatives.isEmpty, alternatives.allSatisfy({ candidate in
             patchError(previous: previous, current: current, shift: candidate.0, start: start, end: end)
@@ -146,19 +160,20 @@ enum ScrollStitchPolicy {
         /// Lines up only where it sits still on screen: a sidebar, floating button or edge fade.
         case held
         case edge(Double)
+        /// Under the pointer: evidence only for a confirmed shift, and only where it lines up.
+        case hovered(Double)
     }
 
     /// Strict wherever the page moved, except under the pointer, where a hover changes content in place.
     private static func fit(
-        previous: Frame, current: Frame, shift: Int, start: Int, end: Int
+        previous: Frame, current: Frame, shift: Int, start: Int, end: Int, hover: Bool
     ) -> (error: Double, consistent: Bool, unsettled: Int) {
         let lower = max(start, start - shift), upper = min(end, end - shift)
         let lines = Array(stride(from: lower, to: upper, by: 16))
         var windows = [[Window?]](repeating: [Window?](repeating: nil, count: current.lanes), count: lines.count)
         for (row, line) in lines.enumerated() {
             let window = min(upper, line + 32)
-            guard !current.nearPointer(line, window), !previous.nearPointer(line + shift, window + shift)
-            else { continue }
+            let hovered = current.nearPointer(line, window) || previous.nearPointer(line + shift, window + shift)
             for lane in 0..<current.lanes {
                 // Blank windows match at any shift; on a sparse page they would hide a line's slip.
                 guard current.activity(lane: lane, start: line, end: window) >= 16
@@ -177,6 +192,10 @@ enum ScrollStitchPolicy {
                 }
                 let count = Double((window - line) * 3)
                 let error = Double(moved) / count, still = Double(min(stillHere, stillThere)) / count
+                if hovered {
+                    windows[row][lane] = .hovered(error)
+                    continue
+                }
                 // Sparse text on a sidebar misses by little, so still has only to explain it better.
                 windows[row][lane] =
                     error <= 4 ? .moved(error)
@@ -200,7 +219,12 @@ enum ScrollStitchPolicy {
             let judged = windows[row].compactMap { $0 }
             guard judged.count >= 2 else { return nil }
             // Off by the fit's own bar, so a faint fade is either left out or passes, never half of each.
-            let off = judged.filter { if case .moved(let error) = $0 { error >= 8 } else { true } }
+            let off = judged.filter {
+                switch $0 {
+                case .moved(let error), .hovered(let error): error >= 8
+                case .held, .edge: true
+                }
+            }
             return off.count * 2 < judged.count
         }
         // An edge fade or dimming sits over moving content, so its lines settle in neither frame.
@@ -224,6 +248,13 @@ enum ScrollStitchPolicy {
         for lane in 0..<current.lanes {
             var changed = 0
             for window in kept.compactMap({ $0[lane] }) {
+                // A hover lights whatever passes beneath the pointer, so only a confirmed line-up counts.
+                if case .hovered(let error) = window {
+                    guard hover, error < 8 else { continue }
+                    judged += 1
+                    errors.append(error)
+                    continue
+                }
                 judged += 1
                 guard case .moved(let error) = window else { held += 1; continue }
                 errors.append(error)
@@ -233,7 +264,7 @@ enum ScrollStitchPolicy {
             if changed > 1 { consistent = false }
         }
         // A sidebar may fill much of a window; a region mostly still has too little moving to trust.
-        if held * 3 > judged * 2 { consistent = false }
+        if held * 3 > judged * 2 || errors.count < minimumEvidence { consistent = false }
         errors.sort()
         // A window's stride short of the band, where the faintest fade still passed as settled.
         let unsettled =

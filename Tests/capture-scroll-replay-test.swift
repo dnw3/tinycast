@@ -19,53 +19,103 @@ struct CaptureScrollReplayTests {
         let window = ChatWindow()
         // A flick in steps up to half the viewport, a pause, a faster run, and rest at the end.
         let tops = [0, 0, 40, 130, 280, 480, 480, 480, 720, 1_000, 1_380, 1_760, 2_140, 2_140, 2_520, 2_900, 2_900]
+        let steady = [0, 0, 40, 130, 280, 480, 480, 720, 960, 1_200, 1_440, 1_440]
+        let quick = [0, 0, 380, 760, 1_140, 1_520, 1_900, 1_900]
         if ProcessInfo.processInfo.environment["TINYCAST_SCROLL_GAPS"] != nil {
-            try gaps(window, in: root)
+            try gaps(window, tops: [steady, quick], in: root)
             return
         }
-        let stitched = try verify(window, tops: tops, in: root.appendingPathComponent("flick"))
+        let stitched = try verify(window, tops.map { Shot(window, top: $0) }, in: root.appendingPathComponent("flick"))
+        // A pointer mid-region hides most of a large step's overlap; the scroll events vouch for the rest.
+        for (name, steps) in [("steady", steady), ("quick", quick)] {
+            try verify(window, steps.map { Shot(window, top: $0, pointer: 600, travel: $0) }, in: root.appendingPathComponent(name))
+        }
+        let lit = quick.enumerated().map { Shot(window, top: $1, pointer: 600, travel: $1 + $0 % 2 * 50, hover: true) }
+        try verify(window, lit, in: root.appendingPathComponent("hover"), comparesPixels: false)
+        // A step past the overlap is lost, never taken at whatever shift fits a little.
+        let far = [0, 0, 480, 480].map { Shot(window, top: $0, pointer: 600, travel: $0) }
+        let (_, farVerdicts) = try verify(window, far, in: root.appendingPathComponent("far"), allowsLoss: true)
+        precondition(!farVerdicts.contains { $0.hasPrefix("commit") && !$0.contains("whole") }, "\(farVerdicts)")
+        // An app that scrolls at its own ratio to the events loses the second witness, never the seam.
+        for ratio in [2.0, 0.5] {
+            let scaled = { (top: Int) in Int(Double(top) * ratio) }
+            try verify(window, steady.map { Shot(window, top: $0, travel: scaled($0)) }, in: root.appendingPathComponent("ratio\(ratio)"))
+            try verify(
+                window, steady.map { Shot(window, top: $0, pointer: 600, travel: scaled($0)) },
+                in: root.appendingPathComponent("ratio-pointer\(ratio)"), allowsLoss: true)
+        }
+        precondition(
+            ScrollStitchPolicy.agrees(250, expected: 320) && ScrollStitchPolicy.agrees(390, expected: 320)
+                && !ScrollStitchPolicy.agrees(230, expected: 320) && !ScrollStitchPolicy.agrees(410, expected: 320)
+                && ScrollStitchPolicy.agrees(-300, expected: -320) && !ScrollStitchPolicy.agrees(300, expected: -320)
+                && ScrollStitchPolicy.agrees(20, expected: 0),
+            "A confirmed shift lies within a quarter of what the events said, either way, and a little more")
+
         let recorder = try ScrollDiagnosticsRecorder.create(in: root, date: Date())
         for (index, top) in tops.enumerated() {
-            try recorder.record(window.frame(top: top, pointer: nil), index: index + 1, pointer: index == 3 ? 42 : nil, verdict: "")
+            try recorder.record(
+                window.frame(top: top, pointer: nil), index: index + 1, pointer: index == 3 ? 42 : nil, travel: top,
+                verdict: "")
         }
-        precondition(ScrollDiagnosticsRecorder.pointer(inFrameNamed: "00004_p42.png") == 42)
-        precondition(ScrollDiagnosticsRecorder.pointer(inFrameNamed: "00005_p-1.png") == nil)
+        precondition(ScrollDiagnosticsRecorder.marks(inFrameNamed: "00004_p42_t130.png") == (42, 130))
+        precondition(ScrollDiagnosticsRecorder.marks(inFrameNamed: "00005_p-1.png") == (nil, nil))
         let replayed = try replay(recorder.directory, in: root.appendingPathComponent("replay"))
-        precondition(replayed.size.height == stitched.size.height, "A recording replays as it was captured")
+        precondition(replayed.size.height == stitched.document.size.height, "A recording replays as it was captured")
         let trace = try String(contentsOf: recorder.directory.appendingPathComponent("trace.tsv"), encoding: .utf8)
         precondition(
             FileManager.default.fileExists(atPath: recorder.directory.appendingPathComponent("replay.png").path)
                 && trace.split(separator: "\n").count == tops.count,
             "and leaves its stitched result and one trace line per frame beside the frames")
-        print("Scrolling replay of a chat window with sidebar, bars, fades, scroller and button passed")
+        print("Scrolling replay of a chat window with sidebar, bars, fades, scroller, button and pointer passed")
     }
 
-    /// Cases the matcher still loses, run on request so the plan's later items have a fixed target.
-    static func gaps(_ window: ChatWindow, in root: URL) throws {
-        let cases = [
-            ("pointer mid-region, steps of 240", [0, 0, 40, 130, 280, 480, 480, 720, 960, 1_200, 1_440, 1_440]),
-            ("pointer mid-region, steps of 380", [0, 0, 380, 760, 1_140, 1_520, 1_900, 1_900])
-        ]
-        for (name, tops) in cases {
-            let frames = tops.map { (image: window.frame(top: $0, pointer: 600), pointer: Int?.some(600)) }
+    /// One sampled frame and what the session knew alongside it.
+    struct Shot {
+        let image: CGImage
+        let top: Int
+        let pointer: Int?
+        let travel: Int?
+
+        init(_ window: ChatWindow, top: Int, pointer: Int? = nil, travel: Int? = nil, hover: Bool = false) {
+            image = window.frame(top: top, pointer: hover ? pointer : nil)
+            self.top = top
+            self.pointer = pointer
+            self.travel = travel
+        }
+
+        init(image: CGImage, pointer: Int?, travel: Int?) {
+            self.image = image
+            top = 0
+            self.pointer = pointer
+            self.travel = travel
+        }
+    }
+
+    /// Without scroll events, a pointer mid-region still loses large steps; printed, not asserted.
+    static func gaps(_ window: ChatWindow, tops: [[Int]], in root: URL) throws {
+        for steps in tops {
             let directory = root.appendingPathComponent(UUID().uuidString)
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-            let (_, verdicts) = try stitch(frames, in: directory)
-            print(verdicts.contains { $0.contains("lost") } ? "LOST" : "ok  ", name, verdicts)
+            let (document, verdicts) = try stitch(steps.map { Shot(window, top: $0, pointer: 600) }, in: directory)
+            let right = document.size.height == window.height + steps.last!
+            print(verdicts.contains { $0.contains("lost") } ? "LOST" : right ? "ok  " : "WRONG", document.size.height, steps, verdicts)
         }
     }
 
     /// Every frame lines up, and the stitched column is the page itself wherever nothing covers it.
     @discardableResult
-    static func verify(_ window: ChatWindow, tops: [Int], in directory: URL) throws -> CaptureDocument {
+    static func verify(
+        _ window: ChatWindow, _ shots: [Shot], in directory: URL, comparesPixels: Bool = true, allowsLoss: Bool = false
+    ) throws -> (document: CaptureDocument, verdicts: [String]) {
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        let frames = tops.map { (image: window.frame(top: $0, pointer: nil), pointer: Int?.none) }
-        let (document, verdicts) = try stitch(frames, in: directory)
-        precondition(!verdicts.contains { $0.contains("lost") }, "A frame lost the overlap: \(verdicts)")
-        let last = tops.last!
-        precondition(
-            document.size.height >= window.contentBottom + last - 16,
-            "The capture reaches the last frame: \(document.size.height), \(verdicts)")
+        let (document, verdicts) = try stitch(shots, in: directory)
+        if !allowsLoss {
+            precondition(!verdicts.contains { $0.contains("lost") }, "A frame lost the overlap: \(verdicts)")
+            precondition(
+                document.size.height == window.height + shots.last!.top,
+                "The capture grows by exactly the distance scrolled: \(document.size.height), \(verdicts)")
+        }
+        guard comparesPixels else { return (document, verdicts) }
         let composite = try CaptureCompositeReader(document: document, directory: directory)
         let columns = window.comparedColumns
         let width = columns.count * 4
@@ -74,12 +124,10 @@ struct CaptureScrollReplayTests {
             let expected = window.pageRow(row - window.contentTop, columns: columns)
             precondition(actual.count == width && actual == expected, "Stitched row \(row) differs from the page, \(verdicts)")
         }
-        return document
+        return (document, verdicts)
     }
 
-    static func stitch(
-        _ frames: [(image: CGImage, pointer: Int?)], in directory: URL
-    ) throws -> (CaptureDocument, [String]) {
+    static func stitch(_ shots: [Shot], in directory: URL) throws -> (CaptureDocument, [String]) {
         var tracker = ScrollTracker<CGImage>()
         var document: CaptureDocument?
         var verdicts: [String] = []
@@ -92,10 +140,11 @@ struct CaptureScrollReplayTests {
             try ScrollFrameReader.strip(strip.payload, rect: plan.source, to: directory.appendingPathComponent(raster))
             document = plan.document
         }
-        for (image, pointer) in frames {
-            var frame = try ScrollFrameReader.sample(image, axis: .vertical)
-            frame.pointer = pointer
-            let steps = tracker.observe(frame, payload: image, match: ScrollStitchPolicy.match)
+        for shot in shots {
+            var frame = try ScrollFrameReader.sample(shot.image, axis: .vertical)
+            frame.pointer = shot.pointer
+            frame.travel = shot.travel
+            let steps = tracker.observe(frame, payload: shot.image, match: ScrollStitchPolicy.match)
             for step in steps { if case .commit(let strip) = step { try write(strip) } }
             verdicts.append(steps.map { step in
                 switch step {
@@ -117,11 +166,12 @@ struct CaptureScrollReplayTests {
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         let names = try FileManager.default.contentsOfDirectory(atPath: folder.path)
             .filter { $0.hasSuffix(".png") && $0 != "replay.png" }.sorted()
-        let frames = names.compactMap { name -> (image: CGImage, pointer: Int?)? in
+        let frames = names.compactMap { name -> Shot? in
             guard let source = CGImageSourceCreateWithURL(folder.appendingPathComponent(name) as CFURL, nil),
                 let image = CGImageSourceCreateImageAtIndex(source, 0, nil)
             else { return nil }
-            return (image, ScrollDiagnosticsRecorder.pointer(inFrameNamed: name))
+            let marks = ScrollDiagnosticsRecorder.marks(inFrameNamed: name)
+            return Shot(image: image, pointer: marks.pointer, travel: marks.travel)
         }
         let (document, verdicts) = try stitch(frames, in: root)
         for (name, verdict) in zip(names, verdicts) where !verdict.isEmpty { print(name, verdict) }

@@ -222,8 +222,22 @@ only the ones at rest. `ScrollTracker` decides which become strips:
 Matching is strict except where the pointer is, or where something sits still over the page. Lanes
 stay `edgeMargin` clear of both region edges, where an overlay scroller moves at its own pace. Each
 sample records the pointer's line while it is over the region, and the 32-line windows within
-`hoverReach` (96 lines, about 48pt at 2×) of it in either frame are left out, since whatever sits under
-a resting pointer lights up as content passes. A window that lines up only at the same line in both
+`hoverReach` (96 lines, about 48pt at 2×) of it in either frame are hovered, since whatever sits under
+a resting pointer lights up as content passes: they still mark an edge band, but count toward the fit
+only when the scroll events confirm the shift, and then only where they line up.
+
+The session watches scroll-wheel events over the region, through a global monitor and, for Tinycast's
+own windows, a local one; neither needs Accessibility. Each sample carries the travel they add up to,
+in pixels (`Frame.travel`), until a wheel's notch arrives, whose lines an app sizes as it likes and which
+ends the travel for the session. The difference between two frames is a second witness: a best shift
+within `slack` of it (a quarter, at least 24 lines, either way, since an app renders behind the events
+and a capture lands after them) is confirmed, which admits hovered line-ups and a fit error under 12
+rather than 8. Travel said to reach past the search range confirms nothing, since an app may scroll
+slower than its events; it never rejects a shift by itself, so an app scrolling at its own ratio only
+loses the witness. Whatever the witness, fewer than `minimumEvidence` (12) windows that moved with the
+page leave a shift uncertain: three windows once carried a shift past the range. When the overlap is
+lost after travel of half the frame or more, the notice says the scroll was too fast rather than only
+that it was lost. A window that lines up only at the same line in both
 frames is held — a sidebar, a floating button — and so is one part still and part moving beside a held
 one, its rim; held windows may make up at most a third of the region, since a region mostly still is a
 pane scrolling inside it. At either end of the overlap, rows where most lanes settle in neither frame —
@@ -246,7 +260,7 @@ the previous fixed footer is removed before a new strip and footer are appended.
 needs the real browser/PDF/native-list corpus before AC-04 can pass.
 
 Record Diagnostic Frames, in the controls' More menu, writes every later sample of that session as it
-was captured, named with the pointer's line, plus one verdict line each in `trace.tsv`, to
+was captured, named with the pointer's line and travel, plus one verdict line each in `trace.tsv`, to
 `captures/diagnostics/scroll-<time>` under Application Support; Finder shows the folder when the
 session ends. Writes queue behind sampling rather than slow it, stop after
 `ScrollDiagnosticsRecorder.frameLimit` frames, and nothing deletes them but the reader. It is off for
