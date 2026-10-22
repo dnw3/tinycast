@@ -17,13 +17,13 @@ enum ScrollStitchPolicy {
 
         func difference(
             to other: Frame, shift: Int, start: Int, end: Int, stride step: Int, textured: Bool = false,
-            selectedLanes: Range<Int>? = nil
+            selectedLanes: [Int]? = nil
         ) -> Double {
             var sum = 0, count = 0
             for line in Swift.stride(from: start, to: end, by: step) {
                 let previous = line + shift
                 guard (0..<length).contains(previous) else { continue }
-                for lane in selectedLanes ?? 0..<lanes {
+                for lane in selectedLanes ?? Array(0..<lanes) {
                     if textured, lane > 0 {
                         let here = (line * lanes + lane) * 3
                         let there = (previous * lanes + lane) * 3
@@ -42,6 +42,12 @@ enum ScrollStitchPolicy {
                 }
             }
             return count == 0 ? 255 : Double(sum) / Double(count)
+        }
+
+        /// Summed channel difference of one lane between a line here and a line in another frame.
+        func distance(to other: Frame, lane: Int, line: Int, previous: Int) -> Int {
+            let here = (line * lanes + lane) * 3, there = (previous * other.lanes + lane) * 3
+            return (0..<3).reduce(0) { $0 + abs(Int(rgb[here + $1]) - Int(other.rgb[there + $1])) }
         }
 
         /// The widest swing of any channel along one lane, so a blank stretch can be told apart.
@@ -102,20 +108,24 @@ enum ScrollStitchPolicy {
         if !distinctEdge(originalCurrent, start: length - trailing, end: length) { trailing = 0 }
         let start = leading + 4, end = length - trailing - 4
         guard end - start > length / 2 else { return .uncertain }
+        // A sidebar matches best at no shift at all, so it would pull the search toward a tiny one.
+        let moving = (0..<current.lanes).filter {
+            current.difference(to: previous, shift: 0, start: start, end: end, stride: 2, selectedLanes: [$0]) >= 0.8
+        }
         var candidates: [(Int, Double)] = []
         let maximum = (end - start) * 2 / 3
         for shift in -maximum...maximum where abs(shift) >= 2 {
             let lower = max(start, start - shift), upper = min(end, end - shift)
             let score = current.difference(
                 to: previous, shift: shift, start: lower, end: upper,
-                stride: max(1, (upper - lower) / 40), textured: true)
+                stride: max(1, (upper - lower) / 40), textured: true, selectedLanes: moving)
             candidates.append((shift, score))
         }
         candidates.sort { $0.1 < $1.1 }
         candidates = candidates.prefix(32).map { candidate in
             let lower = max(start, start - candidate.0), upper = min(end, end - candidate.0)
             return (candidate.0, current.difference(to: previous, shift: candidate.0,
-                start: lower, end: upper, stride: 1, textured: true))
+                start: lower, end: upper, stride: 1, textured: true, selectedLanes: moving))
         }.sorted { $0.1 < $1.1 }
         // At the end of the search range the true shift may lie just beyond it, one line off.
         guard let best = candidates.first, abs(best.0) < maximum else { return .uncertain }
@@ -126,36 +136,108 @@ enum ScrollStitchPolicy {
             patchError(previous: previous, current: current, shift: candidate.0, start: start, end: end)
                 > fit.error * 1.8 + 1.5
         }) else { return .uncertain }
-        return best.0 > 0 ? .append(offset: best.0, fixedLeading: leading, fixedTrailing: trailing) : .reverse
+        return best.0 > 0
+            ? .append(offset: best.0, fixedLeading: leading, fixedTrailing: max(trailing, fit.unsettled))
+            : .reverse
     }
 
-    /// Strict everywhere but under the pointer, where a hover changes content in place.
+    private enum Window {
+        case moved(Double)
+        /// Lines up only where it sits still on screen: a sidebar, floating button or edge fade.
+        case held
+        case edge(Double)
+    }
+
+    /// Strict wherever the page moved, except under the pointer, where a hover changes content in place.
     private static func fit(
         previous: Frame, current: Frame, shift: Int, start: Int, end: Int
-    ) -> (error: Double, consistent: Bool) {
+    ) -> (error: Double, consistent: Bool, unsettled: Int) {
         let lower = max(start, start - shift), upper = min(end, end - shift)
+        let lines = Array(stride(from: lower, to: upper, by: 16))
+        var windows = [[Window?]](repeating: [Window?](repeating: nil, count: current.lanes), count: lines.count)
+        for (row, line) in lines.enumerated() {
+            let window = min(upper, line + 32)
+            guard !current.nearPointer(line, window), !previous.nearPointer(line + shift, window + shift)
+            else { continue }
+            for lane in 0..<current.lanes {
+                // Blank windows match at any shift; on a sparse page they would hide a line's slip.
+                guard current.activity(lane: lane, start: line, end: window) >= 16
+                    || previous.activity(lane: lane, start: line + shift, end: window + shift) >= 16
+                else { continue }
+                var moved = 0, stillHere = 0, stillThere = 0, best = 0
+                for line in line..<window {
+                    let along = current.distance(to: previous, lane: lane, line: line, previous: line + shift)
+                    // Something still on screen shows at the same line in both frames, on either side.
+                    let here = current.distance(to: previous, lane: lane, line: line, previous: line)
+                    let there = current.distance(to: previous, lane: lane, line: line + shift, previous: line + shift)
+                    moved += along
+                    stillHere += here
+                    stillThere += there
+                    best += min(along, here, there)
+                }
+                let count = Double((window - line) * 3)
+                let error = Double(moved) / count, still = Double(min(stillHere, stillThere)) / count
+                // Sparse text on a sidebar misses by little, so still has only to explain it better.
+                windows[row][lane] =
+                    error <= 4 ? .moved(error)
+                    : still <= 12 && still < error ? .held
+                    : error <= 12 ? .moved(error)
+                    : Double(best) / count <= 12 ? .edge(error) : .moved(error)
+            }
+        }
+        // A window part still, part moving is only the rim of something that sits still beside it.
+        let solid = windows
+        for row in windows.indices {
+            for lane in 0..<current.lanes {
+                guard case .edge(let error) = windows[row][lane] else { continue }
+                let rim = (max(0, row - 2)...min(windows.count - 1, row + 2)).contains {
+                    if case .held = solid[$0][lane] { true } else { false }
+                }
+                windows[row][lane] = rim ? .held : .moved(error)
+            }
+        }
+        func settled(_ row: Int) -> Bool? {
+            let judged = windows[row].compactMap { $0 }
+            guard judged.count >= 2 else { return nil }
+            let off = judged.filter { if case .moved(let error) = $0 { error > 12 } else { true } }
+            return off.count * 2 < judged.count
+        }
+        // An edge fade or dimming sits over moving content, so its lines settle in neither frame.
+        let reach = min(lines.count / 3, current.length / 6 / 16)
+        var top = 0
+        for row in 0..<reach {
+            guard let settled = settled(row) else { continue }
+            if settled { break }
+            top = row + 1
+        }
+        var bottom = lines.count
+        for row in stride(from: lines.count - 1, through: max(top, lines.count - reach), by: -1) {
+            guard let settled = settled(row) else { continue }
+            if settled { break }
+            bottom = row
+        }
+        let kept = windows[top..<bottom]
         var errors: [Double] = []
+        var held = 0, judged = 0
         var consistent = true
         for lane in 0..<current.lanes {
             var changed = 0
-            for line in stride(from: lower, to: upper, by: 16) {
-                let window = min(upper, line + 32)
-                guard !current.nearPointer(line, window), !previous.nearPointer(line + shift, window + shift),
-                    current.activity(lane: lane, start: line, end: window) >= 16
-                        || previous.activity(lane: lane, start: line + shift, end: window + shift) >= 16
-                else { continue }
-                let error = current.difference(
-                    to: previous, shift: shift, start: line, end: window, stride: 1,
-                    selectedLanes: lane..<(lane + 1))
-                // Blank windows match at any shift; on a sparse page they would hide a line's slip.
+            for window in kept.compactMap({ $0[lane] }) {
+                judged += 1
+                guard case .moved(let error) = window else { held += 1; continue }
                 errors.append(error)
                 if error > 12 { changed += 1 }
             }
             // One window is a caret blinking; a lane changed in more never moved with the rest.
             if changed > 1 { consistent = false }
         }
+        // A sidebar may fill much of a window; a region mostly still has too little moving to trust.
+        if held * 3 > judged * 2 { consistent = false }
         errors.sort()
-        return (errors.dropLast(errors.count / 20).last ?? 255, consistent)
+        // A window's stride short of the band, where the faintest fade still passed as settled.
+        let unsettled =
+            bottom < lines.count ? min(current.length - shift, current.length - lines[bottom] - shift + 16) : 0
+        return (errors.dropLast(errors.count / 20).last ?? 255, consistent, unsettled)
     }
 
     private static func patchError(previous: Frame, current: Frame, shift: Int, start: Int, end: Int) -> Double {
@@ -164,7 +246,7 @@ enum ScrollStitchPolicy {
         for line in stride(from: lower, to: upper, by: 16) {
             for lane in 0..<current.lanes {
                 maximum = max(maximum, current.difference(to: previous, shift: shift,
-                    start: line, end: min(upper, line + 32), stride: 1, selectedLanes: lane..<(lane + 1)))
+                    start: line, end: min(upper, line + 32), stride: 1, selectedLanes: [lane]))
             }
         }
         return maximum

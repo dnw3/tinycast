@@ -25,7 +25,8 @@ enum ScrollFrameReader {
         let lanes = min(32, max(1, cross / 4))
         var rgb = [UInt8](repeating: 0, count: length * lanes * 3)
         var originalRGB = rgb
-        let positions = (0..<lanes).map { $0 * (cross - 1) / max(1, lanes - 1) }
+        let margin = lanes > 1 ? edgeMargin(cross: cross) : 0
+        let positions = (0..<lanes).map { margin + $0 * (cross - 1 - margin * 2) / max(1, lanes - 1) }
         pixels.withUnsafeBufferPointer { pixels in
             for line in 0..<length {
                 for (lane, across) in positions.enumerated() {
@@ -49,6 +50,9 @@ enum ScrollFrameReader {
         }
         return ScrollStitchPolicy.Frame(length: length, lanes: lanes, rgb: rgb, originalRGB: originalRGB)
     }
+
+    /// Lanes stay clear of both edges, where an overlay scroller moves at its own pace.
+    nonisolated static func edgeMargin(cross: Int) -> Int { min(32, cross / 16) }
 
     nonisolated static func strip(from source: URL, rect: CGRect, to destination: URL) throws {
         let reader = try CaptureRasterReader(directory: source)

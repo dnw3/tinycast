@@ -84,8 +84,6 @@ enum Theme {
         static let captureVideoTimeline: CGFloat = 52
         static let captureGlyph: CGFloat = 16
         static let captureCompactGlyph: CGFloat = 14
-        /// Kept off a found scroll area's trailing edge, where an overlay scroller flashes in.
-        static let captureScrollerClearance: CGFloat = 16
         static let captureToolbarCustomization = CGSize(width: 540, height: 560)
         static let captureLoupePixels: CGFloat = 13
         static let captureLoupeCell: CGFloat = 8

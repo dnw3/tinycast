@@ -190,12 +190,10 @@ multi-Space, keyboard, Retina quality and VoiceOver behavior remain in the accep
 The scrolling icon starts manual vertical capture directly from a selected region. Its menu offers
 Vertical, Horizontal and Adjust Region; direction and region preparation remain available before sampling.
 A picked window — the scrolling icon on its selection, or a window clicked in scrolling mode — starts at
-once from its own scrolling content, so the reader only scrolls: in Tinycast's own windows the largest
-scroll view less its content insets and the toolbar (`contentLayoutRect`), elsewhere the
-`AXScrollArea` under the window's center when Accessibility is granted. The area stops
-`captureScrollerClearance` short of its trailing edge, where an overlay scroller flashes in while the
-content moves. A screen capture, or a window whose scroll area cannot be found, first requires a region
-inside the scrolling content; the previous selection is hidden so the first drag creates the new region.
+once with the whole window as its region, as the reader picked it, so the reader only scrolls; its title
+bar, sidebar and composer stay put and are matched around rather than cut away. A screen capture first
+requires a region inside the scrolling content; the previous selection is hidden so the first drag
+creates the new region.
 A drawn region that strays past the window under its center is trimmed to that window, rounded inward
 (`CaptureGeometry.innerPixels`), rather than reading as outside it at once. Starting refreshes the ScreenCaptureKit filter to exclude
 the Dock. The original desktop workspace is retained until a result is accepted or cancellation restores it;
@@ -221,15 +219,24 @@ only the ones at rest. `ScrollTracker` decides which become strips:
   this, and nothing is force-stitched meanwhile. A frame above the last strip shows Scroll forward for
   three seconds instead.
 
-Matching is strict except where the pointer is. Each sample records the pointer's line while it is
-over the region, and the 32-line windows within `hoverReach` (96 lines, about 48pt at 2×) of it in
-either frame are left out, since whatever sits under a resting pointer lights up as content passes.
-Everywhere else a lane may differ in at most one window — a caret blinking — so a fixed sidebar, a
-floating button or a layout that repeats at a different line still makes the match uncertain; a
-tolerance spread over the whole region was tried and took a page that repeats every few lines for a
-shift it never made. The fit is the 95th-percentile error of the windows that show anything, since
-blank ones match at any shift and would hide a line's slip on a sparse page, and a best shift at the
-very end of the search range is uncertain too, because the true one may lie a line beyond it. AI Chat holds its hover effects still while a scrolling
+Matching is strict except where the pointer is, or where something sits still over the page. Lanes
+stay `edgeMargin` clear of both region edges, where an overlay scroller moves at its own pace. Each
+sample records the pointer's line while it is over the region, and the 32-line windows within
+`hoverReach` (96 lines, about 48pt at 2×) of it in either frame are left out, since whatever sits under
+a resting pointer lights up as content passes. A window that lines up only at the same line in both
+frames is held — a sidebar, a floating button — and so is one part still and part moving beside a held
+one, its rim; held windows may make up at most a third of the region, since a region mostly still is a
+pane scrolling inside it. At either end of the overlap, rows where most lanes settle in neither frame —
+an edge fade, a dimmed band — are left out too, up to a sixth of the frame; at the bottom they widen the
+fixed trailing rows, so each append retakes them from the newer frame and no seam keeps faded lines.
+Everywhere else a lane may differ in at most one window — a caret blinking — so a layout that repeats
+at a different line still makes the match uncertain: a lane that moved does not line up at the wrong
+shift, nor at none. A tolerance spread over the whole region was tried and took a page that repeats
+every few lines for a shift it never made, and a part-still window counts only as a held window's rim
+because a sparse page otherwise matched a near-repeat. The fit is the 95th-percentile error of the
+windows that show anything, since blank ones match at any shift and would hide a line's slip on a
+sparse page, and a best shift at the very end of the search range is uncertain too, because the true
+one may lie a line beyond it. AI Chat holds its hover effects still while a scrolling
 capture reads it (`chatHoverStill`), so no Copy button the pointer happens to rest on is stitched in.
 Duplicate and reverse frames do not grow the result. Along-axis fixed headers stay in the first strip;
 the previous fixed footer is removed before a new strip and footer are appended. This detection still
