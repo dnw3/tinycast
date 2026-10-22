@@ -203,16 +203,6 @@ struct ScrollTracker<Payload: Sendable>: Sendable {
         return commit(Strip(
             frame: frame, payload: payload, offset: frame.length - unreliable, trailing: unreliable, reversed: reversed))
     }
-
-    /// After a pause or an unwritten strip, matching starts over from the last strip on disk.
-    mutating func restart(from committed: Frame?) {
-        accepted = committed
-        position = end
-        pending = nil
-        resting = false
-        last = nil
-        misses = 0
-    }
 }
 
 extension ScrollStitchPolicy.Decision {

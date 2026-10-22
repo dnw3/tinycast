@@ -202,9 +202,12 @@ The result window switches between Screenshot and Scrolling Screenshot with one 
 title bar, preserving each image and undo stack.
 Closing checks both unsaved results. Canceling without keeping a result restores the retained screenshot in its original desktop workspace.
 
-`ScrollCaptureSession` serializes sampling, RGB registration, strip writes and incremental preview
-updates. It samples again 10ms after each sample while anything moves, about every 55ms in all, and
-every 150ms once ten samples in a row were at rest, reading the captured image in memory (`ScrollFrameReader.sample(_:axis:)`); only strips reach the
+`ScrollCaptureSession` serializes sampling and RGB registration. Strips, once decided, are written in
+order behind it (`enqueue`), with their seam and incremental preview, and always complete, since the
+tracker has already moved the result's end past them: waited for in the loop, a write of about 50ms on
+nearly every sample of a fast terminal scroll slowed sampling to about 165ms and let the scroll outrun the
+overlap. A screenshot of the region takes about 30ms. It samples again 10ms after each sample while
+anything moves, about every 55ms in all, and every 150ms once ten samples in a row were at rest, reading the captured image in memory (`ScrollFrameReader.sample(_:axis:)`); only strips reach the
 disk, each cut from its own frame (`strip(_:rect:to:)`). A frame reaches back two thirds of the region,
 and a single trackpad flick moves further than that, which is why the frames in motion are used, not
 only the ones at rest. `ScrollTracker` decides which become strips:
@@ -292,7 +295,8 @@ the previous fixed footer is removed before a new strip and footer are appended.
 needs the real browser/PDF/native-list corpus before AC-04 can pass.
 
 Record Diagnostic Frames, in the controls' More menu, writes every later sample of that session as it
-was captured, named with the pointer's line and travel, plus one verdict line each in `trace.tsv`, to
+was captured, named with the pointer's line and travel, plus one verdict line each in `trace.tsv` with the
+interval since the last sample and the milliseconds spent capturing and matching it, to
 `captures/diagnostics/scroll-<time>` under Application Support; Finder shows the folder when the
 session ends. Writes queue behind sampling rather than slow it and stop after
 `ScrollDiagnosticsRecorder.frameLimit` frames. Recordings older than three days, and all but the newest

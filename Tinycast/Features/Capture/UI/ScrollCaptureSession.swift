@@ -25,9 +25,7 @@ final class ScrollCaptureSession {
     var preview: CGImage?
     private var task: Task<Void, Never>?
     private var tracker = ScrollTracker<CGImage>()
-    /// The frame behind the last strip on disk, where matching starts over if a write is dropped.
-    private var committed: ScrollStitchPolicy.Frame?
-    /// The picture of that frame, against which the next seam is placed.
+    /// The picture behind the last strip written, against which the next seam is placed.
     @ObservationIgnored private var committedImage: CGImage?
     /// Samples in a row at rest; the loop slows down once the content has settled.
     private var restingSamples = 0
@@ -47,6 +45,9 @@ final class ScrollCaptureSession {
     private var diagnosticFrames = 0
     /// Frames are written in order behind sampling, so recording never slows the capture it watches.
     private var diagnosticWrites: Task<Void, Never>?
+    /// Strips are written in order behind sampling too: a write waited for let a fast scroll outrun it.
+    @ObservationIgnored private var writes: Task<Void, Never>?
+    @ObservationIgnored private var lastSample: ContinuousClock.Instant?
     private let speed: Int
 
     init(
@@ -99,17 +100,17 @@ final class ScrollCaptureSession {
     func stop() async {
         cancel()
         await task?.value
+        // The newest frame that lined up is content the reader scrolled to, so finishing keeps it.
+        if let strip = tracker.flush() { enqueue(strip) }
+        await writes?.value
         await diagnosticWrites?.value
         if let diagnostics { NSWorkspace.shared.activateFileViewerSelecting([diagnostics.directory]) }
-        // The newest frame that lined up is content the reader scrolled to, so finishing keeps it.
-        if let strip = tracker.flush() { _ = try? await write(strip, generation: nil) }
         Self.logger.notice("""
             Scroll stopped: pieces=\(self.document.pieces.count), \
             width=\(self.document.size.width), height=\(self.document.size.height)
             """)
         task = nil
         tracker = ScrollTracker()
-        committed = nil
         preview = nil
     }
 
@@ -182,17 +183,14 @@ final class ScrollCaptureSession {
         bridgeRequested = true
     }
 
-    private func bridge(generation: Int) async throws {
+    private func bridge() {
         bridgeRequested = false
         var bridged = tracker
         guard let latest, let strip = bridged.bridge(latest.frame, payload: latest.image) else { return }
         tracker = bridged
         lost = false
-        guard try await write(strip, generation: generation) else {
-            tracker.restart(from: committed)
-            return
-        }
-        Self.logger.notice("Scroll bridged a gap: pieces=\(self.document.pieces.count)")
+        enqueue(strip)
+        Self.logger.notice("Scroll bridged a gap")
         notice = String(localized: "Went on past a gap: what was scrolled past is missing there")
         setHint(notice)
     }
@@ -200,8 +198,12 @@ final class ScrollCaptureSession {
     private func sample() async throws {
         let generation = generation
         guard validateTarget() else { return }
-        if bridgeRequested { try await bridge(generation: generation) }
+        if bridgeRequested { bridge() }
+        let started = ContinuousClock.now
+        let interval = lastSample.map { started - $0 }
+        lastSample = started
         let image = try await CaptureScreenService.image(target: target, rect: region, cursor: false)
+        let captured = ContinuousClock.now
         let axis = axis, tracker = tracker, pointer = pointerLine, travel = travel.map { Int($0.rounded()) }
         let (observed, steps, frame) = try await CaptureWork.run {
             var tracker = tracker
@@ -213,7 +215,9 @@ final class ScrollCaptureSession {
         }
         latest = (frame, image)
         try Task.checkCancellation()
-        record(image, pointer: pointer, travel: travel, resting: observed.resting, steps: steps)
+        let timing = [interval.map { "interval \(Self.milliseconds($0))" }, "capture \(Self.milliseconds(captured - started))",
+            "match \(Self.milliseconds(.now - captured))"].compactMap { $0 }.joined(separator: " ")
+        record(image, pointer: pointer, travel: travel, resting: observed.resting, steps: steps, timing: timing)
         guard !paused, generation == self.generation else { return }
         self.tracker = observed
         restingSamples = observed.resting ? restingSamples + 1 : 0
@@ -221,12 +225,7 @@ final class ScrollCaptureSession {
             switch step {
             case .commit(let strip):
                 lost = false
-                let started = ContinuousClock.now
-                guard try await write(strip, generation: generation) else {
-                    self.tracker.restart(from: committed)
-                    return
-                }
-                CapturePerformance.completed("scroll-preview-ready", since: started)
+                enqueue(strip)
             case .backward:
                 notice = observed.reversed
                     ? String(localized: "Keep scrolling back to add more content")
@@ -256,8 +255,13 @@ final class ScrollCaptureSession {
         }
     }
 
+    private static func milliseconds(_ duration: Duration) -> Int {
+        Int(duration.components.seconds * 1_000 + duration.components.attoseconds / 1_000_000_000_000_000)
+    }
+
     private func record(
-        _ image: CGImage, pointer: Int?, travel: Int?, resting: Bool, steps: [ScrollTracker<CGImage>.Step]
+        _ image: CGImage, pointer: Int?, travel: Int?, resting: Bool, steps: [ScrollTracker<CGImage>.Step],
+        timing: String
     ) {
         guard let diagnostics, diagnosticFrames < ScrollDiagnosticsRecorder.frameLimit else { return }
         diagnosticFrames += 1
@@ -270,15 +274,30 @@ final class ScrollCaptureSession {
             case .found: "found"
             case .reversing: "reversing"
             }
-        }).joined(separator: " ")
+        } + [timing]).joined(separator: " ")
         diagnosticWrites = Task.detached {
             await previous?.value
             try? diagnostics.record(image, index: index, pointer: pointer, travel: travel, verdict: verdict)
         }
     }
 
-    /// A nil generation is the finishing flush, which no pause can overtake.
-    private func write(_ strip: ScrollTracker<CGImage>.Strip, generation: Int?) async throws -> Bool {
+    /// Decided strips are written whatever follows: the tracker has already moved its end past them.
+    private func enqueue(_ strip: ScrollTracker<CGImage>.Strip) {
+        let previous = writes
+        writes = Task { [weak self] in
+            await previous?.value
+            guard let self else { return }
+            let started = ContinuousClock.now
+            do {
+                try await self.write(strip)
+                CapturePerformance.completed("scroll-preview-ready", since: started)
+            } catch {
+                self.pause(Bundle.main.localizedString(forKey: error.localizedDescription, value: nil, table: nil))
+            }
+        }
+    }
+
+    private func write(_ strip: ScrollTracker<CGImage>.Strip) async throws {
         let image = strip.payload, axis = axis, before = committedImage
         let raster = UUID().uuidString
         let extra = try await CaptureWork.run {
@@ -304,20 +323,14 @@ final class ScrollCaptureSession {
                 previous: previous, previousSize: previousSize, document: plan.document, directory: directory,
                 atStart: strip.reversed)
         }
-        if let generation, paused || generation != self.generation {
-            try? FileManager.default.removeItem(at: destination)
-            return false
-        }
         document = plan.document
         preview = nextPreview
-        committed = strip.frame
         committedImage = image
         Self.logger.info("""
             Scroll appended: pieces=\(self.document.pieces.count), \
             width=\(self.document.size.width), height=\(self.document.size.height)
             """)
         onPauseChange?(false)
-        return true
     }
 
     private func validateTarget() -> Bool {
