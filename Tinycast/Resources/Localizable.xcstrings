@@ -22612,6 +22612,16 @@
         }
       }
     },
+    "Reached the longest a capture can be, %lld pixels. Finish to keep it": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已达到长截图的最大长度（%lld 像素），后面的内容不会再加入，点完成即可保存"
+          }
+        }
+      }
+    },
     "Read %@": {
       "localizations": {
         "zh-Hans": {

@@ -19,6 +19,7 @@ struct CaptureWorkflowTests {
         tracking()
         stillOverlays()
         previewPlacement()
+        try longestResult()
         try liveFrames(in: root)
         try CaptureScrollFixture.verify(in: root)
         try leases(in: root)
@@ -371,6 +372,49 @@ struct CaptureWorkflowTests {
             screen: CGRect(x: 0, y: 0, width: 1728, height: 1117), gap: 8)
         precondition(!corner.outputs.intersects(CGRect(x: 1670, y: 30, width: 40, height: 50)))
         precondition(!corner.outputs.intersects(corner.tools))
+    }
+
+    /// Growing past the longest a result can be keeps what fits beside it, either way, and stops there.
+    static func longestResult() throws {
+        let frame = try CapturePixelSize(width: 1_000, height: 800)
+        let longest = CaptureScrollAppend.longest(frame: frame, axis: .vertical)
+        precondition(longest == CapturePixelSize.maximumEdge, "Narrow frames are held by the edge limit")
+        let wide = try CapturePixelSize(width: 3_200, height: 800)
+        precondition(
+            CaptureScrollAppend.longest(frame: wide, axis: .vertical) == CapturePixelSize.maximumPixels / 3_200,
+            "and wide ones by the pixel limit")
+        for atStart in [false, true] {
+            var document = CaptureDocument(id: UUID(), createdAt: Date(), size: frame, pieces: [], axis: .vertical)
+            var plan = try CaptureScrollAppend.plan(
+                document: document, frame: frame, raster: UUID().uuidString, offset: nil, trailing: 0)
+            document = plan.document
+            var strips = 0
+            while !plan.full {
+                let before = document.size.height
+                plan = try CaptureScrollAppend.plan(
+                    document: document, frame: frame, raster: UUID().uuidString, offset: 700, trailing: 64, atStart: atStart)
+                strips += 1
+                let grown = plan.document.size.height - before
+                precondition(plan.full == (plan.document.size.height == longest), "Full exactly at the limit")
+                if plan.full {
+                    precondition(grown == longest - before && grown < 700, "The last strip keeps only what fits")
+                    // Beside the result: forward its far end is left off, backward its leading lines.
+                    precondition(
+                        plan.source == CGRect(
+                            x: 0, y: atStart ? 700 - grown : 800 - 700 - 64, width: 1_000, height: grown + 64),
+                        "\(plan.source) \(grown)")
+                } else {
+                    precondition(grown == 700)
+                }
+                document = plan.document
+            }
+            precondition(document.size.height == longest && strips == (longest - 800 + 699) / 700)
+            do {
+                _ = try CaptureScrollAppend.plan(
+                    document: document, frame: frame, raster: UUID().uuidString, offset: 10, trailing: 64, atStart: atStart)
+                preconditionFailure("A full result takes nothing more")
+            } catch CaptureRasterError.invalidSize {}
+        }
     }
 
     static func previewPlacement() {

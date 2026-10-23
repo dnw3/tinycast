@@ -41,6 +41,8 @@ final class ScrollCaptureSession {
     private(set) var lost = false
     /// Turned to scroll back from where it began, so the result's newest lines are its first.
     private(set) var growsAtStart = false
+    /// As long as a capture can be: nothing more is added, and finishing keeps it.
+    private(set) var full = false
     @ObservationIgnored private var bridgeRequested = false
     @ObservationIgnored private var latest: (frame: ScrollStitchPolicy.Frame, image: CGImage)?
     private(set) var diagnostics: ScrollDiagnosticsRecorder?
@@ -177,6 +179,8 @@ final class ScrollCaptureSession {
     }
 
     func resume() {
+        // Resuming a full capture would match on past lines that can never be written: a silent gap.
+        guard !full else { onPauseChange?(true); return }
         generation += 1
         paused = false
         notice = String(localized: "Scroll inside the selected region")
@@ -359,6 +363,7 @@ final class ScrollCaptureSession {
     }
 
     private func write(_ strip: ScrollTracker<CGImage>.Strip) async throws {
+        guard !full else { return }
         let image = strip.payload, axis = axis, before = committedImage
         let raster = UUID().uuidString
         let extra = try await CaptureWork.run {
@@ -387,6 +392,13 @@ final class ScrollCaptureSession {
         document = plan.document
         preview = nextPreview
         committedImage = image
+        if plan.full {
+            full = true
+            frames.stop()
+            let longest = CaptureScrollAppend.longest(
+                frame: try CapturePixelSize(width: image.width, height: image.height), axis: axis)
+            pause(String(localized: "Reached the longest a capture can be, \(longest) pixels. Finish to keep it"))
+        }
         Self.logger.info("""
             Scroll appended: pieces=\(self.document.pieces.count), \
             width=\(self.document.size.width), height=\(self.document.size.height)

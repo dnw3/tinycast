@@ -219,7 +219,10 @@ struct CaptureScrollReplayTests {
         var document: CaptureDocument?
         var verdicts: [String] = []
         var before: CGImage?
+        var full = false
         func write(_ strip: ScrollTracker<CGImage>.Strip) throws {
+            // As the session does: once as long as a capture can be, nothing more is written.
+            guard !full else { return }
             let size = try CapturePixelSize(width: strip.payload.width, height: strip.payload.height)
             let current = document ?? CaptureDocument(id: UUID(), createdAt: Date(), size: size, pieces: [], axis: .vertical)
             let raster = UUID().uuidString
@@ -233,6 +236,7 @@ struct CaptureScrollReplayTests {
                 document: current, frame: size, raster: raster, offset: strip.offset, trailing: strip.trailing + extra,
                 atStart: strip.reversed)
             before = strip.payload
+            full = plan.full
             try ScrollFrameReader.strip(strip.payload, rect: plan.source, to: directory.appendingPathComponent(raster))
             preview = try CaptureRenderer.scrollPreview(
                 previous: preview, previousSize: current.pieces.isEmpty ? plan.document.size : current.size,

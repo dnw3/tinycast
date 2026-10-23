@@ -246,6 +246,12 @@ only the ones at rest. `ScrollTracker` decides which become strips:
   climbed over, not repeated. A frame above the result's end otherwise shows Scroll forward, or Keep
   scrolling back once turned, for three seconds.
 
+A result grows to at most `CaptureScrollAppend.longest` along its axis: 30,000 lines, or fewer where the
+frames are wide enough that 64 million pixels come first. The strip that would pass it keeps only the
+lines beside the result that fit, so the result ends exactly at the limit; then the stream stops and the
+session pauses, saying so, and does not resume (`full`), since matching on past lines that can never be
+written would leave a silent gap. Before, that strip failed whole and a resume went on past the gap.
+
 Each strip retakes up to `ScrollFrameReader.seamReach` (48) more lines than it must, so the seam falls on
 the line where the two frames agree and nothing is drawn, compared at full resolution: between lines of
 text rather than through one. Matching never sees this choice.
