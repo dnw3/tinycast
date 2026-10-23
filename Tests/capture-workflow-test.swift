@@ -17,6 +17,9 @@ struct CaptureWorkflowTests {
         visibility()
         stitching()
         tracking()
+        stillOverlays()
+        previewPlacement()
+        try longestResult()
         try liveFrames(in: root)
         try CaptureScrollFixture.verify(in: root)
         try leases(in: root)
@@ -371,6 +374,74 @@ struct CaptureWorkflowTests {
         precondition(!corner.outputs.intersects(corner.tools))
     }
 
+    /// Growing past the longest a result can be keeps what fits beside it, either way, and stops there.
+    static func longestResult() throws {
+        let frame = try CapturePixelSize(width: 1_000, height: 800)
+        let longest = CaptureScrollAppend.longest(frame: frame, axis: .vertical)
+        precondition(longest == CapturePixelSize.maximumEdge, "Narrow frames are held by the edge limit")
+        let wide = try CapturePixelSize(width: 3_200, height: 800)
+        precondition(
+            CaptureScrollAppend.longest(frame: wide, axis: .vertical) == CapturePixelSize.maximumPixels / 3_200,
+            "and wide ones by the pixel limit")
+        for atStart in [false, true] {
+            var document = CaptureDocument(id: UUID(), createdAt: Date(), size: frame, pieces: [], axis: .vertical)
+            var plan = try CaptureScrollAppend.plan(
+                document: document, frame: frame, raster: UUID().uuidString, offset: nil, trailing: 0)
+            document = plan.document
+            var strips = 0
+            while !plan.full {
+                let before = document.size.height
+                plan = try CaptureScrollAppend.plan(
+                    document: document, frame: frame, raster: UUID().uuidString, offset: 700, trailing: 64, atStart: atStart)
+                strips += 1
+                let grown = plan.document.size.height - before
+                precondition(plan.full == (plan.document.size.height == longest), "Full exactly at the limit")
+                if plan.full {
+                    precondition(grown == longest - before && grown < 700, "The last strip keeps only what fits")
+                    // Beside the result: forward its far end is left off, backward its leading lines.
+                    precondition(
+                        plan.source == CGRect(
+                            x: 0, y: atStart ? 700 - grown : 800 - 700 - 64, width: 1_000, height: grown + 64),
+                        "\(plan.source) \(grown)")
+                } else {
+                    precondition(grown == 700)
+                }
+                document = plan.document
+            }
+            precondition(document.size.height == longest && strips == (longest - 800 + 699) / 700)
+            do {
+                _ = try CaptureScrollAppend.plan(
+                    document: document, frame: frame, raster: UUID().uuidString, offset: 10, trailing: 64, atStart: atStart)
+                preconditionFailure("A full result takes nothing more")
+            } catch CaptureRasterError.invalidSize {}
+        }
+    }
+
+    static func previewPlacement() {
+        let screen = CGRect(x: 0, y: 0, width: 1_500, height: 900)
+        let controls = CGRect(x: 600, y: 820, width: 280, height: 38)
+        let region = CGRect(x: 400, y: 100, width: 700, height: 700)
+        precondition(
+            CaptureControlPlacement.scrollingPreview(region: region, width: 112, controls: controls, screens: [screen], gap: 12)
+                == CGRect(x: 1_112, y: 100, width: 112, height: 700),
+            "The live preview stands beside the region, as tall as it")
+        let right = CGRect(x: 700, y: 100, width: 790, height: 700)
+        precondition(
+            CaptureControlPlacement.scrollingPreview(region: right, width: 112, controls: controls, screens: [screen], gap: 12)
+                == CGRect(x: 576, y: 100, width: 112, height: 700),
+            "or on the other side when that one has no room")
+        let wide = CGRect(x: 20, y: 100, width: 1_460, height: 700)
+        precondition(
+            CaptureControlPlacement.scrollingPreview(region: wide, width: 112, controls: controls, screens: [screen], gap: 12)
+                == nil,
+            "and nowhere when neither side has")
+        let beside = CGRect(x: 1_112, y: 100, width: 300, height: 700)
+        precondition(
+            CaptureControlPlacement.scrollingPreview(region: region, width: 112, controls: beside, screens: [screen], gap: 12)
+                == CGRect(x: 276, y: 100, width: 112, height: 700),
+            "never over the controls")
+    }
+
     static func frame(offset: Int, fixed: Int = 0, lanes: Int = 8) -> ScrollStitchPolicy.Frame {
         var rgb: [UInt8] = []
         for y in 0..<300 {
@@ -531,13 +602,13 @@ struct CaptureWorkflowTests {
         precondition(ScrollStitchPolicy.match(previous: first, current: first) == .duplicate)
         precondition(
             ScrollStitchPolicy.match(previous: first, current: second)
-                == .append(offset: 60, fixedLeading: 0, fixedTrailing: 0))
-        precondition(ScrollStitchPolicy.match(previous: second, current: first) == .reverse)
+                == .append(offset: 60, fixedLeading: 0, fixedTrailing: ScrollStitchPolicy.edgeClearance))
+        guard case .reverse = ScrollStitchPolicy.match(previous: second, current: first) else { preconditionFailure("Matched the other way, the shift reads back") }
         precondition(ScrollStitchPolicy.match(previous: first, current: frame(offset: 260)) == .uncertain)
         precondition(
             ScrollStitchPolicy.match(
                 previous: frame(offset: 0, fixed: 24), current: frame(offset: 80, fixed: 24))
-                == .append(offset: 80, fixedLeading: 24, fixedTrailing: 0))
+                == .append(offset: 80, fixedLeading: 24, fixedTrailing: ScrollStitchPolicy.edgeClearance))
         let pattern = frame(offset: 0)
         func repeated(_ offset: Int) -> ScrollStitchPolicy.Frame {
             let rgb = (0..<pattern.length).flatMap { row in
@@ -554,8 +625,71 @@ struct CaptureWorkflowTests {
             for channel in 0..<3 { sidebar[line * 96 + channel] = wide.rgb[line * 96 + channel] }
         }
         precondition(
-            ScrollStitchPolicy.match(
-                previous: wide, current: .init(length: 300, lanes: 32, rgb: sidebar)) == .uncertain)
+            ScrollStitchPolicy.match(previous: wide, current: .init(length: 300, lanes: 32, rgb: sidebar))
+                == .append(offset: 60, fixedLeading: 0, fixedTrailing: ScrollStitchPolicy.edgeClearance),
+            "A sidebar that stays put while the page moves is left out of the match")
+    }
+
+    /// What sits still over a moving page: an edge fade, a floating button, a pane that never moves.
+    static func stillOverlays() {
+        func covered(_ top: Int, fade: (top: Int, bottom: Int) = (0, 0), still: (lanes: Range<Int>, lines: Range<Int>)? = nil)
+            -> ScrollStitchPolicy.Frame
+        {
+            let moving = page(top, length: 800, lanes: 32), fixed = page(5_000, length: 800, lanes: 32)
+            var rgb = moving.rgb
+            for line in 0..<800 {
+                let depth = line < fade.top ? fade.top - line : line >= 800 - fade.bottom ? line - (799 - fade.bottom) : 0
+                let edge = line < fade.top ? fade.top : fade.bottom
+                for lane in 0..<32 {
+                    for channel in 0..<3 {
+                        let index = (line * 32 + lane) * 3 + channel
+                        if let still, still.lanes.contains(lane), still.lines.contains(line) {
+                            rgb[index] = fixed.rgb[index]
+                        } else if depth > 0 {
+                            rgb[index] = UInt8(Int(rgb[index]) + (255 - Int(rgb[index])) * depth / (edge + 1))
+                        }
+                    }
+                }
+            }
+            return .init(length: 800, lanes: 32, rgb: rgb)
+        }
+        guard case .append(150, _, let trailing) =
+            ScrollStitchPolicy.match(previous: covered(0, fade: (0, 60)), current: covered(150, fade: (0, 60)))
+        else { preconditionFailure("A fade over the bottom edge moves with neither the page nor the screen") }
+        precondition(
+            (60...120).contains(trailing - ScrollStitchPolicy.edgeClearance),
+            "and is replaced from the next frame, so no seam keeps the faded lines: \(trailing)")
+        guard case .append(150, _, _) =
+            ScrollStitchPolicy.match(previous: covered(0, fade: (48, 48)), current: covered(150, fade: (48, 48)))
+        else { preconditionFailure("Fades over both edges leave the middle to register") }
+        let button = (lanes: 20..<23, lines: 500..<580)
+        precondition(
+            ScrollStitchPolicy.match(previous: covered(0, still: button), current: covered(150, still: button))
+                == .append(offset: 150, fixedLeading: 0, fixedTrailing: ScrollStitchPolicy.edgeClearance),
+            "A floating button stays put while the page passes beneath it")
+        let sidebar = (lanes: 0..<14, lines: 0..<800)
+        precondition(
+            ScrollStitchPolicy.match(previous: covered(0, still: sidebar), current: covered(150, still: sidebar))
+                == .append(offset: 150, fixedLeading: 0, fixedTrailing: ScrollStitchPolicy.edgeClearance),
+            "A sidebar nearly half the window wide stays out of the search and the match")
+        let wide = (lanes: 0..<22, lines: 0..<800)
+        guard case .append(150, _, _) =
+            ScrollStitchPolicy.match(previous: covered(0, still: wide), current: covered(150, still: wide))
+        else { preconditionFailure("A sidebar holding seven in ten windows still leaves the page to vouch for the shift") }
+        let pane = (lanes: 0..<27, lines: 0..<800)
+        if case .append = ScrollStitchPolicy.match(previous: covered(0, still: pane), current: covered(150, still: pane)) {
+            preconditionFailure("Past four in five held still, the windows that moved are too few to trust")
+        }
+        var patch = covered(0, still: (lanes: 0..<32, lines: 0..<800)).rgb
+        let moved = covered(150).rgb
+        for line in 300..<348 {
+            for channel in 0..<3 { patch[(line * 32 + 31) * 3 + channel] = moved[(line * 32 + 31) * 3 + channel] }
+        }
+        let patched = ScrollStitchPolicy.match(
+            previous: covered(0, still: (lanes: 0..<32, lines: 0..<800)), current: .init(length: 800, lanes: 32, rgb: patch))
+        if case .append = patched {
+            preconditionFailure("A patch a few windows tall is too little that moved to vouch for any shift")
+        }
     }
 
     /// A page taller than any frame, so a frame can be cut at any scroll position.
@@ -586,7 +720,7 @@ struct CaptureWorkflowTests {
         still.pointer = 300
         precondition(
             ScrollStitchPolicy.match(previous: still, current: hovered)
-                == .append(offset: 120, fixedLeading: 0, fixedTrailing: 0),
+                == .append(offset: 120, fixedLeading: 0, fixedTrailing: ScrollStitchPolicy.edgeClearance),
             "unless the pointer is over it, where a hover lights whatever passes beneath")
         var lit = page(120, lanes: 32).rgb
         for line in 0..<300 {
@@ -594,8 +728,8 @@ struct CaptureWorkflowTests {
         }
         precondition(
             ScrollStitchPolicy.match(previous: page(0, lanes: 32), current: .init(length: 300, lanes: 32, rgb: lit))
-                == .uncertain,
-            "A lane that never moves is a fixed sidebar however much else lines up")
+                == .append(offset: 120, fixedLeading: 0, fixedTrailing: ScrollStitchPolicy.edgeClearance),
+            "A lane that never moves is a fixed sidebar, left out while the rest lines up")
 
         func sparse(_ top: Int) -> ScrollStitchPolicy.Frame {
             var rgb: [UInt8] = []
@@ -666,9 +800,14 @@ struct CaptureWorkflowTests {
             decode: nil, shouldInterpolate: false, intent: .defaultIntent)!
         let frame = try ScrollFrameReader.sample(image, axis: .vertical)
         precondition(frame.length == height && frame.lanes == 10, "A frame keeps every line and a lane per four columns")
+        let margin = ScrollFrameReader.edgeMargin(cross: width)
         precondition(
-            Array(frame.originalRGB?[0..<3] ?? []) == Array(pixels[0..<3]),
-            "Its first line is the image's top row, not its bottom")
+            margin > 0 && Array(frame.originalRGB?[0..<3] ?? []) == Array(pixels[margin * 4..<(margin * 4 + 3)]),
+            "Its first line is the image's top row, read clear of the edge an overlay scroller crosses")
+        let last = (width - 1 - margin) * 4
+        precondition(
+            Array(frame.originalRGB?[(frame.lanes - 1) * 3..<frame.lanes * 3] ?? []) == Array(pixels[last..<(last + 3)]),
+            "and its last lane stays as far from the trailing edge")
         let wide = try ScrollFrameReader.sample(image, axis: .horizontal)
         precondition(wide.length == width, "A sideways frame runs along the columns")
         let directory = root.appendingPathComponent("live-strip")

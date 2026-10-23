@@ -190,12 +190,10 @@ multi-Space, keyboard, Retina quality and VoiceOver behavior remain in the accep
 The scrolling icon starts manual vertical capture directly from a selected region. Its menu offers
 Vertical, Horizontal and Adjust Region; direction and region preparation remain available before sampling.
 A picked window — the scrolling icon on its selection, or a window clicked in scrolling mode — starts at
-once from its own scrolling content, so the reader only scrolls: in Tinycast's own windows the largest
-scroll view less its content insets and the toolbar (`contentLayoutRect`), elsewhere the
-`AXScrollArea` under the window's center when Accessibility is granted. The area stops
-`captureScrollerClearance` short of its trailing edge, where an overlay scroller flashes in while the
-content moves. A screen capture, or a window whose scroll area cannot be found, first requires a region
-inside the scrolling content; the previous selection is hidden so the first drag creates the new region.
+once with the whole window as its region, as the reader picked it, so the reader only scrolls; its title
+bar, sidebar and composer stay put and are matched around rather than cut away. A screen capture first
+requires a region inside the scrolling content; the previous selection is hidden so the first drag
+creates the new region.
 A drawn region that strays past the window under its center is trimmed to that window, rounded inward
 (`CaptureGeometry.innerPixels`), rather than reading as outside it at once. Starting refreshes the ScreenCaptureKit filter to exclude
 the Dock. The original desktop workspace is retained until a result is accepted or cancellation restores it;
@@ -204,36 +202,131 @@ The result window switches between Screenshot and Scrolling Screenshot with one 
 title bar, preserving each image and undo stack.
 Closing checks both unsaved results. Canceling without keeping a result restores the retained screenshot in its original desktop workspace.
 
-`ScrollCaptureSession` serializes sampling, RGB registration, strip writes and incremental preview
-updates. It samples again 10ms after each sample while anything moves, about every 55ms in all, and
-every 150ms once ten samples in a row were at rest, reading the captured image in memory (`ScrollFrameReader.sample(_:axis:)`); only strips reach the
-disk, each cut from its own frame (`strip(_:rect:to:)`). A frame reaches back two thirds of the region,
-and a single trackpad flick moves further than that, which is why the frames in motion are used, not
+Frames come from a ScreenCaptureKit stream on the region (`ScrollFrameStream`), as often as the display
+redraws it, up to 120 a second, in sRGB without the cursor. Each is copied as it arrives, since the
+stream reuses its buffers, and stamped with the pointer and the scroll travel at that moment; up to 16
+wait to be taken, the oldest going past that. A screenshot per sample came every 36ms at best, and on
+otty a flick moved more than the whole 1563-line region within 52ms, past any overlap; the stream sees
+the frames in between. macOS shows its screen recording indicator while a scrolling capture runs.
+
+`ScrollCaptureSession` takes every frame since its last pass as one batch, reads each in memory
+(`ScrollFrameReader.sample(_:axis:)`), and hands the batch to the tracker, which matches only the newest
+unless that misses where the last one lined up; then it goes through every frame of the batch in order
+(`ScrollTracker.observe(batch:)`), following a scroll faster than matching through the frames it passed.
+Once the tracker has lost the overlap, batches are not gone through again, which only scrolling back can
+mend. When nothing has been redrawn for 100ms the newest frame is matched once more, so the tracker sees
+the content at rest, writes what waits and, at the start, takes its first strip. Paused, frames are taken
+and dropped. Matching takes about 10ms for a 750 × 818pt region: each frame's lane edges are worked out
+once (`Frame.edges`) rather than for every candidate shift, and an alternative counts as worse as soon as
+one of its windows misses by more than the bar (`patchExceeds`). Strips, once decided, are written in
+order behind matching (`enqueue`), with their seam and incremental preview, and always complete, since
+the tracker has already moved the result's end past them; only strips reach the disk, each cut from its
+own frame (`strip(_:rect:to:)`). A frame reaches back two thirds of the region, and a single trackpad
+flick moves further than that, which is why the frames in motion are used, not
 only the ones at rest. `ScrollTracker` decides which become strips:
 
 - The first strip is a frame at rest, two samples alike, so nothing half-drawn starts the capture.
-- Every later sample is matched against the last strip's frame. The newest one that lines up waits as
-  pending, and is written as soon as the content rests or a later frame no longer reaches back to the
-  last strip; that later frame is then measured from the one just written. Scrolling back a little keeps
-  the furthest pending frame, and finishing writes it.
+- Every later sample is matched against the frame matched from, which starts as the last strip's frame
+  and follows the reader back and forth, apart from the result's end (`lead`): a frame behind the end
+  becomes the one matched from, so scrolling back past the last strip's reach and on again keeps the
+  overlap, and only lines past the end are ever added. The newest frame that reaches past the end waits
+  as pending, and is written as soon as the content rests or a later frame no longer lines up with it;
+  scrolling back a little keeps the furthest pending frame, and finishing writes it.
+- A frame that lines up with neither, once a miss has been seen, is matched against up to four earlier
+  strips (`historyLimit`), newest first; one that places it makes it the frame matched from.
 - After two samples in a row that do not line up, a lasting notice under the bar asks to scroll back a
-  little; the next frame that lines up clears it and capture carries on by itself. Nothing pauses for
-  this, and nothing is force-stitched meanwhile. A frame above the last strip shows Scroll forward for
-  three seconds instead.
+  little, with Go On from Here beside it; the next frame that lines up clears both and capture carries on
+  by itself. Nothing is force-stitched meanwhile. Go On from Here, taken up by the sampling loop rather
+  than racing it, adds the latest frame whole after the result's end, less its unreliable trailing lines,
+  says that what was scrolled past is missing there, and matching goes on from it (`ScrollTracker.bridge`).
+- Two frames in a row above the first strip, before half a frame was added, turn the capture: frames
+  reach matching upside down (`Frame.reversed`, travel negated), so scrolling back reads as scrolling on,
+  and strips go before the result (`CaptureScrollAppend.plan(atStart:)`), retaking its first lines, which
+  hold the title bar and the fade under it. Lines added before the turn lie behind the new end and are
+  climbed over, not repeated. A frame above the result's end otherwise shows Scroll forward, or Keep
+  scrolling back once turned, for three seconds.
 
-Matching is strict except where the pointer is. Each sample records the pointer's line while it is
-over the region, and the 32-line windows within `hoverReach` (96 lines, about 48pt at 2×) of it in
-either frame are left out, since whatever sits under a resting pointer lights up as content passes.
-Everywhere else a lane may differ in at most one window — a caret blinking — so a fixed sidebar, a
-floating button or a layout that repeats at a different line still makes the match uncertain; a
+A result grows to at most `CaptureScrollAppend.longest` along its axis: 30,000 lines, or fewer where the
+frames are wide enough that 64 million pixels come first. The strip that would pass it keeps only the
+lines beside the result that fit, so the result ends exactly at the limit; then the stream stops and the
+session pauses, saying so, and does not resume (`full`), since matching on past lines that can never be
+written would leave a silent gap. Before, that strip failed whole and a resume went on past the gap.
+
+Each strip retakes up to `ScrollFrameReader.seamReach` (48) more lines than it must, so the seam falls on
+the line where the two frames agree and nothing is drawn, compared at full resolution: between lines of
+text rather than through one. Matching never sees this choice.
+
+A strip beside the region, as tall as it and `captureScrollThumbnail` wide, shows the result so far,
+fitted across with its newest end in view: the bottom, or the top once turned
+(`CaptureControlPlacement.scrollingPreview`). It goes on whichever side has room clear of the region and
+the controls, and is left out when neither has; Show Live Preview in the More menu hides it. The
+incremental preview is 256 pixels across, at most 6,000 along, and copies what it had pixel for pixel at a
+whole-pixel offset, since redrawing it at fractions blurred it more with every strip and left a faint
+line at each seam.
+
+Matching is strict except where the pointer is, or where something sits still over the page. Lanes
+stay `edgeMargin` clear of both region edges, where an overlay scroller moves at its own pace. A
+leading bar is a run of lines no lane of which moved (`Frame.fixed`): a glass title bar tints with the
+page beneath it, so the average may differ up to `barTolerance`, but a line of sparse text that moved in
+one lane is no bar, and a leading band taken too deep would narrow the search past the true shift. The
+trailing band only needs the average, since one taken too deep only retakes lines. Each sample records
+the pointer's line while it is over the region, and the 32-line windows within `hoverReach` (96 lines,
+about 48pt at 2×) of it in either frame are hovered, since whatever sits under a resting pointer lights
+up as content passes: they still mark an edge band, but count toward the fit only when the scroll events
+confirm the shift, and then only where they line up. A window that lines up only at the same line in
+both frames is held — a sidebar, a floating button — and so is one part still and part moving beside a
+held one, its rim. A wide sidebar holds about seven windows in ten still; past four in five, the windows
+that moved are a sliver that happened to line up, and the shift is uncertain. At either end of the
+overlap, rows where a third of the lanes that are not held settle in neither frame — an edge fade, a
+dimmed band — are left out, out to the last such row within a sixth of the frame, since the deepest fade
+often lies over blank and passes. Below them `edgeClearance` (64 lines) is always retaken from the newer
+frame, because a fade over a short line can slip between lanes; at the bottom all of it widens the
+trailing rows, so each append retakes them and no seam keeps faded lines. Everywhere else a lane may
+differ in at most one window — a caret blinking — so a layout that repeats at a different line still
+makes the match uncertain: a lane that moved does not line up at the wrong shift, nor at none. A
 tolerance spread over the whole region was tried and took a page that repeats every few lines for a
-shift it never made. The fit is the 95th-percentile error of the windows that show anything, since
-blank ones match at any shift and would hide a line's slip on a sparse page, and a best shift at the
-very end of the search range is uncertain too, because the true one may lie a line beyond it. AI Chat holds its hover effects still while a scrolling
-capture reads it (`chatHoverStill`), so no Copy button the pointer happens to rest on is stitched in.
-Duplicate and reverse frames do not grow the result. Along-axis fixed headers stay in the first strip;
+shift it never made, and a part-still window counts only as a held window's rim because a sparse page
+otherwise matched a near-repeat. The fit is the 95th-percentile error of the windows that show anything,
+since blank ones match at any shift and would hide a line's slip on a sparse page; a best shift within a
+window's stride of the end of the search range is uncertain too, because the true one may lie beyond it
+and a sliver of overlap that lines up there proves nothing. Recorded AI Chat frames found such a shift
+taken 105 lines short.
+
+The session watches scroll-wheel events over the region, through a global monitor and, for Tinycast's
+own windows, a local one; neither needs Accessibility. Each sample carries the travel they add up to,
+in pixels (`Frame.travel`), until a wheel's notch arrives, whose lines an app sizes as it likes and which
+ends the travel for the session. On recorded AI Chat frames the travel ran anywhere from one to six times
+the content's move, frame to frame, so its size is a weak witness and its direction a strong one. A best
+shift within `slack` of it (a quarter, at least 24 lines, either way) is confirmed, which admits hovered
+line-ups and a fit error under 12 rather than 8, and the 16 coarse candidates best ranked within that
+slack join the refined search, since a coarse pass can rank a large shift between sparse lines below the
+first 32; refining every line of the slack instead cost up to 25ms a match on a fast scroll. Travel said to reach past the search
+range confirms nothing. Travel of 200 lines or more the other way rejects a shift; nothing else about the
+travel does, so an app scrolling at its own ratio only loses the witness. Fewer than `minimumEvidence`
+(12) windows that moved with the page leave a shift uncertain. A frame at rest that no longer matches,
+with no travel since the frame it is matched from, replaces that frame (`ScrollTracker`): the picture
+changed in place, as a window does turning key a moment into the capture. When the overlap is lost after
+travel of half the frame or more, the notice says the scroll was too fast rather than only that it was
+lost.
+
+AI Chat holds its hover effects still while a scrolling capture reads it (`chatHoverStill`), so no Copy button the pointer happens to rest on is stitched in.
+Duplicate frames do not grow the result. Along-axis fixed headers stay in the first strip;
 the previous fixed footer is removed before a new strip and footer are appended. This detection still
 needs the real browser/PDF/native-list corpus before AC-04 can pass.
+
+Record Diagnostic Frames, in the controls' More menu, writes every later frame the tracker sees as it was
+captured, named with its batch, the pointer's line and travel, so a replay goes through the batches the
+same way, plus one verdict line each in `trace.tsv`, the newest of a batch with the interval since the
+last batch, the frames in it, how long its newest waited and how long matching took, to
+`captures/diagnostics/scroll-<time>` under Application Support; Finder shows the folder when the
+session ends. Frames are written side by side behind matching rather than slow it, since one 10MB frame
+takes about 20ms to encode; while eight are being written a frame is skipped and its trace line says so.
+They stop after
+`ScrollDiagnosticsRecorder.frameLimit` frames. Recordings older than three days, and all but the newest
+three, go whenever a capture starts (`CaptureRepository.reclaimDiagnostics`), and a new recording makes
+room for itself first; Disk Cleanup never offers Tinycast's own files, so this is what keeps them from
+piling up. It is off for every new session, since the frames are screen contents. `capture-scroll-replay-test` replays such a
+folder with `TINYCAST_SCROLL_REPLAY`.
 
 Manual is the default and needs no Accessibility grant. Auto Scroll is an explicit choice for each
 session, checks Accessibility and revalidates the original PID/window/frame/visible region immediately

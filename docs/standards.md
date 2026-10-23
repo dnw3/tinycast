@@ -88,6 +88,7 @@ fit the table.
 | `Policy`      | A pure decision — no state, no effects                                        |
 | `Remapper`    | Keeps one HID key mapping on every matching device, including later arrivals  |
 | `Tracker`     | A value that follows a moving input sample by sample and says what each adds  |
+| `Recorder`    | Writes an input's samples to disk as they arrive, for replay after the fact   |
 
 `Manager` is the one worth thinking twice about. It means _lifecycle plus policy_, which is a lot for one
 type, so there are only four: `ClipboardManager` (polls, and owns the capture policy and the

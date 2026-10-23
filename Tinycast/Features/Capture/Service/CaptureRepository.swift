@@ -7,14 +7,40 @@ struct CaptureRepository: Sendable {
     let root: URL
     var sessions: URL { root.appendingPathComponent("sessions", isDirectory: true) }
     var history: URL { root.appendingPathComponent("history", isDirectory: true) }
+    var diagnostics: URL { root.appendingPathComponent("diagnostics", isDirectory: true) }
+
+    /// Diagnostic recordings are screen contents kept only to be replayed: a few, for a few days.
+    static let diagnosticsKept = 3
+    static let diagnosticsDays = 3
 
     func create(id: UUID) throws -> URL {
         try reclaimAbandonedSessions(before: Date().addingTimeInterval(-86_400))
+        try reclaimDiagnostics(now: Date(), keeping: Self.diagnosticsKept)
         let directory = sessions.appendingPathComponent(id.uuidString, isDirectory: true)
         try FileManager.default.createDirectory(
             at: directory, withIntermediateDirectories: true,
             attributes: [.posixPermissions: 0o700])
         return directory
+    }
+
+    /// Recordings older than `diagnosticsDays`, and all but the newest `keeping`, by last write.
+    func reclaimDiagnostics(now: Date, keeping: Int) throws {
+        let files = FileManager.default
+        guard files.fileExists(atPath: diagnostics.path) else { return }
+        let recordings = try files.contentsOfDirectory(
+            at: diagnostics, includingPropertiesForKeys: [.contentModificationDateKey, .isSymbolicLinkKey])
+            .compactMap { directory -> (URL, Date)? in
+                let values = try? directory.resourceValues(forKeys: [.contentModificationDateKey, .isSymbolicLinkKey])
+                guard directory.lastPathComponent.hasPrefix("scroll-"), values?.isSymbolicLink != true,
+                    let date = values?.contentModificationDate
+                else { return nil }
+                return (directory, date)
+            }
+            .sorted { $0.1 > $1.1 }
+        let cutoff = now.addingTimeInterval(-Double(Self.diagnosticsDays) * 86_400)
+        for (index, recording) in recordings.enumerated() where index >= keeping || recording.1 < cutoff {
+            try files.removeItem(at: recording.0)
+        }
     }
 
     func reclaimAbandonedSessions(before cutoff: Date) throws {

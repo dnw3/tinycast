@@ -25,7 +25,8 @@ enum ScrollFrameReader {
         let lanes = min(32, max(1, cross / 4))
         var rgb = [UInt8](repeating: 0, count: length * lanes * 3)
         var originalRGB = rgb
-        let positions = (0..<lanes).map { $0 * (cross - 1) / max(1, lanes - 1) }
+        let margin = lanes > 1 ? edgeMargin(cross: cross) : 0
+        let positions = (0..<lanes).map { margin + $0 * (cross - 1 - margin * 2) / max(1, lanes - 1) }
         pixels.withUnsafeBufferPointer { pixels in
             for line in 0..<length {
                 for (lane, across) in positions.enumerated() {
@@ -49,6 +50,63 @@ enum ScrollFrameReader {
         }
         return ScrollStitchPolicy.Frame(length: length, lanes: lanes, rgb: rgb, originalRGB: originalRGB)
     }
+
+    /// Extra lines to retake so the seam falls where both frames agree and nothing is drawn.
+    nonisolated static func seam(
+        previous: CGImage, current: CGImage, shift: Int, retaken: Int, axis: CaptureDocument.Axis, atStart: Bool
+    ) -> Int {
+        guard previous.width == current.width, previous.height == current.height,
+            let before = try? rows(previous, axis: axis), let after = try? rows(current, axis: axis)
+        else { return 0 }
+        let length = before.count, room = min(seamReach, length - shift - retaken - 1)
+        guard room > 0 else { return 0 }
+        var best = (extra: 0, score: Int.max)
+        for extra in 0...room {
+            // Forward, the cut is that many above the earlier frame's retaken end; back, below its start.
+            let earlier = atStart ? retaken + extra : length - retaken - extra - 1
+            let later = atStart ? earlier + shift : earlier - shift
+            guard (0..<length).contains(later) else { continue }
+            var differ = 0, ink = 0
+            let line = before[earlier], other = after[later], base = line[0]
+            for index in line.indices {
+                differ += abs(Int(line[index]) - Int(other[index]))
+                ink += abs(Int(line[index]) - Int(base))
+            }
+            let score = differ * 4 + ink
+            if score < best.score { best = (extra, score) }
+        }
+        return best.extra
+    }
+
+    /// Lines a seam may move from the retaken end, about 24pt at 2×: a line of text and its spacing.
+    static let seamReach = 48
+
+    /// One row of green per line along the axis, which is all a seam needs to compare.
+    private nonisolated static func rows(_ image: CGImage, axis: CaptureDocument.Axis) throws -> [[UInt8]] {
+        let size = try CapturePixelSize(width: image.width, height: image.height)
+        var pixels = [UInt8](repeating: 0, count: size.rowBytes * size.height)
+        let drawn = pixels.withUnsafeMutableBytes { buffer -> Bool in
+            guard let context = CGContext(
+                data: buffer.baseAddress, width: size.width, height: size.height, bitsPerComponent: 8,
+                bytesPerRow: size.rowBytes, space: CGColorSpace(name: CGColorSpace.sRGB)!,
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
+            else { return false }
+            context.draw(image, in: CGRect(x: 0, y: 0, width: size.width, height: size.height))
+            return true
+        }
+        guard drawn else { throw CaptureRasterError.invalidSize }
+        let vertical = axis == .vertical
+        let length = vertical ? size.height : size.width, cross = vertical ? size.width : size.height
+        return (0..<length).map { line in
+            (0..<cross).map { across in
+                let x = vertical ? across : line, y = vertical ? line : across
+                return pixels[y * size.rowBytes + x * 4 + 1]
+            }
+        }
+    }
+
+    /// Lanes stay clear of both edges, where an overlay scroller moves at its own pace.
+    nonisolated static func edgeMargin(cross: Int) -> Int { min(32, cross / 16) }
 
     nonisolated static func strip(from source: URL, rect: CGRect, to destination: URL) throws {
         let reader = try CaptureRasterReader(directory: source)

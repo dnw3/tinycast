@@ -178,9 +178,9 @@ extension CaptureCoordinator {
         run { [weak self] in
             guard let self else { return }
             try await self.captureWindow(window, workspace: workspace)
-            // Picked in scrolling mode, a window starts from its own scrolling content at once.
+            // Picked in scrolling mode, a window starts scrolling at once.
             guard workspace.request.mode == .scrolling, self.workspace === workspace else { return }
-            try await self.scrollWindow(window, axis: workspace.axis, returnMode: .scrolling)
+            try await self.scrollWindow(window, returnMode: .scrolling)
         }
     }
 
@@ -291,7 +291,7 @@ extension CaptureCoordinator {
         let originalMode = workspace.request.mode
         workspace.axis = axis
         if let window = pickedWindow(in: workspace) {
-            run { [weak self] in try await self?.scrollWindow(window, axis: axis, returnMode: originalMode) }
+            run { [weak self] in try await self?.scrollWindow(window, returnMode: originalMode) }
             return
         }
         if workspace.request.scope != .region
@@ -336,67 +336,25 @@ extension CaptureCoordinator {
         return workspace.target.windows.first { $0.windowID == id }
     }
 
-    /// Where the window's content scrolls is the region; past that, the reader only scrolls.
-    private func scrollWindow(
-        _ window: SCWindow, axis: CaptureDocument.Axis, returnMode: CaptureRequest.Mode
-    ) async throws {
-        let area = await scrollArea(of: window, axis: axis)
-        try Task.checkCancellation()
-        guard let workspace else { return }
-        setCaptureMode(.scrolling)
-        // Not found, the reader draws the region as before.
-        guard let area else { return }
-        let screen = workspace.target.screenFrame
-        selectRegion(area.offsetBy(dx: -screen.minX, dy: -screen.minY))
-        guard let start = scrollStart() else { return }
-        try await startScroll(start, returnMode: returnMode)
-    }
-
-    /// A window's scrolling content in global AppKit points, short of where its scroller shows.
-    private func scrollArea(of window: SCWindow, axis: CaptureDocument.Axis) async -> CGRect? {
+    /// The picked window is the region as picked, started without touching what is on screen first.
+    private func scrollWindow(_ window: SCWindow, returnMode: CaptureRequest.Mode) async throws {
+        guard let workspace, let editor, !workspace.busy, !editor.busy,
+            let screen = NSScreen.screens.first(where: { $0.frame == workspace.target.screenFrame })
+        else { return }
         let top = NSScreen.primary?.frame.maxY ?? 0
-        let appKit = { (quartz: CGRect) in
-            CGRect(x: quartz.minX, y: top - quartz.maxY, width: quartz.width, height: quartz.height)
+        let rect = CGRect(
+            x: window.frame.minX, y: top - window.frame.maxY, width: window.frame.width, height: window.frame.height
+        ).intersection(screen.frame).offsetBy(dx: -screen.frame.minX, dy: -screen.frame.minY)
+        guard !rect.isEmpty,
+            let pixels = CaptureGeometry.pixels(
+                rect, screen: CGRect(origin: .zero, size: screen.frame.size), scale: workspace.target.scale)
+        else {
+            // Off this display, the reader draws the region as before.
+            setCaptureMode(.scrolling)
+            return
         }
-        let found: CGRect?
-        if let own = NSApp.window(withWindowNumber: Int(window.windowID)) {
-            found = Self.largestScrollView(in: own)
-        } else if let pid = window.owningApplication?.processID {
-            let center = CGPoint(x: window.frame.midX, y: window.frame.midY)
-            let area = try? await CaptureWork.run { try CaptureElementAccess.scrollArea(pid: pid, at: center) }
-            found = area.flatMap { $0 }.map(appKit)
-        } else {
-            found = nil
-        }
-        guard var area = found?.intersection(appKit(window.frame)), !area.isEmpty else { return nil }
-        let clearance = Theme.Size.captureScrollerClearance
-        switch axis {
-        case .vertical: area.size.width -= clearance
-        case .horizontal:
-            area.origin.y += clearance
-            area.size.height -= clearance
-        }
-        return area.width > clearance * 4 && area.height > clearance * 4 ? area : nil
-    }
-
-    /// Tinycast's own windows need no Accessibility: the largest scroll view, clear of its toolbar.
-    private static func largestScrollView(in window: NSWindow) -> CGRect? {
-        var largest: CGRect?
-        func visit(_ view: NSView) {
-            if let scroll = view as? NSScrollView, !scroll.isHiddenOrHasHiddenAncestor {
-                let insets = scroll.contentInsets
-                var frame = scroll.convert(scroll.bounds, to: nil)
-                frame.origin.x += insets.left
-                frame.origin.y += insets.bottom
-                frame.size.width -= insets.left + insets.right
-                frame.size.height -= insets.top + insets.bottom
-                frame = frame.intersection(window.contentLayoutRect)
-                if frame.width * frame.height > (largest.map { $0.width * $0.height } ?? 0) { largest = frame }
-            }
-            view.subviews.forEach(visit)
-        }
-        window.contentView.map(visit)
-        return largest.map(window.convertToScreen)
+        let start = ScrollStart(workspace: workspace, editor: editor, rect: rect, screen: screen, pixels: pixels)
+        try await startScroll(start, returnMode: returnMode)
     }
 
     private func startScroll(_ start: ScrollStart, returnMode: CaptureRequest.Mode?) async throws {

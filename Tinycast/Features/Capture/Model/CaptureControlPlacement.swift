@@ -48,6 +48,26 @@ enum CaptureControlPlacement {
         return (collapsed, expanded)
     }
 
+    /// A strip beside the region, as tall as it, clear of it and its controls; nil without room.
+    static func scrollingPreview(
+        region: CGRect, width: CGFloat, controls: CGRect, screens: [CGRect], gap: CGFloat
+    ) -> CGRect? {
+        for screen in screens where screen.intersects(region) {
+            let top = min(region.maxY, screen.maxY), bottom = max(region.minY, screen.minY)
+            guard top - bottom > width else { continue }
+            let candidates = [
+                CGRect(x: region.maxX + gap, y: bottom, width: width, height: top - bottom),
+                CGRect(x: region.minX - gap - width, y: bottom, width: width, height: top - bottom)
+            ]
+            if let placement = candidates.first(where: {
+                screen.contains($0) && !$0.intersects(region) && !$0.intersects(controls)
+            }) {
+                return placement
+            }
+        }
+        return nil
+    }
+
     static func frame(region: CGRect, size: CGSize, screens: [CGRect], gap: CGFloat) -> CGRect? {
         for screen in screens {
             let x = min(max(region.midX - size.width / 2, screen.minX), screen.maxX - size.width)

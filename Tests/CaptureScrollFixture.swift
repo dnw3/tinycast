@@ -58,7 +58,7 @@ enum CaptureScrollFixture {
                     }
                     displacement = shift
                     trailing = fixedTrailing
-                    precondition(ScrollStitchPolicy.match(previous: frame, current: previous) == .reverse)
+                    precondition(ScrollStitchPolicy.match(previous: frame, current: previous) == .reverse(offset: 83))
                 }
                 let raster = UUID().uuidString
                 let plan = try CaptureScrollAppend.plan(
@@ -103,8 +103,9 @@ enum CaptureScrollFixture {
         guard case .append(let offset, let leading, let trailing) =
             ScrollStitchPolicy.match(previous: first, current: second)
         else { preconditionFailure("Fixed-header browser frames must register despite text rasterization differences") }
-        precondition((279...280).contains(offset) && (62...66).contains(leading) && trailing == 0)
-        precondition(ScrollStitchPolicy.match(previous: second, current: first) == .reverse)
+        // A blank margin and the edge clearance are retaken from the newer frame; no pixel changes.
+        precondition((279...280).contains(offset) && (62...70).contains(leading) && trailing <= 32 + ScrollStitchPolicy.edgeClearance, "\(offset) \(leading) \(trailing)")
+        guard case .reverse = ScrollStitchPolicy.match(previous: second, current: first) else { preconditionFailure("Matched the other way, the shift reads back") }
         let strip = root.appendingPathComponent("browser-strip")
         try ScrollFrameReader.strip(from: after,
             rect: CGRect(x: 0, y: size.height - offset, width: size.width, height: offset), to: strip)
@@ -153,10 +154,10 @@ enum CaptureScrollFixture {
             let second = try sample(croppedAfter, axis: .vertical)
             let decision = ScrollStitchPolicy.match(previous: first, current: second)
             guard case .append(let offset, _, let trailing) = decision,
-                (279...280).contains(offset), trailing == 0 else {
+                (279...280).contains(offset), trailing <= 32 + ScrollStitchPolicy.edgeClearance else {
                 preconditionFailure("Browser region \(region) failed: \(decision)")
             }
-            precondition(ScrollStitchPolicy.match(previous: second, current: first) == .reverse)
+            guard case .reverse = ScrollStitchPolicy.match(previous: second, current: first) else { preconditionFailure("Matched the other way, the shift reads back") }
         }
     }
 }

@@ -3520,6 +3520,16 @@
         }
       }
     },
+    "Adds what is on screen now and leaves out what was scrolled past": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "把当前画面接上去，中间滚过的部分会缺失"
+          }
+        }
+      }
+    },
     "Add…": {
       "localizations": {
         "zh-Hans": {
@@ -6319,6 +6329,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "已截取尺寸"
+          }
+        }
+      }
+    },
+    "Captured so far": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已拼接的内容"
           }
         }
       }
@@ -13760,6 +13780,16 @@
         }
       }
     },
+    "Go On from Here": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "从这里继续"
+          }
+        }
+      }
+    },
     "Go back to the icon the extension ships.": {
       "localizations": {
         "zh-Hans": {
@@ -15765,6 +15795,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "保留截图"
+          }
+        }
+      }
+    },
+    "Keep scrolling back to add more content": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "继续往回滚以添加内容"
           }
         }
       }
@@ -22572,6 +22612,16 @@
         }
       }
     },
+    "Reached the longest a capture can be, %lld pixels. Finish to keep it": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已达到长截图的最大长度（%lld 像素），后面的内容不会再加入，点完成即可保存"
+          }
+        }
+      }
+    },
     "Read %@": {
       "localizations": {
         "zh-Hans": {
@@ -22897,6 +22947,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "建议授予"
+          }
+        }
+      }
+    },
+    "Record Diagnostic Frames": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "记录诊断帧"
           }
         }
       }
@@ -25056,6 +25116,16 @@
         }
       }
     },
+    "Scrolled too fast to line up. Scroll back a little, then slower": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "滚得太快，接不上了。往回滚一点，再慢一些"
+          }
+        }
+      }
+    },
     "Scrolling Capture": {
       "extractionState": "manual",
       "localizations": {
@@ -25084,6 +25154,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "长截图"
+          }
+        }
+      }
+    },
+    "Scrolling back: new content is added at the start": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在往回滚：新内容会加在开头"
           }
         }
       }
@@ -26500,6 +26580,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "收起"
+          }
+        }
+      }
+    },
+    "Show Live Preview": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "显示实时预览"
           }
         }
       }
@@ -32909,6 +32999,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "欢迎使用 Tinycast"
+          }
+        }
+      }
+    },
+    "Went on past a gap: what was scrolled past is missing there": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已从这里继续：中间滚过的部分在长图里缺失"
           }
         }
       }

@@ -74,7 +74,7 @@ enum Theme {
         static let captureWorkspaceOutputs = CGSize(width: 60, height: 312)
         static let captureScrollBar = CGSize(width: 280, height: 38)
         static let captureScrollDetails: CGFloat = 72
-        static let captureScrollPreview: CGFloat = 48
+        static let captureScrollThumbnail: CGFloat = 112
         static let captureCountdown = CGSize(width: 240, height: 48)
         static let captureRecordingBar = CGSize(width: 380, height: 88)
         static let captureTextEditor = CGSize(width: 320, height: 140)
@@ -84,8 +84,6 @@ enum Theme {
         static let captureVideoTimeline: CGFloat = 52
         static let captureGlyph: CGFloat = 16
         static let captureCompactGlyph: CGFloat = 14
-        /// Kept off a found scroll area's trailing edge, where an overlay scroller flashes in.
-        static let captureScrollerClearance: CGFloat = 16
         static let captureToolbarCustomization = CGSize(width: 540, height: 560)
         static let captureLoupePixels: CGFloat = 13
         static let captureLoupeCell: CGFloat = 8
