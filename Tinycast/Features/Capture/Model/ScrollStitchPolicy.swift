@@ -32,25 +32,55 @@ enum ScrollStitchPolicy {
             to other: Frame, shift: Int, start: Int, end: Int, stride step: Int, textured: Bool = false,
             selectedLanes: [Int]? = nil
         ) -> Double {
-            var sum = 0, count = 0
-            for line in Swift.stride(from: start, to: end, by: step) {
-                let previous = line + shift
-                guard (0..<length).contains(previous) else { continue }
-                for lane in selectedLanes ?? Array(0..<lanes) {
-                    if textured, lane > 0 {
+            let edges = textured ? (edges(), other.edges()) : nil
+            return difference(
+                to: other, shift: shift, start: start, end: end, stride: step, edges: edges,
+                lanes: selectedLanes ?? Array(0..<lanes))
+        }
+
+        /// Each lane's contrast with the lane before it, summed over channels, worked out once a frame.
+        func edges() -> [Int32] {
+            var edges = [Int32](repeating: 0, count: length * lanes)
+            rgb.withUnsafeBufferPointer { rgb in
+                for line in 0..<length {
+                    for lane in 1..<max(1, lanes) {
                         let here = (line * lanes + lane) * 3
-                        let there = (previous * lanes + lane) * 3
-                        let contrast = (0..<3).reduce(0) {
-                            $0 + abs(Int(rgb[here + $1]) - Int(rgb[here + $1 - 3]))
-                                + abs(Int(other.rgb[there + $1]) - Int(other.rgb[there + $1 - 3]))
-                        }
-                        if contrast < 48 { continue }
+                        var contrast: Int32 = 0
+                        for channel in 0..<3 { contrast += Int32(abs(Int(rgb[here + channel]) - Int(rgb[here + channel - 3]))) }
+                        edges[line * lanes + lane] = contrast
                     }
-                    for channel in 0..<3 {
-                        let index = (line * lanes + lane) * 3 + channel
-                        let previousIndex = (previous * lanes + lane) * 3 + channel
-                        sum += abs(Int(rgb[index]) - Int(other.rgb[previousIndex]))
-                        count += 1
+                }
+            }
+            return edges
+        }
+
+        /// Every search's hot loop: lanes with no edge in either frame match at any shift, so are skipped.
+        func difference(
+            to other: Frame, shift: Int, start: Int, end: Int, stride step: Int,
+            edges: ([Int32], [Int32])?, lanes selected: [Int]
+        ) -> Double {
+            var sum = 0, count = 0
+            let lanes = lanes
+            // The lines a plain stride from `start` visits, less those the shift takes outside the other frame.
+            let lower = max(start, -shift), upper = min(end, length - shift)
+            guard lower < upper else { return 255 }
+            let first = start + (lower - start + step - 1) / step * step
+            rgb.withUnsafeBufferPointer { rgb in
+                other.rgb.withUnsafeBufferPointer { otherRGB in
+                    for line in Swift.stride(from: first, to: upper, by: step) {
+                        let previous = line + shift
+                        for lane in selected {
+                            if let edges, lane > 0,
+                                edges.0[line * lanes + lane] + edges.1[previous * lanes + lane] < 48
+                            {
+                                continue
+                            }
+                            let index = (line * lanes + lane) * 3, previousIndex = (previous * lanes + lane) * 3
+                            sum += abs(Int(rgb[index]) - Int(otherRGB[previousIndex]))
+                                + abs(Int(rgb[index + 1]) - Int(otherRGB[previousIndex + 1]))
+                                + abs(Int(rgb[index + 2]) - Int(otherRGB[previousIndex + 2]))
+                            count += 3
+                        }
                     }
                 }
             }
@@ -153,24 +183,22 @@ enum ScrollStitchPolicy {
         var candidates: [(Int, Double)] = []
         let maximum = (end - start) * 2 / 3
         let expected = previous.travel.flatMap { from in current.travel.map { $0 - from } }
+        let edges = (current.edges(), previous.edges())
         for shift in -maximum...maximum where abs(shift) >= 2 {
             let lower = max(start, start - shift), upper = min(end, end - shift)
             let score = current.difference(
                 to: previous, shift: shift, start: lower, end: upper,
-                stride: max(1, (upper - lower) / 40), textured: true, selectedLanes: moving)
+                stride: max(1, (upper - lower) / 40), edges: edges, lanes: moving)
             candidates.append((shift, score))
         }
         candidates.sort { $0.1 < $1.1 }
         var refined = Set(candidates.prefix(32).map(\.0))
         // A coarse pass can miss a large shift between sparse lines while bars still match a tiny one.
-        if let expected {
-            let lowest = max(-maximum, expected - slack(expected)), highest = min(maximum, expected + slack(expected))
-            if lowest <= highest { refined.formUnion((lowest...highest).filter { abs($0) >= 2 }) }
-        }
+        if let expected { refined.formUnion(candidates.lazy.filter { agrees($0.0, expected: expected) }.prefix(16).map(\.0)) }
         candidates = refined.map { shift in
             let lower = max(start, start - shift), upper = min(end, end - shift)
-            return (shift, current.difference(to: previous, shift: shift,
-                start: lower, end: upper, stride: 1, textured: true, selectedLanes: moving))
+            return (shift, current.difference(
+                to: previous, shift: shift, start: lower, end: upper, stride: 1, edges: edges, lanes: moving))
         }.sorted { $0.1 < $1.1 }
         // Near the range's end the true shift may lie beyond it; a sliver lining up there proves nothing.
         guard let best = candidates.first, abs(best.0) < maximum - 16 else { return .uncertain }
@@ -182,8 +210,9 @@ enum ScrollStitchPolicy {
         guard fit.consistent, fit.error < (confirmed ? 12 : 8) else { return .uncertain }
         let alternatives = candidates.prefix(32).filter { abs($0.0 - best.0) > 3 }
         guard !alternatives.isEmpty, alternatives.allSatisfy({ candidate in
-            patchError(previous: previous, current: current, shift: candidate.0, start: start, end: end)
-                > fit.error * 1.8 + 1.5
+            patchExceeds(
+                previous: previous, current: current, shift: candidate.0, start: start, end: end,
+                bar: fit.error * 1.8 + 1.5)
         }) else { return .uncertain }
         guard best.0 > 0 else { return .reverse(offset: -best.0) }
         // A fade over a short line can slip between lanes, so lines by the edge come from the newer frame.
@@ -304,16 +333,20 @@ enum ScrollStitchPolicy {
         return (errors.dropLast(errors.count / 20).last ?? 255, consistent, unsettled)
     }
 
-    private static func patchError(previous: Frame, current: Frame, shift: Int, start: Int, end: Int) -> Double {
+    /// Whether some window misses by more than `bar` at this shift: the first one found settles it.
+    private static func patchExceeds(
+        previous: Frame, current: Frame, shift: Int, start: Int, end: Int, bar: Double
+    ) -> Bool {
         let lower = max(start, start - shift), upper = min(end, end - shift)
-        var maximum = 0.0
         for line in stride(from: lower, to: upper, by: 16) {
-            for lane in 0..<current.lanes {
-                maximum = max(maximum, current.difference(to: previous, shift: shift,
-                    start: line, end: min(upper, line + 32), stride: 1, selectedLanes: [lane]))
+            for lane in 0..<current.lanes where current.difference(
+                to: previous, shift: shift, start: line, end: min(upper, line + 32), stride: 1, edges: nil,
+                lanes: [lane]) > bar
+            {
+                return true
             }
         }
-        return maximum
+        return false
     }
 
     private static func distinctEdge(_ frame: Frame, start: Int, end: Int) -> Bool {

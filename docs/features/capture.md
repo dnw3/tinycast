@@ -206,8 +206,12 @@ Closing checks both unsaved results. Canceling without keeping a result restores
 order behind it (`enqueue`), with their seam and incremental preview, and always complete, since the
 tracker has already moved the result's end past them: waited for in the loop, a write of about 50ms on
 nearly every sample of a fast terminal scroll slowed sampling to about 165ms and let the scroll outrun the
-overlap. A screenshot of the region takes about 30ms. It samples again 10ms after each sample while
-anything moves, about every 55ms in all, and every 150ms once ten samples in a row were at rest, reading the captured image in memory (`ScrollFrameReader.sample(_:axis:)`); only strips reach the
+overlap. While anything moves it samples again at once, about every 26ms for a 750 × 818pt region: some
+16ms to capture and 10ms to match. Once ten samples in a row were at rest, or while paused, it samples
+every 150ms. Matching works out each frame's lane edges once (`Frame.edges`) rather than for every
+candidate shift, and an alternative counts as worse as soon as one of its windows misses by more than
+the bar (`patchExceeds`): at 50ms a match, a fast terminal flick moved more than a whole region between
+two samples, reading the captured image in memory (`ScrollFrameReader.sample(_:axis:)`); only strips reach the
 disk, each cut from its own frame (`strip(_:rect:to:)`). A frame reaches back two thirds of the region,
 and a single trackpad flick moves further than that, which is why the frames in motion are used, not
 only the ones at rest. `ScrollTracker` decides which become strips:
@@ -279,8 +283,9 @@ in pixels (`Frame.travel`), until a wheel's notch arrives, whose lines an app si
 ends the travel for the session. On recorded AI Chat frames the travel ran anywhere from one to six times
 the content's move, frame to frame, so its size is a weak witness and its direction a strong one. A best
 shift within `slack` of it (a quarter, at least 24 lines, either way) is confirmed, which admits hovered
-line-ups and a fit error under 12 rather than 8, and the lines within that slack join the refined search,
-since a coarse pass can miss a large shift between sparse lines. Travel said to reach past the search
+line-ups and a fit error under 12 rather than 8, and the 16 coarse candidates best ranked within that
+slack join the refined search, since a coarse pass can rank a large shift between sparse lines below the
+first 32; refining every line of the slack instead cost up to 25ms a match on a fast scroll. Travel said to reach past the search
 range confirms nothing. Travel of 200 lines or more the other way rejects a shift; nothing else about the
 travel does, so an app scrolling at its own ratio only loses the witness. Fewer than `minimumEvidence`
 (12) windows that moved with the page leave a shift uncertain. A frame at rest that no longer matches,
@@ -298,7 +303,8 @@ Record Diagnostic Frames, in the controls' More menu, writes every later sample 
 was captured, named with the pointer's line and travel, plus one verdict line each in `trace.tsv` with the
 interval since the last sample and the milliseconds spent capturing and matching it, to
 `captures/diagnostics/scroll-<time>` under Application Support; Finder shows the folder when the
-session ends. Writes queue behind sampling rather than slow it and stop after
+session ends. Writes queue behind sampling rather than slow it, and a frame is skipped, its number left
+out, while eight wait, since one 10MB frame takes about 20ms to encode. They stop after
 `ScrollDiagnosticsRecorder.frameLimit` frames. Recordings older than three days, and all but the newest
 three, go whenever a capture starts (`CaptureRepository.reclaimDiagnostics`), and a new recording makes
 room for itself first; Disk Cleanup never offers Tinycast's own files, so this is what keeps them from

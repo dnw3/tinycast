@@ -45,6 +45,9 @@ final class ScrollCaptureSession {
     private var diagnosticFrames = 0
     /// Frames are written in order behind sampling, so recording never slows the capture it watches.
     private var diagnosticWrites: Task<Void, Never>?
+    /// Frames waiting to be written; past the limit a frame is skipped and its number left out.
+    @ObservationIgnored private var diagnosticBacklog = 0
+    private static let diagnosticBacklogLimit = 8
     /// Strips are written in order behind sampling too: a write waited for let a fast scroll outrun it.
     @ObservationIgnored private var writes: Task<Void, Never>?
     @ObservationIgnored private var lastSample: ContinuousClock.Instant?
@@ -73,14 +76,14 @@ final class ScrollCaptureSession {
             while !Task.isCancelled, !self.stopped {
                 do {
                     if !self.paused { try await self.sample() }
-                    try await Task.sleep(for: self.cadence)
+                    if let pause = self.cadence { try await Task.sleep(for: pause) } else { await Task.yield() }
                 } catch is CancellationError { return } catch { self.pause(Bundle.main.localizedString(forKey: error.localizedDescription, value: nil, table: nil)) }
             }
         }
     }
 
-    /// Quick while anything moves, so a flick never outruns the overlap; slower once it rests.
-    private var cadence: Duration { .milliseconds(restingSamples > 10 ? 150 : 10) }
+    /// None while anything moves, so a flick never outruns the overlap; slower once it rests or pauses.
+    private var cadence: Duration? { paused || restingSamples > 10 ? .milliseconds(150) : nil }
 
     /// The pointer's line in a frame while it is over the region, where hovering changes content.
     private var pointerLine: Int? {
@@ -255,6 +258,10 @@ final class ScrollCaptureSession {
         }
     }
 
+    private func diagnosticWritten() {
+        diagnosticBacklog -= 1
+    }
+
     private static func milliseconds(_ duration: Duration) -> Int {
         Int(duration.components.seconds * 1_000 + duration.components.attoseconds / 1_000_000_000_000_000)
     }
@@ -265,6 +272,8 @@ final class ScrollCaptureSession {
     ) {
         guard let diagnostics, diagnosticFrames < ScrollDiagnosticsRecorder.frameLimit else { return }
         diagnosticFrames += 1
+        guard diagnosticBacklog < Self.diagnosticBacklogLimit else { return }
+        diagnosticBacklog += 1
         let index = diagnosticFrames, previous = diagnosticWrites
         let verdict = ([resting ? "rest" : "moving"] + steps.map { step in
             switch step {
@@ -275,9 +284,10 @@ final class ScrollCaptureSession {
             case .reversing: "reversing"
             }
         } + [timing]).joined(separator: " ")
-        diagnosticWrites = Task.detached {
+        diagnosticWrites = Task.detached { [weak self] in
             await previous?.value
             try? diagnostics.record(image, index: index, pointer: pointer, travel: travel, verdict: verdict)
+            await self?.diagnosticWritten()
         }
     }
 
