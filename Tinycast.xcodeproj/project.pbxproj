@@ -759,6 +759,7 @@
 		8B265BFDDDDAFCC45B35BDCB /* ExtensionPickerField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 936C0D68CC32D90E590F712C /* ExtensionPickerField.swift */; };
 		8B2BFFA4BE5492CFB6366E06 /* huffman_utils.c in Sources */ = {isa = PBXBuildFile; fileRef = 93319CC291A73CDECD10586D /* huffman_utils.c */; };
 		8BC02EA99DA8526DBA1204D0 /* AIToolRounds.swift in Sources */ = {isa = PBXBuildFile; fileRef = 552EF9B38ABA9443D4FDE5E4 /* AIToolRounds.swift */; };
+		8BC4ABC61C28B4A5D0BE84F7 /* ScrollFrameStream.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BC35EC5838FE506F572CEE7 /* ScrollFrameStream.swift */; };
 		8BCE48437E9621D7B0220378 /* WindowSwitchScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 369115AB459927FE90BCBEB5 /* WindowSwitchScreen.swift */; };
 		8C0B53A9B5B3C8E95359DA88 /* predictor_enc.c in Sources */ = {isa = PBXBuildFile; fileRef = 927C38D68964360C557DD1DF /* predictor_enc.c */; };
 		8C739DAC2978F8709D10A2B4 /* CaptureColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6310FEBECA0C99105BF80278 /* CaptureColor.swift */; };
@@ -1553,6 +1554,7 @@
 		0B47AAE8E6446126CE3995BE /* vp8i_dec.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vp8i_dec.h; sourceTree = "<group>"; };
 		0B7B7EEBB2B45A09797B57EF /* enc_msa.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = enc_msa.c; sourceTree = "<group>"; };
 		0BAB4BA42F458BA3CC9080D0 /* CaptureImageLayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureImageLayer.swift; sourceTree = "<group>"; };
+		0BC35EC5838FE506F572CEE7 /* ScrollFrameStream.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScrollFrameStream.swift; sourceTree = "<group>"; };
 		0BCEA23F4D81B4239299E229 /* CaptureToolbarButtonStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureToolbarButtonStyle.swift; sourceTree = "<group>"; };
 		0BD0F1989B00B2B3BFF5BFCC /* SecureInputMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureInputMonitor.swift; sourceTree = "<group>"; };
 		0BF6A7ADBCA7BF5AD202164C /* picture_rescale_enc.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = picture_rescale_enc.c; sourceTree = "<group>"; };
@@ -4135,6 +4137,7 @@
 				02EC12F07755F66FD88D33EE /* CaptureWork.swift */,
 				C5F0A7C00C437F30D1D13692 /* ScrollDiagnosticsRecorder.swift */,
 				11749C391F7F72702790D4A7 /* ScrollFrameReader.swift */,
+				0BC35EC5838FE506F572CEE7 /* ScrollFrameStream.swift */,
 			);
 			path = Service;
 			sourceTree = "<group>";
@@ -6957,6 +6960,7 @@
 				0B839B403036A89392B7FD1B /* ScrollCaptureSession.swift in Sources */,
 				357F51774775BBE571B80BF1 /* ScrollDiagnosticsRecorder.swift in Sources */,
 				9A652AD821EB74077C997B7C /* ScrollFrameReader.swift in Sources */,
+				8BC4ABC61C28B4A5D0BE84F7 /* ScrollFrameStream.swift in Sources */,
 				31E0E4E0782A79504CEB588D /* ScrollIntent.swift in Sources */,
 				86F8083B30ED888DC231764D /* ScrollStitchPolicy.swift in Sources */,
 				25EF5348B9B32426D6F858CA /* ScrollTracker.swift in Sources */,

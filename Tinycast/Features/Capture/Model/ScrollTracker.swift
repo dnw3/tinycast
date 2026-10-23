@@ -100,6 +100,20 @@ struct ScrollTracker<Payload: Sendable>: Sendable {
         return steps + resolve(decision, frame: frame, payload: payload)
     }
 
+    /// Frames that arrived together: the newest, or every one in order once it misses after lining up.
+    mutating func observe(batch: [(frame: Frame, payload: Payload)], match: Match) -> [(index: Int, steps: [Step])] {
+        guard let newest = batch.last else { return [] }
+        var trial = self
+        let steps = trial.observe(newest.frame, payload: newest.payload, match: match)
+        guard batch.count > 1, misses == 0, trial.misses > 0 else {
+            self = trial
+            return [(batch.count - 1, steps)]
+        }
+        return batch.indices.map { index in
+            (index, observe(batch[index].frame, payload: batch[index].payload, match: match))
+        }
+    }
+
     private mutating func resolve(_ decision: ScrollStitchPolicy.Decision, frame: Frame, payload: Payload) -> [Step] {
         var steps: [Step] = []
         switch decision {

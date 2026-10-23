@@ -54,6 +54,25 @@ struct CaptureScrollReplayTests {
         precondition(
             extra > 0 && extra <= ScrollFrameReader.seamReach && blank(inked + extra),
             "A seam through text moves to a blank line: \(inked) + \(extra)")
+        // Faster than matching: each batch's newest frame is out of the last strip's reach, the others not.
+        let fast: [[Int]] = [[0], [0], [250, 500, 750], [1_000, 1_250, 1_500], [1_500], [1_500]]
+        let rushed = fast.enumerated().flatMap { batch, tops in
+            tops.map { top in var shot = Shot(window, top: top); shot.batch = batch; return shot }
+        }
+        try verify(window, rushed, in: root.appendingPathComponent("batches"))
+        try FileManager.default.createDirectory(at: root.appendingPathComponent("newest"), withIntermediateDirectories: true)
+        let newestOnly = try stitch(fast.map { Shot(window, top: $0.last!) }, in: root.appendingPathComponent("newest"))
+        precondition(newestOnly.1.contains { $0.contains("lost") }, "Taken one frame at a time, the same scroll is lost")
+        var batched = ScrollTracker<Int>()
+        func frames(_ tops: [Int]) throws -> [(frame: ScrollStitchPolicy.Frame, payload: Int)] {
+            try tops.map { (frame: try ScrollFrameReader.sample(window.frame(top: $0, pointer: nil), axis: .vertical), payload: $0) }
+        }
+        _ = batched.observe(batch: try frames([0]), match: ScrollStitchPolicy.match)
+        _ = batched.observe(batch: try frames([0]), match: ScrollStitchPolicy.match)
+        let within = batched.observe(batch: try frames([100, 200, 300]), match: ScrollStitchPolicy.match)
+        precondition(within.map(\.index) == [2], "A batch whose newest frame lines up is matched by that frame alone")
+        let beyond = batched.observe(batch: try frames([550, 800, 1_050]), match: ScrollStitchPolicy.match)
+        precondition(beyond.map(\.index) == [0, 1, 2], "and one whose newest is out of reach, frame by frame through the rest")
         // Back well past what the last strip reaches, then on again: matching follows the reader both ways.
         let roundTrip = [0, 0, 300, 600, 900, 1_200, 1_200, 1_000, 800, 600, 400, 200, 200, 400, 600, 900, 1_200, 1_500, 1_500]
         try verify(window, roundTrip.map { Shot(window, top: $0, travel: $0) }, in: root.appendingPathComponent("round"))
@@ -93,12 +112,13 @@ struct CaptureScrollReplayTests {
 
         let recorder = try ScrollDiagnosticsRecorder.create(in: root, date: Date())
         for (index, top) in tops.enumerated() {
-            try recorder.record(
-                window.frame(top: top, pointer: nil), index: index + 1, pointer: index == 3 ? 42 : nil, travel: top,
-                verdict: "")
+            let name = ScrollDiagnosticsRecorder.frameName(
+                index: index + 1, batch: index, pointer: index == 3 ? 42 : nil, travel: top)
+            try recorder.write(window.frame(top: top, pointer: nil), named: name)
+            try recorder.note(name, verdict: "")
         }
-        precondition(ScrollDiagnosticsRecorder.marks(inFrameNamed: "00004_p42_t130.png") == (42, 130))
-        precondition(ScrollDiagnosticsRecorder.marks(inFrameNamed: "00005_p-1.png") == (nil, nil))
+        precondition(ScrollDiagnosticsRecorder.marks(inFrameNamed: "00004_b3_p42_t130.png") == (3, 42, 130))
+        precondition(ScrollDiagnosticsRecorder.marks(inFrameNamed: "00005_p-1.png") == (nil, nil, nil))
         let replayed = try replay(recorder.directory, in: root.appendingPathComponent("replay"))
         precondition(replayed.size.height == stitched.document.size.height, "A recording replays as it was captured")
         let trace = try String(contentsOf: recorder.directory.appendingPathComponent("trace.tsv"), encoding: .utf8)
@@ -132,6 +152,8 @@ struct CaptureScrollReplayTests {
         let top: Int
         let pointer: Int?
         let travel: Int?
+        /// Shots of one batch arrived together; one with none is a batch of its own.
+        var batch: Int?
 
         init(
             _ window: ChatWindow, top: Int, pointer: Int? = nil, travel: Int? = nil, hover: Bool = false,
@@ -143,11 +165,12 @@ struct CaptureScrollReplayTests {
             self.travel = travel
         }
 
-        init(image: CGImage, pointer: Int?, travel: Int?) {
+        init(image: CGImage, pointer: Int?, travel: Int?, batch: Int?) {
             self.image = image
             top = 0
             self.pointer = pointer
             self.travel = travel
+            self.batch = batch
         }
     }
 
@@ -216,21 +239,34 @@ struct CaptureScrollReplayTests {
                 document: plan.document, directory: directory, atStart: strip.reversed)
             document = plan.document
         }
+        // As the session takes them: consecutive shots of one batch together, any other alone.
+        var groups: [[Shot]] = []
         for shot in shots {
-            var frame = try ScrollFrameReader.sample(shot.image, axis: .vertical)
-            frame.pointer = shot.pointer
-            frame.travel = shot.travel
-            let steps = tracker.observe(frame, payload: shot.image, match: ScrollStitchPolicy.match)
-            for step in steps { if case .commit(let strip) = step { try write(strip) } }
-            verdicts.append(steps.map { step in
-                switch step {
-                case .commit(let strip): "commit \(strip.offset.map(String.init) ?? "whole") trailing \(strip.trailing)"
-                case .backward: "backward"
-                case .lost: "lost"
-                case .found: "found"
-                case .reversing: "reversing"
-                }
-            }.joined(separator: " "))
+            if let batch = shot.batch, groups.last?.last?.batch == batch { groups[groups.count - 1].append(shot) } else {
+                groups.append([shot])
+            }
+        }
+        for group in groups {
+            let frames = try group.map { shot in
+                var frame = try ScrollFrameReader.sample(shot.image, axis: .vertical)
+                frame.pointer = shot.pointer
+                frame.travel = shot.travel
+                return (frame: frame, payload: shot.image)
+            }
+            var said = [String](repeating: "", count: group.count)
+            for (index, steps) in tracker.observe(batch: frames, match: ScrollStitchPolicy.match) {
+                for step in steps { if case .commit(let strip) = step { try write(strip) } }
+                said[index] = steps.map { step in
+                    switch step {
+                    case .commit(let strip): "commit \(strip.offset.map(String.init) ?? "whole") trailing \(strip.trailing)"
+                    case .backward: "backward"
+                    case .lost: "lost"
+                    case .found: "found"
+                    case .reversing: "reversing"
+                    }
+                }.joined(separator: " ")
+            }
+            verdicts += said
         }
         if let strip = tracker.flush() { try write(strip) }
         guard let document else { preconditionFailure("Nothing was captured: \(verdicts)") }
@@ -248,7 +284,7 @@ struct CaptureScrollReplayTests {
                 let image = CGImageSourceCreateImageAtIndex(source, 0, nil)
             else { return nil }
             let marks = ScrollDiagnosticsRecorder.marks(inFrameNamed: name)
-            return Shot(image: image, pointer: marks.pointer, travel: marks.travel)
+            return Shot(image: image, pointer: marks.pointer, travel: marks.travel, batch: marks.batch)
         }
         preview = nil
         let (document, verdicts) = try stitch(frames, in: root)

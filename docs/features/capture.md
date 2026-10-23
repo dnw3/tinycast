@@ -202,18 +202,27 @@ The result window switches between Screenshot and Scrolling Screenshot with one 
 title bar, preserving each image and undo stack.
 Closing checks both unsaved results. Canceling without keeping a result restores the retained screenshot in its original desktop workspace.
 
-`ScrollCaptureSession` serializes sampling and RGB registration. Strips, once decided, are written in
-order behind it (`enqueue`), with their seam and incremental preview, and always complete, since the
-tracker has already moved the result's end past them: waited for in the loop, a write of about 50ms on
-nearly every sample of a fast terminal scroll slowed sampling to about 165ms and let the scroll outrun the
-overlap. While anything moves it samples again at once, about every 26ms for a 750 × 818pt region: some
-16ms to capture and 10ms to match. Once ten samples in a row were at rest, or while paused, it samples
-every 150ms. Matching works out each frame's lane edges once (`Frame.edges`) rather than for every
-candidate shift, and an alternative counts as worse as soon as one of its windows misses by more than
-the bar (`patchExceeds`): at 50ms a match, a fast terminal flick moved more than a whole region between
-two samples, reading the captured image in memory (`ScrollFrameReader.sample(_:axis:)`); only strips reach the
-disk, each cut from its own frame (`strip(_:rect:to:)`). A frame reaches back two thirds of the region,
-and a single trackpad flick moves further than that, which is why the frames in motion are used, not
+Frames come from a ScreenCaptureKit stream on the region (`ScrollFrameStream`), as often as the display
+redraws it, up to 120 a second, in sRGB without the cursor. Each is copied as it arrives, since the
+stream reuses its buffers, and stamped with the pointer and the scroll travel at that moment; up to 16
+wait to be taken, the oldest going past that. A screenshot per sample came every 36ms at best, and on
+otty a flick moved more than the whole 1563-line region within 52ms, past any overlap; the stream sees
+the frames in between. macOS shows its screen recording indicator while a scrolling capture runs.
+
+`ScrollCaptureSession` takes every frame since its last pass as one batch, reads each in memory
+(`ScrollFrameReader.sample(_:axis:)`), and hands the batch to the tracker, which matches only the newest
+unless that misses where the last one lined up; then it goes through every frame of the batch in order
+(`ScrollTracker.observe(batch:)`), following a scroll faster than matching through the frames it passed.
+Once the tracker has lost the overlap, batches are not gone through again, which only scrolling back can
+mend. When nothing has been redrawn for 100ms the newest frame is matched once more, so the tracker sees
+the content at rest, writes what waits and, at the start, takes its first strip. Paused, frames are taken
+and dropped. Matching takes about 10ms for a 750 × 818pt region: each frame's lane edges are worked out
+once (`Frame.edges`) rather than for every candidate shift, and an alternative counts as worse as soon as
+one of its windows misses by more than the bar (`patchExceeds`). Strips, once decided, are written in
+order behind matching (`enqueue`), with their seam and incremental preview, and always complete, since
+the tracker has already moved the result's end past them; only strips reach the disk, each cut from its
+own frame (`strip(_:rect:to:)`). A frame reaches back two thirds of the region, and a single trackpad
+flick moves further than that, which is why the frames in motion are used, not
 only the ones at rest. `ScrollTracker` decides which become strips:
 
 - The first strip is a frame at rest, two samples alike, so nothing half-drawn starts the capture.
@@ -299,12 +308,14 @@ Duplicate frames do not grow the result. Along-axis fixed headers stay in the fi
 the previous fixed footer is removed before a new strip and footer are appended. This detection still
 needs the real browser/PDF/native-list corpus before AC-04 can pass.
 
-Record Diagnostic Frames, in the controls' More menu, writes every later sample of that session as it
-was captured, named with the pointer's line and travel, plus one verdict line each in `trace.tsv` with the
-interval since the last sample and the milliseconds spent capturing and matching it, to
+Record Diagnostic Frames, in the controls' More menu, writes every later frame the tracker sees as it was
+captured, named with its batch, the pointer's line and travel, so a replay goes through the batches the
+same way, plus one verdict line each in `trace.tsv`, the newest of a batch with the interval since the
+last batch, the frames in it, how long its newest waited and how long matching took, to
 `captures/diagnostics/scroll-<time>` under Application Support; Finder shows the folder when the
-session ends. Writes queue behind sampling rather than slow it, and a frame is skipped, its number left
-out, while eight wait, since one 10MB frame takes about 20ms to encode. They stop after
+session ends. Frames are written side by side behind matching rather than slow it, since one 10MB frame
+takes about 20ms to encode; while eight are being written a frame is skipped and its trace line says so.
+They stop after
 `ScrollDiagnosticsRecorder.frameLimit` frames. Recordings older than three days, and all but the newest
 three, go whenever a capture starts (`CaptureRepository.reclaimDiagnostics`), and a new recording makes
 room for itself first; Disk Cleanup never offers Tinycast's own files, so this is what keeps them from
