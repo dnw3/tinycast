@@ -139,6 +139,18 @@ struct RootPaletteView: View {
         case .extensionCommand:
             return ExtensionCommandScreen(
                 screen: extensionScreen, extensions: extensions, vm: vm, openActions: openActions)
+        case .proxyStrategies:
+            return ProxyStrategiesScreen(
+                manager: core.proxy, coordinator: core.proxyCoordinator, vm: vm, metrics: metrics,
+                openActions: openActions)
+        case .proxyNodes:
+            return ProxyNodesScreen(
+                manager: core.proxy, coordinator: core.proxyCoordinator, vm: vm, metrics: metrics,
+                openActions: openActions)
+        case .proxyRule:
+            return ProxyRuleScreen(
+                manager: core.proxy, coordinator: core.proxyCoordinator, vm: vm, metrics: metrics,
+                openActions: openActions)
         }
     }
 

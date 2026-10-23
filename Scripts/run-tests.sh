@@ -631,6 +631,33 @@ run cleanup-walk-test      Tinycast/Features/Cleanup/Model/*.swift \
                            Tinycast/Features/Cleanup/Settings/CleanupSettingsStore.swift \
                            Tinycast/Features/Settings/AppSettingsKey.swift \
                            Tinycast/Platform/Signposts.swift
+PROXY_MODEL="Tinycast/Features/Proxy/Model/*.swift Tinycast/Features/Updates/Model/AppVersion.swift
+             Tinycast/Features/Updates/Model/ReleaseArchitecture.swift"
+run proxy-test             $PROXY_MODEL
+run proxy-api-test         $PROXY_MODEL \
+                           Tinycast/Features/Proxy/Service/ProxyCoreRunner.swift Tinycast/Platform/ProcessExit.swift
+run proxy-service-test     $PROXY_MODEL Tinycast/Features/Proxy/Service/ProxySocket.swift \
+                           Tinycast/Features/Proxy/Service/ProxyAPIService.swift \
+                           Tinycast/Features/Proxy/Service/ProxyCoreRunner.swift \
+                           Tinycast/Features/Proxy/Service/ProxyCoreInstaller.swift \
+                           Tinycast/Features/Proxy/Service/ProxyStore.swift Tinycast/Platform/AppPaths.swift \
+                           Tinycast/Platform/KeychainSecretStore.swift Tinycast/Platform/ProcessExit.swift \
+                           Tinycast/Platform/Compression/Zlib.swift
+run proxy-helper-test      $PROXY_MODEL Tinycast/Features/Proxy/Helper/ProxyHelperSupervisor.swift \
+                           Tinycast/Features/Proxy/Helper/ProxyHelperListener.swift \
+                           Tinycast/Features/Proxy/Helper/ProxyHelperEndpoint.swift \
+                           Tinycast/Features/Proxy/Helper/ProxyDNSPlaceholder.swift \
+                           Tinycast/Features/Proxy/Helper/ProxySystemDNS.swift \
+                           Tinycast/Features/Proxy/Service/ProxyHelperWire.swift \
+                           Tinycast/Features/Proxy/Service/ProxyHelperConnection.swift \
+                           Tinycast/Features/Proxy/Service/ProxyCodeSignature.swift \
+                           Tinycast/Features/Proxy/Service/ProxySocket.swift \
+                           Tinycast/Features/Proxy/Service/ProxyAPIService.swift \
+                           Tinycast/Features/Proxy/Service/ProxyCoreRunner.swift Tinycast/Platform/ProcessExit.swift
+run index proxy-smoke      $PROXY_MODEL Tinycast/Features/Proxy/Service/*.swift \
+                           Tinycast/Platform/AppPaths.swift Tinycast/Platform/KeychainSecretStore.swift \
+                           Tinycast/Platform/ProcessExit.swift Tinycast/Platform/Compression/Zlib.swift \
+                           Tinycast/Features/Updates/Service/ToolRunner.swift
 run quicklink-test         Tinycast/Features/Quicklinks/Model/Quicklink.swift \
                            Tinycast/Features/Quicklinks/Model/QuicklinkDestination.swift \
                            Tinycast/Features/Quicklinks/Model/QuicklinkStore.swift \

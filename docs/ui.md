@@ -385,6 +385,21 @@ with its header's chevron.
 
 ---
 
+## Proxy window
+
+Source: `Features/Proxy/Window/`.
+
+The proxy window is built the way Settings is: `AppWindowController` with `SettingsWindowChrome`, a
+`NavigationSplitView` whose sidebar ends in the connection status, and a bridged toolbar holding the
+page title, the mode's segmented control and the connect switch. Content is cards — `Colors.cardFill`
+under a `cardStroke` hairline at `Radius.card` — on the window background, and its editors are the
+Settings editor panels, presented over this window. Colour is kept for strategies: a strategy's tint
+marks its tab, its lines in the flow map, a picked node card and every target menu that names it. Delays
+read green under 150 ms, `Colors.warning` above, red on a timeout and grey untested. A node shows its
+region's flag and its name without the flag it may already open with; Taiwan's region has no flag.
+
+---
+
 ## Translation panel
 
 Source: `Features/Translation/UI/`.

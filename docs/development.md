@@ -51,6 +51,14 @@ Xcode, prefix with `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer` (t
 project settings in `project.yml`, run `xcodegen generate` and commit the result. There is no
 `Package.swift`, and `Bundle.module` must never be used.
 
+The proxy runs the mihomo core, which is downloaded rather than committed. Run
+`./Scripts/fetch-mihomo.sh` once, and again after the pin moves; the "Embed mihomo" phase copies it to
+`Contents/Helpers/mihomo` and signs it. A build without it succeeds and reports the core missing.
+`./Scripts/upgrade-mihomo.sh` moves the pin; [Vendor/mihomo/README.md](../Vendor/mihomo/README.md)
+explains both. TUN runs the core as root through `TinycastProxyHelper`, which the "Embed TUN helper"
+phase copies to `Contents/Helpers/` and signs as `<bundle id>.proxy-helper`; installing it needs an
+administrator, so nothing in the build or the harnesses installs or runs it.
+
 Capture WebP export builds the vendored official C sources as a static `CaptureWebP` target.
 The source version, archive checksum and license are recorded in [Vendor/README.md](../Vendor/README.md);
 no package-manager download is part of the build. Standalone Capture harnesses build the same sources
@@ -207,7 +215,7 @@ the settings-search check, so run it locally before you open one.
 
 ## Generated data
 
-Three Swift files are emitted by scripts and must never be hand-edited. Each downloads its source, so
+Four Swift files are emitted by scripts and must never be hand-edited. Each downloads its source, so
 run them online, then commit the result:
 
 ```sh
@@ -215,7 +223,11 @@ node Scripts/gen-emoji.js            # -> Tinycast/Features/Emoji/Model/EmojiDat
                                      #    + Tinycast/Resources/EmojiKeywords/<language>.txt
 node Scripts/gen-currencies.js       # -> Tinycast/Features/Calculator/Model/CurrencyData.generated.swift
 node Scripts/gen-countries.js        # -> Tinycast/Features/Calculator/Model/CountryZoneData.generated.swift
+node Scripts/gen-proxy-rules.js      # -> Tinycast/Features/Proxy/Model/ProxyRuleNames.generated.swift
 ```
+
+`gen-proxy-rules.js` lists every geosite and geoip set MetaCubeX/meta-rules-dat ships as `.mrs`. It only
+powers the route library's search and its offline check of a typed name; run it occasionally.
 
 `node Scripts/gen-dictation-sounds.js` synthesizes Dictation's start and stop chimes into
 `Tinycast/Resources/DictationStart.wav` and `DictationStop.wav`. It needs no network and writes the same

@@ -63,6 +63,12 @@ extension SettingsTab {
         ]
         case .fileSearch: [.searchFiles]
         case .cleanup: [.cleanUpDisk, .quickClean, .analyzeDiskUsage, .rebuildThumbnails, .restartDock]
+        case .proxy:
+            [
+                .openProxy, .proxyNodes, .proxyRoutes, .proxyStrategies, .addProxyRule, .connectProxy,
+                .disconnectProxy, .proxyRuleMode, .proxyGlobalMode, .proxyDirectMode, .testProxyNodes,
+                .updateProxySubscriptions
+            ]
         case .notes: [.showNotes, .createNote, .searchNotes]
         case .snippets: [.searchSnippets, .createSnippet]
         case .navigation: [.switchWindows, .switchWindowsBackwards, .searchMenuItems]

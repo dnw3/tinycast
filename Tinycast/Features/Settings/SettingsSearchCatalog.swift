@@ -124,7 +124,8 @@ enum SettingsSearchCatalog {
         general + applications + systemSettings + systemActions + commands + quicklinks
         + appleShortcuts + fallbacks + clipboard + snippets + fileSearch + cleanup
         + windowManagement
-        + navigation + notes + calendar + emoji + capture + translation + ai + quickActions + dictation + extensions + permissions
+        + navigation + notes + calendar + emoji + capture + translation + ai + quickActions + dictation + proxy
+        + extensions + permissions
         + backup + about
 
     private static let general: [SettingsSearchEntry] = [
@@ -449,6 +450,45 @@ enum SettingsSearchCatalog {
         .init(
             group: .cleanupExclusions, "Excluded Folders",
             keywords: ["exclude", "ignore", "skip", "never scan", "排除"])
+    ]
+
+    private static let proxy: [SettingsSearchEntry] = [
+        .init(
+            pane: .proxy,
+            keywords: ["proxy", "vpn", "mihomo", "clash", "代理", "科学上网", "节点", "机场"]),
+        .init(.proxyProxy, "Proxy", keywords: ["enable", "turn on", "启用代理"]),
+        .init(
+            .proxyWindow, "Proxy Window",
+            keywords: [
+                "nodes", "strategies", "proxy groups", "routing", "routes", "rules", "rule sets", "subscriptions",
+                "activity", "connections", "节点", "策略", "策略组", "分流", "规则", "我的规则", "规则集", "订阅",
+                "活动", "连接", "测速"
+            ]),
+        .init(
+            .proxyConnection, "Connect when Tinycast starts",
+            keywords: ["auto connect", "login", "自动连接", "开机连接"]),
+        .init(
+            .proxyConnection, "Stay connected after quitting",
+            keywords: ["quit", "keep running", "退出", "保持连接", "不断网"]),
+        .init(.proxyMenuBar, "Show in the menu bar", keywords: ["menu bar", "status item", "菜单栏", "状态栏"]),
+        .init(.proxyMenuBar, "Show speed in the menu bar", keywords: ["speed", "rate", "网速", "速度"]),
+        .init(.proxyTUN, "TUN Mode", keywords: ["tun", "all traffic", "udp", "全局接管", "虚拟网卡"]),
+        .init(
+            .proxyTUN, "TUN Helper",
+            keywords: ["helper", "daemon", "administrator", "install", "uninstall", "助手", "管理员", "卸载"]),
+        .init(.proxyTUN, "DNS Placeholder", keywords: ["dns", "lan dns", "router dns", "占位", "局域网 dns"]),
+        .init(.proxyDNS, "DNS Mode", keywords: ["fake-ip", "fake ip", "real ip", "resolution"]),
+        .init(.proxyDNS, "Domestic DNS", keywords: ["dns server", "国内 dns", "直连 dns"]),
+        .init(.proxyDNS, "Overseas DNS", keywords: ["dns server", "国外 dns", "dns leak", "dns 泄露"]),
+        .init(.proxyCore, "mihomo", keywords: ["core", "kernel", "内核", "version", "log", "日志", "restart"]),
+        .init(.proxyCore, "Core Updates", keywords: ["update core", "upgrade", "内核更新", "升级内核"]),
+        .init(.proxyCore, "Mixed Port", keywords: ["port", "http proxy", "socks", "端口", "terminal", "终端"]),
+        .init(.proxyCore, "Allow LAN Connections", keywords: ["lan", "局域网", "share", "共享"]),
+        .init(.proxyUpdates, "Update subscriptions", keywords: ["interval", "自动更新订阅"]),
+        .init(.proxyUpdates, "Update through the proxy", keywords: ["通过代理更新"]),
+        .init(.proxyAdvanced, "Generated Config", keywords: ["config", "yaml", "json", "配置文件"]),
+        .init(.proxyAdvanced, "Restore Default Settings", keywords: ["reset", "恢复默认", "重置"]),
+        .init(group: .proxyCommands, "Proxy commands", keywords: ["shortcut", "launcher", "hotkey"])
     ]
 
     private static let notes: [SettingsSearchEntry] = [

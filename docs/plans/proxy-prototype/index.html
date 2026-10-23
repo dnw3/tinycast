@@ -1,0 +1,1124 @@
+<!doctype html>
+<html lang="zh-Hans" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tinycast · 代理设计稿 v2</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-font-smoothing: antialiased; }
+:root {
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Helvetica Neue", sans-serif;
+}
+/* Theme.Colors, dark column (frozen baseline) */
+:root[data-theme="dark"] {
+  --page: #0b0c10; --page-ink: #f2f2f5; --page-ink2: rgba(242,242,245,.62); --page-card: rgba(255,255,255,.04);
+  --scrim: rgba(0,0,0,.40); --panel-rim: rgba(255,255,255,.14);
+  --sel: rgba(255,255,255,.10); --hover: rgba(255,255,255,.05); --menu-hover: rgba(255,255,255,.10);
+  --sep: rgba(255,255,255,.10); --ctl: rgba(255,255,255,.10); --ctl-hover: rgba(255,255,255,.16);
+  --border: rgba(255,255,255,.20); --t1: #fff; --t2: rgba(255,255,255,.60); --t3: rgba(255,255,255,.40);
+  --menu-sym: rgba(255,255,255,.70); --card: rgba(255,255,255,.05); --card-stroke: rgba(255,255,255,.10);
+  --tile: rgba(255,255,255,.09); --tile-ink: rgba(255,255,255,.85); --dim: rgba(0,0,0,.34);
+  --glass: rgba(255,255,255,.07);
+  --glass-shadow: inset 0 .5px 0 rgba(255,255,255,.32), inset 0 0 0 .5px rgba(255,255,255,.12), 0 6px 18px rgba(0,0,0,.28);
+  --accent: #0a84ff; --green: #30d158; --orange: #ff9f0a; --red: #ff453a;
+  --wall:
+    radial-gradient(70% 55% at 18% 22%, rgba(255,255,255,.16), transparent 60%),
+    radial-gradient(55% 60% at 88% 82%, rgba(255,255,255,.12), transparent 62%),
+    radial-gradient(40% 40% at 70% 12%, rgba(255,255,255,.07), transparent 60%),
+    linear-gradient(160deg, #101012 0%, #1a1a1d 45%, #070708 100%);
+  --streak: rgba(255,255,255,.10);
+  /* Settings window (system materials, dark) */
+  --win-bg: #1e1e20; --win-rim: rgba(255,255,255,.12); --sb-bg: rgba(52,52,58,.62); --sb-field: rgba(255,255,255,.08);
+  --sb-sel: rgba(255,255,255,.12); --grp-bg: rgba(255,255,255,.045); --grp-rim: rgba(255,255,255,.08);
+  --grp-sep: rgba(255,255,255,.08); --btn: rgba(255,255,255,.12); --field: rgba(255,255,255,.06); --sw-off: rgba(255,255,255,.16);
+  --dlg-bg: rgba(28,28,32,.58); --ed-field: rgba(255,255,255,.06);
+}
+:root[data-theme="light"] {
+  --page: #f4f4f7; --page-ink: #1b1b1f; --page-ink2: rgba(27,27,31,.62); --page-card: rgba(0,0,0,.035);
+  --scrim: rgba(255,255,255,.55); --panel-rim: rgba(0,0,0,.10);
+  --sel: rgba(0,0,0,.09); --hover: rgba(0,0,0,.045); --menu-hover: rgba(0,0,0,.09);
+  --sep: rgba(0,0,0,.12); --ctl: rgba(0,0,0,.08); --ctl-hover: rgba(0,0,0,.14);
+  --border: rgba(0,0,0,.18); --t1: #000; --t2: rgba(0,0,0,.60); --t3: rgba(0,0,0,.42);
+  --menu-sym: rgba(0,0,0,.70); --card: rgba(0,0,0,.04); --card-stroke: rgba(0,0,0,.10);
+  --tile: rgba(0,0,0,.09); --tile-ink: rgba(0,0,0,.85); --dim: rgba(0,0,0,.34);
+  --glass: rgba(255,255,255,.50);
+  --glass-shadow: inset 0 .5px 0 rgba(255,255,255,.95), inset 0 0 0 .5px rgba(0,0,0,.08), 0 6px 18px rgba(0,0,0,.10);
+  --accent: #007aff; --green: #28a745; --orange: #f08c00; --red: #ff3b30;
+  --wall:
+    radial-gradient(70% 55% at 18% 22%, rgba(255,255,255,.95), transparent 60%),
+    radial-gradient(55% 60% at 88% 82%, rgba(255,255,255,.80), transparent 62%),
+    radial-gradient(40% 40% at 70% 12%, rgba(0,0,0,.06), transparent 60%),
+    linear-gradient(160deg, #d9dadf 0%, #c9cbd2 50%, #e4e5e9 100%);
+  --streak: rgba(255,255,255,.55);
+  --win-bg: #f2f2f4; --win-rim: rgba(0,0,0,.12); --sb-bg: rgba(255,255,255,.58); --sb-field: rgba(0,0,0,.06);
+  --sb-sel: rgba(0,0,0,.08); --grp-bg: #fff; --grp-rim: rgba(0,0,0,.08);
+  --grp-sep: rgba(0,0,0,.08); --btn: rgba(0,0,0,.07); --field: #fff; --sw-off: rgba(0,0,0,.14);
+  --dlg-bg: rgba(255,255,255,.62); --ed-field: rgba(0,0,0,.04);
+}
+
+body { font-family: var(--font); background: var(--page); color: var(--page-ink); }
+.page { max-width: 1140px; margin: 0 auto; padding: 44px 32px 110px; }
+
+/* ---------- page chrome ---------- */
+.top { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; }
+.top h1 { font-size: 28px; font-weight: 700; letter-spacing: -.01em; }
+.top p { margin-top: 8px; font-size: 14px; line-height: 1.55; color: var(--page-ink2); max-width: 700px; }
+.seg { display: inline-flex; padding: 3px; border-radius: 10px; background: var(--page-card); box-shadow: inset 0 0 0 .5px var(--sep); }
+.seg button { font: 500 12px var(--font); color: var(--page-ink2); background: none; border: 0; padding: 6px 14px; border-radius: 8px; cursor: pointer; }
+.seg button.on { background: var(--ctl); color: var(--page-ink); }
+.principles { margin-top: 22px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.principles div { background: var(--page-card); border-radius: 14px; padding: 14px 16px; box-shadow: inset 0 0 0 .5px var(--sep); }
+.principles b { display: block; font-size: 13px; margin-bottom: 4px; }
+.principles span { font-size: 12px; line-height: 1.5; color: var(--page-ink2); }
+.board { margin-top: 46px; }
+.board h2 { font-size: 17px; font-weight: 600; display: flex; align-items: baseline; gap: 10px; }
+.board h2 i { font-style: normal; font-size: 12px; font-weight: 500; color: var(--page-ink2); }
+.board .cap { margin: 6px 0 14px; font-size: 13px; line-height: 1.6; color: var(--page-ink2); max-width: 900px; }
+.board .cap code { font: 12px ui-monospace, "SF Mono", monospace; background: var(--page-card); padding: 1px 5px; border-radius: 5px; }
+.stage { position: relative; height: 620px; border-radius: 22px; overflow: hidden; background: var(--wall);
+  display: flex; align-items: center; justify-content: center; gap: 44px; isolation: isolate; }
+.stage::before { content: ""; position: absolute; inset: -20%; z-index: -1; pointer-events: none;
+  background: repeating-linear-gradient(118deg, transparent 0 150px, var(--streak) 190px, transparent 250px); filter: blur(10px); }
+.stage.tall { height: 1050px; }
+.stage.col { flex-direction: column; gap: 14px; }
+
+/* ---------- icons ---------- */
+.ic { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+/* ---------- palette panel ---------- */
+.panel { position: relative; width: 750px; height: 475px; border-radius: 26px; overflow: hidden; flex: none;
+  background: var(--scrim); -webkit-backdrop-filter: blur(42px) saturate(170%); backdrop-filter: blur(42px) saturate(170%);
+  box-shadow: inset 0 0 0 .5px var(--panel-rim), 0 30px 80px rgba(0,0,0,.42), 0 0 0 .5px rgba(0,0,0,.30); color: var(--t1); }
+.hdr { position: absolute; left: 0; right: 0; top: 0; height: 60px; display: flex; align-items: center; padding: 0 16px; z-index: 3; }
+.hdr .lead { width: 26px; height: 26px; display: grid; place-items: center; color: var(--t2); }
+.hdr .lead .ic { width: 19px; height: 19px; stroke-width: 2; }
+.hdr .q { margin-left: 10px; font-size: 20px; letter-spacing: -.01em; flex: 1; white-space: nowrap; }
+.hdr .q .ph { color: var(--t3); }
+.caret { display: inline-block; width: 2px; height: 23px; background: var(--accent); vertical-align: -5px; border-radius: 1px; margin: 0 1px; }
+.hpop { height: 28px; padding: 0 8px; border-radius: 8px; display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; color: var(--t2); }
+.hpop .ic { width: 13px; height: 13px; }
+.list { position: absolute; left: 8px; right: 8px; top: 56px; bottom: 0; padding-bottom: 80px; overflow: hidden;
+  -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - 104px), rgba(0,0,0,.25) calc(100% - 50px), transparent 100%);
+          mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - 104px), rgba(0,0,0,.25) calc(100% - 50px), transparent 100%); }
+.sec { font-size: 11px; font-weight: 500; color: var(--t2); padding: 0 8px; margin: 12px 0 4px; height: 16px; display: flex; align-items: flex-end; gap: 6px; }
+.sec.first { margin-top: 4px; }
+.sec em { font-style: normal; color: var(--t3); font-weight: 400; }
+.row { height: 38px; display: flex; align-items: center; gap: 10px; padding: 0 8px; border-radius: 10px; }
+.row.sel { background: var(--sel); }
+.slot { width: 26px; height: 26px; display: grid; place-items: center; flex: none; }
+.tile { width: 22px; height: 22px; border-radius: 5px; background: var(--tile); color: var(--tile-ink); display: grid; place-items: center; }
+.tile .ic { width: 13px; height: 13px; stroke-width: 2; }
+.flag { font-size: 17px; line-height: 1; }
+.ttl { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kcs { display: flex; gap: 2px; }
+.kc { min-width: 18px; height: 18px; padding: 0 4px; border-radius: 6px; display: inline-grid; place-items: center; font-size: 10px; color: var(--t2); }
+.kc.o { box-shadow: inset 0 0 0 1px var(--border); }
+.kc.f { background: var(--ctl); }
+.trail { margin-left: auto; font-size: 12px; color: var(--t3); white-space: nowrap; display: flex; align-items: center; gap: 6px; }
+.lat { font-variant-numeric: tabular-nums; }
+.lat.good { color: var(--green); } .lat.mid { color: var(--orange); } .lat.bad { color: var(--red); }
+.cur { color: var(--t1); width: 13px; height: 13px; stroke-width: 2.4; }
+
+/* lead card (LeadCardChrome: cardFill under selection) */
+.lead-card { position: relative; height: 92px; border-radius: 10px; background: var(--card); display: flex; align-items: center; }
+.lead-card.sel::before { content: ""; position: absolute; inset: 0; border-radius: 10px; background: var(--sel); }
+.lc { position: relative; flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.lc + .lc::after { content: ""; position: absolute; left: 0; top: 4px; bottom: 4px; width: 1px; background: var(--sep); }
+.lc .v { font-size: 22px; font-weight: 500; letter-spacing: -.01em; display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+.lc .v .flag { font-size: 20px; }
+.badge { font-size: 10px; color: var(--t2); background: var(--ctl); padding: 2px 7px; border-radius: 6px; white-space: nowrap; }
+.dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex: none; }
+.dot.on { background: var(--green); box-shadow: 0 0 0 3px color-mix(in srgb, var(--green) 22%, transparent); }
+
+/* bottom bar */
+.foot { position: absolute; left: 8px; right: 8px; bottom: 8px; height: 36px; display: flex; align-items: center; justify-content: space-between; z-index: 4; }
+.glass { background: var(--glass); -webkit-backdrop-filter: blur(16px) saturate(180%); backdrop-filter: blur(16px) saturate(180%); box-shadow: var(--glass-shadow); }
+.mcircle { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; color: var(--t1); }
+.mcircle .ic { width: 16px; height: 16px; stroke-width: 2; }
+.capsule { height: 36px; border-radius: 18px; display: flex; align-items: center; padding: 4px; gap: 2px; }
+.bb { height: 28px; border-radius: 14px; padding: 0 8px; display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.bb.second { color: var(--t2); font-weight: 500; }
+.bb.on { background: var(--sel); color: var(--t1); }
+
+/* list + preview split (Clipboard pattern) */
+.left { position: absolute; left: 8px; top: 56px; width: 282px; bottom: 0; padding-bottom: 80px; overflow: hidden;
+  -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - 104px), rgba(0,0,0,.25) calc(100% - 50px), transparent 100%);
+          mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - 104px), rgba(0,0,0,.25) calc(100% - 50px), transparent 100%); }
+.vline { position: absolute; left: 298px; top: 62px; bottom: 58px; width: 1px; background: var(--sep); }
+.detail { position: absolute; left: 299px; right: 0; top: 60px; bottom: 58px; padding: 4px 16px 0 16px; overflow: hidden; }
+.hero { border-radius: 10px; background: var(--card); padding: 16px; display: flex; align-items: center; gap: 14px; }
+.hero .bigflag { font-size: 34px; line-height: 1; }
+.hero .name { font-size: 17px; font-weight: 600; }
+.hero .sub { margin-top: 3px; font-size: 12px; color: var(--t2); }
+.hero .latbox { margin-left: auto; text-align: right; }
+.readout { font-size: 26px; font-weight: 600; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.unit { font-size: 12px; color: var(--t2); margin-left: 3px; }
+.spark { display: flex; align-items: flex-end; gap: 3px; height: 16px; margin-top: 6px; justify-content: flex-end; }
+.spark i { width: 4px; border-radius: 2px; background: color-mix(in srgb, var(--green) 70%, transparent); }
+.kv { height: 25px; display: flex; align-items: center; justify-content: space-between; padding: 0 8px; font-size: 12px; }
+.kv span:first-child { color: var(--t2); }
+.detail .sec { margin-top: 16px; }
+
+/* PopoverMenu */
+.menu { position: absolute; right: 8px; bottom: 50px; width: 306px; border-radius: 16px 16px 18px 16px; padding: 6px; z-index: 6; color: var(--t1);
+  background: var(--glass); -webkit-backdrop-filter: blur(26px) saturate(180%); backdrop-filter: blur(26px) saturate(180%);
+  box-shadow: var(--glass-shadow), 0 18px 40px rgba(0,0,0,.30); }
+:root[data-theme="dark"] .menu { background: rgba(38,38,42,.96); }
+:root[data-theme="light"] .menu { background: rgba(248,248,250,.96); }
+.mrow { height: 36px; display: flex; align-items: center; gap: 8px; padding: 0 8px; border-radius: 10px; font-size: 13px; margin-bottom: 1px; }
+.mrow.hl { background: var(--menu-hover); }
+.mrow .mi { width: 20px; height: 20px; display: grid; place-items: center; color: var(--menu-sym); }
+.mrow .mi .ic { width: 14px; height: 14px; stroke-width: 2; }
+.mrow .sc { margin-left: auto; font-size: 12px; color: var(--t3); letter-spacing: .04em; }
+.mdiv { height: 1px; background: var(--sep); margin: 4px 10px 5px; }
+.msearch { height: 36px; display: flex; align-items: center; gap: 8px; padding: 0 12px; margin-top: 2px; font-size: 13px; color: var(--t3); }
+.msearch .ic { width: 14px; height: 14px; }
+
+/* Dialog (DialogView: glass panel 26, symbol tile, full-width capsule buttons) */
+.dlg { width: 290px; border-radius: 26px; padding: 18px; color: var(--t1); flex: none;
+  background: var(--dlg-bg); -webkit-backdrop-filter: blur(34px) saturate(180%); backdrop-filter: blur(34px) saturate(180%);
+  box-shadow: inset 0 0 0 .5px var(--panel-rim), 0 26px 70px rgba(0,0,0,.40); }
+.dlg .inner { padding: 4px 4px 0; }
+.dsym { width: 52px; height: 52px; border-radius: 16px; background: var(--ctl); display: grid; place-items: center; color: var(--t2); }
+.dsym .ic { width: 28px; height: 28px; stroke-width: 1.7; }
+.dtitle { margin-top: 20px; font-size: 13px; font-weight: 700; }
+.dmsg { margin-top: 6px; font-size: 13px; line-height: 1.5; color: var(--t2); }
+.dbtns { display: flex; gap: 8px; margin-top: 20px; }
+.dbtn { flex: 1; height: 34px; border-radius: 17px; font-size: 12px; display: grid; place-items: center; background: var(--ctl); color: var(--t1); }
+.dbtn.cancel { color: var(--t2); }
+.dbtn.primary { background: color-mix(in srgb, var(--accent) 20%, transparent); color: var(--accent); }
+.dim { position: absolute; inset: 0; background: var(--dim); z-index: 8; }
+.overlay-center { position: absolute; inset: 0; display: grid; place-items: center; z-index: 9; }
+
+/* HUD pill (HUDCapsule: tone glow, scrim, glass, fading rim) */
+.hud { --tint: var(--green); position: relative; display: inline-flex; align-items: center; gap: 8px; padding: 10px 14px 10px 12px; border-radius: 999px;
+  font-size: 12px; font-weight: 600; color: var(--t1);
+  background: radial-gradient(150px circle at 22px 50%, color-mix(in srgb, var(--tint) 16%, transparent), color-mix(in srgb, var(--tint) 3%, transparent) 55%, transparent 100%), var(--scrim);
+  -webkit-backdrop-filter: blur(30px) saturate(170%); backdrop-filter: blur(30px) saturate(170%); box-shadow: 0 12px 30px rgba(0,0,0,.25); }
+.hud::after { content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--tint) 30%, transparent), color-mix(in srgb, var(--tint) 6%, transparent) 55%, transparent);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; }
+.hud .hi { width: 20px; height: 20px; display: grid; place-items: center; color: var(--tint); }
+.hud .hi .ic { width: 14px; height: 14px; stroke-width: 2.6; }
+.hud.neutral { --tint: var(--t2); } .hud.danger { --tint: var(--red); } .hud.progress { --tint: var(--accent); }
+.spin { animation: spin 1s steps(8) infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.hud-note { font-size: 12px; color: var(--t2); margin-top: 10px; }
+:root[data-theme="light"] .hud-note { color: rgba(0,0,0,.55); }
+
+/* Settings window (stock grouped Form, system sidebar) */
+.win { position: relative; width: 880px; height: 970px; border-radius: 16px; overflow: hidden; display: flex; flex: none; color: var(--t1);
+  background: var(--win-bg); box-shadow: 0 0 0 .5px var(--win-rim), 0 34px 90px rgba(0,0,0,.45); }
+.traffic { position: absolute; top: 19px; left: 22px; display: flex; gap: 8px; z-index: 5; }
+.traffic i { width: 12px; height: 12px; border-radius: 50%; }
+.traffic i:nth-child(1) { background: #ff5f57; } .traffic i:nth-child(2) { background: #febc2e; } .traffic i:nth-child(3) { background: #28c840; }
+.sidebar { width: 215px; margin: 8px 0 8px 8px; border-radius: 18px; padding: 48px 10px 10px; flex: none;
+  background: var(--sb-bg); -webkit-backdrop-filter: blur(30px); backdrop-filter: blur(30px); box-shadow: inset 0 0 0 .5px var(--win-rim); }
+.sb-search { height: 28px; border-radius: 8px; background: var(--sb-field); display: flex; align-items: center; gap: 6px; padding: 0 8px; font-size: 13px; color: var(--t3); margin: 0 2px 6px; }
+.sb-search .ic { width: 13px; height: 13px; }
+.sb-sec { font-size: 11px; font-weight: 600; color: var(--t3); padding: 12px 8px 4px; }
+.sb-item { height: 28px; display: flex; align-items: center; gap: 8px; padding: 0 6px; border-radius: 8px; font-size: 13px; }
+.sb-item .si { width: 22px; height: 22px; border-radius: 6px; display: grid; place-items: center; background: color-mix(in srgb, var(--accent) 10%, transparent); color: var(--accent); flex: none; }
+.sb-item .si .ic { width: 14px; height: 14px; stroke-width: 1.9; }
+.sb-item.sel { background: var(--sb-sel); font-weight: 600; }
+.content { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.titlebar { height: 56px; display: flex; align-items: center; gap: 12px; padding: 0 22px; }
+.navcap { height: 30px; border-radius: 15px; display: flex; align-items: center; padding: 0 4px; color: var(--t2); }
+.navcap span { width: 28px; height: 24px; display: grid; place-items: center; }
+.navcap .ic { width: 14px; height: 14px; stroke-width: 2.1; }
+.navcap span + span { color: var(--t3); }
+.wtitle { font-size: 15px; font-weight: 700; }
+.form { flex: 1; padding: 2px 30px 30px; overflow: hidden; }
+.grp { background: var(--grp-bg); border-radius: 12px; box-shadow: inset 0 0 0 .5px var(--grp-rim); }
+.grp-h { font-size: 13px; font-weight: 600; margin: 22px 10px 8px; }
+.grp-f { font-size: 11px; line-height: 1.5; color: var(--t2); margin: 8px 10px 0; }
+.srow { position: relative; min-height: 44px; display: flex; align-items: center; gap: 10px; padding: 9px 12px; }
+.srow + .srow::before { content: ""; position: absolute; top: 0; left: 12px; right: 12px; height: 1px; background: var(--grp-sep); }
+.lbl { flex: 1; min-width: 0; }
+.lbl .t { font-size: 13px; display: flex; align-items: center; gap: 6px; }
+.lbl .t.b { font-weight: 600; }
+.lbl .s { font-size: 11px; line-height: 1.45; color: var(--t2); margin-top: 2px; }
+.mic { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; background: color-mix(in srgb, var(--accent) 10%, transparent); color: var(--accent); flex: none; }
+.mic .ic { width: 19px; height: 19px; stroke-width: 1.8; }
+.sicon { width: 24px; height: 24px; border-radius: 6px; display: grid; place-items: center; background: var(--btn); color: var(--t2); flex: none; }
+.sicon .ic { width: 13px; height: 13px; stroke-width: 2; }
+.toggle { width: 38px; height: 22px; border-radius: 11px; background: var(--sw-off); position: relative; flex: none; }
+.toggle::after { content: ""; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.30); }
+.toggle.on { background: var(--accent); }
+.toggle.on::after { left: 18px; }
+.pbtn { height: 24px; padding: 0 12px; border-radius: 12px; background: var(--btn); font-size: 13px; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; flex: none; }
+.popup { height: 24px; padding: 0 6px 0 11px; border-radius: 12px; background: var(--btn); font-size: 13px; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; flex: none; }
+.popup .ic { width: 11px; height: 11px; stroke-width: 2.2; color: var(--t2); }
+.tfield { height: 24px; min-width: 72px; padding: 0 8px; border-radius: 7px; background: var(--field); box-shadow: inset 0 0 0 .5px var(--grp-rim);
+  font-size: 13px; display: flex; align-items: center; justify-content: flex-end; font-variant-numeric: tabular-nums; flex: none; }
+.btns { display: flex; gap: 8px; flex: none; }
+.usage { height: 4px; border-radius: 2px; background: var(--btn); margin-top: 6px; width: 220px; overflow: hidden; }
+.usage i { display: block; height: 100%; background: var(--accent); border-radius: 2px; }
+.status { display: inline-flex; align-items: center; gap: 6px; }
+.status .dot { width: 7px; height: 7px; }
+
+/* Settings editor (dialog language over the dimmed window) */
+.editor { width: 470px; border-radius: 26px; padding: 22px 22px 18px; color: var(--t1);
+  background: var(--dlg-bg); -webkit-backdrop-filter: blur(36px) saturate(180%); backdrop-filter: blur(36px) saturate(180%);
+  box-shadow: inset 0 0 0 .5px var(--panel-rim), 0 30px 80px rgba(0,0,0,.45); }
+.ed-title { font-size: 15px; font-weight: 700; }
+.ed-sub { font-size: 12px; color: var(--t2); margin-top: 3px; }
+.ed-grid { margin-top: 18px; display: grid; grid-template-columns: 72px 1fr; gap: 10px 12px; align-items: center; }
+.ed-grid label { font-size: 12px; color: var(--t2); text-align: right; }
+.fld { height: 30px; border-radius: 12px; background: var(--ed-field); box-shadow: inset 0 0 0 1px var(--border); display: flex; align-items: center;
+  gap: 8px; padding: 0 11px; font-size: 13px; min-width: 0; white-space: nowrap; overflow: hidden; }
+.fld .ph { color: var(--t3); }
+.fld .end { margin-left: auto; color: var(--t2); display: flex; align-items: center; }
+.fld .end .ic { width: 14px; height: 14px; }
+.fld.mono { font: 12px ui-monospace, "SF Mono", monospace; }
+.fld .tag { font-size: 11px; color: var(--t2); background: var(--ctl); border-radius: 6px; padding: 1px 6px; flex: none; }
+.fld-row { display: flex; gap: 8px; align-items: center; min-width: 0; }
+.fld-row .fld { flex: 1; }
+.fld-row .arrow { color: var(--t3); font-size: 13px; }
+.link { color: var(--accent); }
+.ed-preview { margin-top: 14px; border-radius: 12px; background: var(--card); padding: 10px 12px; font-size: 12px; color: var(--t2); display: flex; align-items: center; gap: 8px; }
+.ed-preview .ic { width: 14px; height: 14px; color: var(--green); stroke-width: 2.4; }
+.ed-preview .flags { margin-left: auto; letter-spacing: 2px; }
+:root[data-theme="dark"] {
+  --c-default:#0a84ff; --c-fast:#64d2ff; --c-us:#bf5af2; --c-hk:#ff9f0a; --c-stable:#30d158; --c-direct:#8e8e93; --c-reject:#ff453a;
+  --seg-on: rgba(255,255,255,.22); --nmenu-bg: rgba(40,40,44,.88); --sel-strong: rgba(255,255,255,.18); --code-bg: rgba(0,0,0,.22);
+  --syn-key:#fc5fa3; --syn-str:#fc6a5d; --syn-num:#d0bf69; --syn-com:#7f8c98; --syn-prop:#6bbcdd;
+}
+:root[data-theme="light"] {
+  --c-default:#007aff; --c-fast:#0094c4; --c-us:#9b3dd6; --c-hk:#e07800; --c-stable:#1f9d47; --c-direct:#8e8e93; --c-reject:#e5342b;
+  --seg-on: #fff; --nmenu-bg: rgba(246,246,248,.92); --sel-strong: rgba(0,0,0,.10); --code-bg: rgba(0,0,0,.03);
+  --syn-key:#ad3da4; --syn-str:#d12f1b; --syn-num:#272ad8; --syn-com:#5d6c79; --syn-prop:#0f68a0;
+}
+.nav { position: sticky; top: 0; z-index: 50; margin: 22px -32px 0; padding: 10px 32px; display: flex; gap: 4px; flex-wrap: wrap;
+  background: color-mix(in srgb, var(--page) 86%, transparent); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); border-bottom: .5px solid var(--sep); }
+.nav a { font-size: 12px; color: var(--page-ink2); text-decoration: none; padding: 4px 10px; border-radius: 8px; }
+.nav a:hover { background: var(--page-card); color: var(--page-ink); }
+.sd { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex: none; background: var(--c); }
+.t3 { color: var(--t3); }
+/* model */
+.model { position: relative; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 110px; padding: 30px 40px 26px; border-radius: 22px;
+  background: var(--page-card); box-shadow: inset 0 0 0 .5px var(--sep); }
+.model svg.wires { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+.mcol { position: relative; z-index: 1; }
+.mcol h3 { font-size: 14px; font-weight: 600; }
+.mcap { font-size: 12px; color: var(--page-ink2); line-height: 1.5; margin: 4px 0 14px; min-height: 36px; }
+.mcard { background: var(--page); border-radius: 11px; padding: 8px 11px; margin-bottom: 7px; display: flex; align-items: center; gap: 8px; font-size: 13px;
+  box-shadow: inset 0 0 0 .5px var(--sep), 0 1px 2px rgba(0,0,0,.06); }
+.mcard small { margin-left: auto; font-size: 11px; color: var(--page-ink2); white-space: nowrap; }
+.mcard.pool { display: block; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 60%, transparent); }
+.mcard.dimmed { opacity: .5; }
+.merge { text-align: center; font-size: 11px; color: var(--page-ink2); margin: 2px 0 7px; }
+.regions { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.regions span { font-size: 11px; background: var(--page-card); border-radius: 6px; padding: 2px 6px; color: var(--page-ink2); }
+.win .regions span { background: var(--btn); color: var(--t2); }
+.mnote { margin-top: 18px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.mnote div { font-size: 12px; line-height: 1.55; color: var(--page-ink2); }
+.mnote b { color: var(--page-ink); }
+/* board tabs */
+.btabs { display: inline-flex; gap: 2px; padding: 3px; border-radius: 10px; background: var(--page-card); box-shadow: inset 0 0 0 .5px var(--sep); margin-bottom: 12px; }
+.btabs button { font: 500 12px var(--font); color: var(--page-ink2); background: none; border: 0; padding: 5px 12px; border-radius: 8px; cursor: pointer; }
+.btabs button.on { background: var(--ctl); color: var(--page-ink); }
+/* palette additions */
+.ptile { width: 22px; height: 22px; border-radius: 5px; background: var(--c); color: #fff; display: grid; place-items: center; }
+.ptile .ic { width: 13px; height: 13px; stroke-width: 2.2; }
+.src { font-size: 11px; color: var(--t3); }
+.hdr .q.title { font-size: 20px; color: var(--t1); }
+.pform { position: absolute; left: 0; right: 0; top: 70px; padding: 6px 40px; display: flex; flex-direction: column; gap: 16px; }
+.frow { display: flex; align-items: center; gap: 20px; }
+.frow::after { content: ""; width: 60px; flex: none; }
+.frow > label { width: 120px; text-align: right; font-size: 11px; font-weight: 500; color: var(--t2); flex: none; }
+.ff { flex: 1; height: 36px; border-radius: 12px; background: var(--card); box-shadow: inset 0 0 0 1px var(--border); display: flex; align-items: center; gap: 8px; padding: 0 12px; font-size: 13px; min-width: 0; white-space: nowrap; }
+.ff.focus { box-shadow: inset 0 0 0 2px var(--border); }
+.ff .end { margin-left: auto; display: flex; align-items: center; gap: 6px; color: var(--t2); font-size: 12px; }
+.ff .end .ic { width: 12px; height: 12px; }
+.hint { font-size: 12px; color: var(--t2); line-height: 1.55; flex: 1; }
+/* settings additions */
+.pseg { display: flex; justify-content: center; margin: 0 0 14px; }
+.pseg div { display: inline-flex; padding: 2px; border-radius: 8px; background: var(--btn); }
+.pseg span { font-size: 12px; padding: 3px 18px; border-radius: 6px; cursor: pointer; }
+.pseg span.on { background: var(--seg-on); box-shadow: 0 1px 2px rgba(0,0,0,.18); }
+.cbx { width: 14px; height: 14px; border-radius: 4px; flex: none; box-shadow: inset 0 0 0 1px var(--border); display: grid; place-items: center; }
+.cbx.on { background: var(--accent); box-shadow: none; }
+.cbx.on::after { content: ""; width: 7px; height: 3.5px; border-left: 2px solid #fff; border-bottom: 2px solid #fff; transform: translateY(-1px) rotate(-45deg); }
+.tag2 { font-size: 10px; color: var(--t2); background: var(--btn); border-radius: 5px; padding: 1px 6px; font-weight: 500; }
+.srow.off .lbl, .srow.off .cbx { opacity: .5; }
+.stile { width: 26px; height: 26px; border-radius: 7px; display: grid; place-items: center; flex: none; background: color-mix(in srgb, var(--c) 14%, transparent); color: var(--c); }
+.stile .ic { width: 14px; height: 14px; stroke-width: 2; }
+.uses { display: flex; gap: 4px; align-items: center; margin-top: 5px; font-size: 11px; color: var(--t3); flex-wrap: wrap; }
+.uses b { font-weight: 500; color: var(--t2); background: var(--btn); border-radius: 5px; padding: 1px 6px; }
+.spop { height: 24px; min-width: 120px; padding: 0 6px 0 10px; border-radius: 12px; background: var(--btn); font-size: 13px; display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; flex: none; }
+.spop .ic { width: 11px; height: 11px; stroke-width: 2.2; color: var(--t2); margin-left: auto; }
+.spop.open { box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 45%, transparent); }
+.drag { width: 9px; height: 15px; flex: none; opacity: .55; background-image: radial-gradient(circle, var(--t2) 1.1px, transparent 1.4px); background-size: 4.5px 5px; }
+.drag.none { opacity: 0; }
+.grp-h .hint2 { font-weight: 400; font-size: 11px; color: var(--t3); margin-left: 8px; }
+.nmenu { position: absolute; right: 12px; top: 38px; z-index: 20; width: 210px; padding: 5px; border-radius: 10px; display: none;
+  background: var(--nmenu-bg); -webkit-backdrop-filter: blur(30px) saturate(180%); backdrop-filter: blur(30px) saturate(180%);
+  box-shadow: 0 0 0 .5px var(--win-rim), 0 14px 34px rgba(0,0,0,.35); }
+.show-menu .nmenu { display: block; }
+.nm { height: 22px; display: flex; align-items: center; gap: 7px; padding: 0 8px 0 4px; border-radius: 5px; font-size: 13px; }
+.nm .chk { width: 13px; font-size: 11px; text-align: center; }
+.nm.hl { background: var(--accent); color: #fff; }
+.nm.hl .sd { box-shadow: 0 0 0 1.5px rgba(255,255,255,.85); }
+.nm .r { margin-left: auto; font-size: 11px; color: var(--t3); }
+.nm.hl .r { color: rgba(255,255,255,.8); }
+.nsep { height: 1px; background: var(--grp-sep); margin: 5px 6px; }
+/* editors */
+.editor { display: none; }
+.editor.show { display: block; }
+.editor.mid { width: 540px; }
+.editor.wide { width: 720px; }
+.ed-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { height: 26px; padding: 0 10px; border-radius: 13px; font-size: 12px; display: inline-flex; align-items: center; gap: 5px; background: var(--ctl); }
+.chip.on { background: color-mix(in srgb, var(--accent) 22%, transparent); color: var(--accent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent); }
+.eseg { display: inline-flex; padding: 2px; border-radius: 10px; background: var(--ctl); }
+.eseg span { font-size: 12px; padding: 4px 12px; border-radius: 8px; color: var(--t2); }
+.eseg span.on { background: var(--sel-strong); color: var(--t1); }
+.fhint { font-size: 11px; color: var(--t3); margin-top: 5px; }
+.colors { display: flex; gap: 9px; align-items: center; padding: 0 4px; }
+.colors i { width: 14px; height: 14px; border-radius: 50%; background: var(--c); }
+.colors i.on { box-shadow: 0 0 0 2px var(--win-bg), 0 0 0 3.5px var(--c); }
+.ed-grid.top { align-items: start; }
+.ed-grid.top label { padding-top: 7px; }
+.w-s { flex: 0 0 auto !important; }
+.toolbar { display: flex; gap: 8px; align-items: center; margin-top: 16px; }
+.sfield { flex: 1; height: 30px; border-radius: 12px; background: var(--ed-field); box-shadow: inset 0 0 0 1px var(--border); display: flex; align-items: center; gap: 8px; padding: 0 11px; font-size: 13px; color: var(--t3); }
+.sfield .ic { width: 13px; height: 13px; }
+.ibtn { height: 30px; padding: 0 12px; border-radius: 15px; background: var(--ctl); display: inline-flex; align-items: center; gap: 6px; font-size: 12px; white-space: nowrap; flex: none; }
+.ibtn .ic { width: 12px; height: 12px; stroke-width: 2.4; }
+.rtable { margin-top: 10px; border-radius: 12px; background: var(--ed-field); box-shadow: inset 0 0 0 1px var(--border); overflow: hidden; }
+.rhead, .rrow { display: grid; grid-template-columns: 14px 88px 1fr 168px 14px; align-items: center; gap: 10px; padding: 0 12px; }
+.rhead { height: 28px; font-size: 11px; color: var(--t3); box-shadow: inset 0 -1px 0 var(--sep); }
+.rrow { height: 34px; font-size: 12px; }
+.rrow + .rrow { box-shadow: inset 0 1px 0 var(--sep); }
+.rrow.sel { background: color-mix(in srgb, var(--accent) 16%, transparent); }
+.mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tchip { display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 6px 0 9px; border-radius: 11px; background: var(--ctl); font-size: 12px; }
+.tchip .ic { width: 10px; height: 10px; color: var(--t3); margin-left: auto; }
+.more { color: var(--t3); text-align: center; letter-spacing: 1px; }
+.testbar { margin-top: 12px; border-radius: 12px; background: var(--card); padding: 8px 10px 8px 12px; font-size: 12px; display: flex; align-items: center; gap: 10px; white-space: nowrap; }
+.testbar .fld { height: 26px; }
+.testbar .ic { width: 14px; height: 14px; color: var(--green); stroke-width: 2.4; }
+.code { margin-top: 14px; border-radius: 12px; background: var(--code-bg); box-shadow: inset 0 0 0 1px var(--border); padding: 10px 0; font: 12px/19px ui-monospace, "SF Mono", Menlo, monospace; }
+.cl { display: flex; white-space: pre; }
+.cl .ln { width: 40px; text-align: right; padding-right: 14px; color: var(--t3); flex: none; }
+.cl.cur { background: var(--hover); }
+.k { color: var(--syn-key); } .s { color: var(--syn-str); } .n { color: var(--syn-num); } .c { color: var(--syn-com); } .p { color: var(--syn-prop); }
+.win .overlay-center { align-items: center; }
+
+.nav .ng { font-size: 11px; color: var(--page-ink2); opacity: .6; padding: 4px 2px 4px 12px; }
+.nav .ng:first-of-type { padding-left: 4px; }
+.stage.xl { height: 1400px; }
+.stage.xl .win { height: 1320px; }
+.tfield.wide { min-width: 236px; justify-content: flex-start; font-variant-numeric: normal; }
+.pbtn.danger { color: var(--red); }
+.lead-card.empty { justify-content: flex-start; }
+.onb { display: flex; align-items: center; gap: 14px; padding: 0 22px; }
+.onb-ic { width: 44px; height: 44px; border-radius: 12px; background: var(--ctl); display: grid; place-items: center; color: var(--t2); flex: none; }
+.onb-ic .ic { width: 22px; height: 22px; stroke-width: 1.8; }
+.onb-t { font-size: 15px; font-weight: 600; }
+.onb-s { font-size: 12px; color: var(--t2); margin-top: 3px; }
+.mono-s { font-family: ui-monospace, "SF Mono", monospace; font-size: 11px; color: var(--t3); margin-right: 8px; }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 20 20"/></symbol>
+    <symbol id="i-chev-left" viewBox="0 0 24 24"><path d="M15 5 8 12l7 7"/></symbol>
+    <symbol id="i-chev-right" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></symbol>
+    <symbol id="i-chev-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+    <symbol id="i-updown" viewBox="0 0 24 24"><path d="m7 9.5 5-5 5 5M7 14.5l5 5 5-5"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M6 9.5h12M6 14.5h8"/></symbol>
+    <symbol id="i-list" viewBox="0 0 24 24"><path d="M9 6.5h11M9 12h11M9 17.5h11"/><circle cx="4.5" cy="6.5" r=".6"/><circle cx="4.5" cy="12" r=".6"/><circle cx="4.5" cy="17.5" r=".6"/></symbol>
+    <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="3.8" ry="9"/><path d="M3.5 9h17M3.5 15h17"/></symbol>
+    <symbol id="i-power" viewBox="0 0 24 24"><path d="M12 3.5v8"/><path d="M6.6 6.6a7.6 7.6 0 1 0 10.8 0"/></symbol>
+    <symbol id="i-branch" viewBox="0 0 24 24"><path d="M12 21v-8.5L6.5 7M12 12.5 17.5 7"/><path d="M6 11V6.5h4.5M18 11V6.5h-4.5"/></symbol>
+    <symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M4 12h15M13.5 6.5 19 12l-5.5 5.5"/></symbol>
+    <symbol id="i-gauge" viewBox="0 0 24 24"><path d="M4.2 16.5a8.3 8.3 0 1 1 15.6 0"/><path d="m12 14 4.2-4.6"/><circle cx="12" cy="14.2" r="1"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M19.5 12A7.5 7.5 0 1 1 17.3 6.7"/><path d="M19.5 4v4.5H15"/></symbol>
+    <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></symbol>
+    <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 3 5.5 13.5H11L10.5 21 18.5 10H13z"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><path d="M12 10.5V18M12 6.5v.2"/></symbol>
+    <symbol id="i-excl" viewBox="0 0 24 24"><path d="M12 5.5v9M12 18.5v.2"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="11" height="11" rx="2.5"/><path d="M15.5 5.5v-.5a1.5 1.5 0 0 0-1.5-1.5H6A2.5 2.5 0 0 0 3.5 6v8A1.5 1.5 0 0 0 5 15.5h.5"/></symbol>
+    <symbol id="i-xcircle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="m9 9 6 6M15 9l-6 6"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3 19 6v5.5c0 4.4-2.9 8-7 9.5-4.1-1.5-7-5.1-7-9.5V6z"/><path d="m9 12 2.2 2.2L15.5 10"/></symbol>
+    <symbol id="i-import" viewBox="0 0 24 24"><path d="M8 9.5H6.5A2.5 2.5 0 0 0 4 12v6.5A2.5 2.5 0 0 0 6.5 21h11a2.5 2.5 0 0 0 2.5-2.5V12a2.5 2.5 0 0 0-2.5-2.5H16"/><path d="M12 3v11.5M8.5 11l3.5 3.5 3.5-3.5"/></symbol>
+    <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3.1-3.1a4 4 0 0 0-5.7-5.7L11.8 6.5"/><path d="M14 10a4 4 0 0 0-5.7 0l-3.1 3.1a4 4 0 0 0 5.7 5.7l1.3-1.3"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-spinner" viewBox="0 0 24 24"><path d="M12 3v3.5" opacity="1"/><path d="m18.4 5.6-2.5 2.5" opacity=".88"/><path d="M21 12h-3.5" opacity=".76"/><path d="m18.4 18.4-2.5-2.5" opacity=".64"/><path d="M12 21v-3.5" opacity=".52"/><path d="m5.6 18.4 2.5-2.5" opacity=".4"/><path d="M3 12h3.5" opacity=".3"/><path d="m5.6 5.6 2.5 2.5" opacity=".2"/></symbol>
+    <symbol id="i-switch" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="6" rx="3"/><circle cx="15" cy="7.5" r="1.5"/><rect x="3" y="13.5" width="18" height="6" rx="3"/><circle cx="9" cy="16.5" r="1.5"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/></symbol>
+    <symbol id="i-grid" viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/></symbol>
+    <symbol id="i-clip" viewBox="0 0 24 24"><rect x="5.5" y="4.5" width="13" height="16.5" rx="2.5"/><path d="M9 4.5V3.5h6v1M9 10h6M9 14h4"/></symbol>
+    <symbol id="i-braces" viewBox="0 0 24 24"><path d="M9 4c-2 0-2.5 1-2.5 3v2c0 1.5-.8 3-2.5 3 1.7 0 2.5 1.5 2.5 3v2c0 2 .5 3 2.5 3M15 4c2 0 2.5 1 2.5 3v2c0 1.5.8 3 2.5 3-1.7 0-2.5 1.5-2.5 3v2c0 2-.5 3-2.5 3"/></symbol>
+    <symbol id="i-window" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="14" rx="2.5"/><path d="M3.5 9h17"/></symbol>
+    <symbol id="i-viewfinder" viewBox="0 0 24 24"><path d="M4 9V6.5A2.5 2.5 0 0 1 6.5 4H9M15 4h2.5A2.5 2.5 0 0 1 20 6.5V9M20 15v2.5a2.5 2.5 0 0 1-2.5 2.5H15M9 20H6.5A2.5 2.5 0 0 1 4 17.5V15"/></symbol>
+    <symbol id="i-translate" viewBox="0 0 24 24"><path d="M4 6h9M8.5 4v2M6 6c.5 3 2.5 5.5 5.5 6.5M11 6c-.5 3-2.5 5.5-6 7"/><path d="m12.5 20 3.5-8.5 3.5 8.5M13.8 17h4.4"/></symbol>
+    <symbol id="i-sparkles" viewBox="0 0 24 24"><path d="M10 3.5 11.6 8 16 9.5l-4.4 1.6L10 15.5 8.4 11.1 4 9.5 8.4 8z"/><path d="m17.5 14 .8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z"/></symbol>
+    <symbol id="i-puzzle" viewBox="0 0 24 24"><path d="M5 8.5h3.2a2 2 0 1 1 3.6 0H15v3.3a2 2 0 1 1 0 3.4V19H11.7a2 2 0 1 0-3.4 0H5v-3.6a2 2 0 1 0 0-3.4z"/></symbol>
+    <symbol id="i-cycle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M9.5 8v8M7.5 10l2-2 2 2M14.5 16V8M12.5 14l2 2 2-2"/></symbol>
+    <symbol id="i-infocircle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5M12 8v.2"/></symbol>
+  </defs>
+</svg>
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <symbol id="i-hand" viewBox="0 0 24 24"><path d="M9 11V5.5a1.5 1.5 0 0 1 3 0V10m0-1.5a1.5 1.5 0 0 1 3 0V11m0-1a1.5 1.5 0 0 1 3 0v4.5a6.5 6.5 0 0 1-6.5 6.5h-.6a6 6 0 0 1-4.6-2.2L4.5 15.5a1.5 1.5 0 0 1 2.3-1.9L9 15.5"/></symbol>
+    <symbol id="i-fallback" viewBox="0 0 24 24"><path d="M12 3 19 6v5.5c0 4.4-2.9 8-7 9.5-4.1-1.5-7-5.1-7-9.5V6z"/><path d="M12 3v18"/></symbol>
+    <symbol id="i-balance" viewBox="0 0 24 24"><path d="M12 4v16M7 20h10M5 7h14"/><path d="m5 7-2.5 6a2.8 2.8 0 0 0 5 0zM19 7l-2.5 6a2.8 2.8 0 0 0 5 0z"/></symbol>
+    <symbol id="i-nosign" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="m6 6 12 12"/></symbol>
+    <symbol id="i-house" viewBox="0 0 24 24"><path d="M4 11 12 4l8 7"/><path d="M6 9.5V20h12V9.5"/><path d="M10 20v-5.5h4V20"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s-6.5-6.2-6.5-11a6.5 6.5 0 0 1 13 0c0 4.8-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="m10 9.5 5 2.5-5 2.5z"/></symbol>
+    <symbol id="i-plane" viewBox="0 0 24 24"><path d="M21 3.5 3 11l7 2.5L12.5 21z"/><path d="m10 13.5 4.5-4.5"/></symbol>
+    <symbol id="i-code" viewBox="0 0 24 24"><path d="m8 7-5 5 5 5M16 7l5 5-5 5M13.5 4.5l-3 15"/></symbol>
+    <symbol id="i-laptop" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="10" rx="1.8"/><path d="M2.5 19h19"/></symbol>
+    <symbol id="i-turn" viewBox="0 0 24 24"><path d="M5 4v7a4 4 0 0 0 4 4h10"/><path d="m15 11 4 4-4 4"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m13.5 6.5 4 4"/></symbol>
+    <symbol id="i-stack" viewBox="0 0 24 24"><path d="m12 3 9 4.5-9 4.5-9-4.5z"/><path d="m3 12 9 4.5 9-4.5M3 16.5 12 21l9-4.5"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4.5h6V7M6.5 7l1 13h9l1-13M10 11v5.5M14 11v5.5"/></symbol>
+    <symbol id="i-doc" viewBox="0 0 24 24"><path d="M6 3h8l5 5v13H6z"/><path d="M14 3v5h5"/></symbol>
+  </defs>
+</svg>
+<div class="page">
+  <div class="top">
+    <div>
+      <h1>Tinycast · 代理 <span style="font-weight:500;color:var(--page-ink2);font-size:16px">v2</span></h1>
+      <p>Tinycast 自己托管 mihomo，用 root 助手开启 TUN。配置拆成三层：<b>节点</b>（订阅与本地文件合并成节点池）、<b>策略</b>（怎样从池里挑节点）、<b>分流</b>（哪类流量用哪个策略）。订阅只提供节点，自带的分组和规则不再使用。样式按 docs/ui.md 的 Theme token 近似还原。</p>
+    </div>
+    <div class="seg" id="themeSeg"><button data-t="dark" class="on">深色</button><button data-t="light">浅色</button></div>
+  </div>
+  <nav class="nav">
+    <a href="#m">模型</a>
+    <span class="ng">启动器</span><a href="#p1">入口</a><a href="#p0">首次使用</a><a href="#p2">分流</a><a href="#p3">策略</a><a href="#p4">节点</a><a href="#pk">⌘K</a><a href="#p5">添加规则</a>
+    <span class="ng">设置</span><a href="#sg">通用</a><a href="#sn">节点</a><a href="#ss">策略</a><a href="#sr">分流</a>
+    <span class="ng">编辑器</span><a href="#es">策略</a><a href="#er">我的规则</a><a href="#eb">订阅</a><a href="#ef">本地文件</a>
+    <span class="ng">反馈</span><a href="#d">对话框</a><a href="#h">提示</a>
+  </nav>
+
+  <!-- 0 model -->
+  <section class="board" id="m">
+    <h2>0 · 三层模型<i>节点 → 策略 → 分流，自由搭配</i></h2>
+    <p class="cap">彩色连线就是“搭配”：每个分流指向一个策略，一个策略可以服务多个分流。「稳定优先」暂时没人用，所以不连线，也不会测速。</p>
+    <div class="model" id="modelGraph">
+      <svg class="wires"></svg>
+      <div class="mcol">
+        <h3>节点来源</h3><div class="mcap">订阅、本地文件。勾选的来源合并成一个节点池。</div>
+        <div class="mcard"><span class="sicon"><svg class="ic"><use href="#i-link"/></svg></span>机场 A<small>103 个</small></div>
+        <div class="mcard"><span class="sicon"><svg class="ic"><use href="#i-link"/></svg></span>机场 B<small>58 个</small></div>
+        <div class="mcard"><span class="sicon"><svg class="ic"><use href="#i-doc"/></svg></span>自建节点<small>本地 · 3 个</small></div>
+        <div class="mcard dimmed"><span class="sicon"><svg class="ic"><use href="#i-link"/></svg></span>旧机场<small>未勾选</small></div>
+        <div class="merge">↓ 合并</div>
+        <div class="mcard pool" data-pool><b>节点池 · 164 个节点</b>
+          <div class="regions"><span>🇭🇰 24</span><span>🇯🇵 18</span><span>🇺🇸 21</span><span>🇸🇬 12</span><span>台湾 9</span><span>其他 80</span></div>
+        </div>
+      </div>
+      <div class="mcol">
+        <h3>策略</h3><div class="mcap">从节点池里怎么挑：手动、自动最快、故障转移。可以按来源和地区筛选。</div>
+        <div class="mcard" data-strategy="default" style="--c:var(--c-default)"><span class="sd"></span>默认代理<small>手动 · 全部</small></div>
+        <div class="mcard" data-strategy="fast" style="--c:var(--c-fast)"><span class="sd"></span>自动最快<small>自动 · 全部</small></div>
+        <div class="mcard" data-strategy="us" style="--c:var(--c-us)"><span class="sd"></span>美国优选<small>自动 · 美国</small></div>
+        <div class="mcard" data-strategy="hk" style="--c:var(--c-hk)"><span class="sd"></span>香港优选<small>自动 · 香港</small></div>
+        <div class="mcard" data-strategy="stable" style="--c:var(--c-stable)"><span class="sd"></span>稳定优先<small>故障转移</small></div>
+        <div class="mcard" data-strategy="direct" style="--c:var(--c-direct)"><span class="sd"></span>直连<small>内置</small></div>
+        <div class="mcard" data-strategy="reject" style="--c:var(--c-reject)"><span class="sd"></span>拒绝<small>内置</small></div>
+      </div>
+      <div class="mcol">
+        <h3>分流</h3><div class="mcap">哪类流量交给哪个策略。从上到下匹配，每行一个选择。</div>
+        <div class="mcard"><span class="sicon"><svg class="ic"><use href="#i-pencil"/></svg></span>我的规则<small>逐条指定</small></div>
+        <div class="mcard" data-route="reject">广告拦截</div>
+        <div class="mcard" data-route="direct">局域网</div>
+        <div class="mcard" data-route="us">AI 服务</div>
+        <div class="mcard" data-route="hk">流媒体</div>
+        <div class="mcard" data-route="default">Telegram</div>
+        <div class="mcard" data-route="fast">GitHub</div>
+        <div class="mcard" data-route="default">国外网站</div>
+        <div class="mcard" data-route="direct">国内网站</div>
+        <div class="mcard" data-route="default">其他流量<small>兜底</small></div>
+      </div>
+    </div>
+    <div class="mnote">
+      <div><b>合并：</b>多个订阅不必选“用哪个”。全部勾上就是一个大池子；只想用某一家，取消勾选其他来源，或建一个“只用机场 A”的策略。重名节点自动区分，某家更新失败继续用它上次的节点。</div>
+      <div><b>策略：</b>与订阅无关的独立设置。“美国优选”按名称和旗帜筛出所有订阅里的美国节点，加了新订阅自动纳入，不用改任何东西。</div>
+      <div><b>分流：</b>分类规则来自 MetaCubeX/meta-rules-dat（每天更新）。选一个方案就能用，之后每一行都能改；在启动器里换策略立即生效，不重载配置。</div>
+    </div>
+  </section>
+
+  <!-- 1 launcher -->
+  <section class="board" id="p1">
+    <h2>1 · 启动器：输入「代理」<i>入口</i></h2>
+    <p class="cap">状态卡三栏：「默认代理」当前节点、分流方案、TUN。下面每个操作都是命令，都能绑热键。</p>
+    <div class="stage">
+      <div class="panel">
+        <div class="hdr"><div class="lead"><svg class="ic"><use href="#i-search"/></svg></div><div class="q">代理<span class="caret"></span></div></div>
+        <div class="list">
+          <div class="sec first">代理</div>
+          <div class="lead-card sel">
+            <div class="lc"><div class="v"><span class="flag">🇭🇰</span>香港 03</div><div class="badge">默认代理 · 42 ms</div></div>
+            <div class="lc"><div class="v">智能分流</div><div class="badge">分流</div></div>
+            <div class="lc"><div class="v"><span class="dot on"></span>已开启</div><div class="badge">TUN</div></div>
+          </div>
+          <div class="sec">结果</div>
+          <div class="row"><div class="slot"><div class="tile"><svg class="ic"><use href="#i-globe"/></svg></div></div><div class="ttl">选择节点</div><div class="kcs"><span class="kc o">⌥</span><span class="kc o">P</span></div><div class="trail">命令</div></div>
+          <div class="row"><div class="slot"><div class="tile"><svg class="ic"><use href="#i-branch"/></svg></div></div><div class="ttl">分流</div><div class="trail">命令</div></div>
+          <div class="row"><div class="slot"><div class="tile"><svg class="ic"><use href="#i-hand"/></svg></div></div><div class="ttl">策略</div><div class="trail">命令</div></div>
+          <div class="row"><div class="slot"><div class="tile"><svg class="ic"><use href="#i-plus"/></svg></div></div><div class="ttl">添加分流规则</div><div class="kcs"><span class="kc o">⌥</span><span class="kc o">R</span></div><div class="trail">命令</div></div>
+          <div class="row"><div class="slot"><div class="tile"><svg class="ic"><use href="#i-power"/></svg></div></div><div class="ttl">关闭代理</div><div class="trail">命令</div></div>
+          <div class="row"><div class="slot"><div class="tile"><svg class="ic"><use href="#i-gauge"/></svg></div></div><div class="ttl">节点测速</div><div class="trail">命令</div></div>
+          <div class="row"><div class="slot"><div class="tile"><svg class="ic"><use href="#i-refresh"/></svg></div></div><div class="ttl">更新订阅</div><div class="trail">命令</div></div>
+        </div>
+        <div class="foot"><div class="mcircle glass"><svg class="ic"><use href="#i-menu"/></svg></div>
+          <div class="capsule glass"><div class="bb">选择节点 <span class="kcs"><span class="kc f">↵</span></span></div><div class="bb second">操作 <span class="kcs"><span class="kc f">⌘</span><span class="kc f">K</span></span></div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- first run -->
+  <section class="board" id="p0">
+    <h2>2 · 首次使用<i>还没有任何节点时</i></h2>
+    <p class="cap">状态卡换成引导。剪贴板里有订阅链接时直接给出「添加」，回车即可；也可以导入本地文件。添加后自动套用「智能分流」方案，不需要先去设置。</p>
+    <div class="stage">
+      <div class="panel">
+        <div class="hdr"><div class="lead"><svg class="ic"><use href="#i-search"/></svg></div><div class="q">代理<span class="caret"></span></div></div>
+        <div class="list">
+          <div class="sec first">代理</div>
+          <div class="lead-card empty">
+            <div class="onb"><div class="onb-ic"><svg class="ic"><use href="#i-globe"/></svg></div>
+              <div><div class="onb-t">还没有节点</div><div class="onb-s">添加订阅或导入本地文件后，就能在这里切换节点和分流。</div></div></div>
+          </div>
+          <div class="sec">开始</div>
+          <div class="row sel"><div class="slot"><div class="tile"><svg class="ic"><use href="#i-clip"/></svg></div></div><div class="ttl">添加剪贴板中的订阅</div><div class="trail"><span class="mono-s">sub.example.com/s/••••</span>剪贴板</div></div>
+          <div class="row"><div class="slot"><div class="tile"><svg class="ic"><use href="#i-link"/></svg></div></div><div class="ttl">添加订阅…</div><div class="trail">命令</div></div>
+          <div class="row"><div class="slot"><div class="tile"><svg class="ic"><use href="#i-doc"/></svg></div></div><div class="ttl">导入本地文件…</div><div class="trail">命令</div></div>
+          <div class="row"><div class="slot"><div class="tile"><svg class="ic"><use href="#i-sliders"/></svg></div></div><div class="ttl">代理设置</div><div class="trail">命令</div></div>
+        </div>
+        <div class="foot"><div class="mcircle glass"><svg class="ic"><use href="#i-menu"/></svg></div>
+          <div class="capsule glass"><div class="bb">添加订阅 <span class="kcs"><span class="kc f">↵</span></span></div><div class="bb second">操作 <span class="kcs"><span class="kc f">⌘</span><span class="kc f">K</span></span></div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2 routing runtime -->
+  <section class="board" id="p2">
+    <h2>3 · 分流<i>运行时看清每类流量的去向</i></h2>
+    <p class="cap">每行：这类流量 → 用哪个策略 → 此刻落到哪个节点。回车给这一类换策略，立即生效、不重载配置。右上角切换分流方案。</p>
+    <div class="stage">
+      <div class="panel">
+        <div class="hdr"><div class="lead"><svg class="ic"><use href="#i-chev-left"/></svg></div><div class="q"><span class="caret"></span><span class="ph">搜索分流…</span></div>
+          <div class="hpop"><svg class="ic"><use href="#i-branch"/></svg>智能分流<svg class="ic"><use href="#i-chev-down"/></svg></div></div>
+        <div class="list">
+          <div class="sec first">我的规则</div>
+          <div class="row"><div class="slot"><div class="tile"><svg class="ic"><use href="#i-pencil"/></svg></div></div><div class="ttl">我的规则</div><div class="trail">12 条 · 逐条指定策略</div></div>
+          <div class="sec">分流 <em>从上到下匹配</em></div>
+          <div class="row"><div class="slot"><div class="tile"><svg class="ic"><use href="#i-nosign"/></svg></div></div><div class="ttl">广告拦截</div><div class="trail"><span class="sd" style="--c:var(--c-reject)"></span>拒绝</div></div>
+          <div class="row"><div class="slot"><div class="tile"><svg class="ic"><use href="#i-house"/></svg></div></div><div class="ttl">局域网</div><div class="trail"><span class="sd" style="--c:var(--c-direct)"></span>直连</div></div>
+          <div class="row sel"><div class="slot"><div class="tile"><svg class="ic"><use href="#i-sparkles"/></svg></div></div><div class="ttl">AI 服务</div><div class="trail"><span class="sd" style="--c:var(--c-us)"></span>美国优选 · 🇺🇸 美国 01 <span class="lat mid">156 ms</span></div></div>
+          <div class="row"><div class="slot"><div class="tile"><svg class="ic"><use href="#i-play"/></svg></div></div><div class="ttl">流媒体</div><div class="trail"><span class="sd" style="--c:var(--c-hk)"></span>香港优选 · 🇭🇰 香港 03 <span class="lat good">42 ms</span></div></div>
+          <div class="row"><div class="slot"><div class="tile"><svg class="ic"><use href="#i-plane"/></svg></div></div><div class="ttl">Telegram</div><div class="trail"><span class="sd" style="--c:var(--c-default)"></span>默认代理 · 🇭🇰 香港 03 <span class="lat good">42 ms</span></div></div>
+          <div class="row"><div class="slot"><div class="tile"><svg class="ic"><use href="#i-code"/></svg></div></div><div class="ttl">GitHub</div><div class="trail"><span class="sd" style="--c:var(--c-fast)"></span>自动最快 · 🇯🇵 日本 02 <span class="lat good">38 ms</span></div></div>
+          <div class="row"><div class="slot"><div class="tile"><svg class="ic"><use href="#i-globe"/></svg></div></div><div class="ttl">国外网站</div><div class="trail"><span class="sd" style="--c:var(--c-default)"></span>默认代理 · 🇭🇰 香港 03 <span class="lat good">42 ms</span></div></div>
+        </div>
+        <div class="foot"><div class="mcircle glass"><svg class="ic"><use href="#i-menu"/></svg></div>
+          <div class="capsule glass"><div class="bb">更换策略 <span class="kcs"><span class="kc f">↵</span></span></div><div class="bb second">操作 <span class="kcs"><span class="kc f">⌘</span><span class="kc f">K</span></span></div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 strategy picker -->
+  <section class="board" id="p3">
+    <h2>4 · 策略<i>同一个列表，两个入口</i></h2>
+    <p class="cap">从「分流」进入时，这里是给「AI 服务」挑策略（右上角标出）；直接运行「策略」命令时，回车进入该策略的节点列表。策略图标用它的颜色，和设置、连线里的颜色一致。</p>
+    <div class="stage">
+      <div class="panel">
+        <div class="hdr"><div class="lead"><svg class="ic"><use href="#i-chev-left"/></svg></div><div class="q"><span class="caret"></span><span class="ph">搜索策略…</span></div>
+          <div class="hpop"><svg class="ic"><use href="#i-sparkles"/></svg>AI 服务</div></div>
+        <div class="list">
+          <div class="sec first">策略</div>
+          <div class="row"><div class="slot"><div class="ptile" style="--c:var(--c-default)"><svg class="ic"><use href="#i-hand"/></svg></div></div><div class="ttl">默认代理</div><div class="trail">手动 · 🇭🇰 香港 03 <span class="lat good">42 ms</span></div></div>
+          <div class="row"><div class="slot"><div class="ptile" style="--c:var(--c-fast)"><svg class="ic"><use href="#i-bolt"/></svg></div></div><div class="ttl">自动最快</div><div class="trail">自动 · 🇯🇵 日本 02 <span class="lat good">38 ms</span></div></div>
+          <div class="row sel"><div class="slot"><div class="ptile" style="--c:var(--c-us)"><svg class="ic"><use href="#i-bolt"/></svg></div></div><div class="ttl">美国优选</div><div class="trail">自动 · 🇺🇸 美国 01 <span class="lat mid">156 ms</span><svg class="ic cur"><use href="#i-check"/></svg></div></div>
+          <div class="row"><div class="slot"><div class="ptile" style="--c:var(--c-hk)"><svg class="ic"><use href="#i-bolt"/></svg></div></div><div class="ttl">香港优选</div><div class="trail">自动 · 🇭🇰 香港 03 <span class="lat good">42 ms</span></div></div>
+          <div class="row"><div class="slot"><div class="ptile" style="--c:var(--c-stable)"><svg class="ic"><use href="#i-fallback"/></svg></div></div><div class="ttl">稳定优先</div><div class="trail">故障转移 · 🇭🇰 香港 01 <span class="lat good">56 ms</span></div></div>
+          <div class="sec">内置</div>
+          <div class="row"><div class="slot"><div class="ptile" style="--c:var(--c-direct)"><svg class="ic"><use href="#i-arrow-right"/></svg></div></div><div class="ttl">直连</div><div class="trail">不经过代理</div></div>
+          <div class="row"><div class="slot"><div class="ptile" style="--c:var(--c-reject)"><svg class="ic"><use href="#i-nosign"/></svg></div></div><div class="ttl">拒绝</div><div class="trail">断开连接</div></div>
+        </div>
+        <div class="foot"><div class="mcircle glass"><svg class="ic"><use href="#i-menu"/></svg></div>
+          <div class="capsule glass"><div class="bb">使用此策略 <span class="kcs"><span class="kc f">↵</span></span></div><div class="bb second">操作 <span class="kcs"><span class="kc f">⌘</span><span class="kc f">K</span></span></div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 nodes -->
+  <section class="board" id="p4">
+    <h2>5 · 节点<i>手动策略的节点列表，合并后的节点池</i></h2>
+    <p class="cap">节点按地区分段，来自多个订阅的同名节点用右侧的来源名区分。详情里写明选中后会影响哪些分流。右上角弹出菜单直接切到别的策略。</p>
+    <div class="stage">
+      <div class="panel">
+        <div class="hdr"><div class="lead"><svg class="ic"><use href="#i-chev-left"/></svg></div><div class="q"><span class="caret"></span><span class="ph">搜索节点…</span></div>
+          <div class="hpop"><span class="sd" style="--c:var(--c-default)"></span>默认代理<svg class="ic"><use href="#i-chev-down"/></svg></div></div>
+        <div class="left">
+          <div class="sec first">香港 <em>24</em></div>
+          <div class="row"><div class="slot"><span class="flag">🇭🇰</span></div><div class="ttl">香港 01</div><div class="trail"><span class="src">机场 A</span><span class="lat good">56 ms</span></div></div>
+          <div class="row"><div class="slot"><span class="flag">🇭🇰</span></div><div class="ttl">香港 01</div><div class="trail"><span class="src">机场 B</span><span class="lat good">63 ms</span></div></div>
+          <div class="row"><div class="slot"><span class="flag">🇭🇰</span></div><div class="ttl">香港 03</div><div class="trail"><span class="src">机场 A</span><span class="lat good">42 ms</span><svg class="ic cur"><use href="#i-check"/></svg></div></div>
+          <div class="sec">日本 <em>18</em></div>
+          <div class="row"><div class="slot"><span class="flag">🇯🇵</span></div><div class="ttl">日本 01</div><div class="trail"><span class="src">机场 B</span><span class="lat good">88 ms</span></div></div>
+          <div class="row sel"><div class="slot"><span class="flag">🇯🇵</span></div><div class="ttl">日本 02</div><div class="trail"><span class="src">机场 A</span><span class="lat good">38 ms</span></div></div>
+          <div class="row"><div class="slot"><span class="flag">🇯🇵</span></div><div class="ttl">VPS · 东京</div><div class="trail"><span class="src">自建</span><span class="lat good">51 ms</span></div></div>
+          <div class="row"><div class="slot"><span class="flag">🇯🇵</span></div><div class="ttl">日本 03</div><div class="trail"><span class="src">机场 A</span><span class="lat bad">超时</span></div></div>
+        </div>
+        <div class="vline"></div>
+        <div class="detail">
+          <div class="hero"><div class="bigflag">🇯🇵</div><div><div class="name">日本 02</div><div class="sub">AnyTLS · 机场 A</div></div>
+            <div class="latbox"><div><span class="readout lat good">38</span><span class="unit">ms</span></div>
+              <div class="spark"><i style="height:9px"></i><i style="height:7px"></i><i style="height:11px"></i><i style="height:8px"></i><i style="height:6px"></i><i style="height:10px"></i><i style="height:7px"></i><i style="height:5px"></i><i style="height:8px"></i><i style="height:6px"></i></div></div></div>
+          <div class="sec">信息</div>
+          <div class="kv"><span>来源</span><span>机场 A</span></div>
+          <div class="kv"><span>协议</span><span>AnyTLS · 支持 UDP</span></div>
+          <div class="kv"><span>上次测速</span><span>刚刚 · 最近 10 次平均 41 ms</span></div>
+          <div class="sec">选中后影响</div>
+          <div class="kv"><span>默认代理</span><span>Telegram、国外网站、其他流量</span></div>
+          <div class="kv"><span>实时流量</span><span>↓ 8.4 MB/s　↑ 1.2 MB/s</span></div>
+        </div>
+        <div class="foot"><div class="mcircle glass"><svg class="ic"><use href="#i-menu"/></svg></div>
+          <div class="capsule glass"><div class="bb">使用此节点 <span class="kcs"><span class="kc f">↵</span></span></div><div class="bb second">操作 <span class="kcs"><span class="kc f">⌘</span><span class="kc f">K</span></span></div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- cmd-k -->
+  <section class="board" id="pk">
+    <h2>6 · ⌘K 操作<i>PopoverMenu，挂在底栏上</i></h2>
+    <p class="cap">在「分流」里对选中的「AI 服务」按 ⌘K：换策略、给它测速、为当前网站加规则；切换方案、临时全局代理也收在这里。快捷键只在菜单里显示。</p>
+    <div class="stage">
+      <div class="panel">
+        <div class="hdr"><div class="lead"><svg class="ic"><use href="#i-chev-left"/></svg></div><div class="q"><span class="caret"></span><span class="ph">搜索分流…</span></div>
+          <div class="hpop"><svg class="ic"><use href="#i-branch"/></svg>智能分流<svg class="ic"><use href="#i-chev-down"/></svg></div></div>
+        <div class="list">
+          <div class="sec first">我的规则</div>
+          <div class="row"><div class="slot"><div class="tile"><svg class="ic"><use href="#i-pencil"/></svg></div></div><div class="ttl">我的规则</div><div class="trail">12 条 · 逐条指定策略</div></div>
+          <div class="sec">分流 <em>从上到下匹配</em></div>
+          <div class="row"><div class="slot"><div class="tile"><svg class="ic"><use href="#i-nosign"/></svg></div></div><div class="ttl">广告拦截</div><div class="trail"><span class="sd" style="--c:var(--c-reject)"></span>拒绝</div></div>
+          <div class="row"><div class="slot"><div class="tile"><svg class="ic"><use href="#i-house"/></svg></div></div><div class="ttl">局域网</div><div class="trail"><span class="sd" style="--c:var(--c-direct)"></span>直连</div></div>
+          <div class="row sel"><div class="slot"><div class="tile"><svg class="ic"><use href="#i-sparkles"/></svg></div></div><div class="ttl">AI 服务</div><div class="trail"><span class="sd" style="--c:var(--c-us)"></span>美国优选 · 🇺🇸 美国 01 <span class="lat mid">156 ms</span></div></div>
+          <div class="row"><div class="slot"><div class="tile"><svg class="ic"><use href="#i-play"/></svg></div></div><div class="ttl">流媒体</div><div class="trail"><span class="sd" style="--c:var(--c-hk)"></span>香港优选 · 🇭🇰 香港 03 <span class="lat good">42 ms</span></div></div>
+          <div class="row"><div class="slot"><div class="tile"><svg class="ic"><use href="#i-plane"/></svg></div></div><div class="ttl">Telegram</div><div class="trail"><span class="sd" style="--c:var(--c-default)"></span>默认代理 · 🇭🇰 香港 03 <span class="lat good">42 ms</span></div></div>
+          <div class="row"><div class="slot"><div class="tile"><svg class="ic"><use href="#i-code"/></svg></div></div><div class="ttl">GitHub</div><div class="trail"><span class="sd" style="--c:var(--c-fast)"></span>自动最快 · 🇯🇵 日本 02 <span class="lat good">38 ms</span></div></div>
+          <div class="row"><div class="slot"><div class="tile"><svg class="ic"><use href="#i-globe"/></svg></div></div><div class="ttl">国外网站</div><div class="trail"><span class="sd" style="--c:var(--c-default)"></span>默认代理 · 🇭🇰 香港 03 <span class="lat good">42 ms</span></div></div>
+        </div>
+        <div class="foot"><div class="mcircle glass"><svg class="ic"><use href="#i-menu"/></svg></div>
+          <div class="capsule glass"><div class="bb">更换策略 <span class="kcs"><span class="kc f">↵</span></span></div><div class="bb second on">操作 <span class="kcs"><span class="kc f">⌘</span><span class="kc f">K</span></span></div></div></div>
+        <div class="menu">
+          <div class="mrow hl"><span class="mi"><svg class="ic"><use href="#i-hand"/></svg></span>更换策略…<span class="sc">↵</span></div>
+          <div class="mrow"><span class="mi"><svg class="ic"><use href="#i-gauge"/></svg></span>测速「美国优选」<span class="sc">⌘T</span></div>
+          <div class="mrow"><span class="mi"><svg class="ic"><use href="#i-plus"/></svg></span>为当前网站添加规则…<span class="sc">⌥R</span></div>
+          <div class="mrow"><span class="mi"><svg class="ic"><use href="#i-sliders"/></svg></span>在设置中编辑…<span class="sc">⌘,</span></div>
+          <div class="mdiv"></div>
+          <div class="mrow"><span class="mi"><svg class="ic"><use href="#i-branch"/></svg></span>切换分流方案…</div>
+          <div class="mrow"><span class="mi"><svg class="ic"><use href="#i-globe"/></svg></span>临时全局代理<span class="sc">⌘G</span></div>
+          <div class="mrow"><span class="mi"><svg class="ic"><use href="#i-power"/></svg></span>关闭代理<span class="sc">⌥⌘P</span></div>
+          <div class="msearch"><svg class="ic"><use href="#i-search"/></svg>搜索操作…</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 quick rule -->
+  <section class="board" id="p5">
+    <h2>7 · 添加分流规则<i>启动器表单，最快的改规则方式</i></h2>
+    <p class="cap">发现某个网站走错了：域名自动取自浏览器当前页面，选匹配方式和策略，⌘↵ 保存。新规则加在「我的规则」最前面，优先于所有分流。</p>
+    <div class="stage">
+      <div class="panel">
+        <div class="hdr"><div class="lead"><svg class="ic"><use href="#i-chev-left"/></svg></div><div class="q title">添加分流规则</div></div>
+        <div class="pform">
+          <div class="frow"><label>网站</label><div class="ff focus">chat.openai.com<span class="end">来自 Safari 当前页面</span></div></div>
+          <div class="frow"><label>匹配</label><div class="ff">域名后缀 · openai.com<span class="end"><svg class="ic"><use href="#i-updown"/></svg></span></div></div>
+          <div class="frow"><label>策略</label><div class="ff"><span class="sd" style="--c:var(--c-us)"></span>美国优选<span class="end">🇺🇸 美国 01 · 156 ms<svg class="ic"><use href="#i-updown"/></svg></span></div></div>
+          <div class="frow"><label></label><div class="hint">openai.com 及其所有子域名都会走「美国优选」。<br>这条规则会排在「我的规则」第 1 条。</div></div>
+        </div>
+        <div class="foot"><div class="mcircle glass"><svg class="ic"><use href="#i-menu"/></svg></div>
+          <div class="capsule glass"><div class="bb">添加规则 <span class="kcs"><span class="kc f">⌘</span><span class="kc f">↵</span></span></div><div class="bb second">操作 <span class="kcs"><span class="kc f">⌘</span><span class="kc f">K</span></span></div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- settings & editor boards -->
+  <section class="board" id="sg">
+    <h2>8 · 设置 › 代理 › 通用<i>开关、连接、TUN、DNS、内核</i></h2>
+    <p class="cap">「启用代理」是功能开关，打开后启动器里才有这些命令；「连接」一组是运行状态，可以随时断开。代理由 TUN 助手运行，退出或更新 Tinycast 默认不断网。DNS 默认 Fake-IP：直连的域名用国内 DNS，走代理的域名经代理解析，避免污染和泄露。</p>
+    <div class="stage xl"><div class="mount" data-tpl="tpl-settings" data-pane="general"></div></div>
+  </section>
+
+  <section class="board" id="sn">
+    <h2>9 · 设置 › 代理 › 节点<i>多个来源，勾选的合并</i></h2>
+    <p class="cap">每个来源一个勾选框，勾上的合并进节点池，顶部汇总节点数和地区分布。订阅显示已用流量和到期时间；本地文件可以直接编辑。</p>
+    <div class="stage tall"><div class="mount" data-tpl="tpl-settings" data-pane="nodes"></div></div>
+  </section>
+
+  <section class="board" id="ss">
+    <h2>10 · 设置 › 代理 › 策略<i>独立于订阅的挑节点方式</i></h2>
+    <p class="cap">每个策略写明类型、范围、当前节点，以及被哪些分流使用；没被使用的策略不测速。直连和拒绝是内置策略。</p>
+    <div class="stage tall"><div class="mount" data-tpl="tpl-settings" data-pane="strategies"></div></div>
+  </section>
+
+  <section class="board" id="sr">
+    <h2>11 · 设置 › 代理 › 分流<i>分流 × 策略的搭配</i></h2>
+    <p class="cap">选一个方案作起点，之后每行一个下拉框决定用哪个策略（已展开示意），拖动调整优先级。「我的规则」优先于所有分流，「其他流量」固定在最后兜底。</p>
+    <div class="stage tall"><div class="mount" data-tpl="tpl-settings" data-pane="routing" data-menu="1"></div></div>
+  </section>
+
+  <section class="board" id="es">
+    <h2>12 · 编辑策略<i>从「策略」页的「编辑…」打开</i></h2>
+    <p class="cap">类型、来源、地区、排除词，底部实时显示匹配到的节点和来源分布。策略的颜色会出现在启动器和分流下拉框里，方便对应。</p>
+    <div class="stage tall"><div class="mount" data-tpl="tpl-settings" data-pane="strategies" data-editor="strategy"></div></div>
+  </section>
+
+  <section class="board" id="er">
+    <h2>13 · 我的规则<i>从「分流」页的「编辑规则…」打开</i></h2>
+    <p class="cap">逐条指定策略，拖动排序；底部输入一个域名，立即显示会命中哪一条、落到哪个节点。也可以从链接或文件导入整份规则集。</p>
+    <div class="stage tall"><div class="mount" data-tpl="tpl-settings" data-pane="routing" data-editor="rules"></div></div>
+  </section>
+
+  <section class="board" id="eb">
+    <h2>14 · 编辑订阅<i>添加订阅也用这个面板</i></h2>
+    <p class="cap">名称前缀只在合并后出现同名节点时使用；筛选和重命名在节点进池之前生效；覆写脚本留给以后的自定义扩展。</p>
+    <div class="stage tall"><div class="mount" data-tpl="tpl-settings" data-pane="nodes" data-editor="sub"></div></div>
+  </section>
+
+  <section class="board" id="ef">
+    <h2>15 · 本地文件<i>导入或新建的节点文件</i></h2>
+    <p class="cap">直接编辑 YAML，也可以每行粘贴一个分享链接；保存前由内核校验，出错时标出行号。</p>
+    <div class="stage tall"><div class="mount" data-tpl="tpl-settings" data-pane="nodes" data-editor="file"></div></div>
+  </section>
+
+  <!-- 8 dialogs -->
+  <section class="board" id="d">
+    <h2>16 · 对话框<i>图标说主体，语气只染图标，按钮角色独立</i></h2>
+    <p class="cap">左：第一次开启 TUN，先说明再弹系统授权框。右：删除订阅前说明影响——会让哪个策略的节点变少。</p>
+    <div class="stage">
+      <div class="dlg"><div class="inner"><div class="dsym"><svg class="ic"><use href="#i-shield"/></svg></div>
+        <div class="dtitle">安装 TUN 助手？</div>
+        <div class="dmsg">TUN 需要一个常驻的系统组件来接管这台 Mac 的全部流量。安装时 macOS 会请求一次管理员密码，之后可在 设置 › 代理 中卸载。</div></div>
+        <div class="dbtns"><div class="dbtn cancel">取消</div><div class="dbtn primary">安装</div></div></div>
+      <div class="dlg"><div class="inner"><div class="dsym" style="color:var(--red)"><svg class="ic"><use href="#i-trash"/></svg></div>
+        <div class="dtitle">删除「机场 B」？</div>
+        <div class="dmsg">它的 58 个节点会从节点池移除，「美国优选」将从 21 个节点减少到 13 个。</div></div>
+        <div class="dbtns"><div class="dbtn cancel">取消</div><div class="dbtn" style="background:color-mix(in srgb,var(--red) 20%,transparent);color:var(--red)">删除</div></div></div>
+    </div>
+  </section>
+
+  <!-- 9 hud -->
+  <section class="board" id="h">
+    <h2>17 · 结果提示<i>MessageHUD：图标就是语气</i></h2>
+    <p class="cap">一步完成的操作只弹胶囊；测速这类持续操作用蓝色进度胶囊，悬停变 × 可取消。</p>
+    <div class="stage col">
+      <div class="hud"><span class="hi"><svg class="ic"><use href="#i-check"/></svg></span>AI 服务 已改用 美国优选</div>
+      <div class="hud"><span class="hi"><svg class="ic"><use href="#i-check"/></svg></span>已添加规则 · openai.com → 美国优选</div>
+      <div class="hud neutral"><span class="hi"><svg class="ic"><use href="#i-info"/></svg></span>订阅已更新 · 新增 4 个节点</div>
+      <div class="hud progress"><span class="hi"><svg class="ic spin"><use href="#i-spinner"/></svg></span>正在测速 164 个节点…</div>
+      <div class="hud danger"><span class="hi"><svg class="ic"><use href="#i-excl"/></svg></span>机场 B 更新失败 · 继续使用上次的节点</div>
+      <div class="hud-note">实际出现在屏幕下方居中，同一时间只显示一个</div>
+    </div>
+  </section>
+</div>
+
+<template id="tpl-settings">
+  <div class="win">
+    <div class="traffic"><i></i><i></i><i></i></div>
+    <aside class="sidebar">
+      <div class="sb-search"><svg class="ic"><use href="#i-search"/></svg>搜索</div>
+      <div class="sb-sec">通用</div>
+      <div class="sb-item"><span class="si"><svg class="ic"><use href="#i-switch"/></svg></span>通用</div>
+      <div class="sb-item"><span class="si"><svg class="ic"><use href="#i-lock"/></svg></span>权限</div>
+      <div class="sb-sec">功能</div>
+      <div class="sb-item"><span class="si"><svg class="ic"><use href="#i-clip"/></svg></span>剪贴板</div>
+      <div class="sb-item"><span class="si"><svg class="ic"><use href="#i-braces"/></svg></span>文本片段</div>
+      <div class="sb-item"><span class="si"><svg class="ic"><use href="#i-window"/></svg></span>窗口管理</div>
+      <div class="sb-item"><span class="si"><svg class="ic"><use href="#i-viewfinder"/></svg></span>截图</div>
+      <div class="sb-item"><span class="si"><svg class="ic"><use href="#i-translate"/></svg></span>翻译</div>
+      <div class="sb-item"><span class="si"><svg class="ic"><use href="#i-sparkles"/></svg></span>AI</div>
+      <div class="sb-item sel"><span class="si"><svg class="ic"><use href="#i-globe"/></svg></span>代理</div>
+      <div class="sb-item"><span class="si"><svg class="ic"><use href="#i-puzzle"/></svg></span>扩展</div>
+      <div class="sb-sec">高级</div>
+      <div class="sb-item"><span class="si"><svg class="ic"><use href="#i-cycle"/></svg></span>备份</div>
+      <div class="sb-item"><span class="si"><svg class="ic"><use href="#i-infocircle"/></svg></span>关于</div>
+    </aside>
+    <main class="content">
+      <div class="titlebar"><div class="navcap glass"><span><svg class="ic"><use href="#i-chev-left"/></svg></span><span><svg class="ic"><use href="#i-chev-right"/></svg></span></div><div class="wtitle">代理</div></div>
+      <div class="form">
+        <div class="pseg"><div><span data-p="general">通用</span><span data-p="nodes">节点</span><span data-p="strategies">策略</span><span data-p="routing">分流</span></div></div>
+
+        <div data-pane="general">
+          <div class="grp"><div class="srow"><div class="mic"><svg class="ic"><use href="#i-globe"/></svg></div><div class="lbl"><div class="t b">启用代理</div><div class="s">在启动器里选择节点、切换策略和分流。</div></div><div class="toggle on"></div></div></div>
+
+          <div class="grp-h">连接</div>
+          <div class="grp">
+            <div class="srow"><div class="lbl"><div class="t">已连接 <span class="status"><span class="dot on"></span></span></div><div class="s">已运行 3 小时 12 分 · 本次 ↓ 12.4 GB　↑ 1.1 GB</div></div><div class="pbtn">断开</div></div>
+            <div class="srow"><div class="lbl"><div class="t">登录后自动连接</div><div class="s">Tinycast 启动时恢复上次的连接状态。</div></div><div class="toggle on"></div></div>
+            <div class="srow"><div class="lbl"><div class="t">退出 Tinycast 后保持连接</div><div class="s">退出或更新 Tinycast 时不断网。</div></div><div class="toggle on"></div></div>
+          </div>
+
+          <div class="grp-h">TUN</div>
+          <div class="grp">
+            <div class="srow"><div class="lbl"><div class="t">TUN 模式</div><div class="s">接管所有应用的流量，包括终端、游戏和 UDP。</div></div><div class="toggle on"></div></div>
+            <div class="srow"><div class="lbl"><div class="t">TUN 助手 <span class="status"><span class="dot on"></span></span></div><div class="s">已安装 · 版本 1.0 · 以管理员权限运行</div></div><div class="pbtn">卸载…</div></div>
+            <div class="srow"><div class="lbl"><div class="t">DNS 占位</div><div class="s">局域网 DNS 会绕过 TUN。连接期间改用占位地址，断开后还原。</div></div><div class="toggle on"></div></div>
+          </div>
+          <div class="grp-f">TUN 助手是常驻的系统组件，可在 系统设置 › 通用 › 登录项与扩展 中查看。</div>
+
+          <div class="grp-h">DNS</div>
+          <div class="grp">
+            <div class="srow"><div class="lbl"><div class="t">解析方式</div><div class="s">Fake-IP 响应更快，也不会被污染。</div></div><div class="popup">Fake-IP（推荐）<svg class="ic"><use href="#i-updown"/></svg></div></div>
+            <div class="srow"><div class="lbl"><div class="t">国内 DNS</div><div class="s">解析直连的域名。</div></div><div class="tfield wide">223.5.5.5、119.29.29.29</div></div>
+            <div class="srow"><div class="lbl"><div class="t">国外 DNS</div><div class="s">经代理解析其余域名。</div></div><div class="tfield wide">https://1.1.1.1/dns-query</div></div>
+          </div>
+          <div class="grp-f">DNS 跟随分流结果：直连的域名用国内 DNS，走代理的域名经代理解析，避免泄露。</div>
+
+          <div class="grp-h">内核</div>
+          <div class="grp">
+            <div class="srow"><div class="lbl"><div class="t">mihomo <span class="status"><span class="dot on"></span></span></div><div class="s">v1.19.33 · 内置 · 运行中 · 内存 84 MB</div></div><div class="btns"><div class="pbtn">查看日志…</div><div class="pbtn">重新启动</div></div></div>
+            <div class="srow"><div class="lbl"><div class="t">内核更新</div><div class="s">有新版本 v1.19.34。安装前校验官方发布包，新内核起不来会自动换回当前版本。</div></div><div class="btns"><div class="pbtn">更新到 v1.19.34</div></div></div>
+            <div class="srow"><div class="lbl"><div class="t">混合端口</div><div class="s">供不走 TUN 的工具手动填写代理地址。</div></div><div class="btns"><div class="pbtn">复制终端命令</div><div class="tfield">7897</div></div></div>
+            <div class="srow"><div class="lbl"><div class="t">允许局域网连接</div><div class="s">让同一网络里的其他设备通过这台 Mac 上网。</div></div><div class="toggle"></div></div>
+          </div>
+          <div class="grp-f">只在点击时检查更新。运行下载的版本时，这里另有「恢复内置版本」，会删除下载的内核。</div>
+
+          <div class="grp-h">高级</div>
+          <div class="grp">
+            <div class="srow"><div class="lbl"><div class="t">配置覆写</div><div class="s">在生成的配置上追加或替换字段，保存前由内核校验。</div></div><div class="pbtn">编辑…</div></div>
+            <div class="srow"><div class="lbl"><div class="t">生成的配置</div><div class="s">只读，可复制给其他 mihomo 客户端使用。</div></div><div class="pbtn">查看…</div></div>
+            <div class="srow"><div class="lbl"><div class="t">恢复默认设置</div><div class="s">保留订阅和本地文件，重置策略、分流和其余设置。</div></div><div class="pbtn danger">恢复…</div></div>
+          </div>
+          <div class="grp-f">mihomo 以 GPL-3.0 发布，源码见 github.com/MetaCubeX/mihomo。</div>
+        </div>
+
+        <div data-pane="nodes">
+          <div class="grp"><div class="srow"><div class="mic"><svg class="ic"><use href="#i-stack"/></svg></div>
+            <div class="lbl"><div class="t b">节点池 · 164 个节点</div><div class="s">来自 3 个已勾选的来源</div>
+              <div class="regions"><span>🇭🇰 香港 24</span><span>🇯🇵 日本 18</span><span>🇺🇸 美国 21</span><span>🇸🇬 新加坡 12</span><span>台湾 9</span><span>其他 80</span></div></div>
+            <div class="pbtn">全部测速</div></div></div>
+          <div class="grp-h">来源</div>
+          <div class="grp">
+            <div class="srow"><div class="cbx on"></div><div class="lbl"><div class="t">机场 A <span class="tag2">订阅</span></div><div class="s">103 个节点 · 已用 128 GB / 500 GB · 12 月 20 日到期 · 2 小时前更新</div><div class="usage"><i style="width:26%"></i></div></div><div class="btns"><div class="pbtn">更新</div><div class="pbtn">编辑…</div></div></div>
+            <div class="srow"><div class="cbx on"></div><div class="lbl"><div class="t">机场 B <span class="tag2">订阅</span></div><div class="s">58 个节点 · 已用 40 GB / 200 GB · 2027 年 1 月 8 日到期 · 2 小时前更新</div><div class="usage"><i style="width:20%"></i></div></div><div class="btns"><div class="pbtn">更新</div><div class="pbtn">编辑…</div></div></div>
+            <div class="srow"><div class="cbx on"></div><div class="lbl"><div class="t">自建节点 <span class="tag2">本地文件</span></div><div class="s">3 个节点 · ~/Documents/自建节点.yaml</div></div><div class="btns"><div class="pbtn">编辑…</div></div></div>
+            <div class="srow off"><div class="cbx"></div><div class="lbl"><div class="t">旧机场 <span class="tag2">订阅</span></div><div class="s">未勾选 · 9 月 30 日已到期</div></div><div class="btns"><div class="pbtn">删除…</div></div></div>
+            <div class="srow"><div class="btns"><div class="pbtn">添加订阅…</div><div class="pbtn">导入本地文件…</div><div class="pbtn">新建节点文件…</div></div></div>
+          </div>
+          <div class="grp-f">勾选的来源合并成一个节点池。来源之间有同名节点时会提示，并可一键给后加入的来源加前缀；某个订阅更新失败时，继续使用它上次的节点。</div>
+          <div class="grp-h">更新</div>
+          <div class="grp">
+            <div class="srow"><div class="lbl"><div class="t">自动更新</div></div><div class="popup">每 12 小时<svg class="ic"><use href="#i-updown"/></svg></div></div>
+            <div class="srow"><div class="lbl"><div class="t">通过代理更新订阅</div><div class="s">订阅地址无法直连时开启。</div></div><div class="toggle on"></div></div>
+          </div>
+          <div class="grp-f">订阅链接存放在钥匙串，不随设置备份导出。</div>
+        </div>
+
+        <div data-pane="strategies">
+          <div class="grp">
+            <div class="srow"><div class="stile" style="--c:var(--c-default)"><svg class="ic"><use href="#i-hand"/></svg></div><div class="lbl"><div class="t">默认代理 <span class="tag2">手动选择</span></div><div class="s">全部节点 · 当前 🇭🇰 香港 03 · 42 ms</div><div class="uses">用于 <b>Telegram</b><b>国外网站</b><b>其他流量</b></div></div><div class="pbtn">编辑…</div></div>
+            <div class="srow"><div class="stile" style="--c:var(--c-fast)"><svg class="ic"><use href="#i-bolt"/></svg></div><div class="lbl"><div class="t">自动最快 <span class="tag2">自动选择</span></div><div class="s">全部节点 · 当前 🇯🇵 日本 02 · 38 ms</div><div class="uses">用于 <b>GitHub</b></div></div><div class="pbtn">编辑…</div></div>
+            <div class="srow"><div class="stile" style="--c:var(--c-us)"><svg class="ic"><use href="#i-bolt"/></svg></div><div class="lbl"><div class="t">美国优选 <span class="tag2">自动选择</span></div><div class="s">美国 · 21 个节点 · 当前 🇺🇸 美国 01 · 156 ms</div><div class="uses">用于 <b>AI 服务</b></div></div><div class="pbtn">编辑…</div></div>
+            <div class="srow"><div class="stile" style="--c:var(--c-hk)"><svg class="ic"><use href="#i-bolt"/></svg></div><div class="lbl"><div class="t">香港优选 <span class="tag2">自动选择</span></div><div class="s">香港 · 24 个节点 · 当前 🇭🇰 香港 03 · 42 ms</div><div class="uses">用于 <b>流媒体</b></div></div><div class="pbtn">编辑…</div></div>
+            <div class="srow"><div class="stile" style="--c:var(--c-stable)"><svg class="ic"><use href="#i-fallback"/></svg></div><div class="lbl"><div class="t">稳定优先 <span class="tag2">故障转移</span></div><div class="s">香港 › 日本 › 新加坡 · 当前 🇭🇰 香港 01</div><div class="uses">未被任何分流使用，不会测速</div></div><div class="pbtn">编辑…</div></div>
+            <div class="srow"><div class="btns"><div class="pbtn">添加策略…</div></div></div>
+          </div>
+          <div class="grp-h">内置</div>
+          <div class="grp">
+            <div class="srow"><div class="stile" style="--c:var(--c-direct)"><svg class="ic"><use href="#i-arrow-right"/></svg></div><div class="lbl"><div class="t">直连</div><div class="s">不经过代理</div></div></div>
+            <div class="srow"><div class="stile" style="--c:var(--c-reject)"><svg class="ic"><use href="#i-nosign"/></svg></div><div class="lbl"><div class="t">拒绝</div><div class="s">直接断开连接</div></div></div>
+          </div>
+          <div class="grp-f">策略决定怎样从节点池里挑节点，一个策略可以同时用于多个分流。策略只看节点名称和来源，新增订阅会自动纳入。</div>
+        </div>
+
+        <div data-pane="routing">
+          <div class="grp"><div class="srow"><div class="lbl"><div class="t">分流方案</div><div class="s">国内直连、常见服务分类、其余走代理。改动任意一项后变为「自定义」。</div></div><div class="popup">智能分流（推荐）<svg class="ic"><use href="#i-updown"/></svg></div></div></div>
+          <div class="grp-h">我的规则</div>
+          <div class="grp"><div class="srow"><div class="sicon"><svg class="ic"><use href="#i-pencil"/></svg></div><div class="lbl"><div class="t">12 条规则</div><div class="s">逐条指定策略，优先于下面所有分流。</div></div><div class="pbtn">编辑规则…</div></div></div>
+          <div class="grp-h">分流<span class="hint2">从上到下匹配，拖动调整顺序</span></div>
+          <div class="grp">
+            <div class="srow"><div class="drag"></div><div class="sicon"><svg class="ic"><use href="#i-nosign"/></svg></div><div class="lbl"><div class="t">广告拦截</div><div class="s">广告与跟踪域名</div></div><div class="spop"><span class="sd" style="--c:var(--c-reject)"></span>拒绝<svg class="ic"><use href="#i-updown"/></svg></div></div>
+            <div class="srow"><div class="drag"></div><div class="sicon"><svg class="ic"><use href="#i-house"/></svg></div><div class="lbl"><div class="t">局域网</div><div class="s">私有地址与本地域名</div></div><div class="spop"><span class="sd" style="--c:var(--c-direct)"></span>直连<svg class="ic"><use href="#i-updown"/></svg></div></div>
+            <div class="srow"><div class="drag"></div><div class="sicon"><svg class="ic"><use href="#i-sparkles"/></svg></div><div class="lbl"><div class="t">AI 服务</div><div class="s">ChatGPT、Claude、Gemini、Copilot 等</div></div><div class="spop open"><span class="sd" style="--c:var(--c-us)"></span>美国优选<svg class="ic"><use href="#i-updown"/></svg></div>
+              <div class="nmenu">
+                <div class="nm"><span class="chk"></span><span class="sd" style="--c:var(--c-default)"></span>默认代理<span class="r">手动</span></div>
+                <div class="nm"><span class="chk"></span><span class="sd" style="--c:var(--c-fast)"></span>自动最快<span class="r">自动</span></div>
+                <div class="nm"><span class="chk">✓</span><span class="sd" style="--c:var(--c-us)"></span>美国优选<span class="r">自动</span></div>
+                <div class="nm hl"><span class="chk"></span><span class="sd" style="--c:var(--c-hk)"></span>香港优选<span class="r">自动</span></div>
+                <div class="nm"><span class="chk"></span><span class="sd" style="--c:var(--c-stable)"></span>稳定优先<span class="r">故障转移</span></div>
+                <div class="nsep"></div>
+                <div class="nm"><span class="chk"></span><span class="sd" style="--c:var(--c-direct)"></span>直连</div>
+                <div class="nm"><span class="chk"></span><span class="sd" style="--c:var(--c-reject)"></span>拒绝</div>
+                <div class="nsep"></div>
+                <div class="nm"><span class="chk"></span>新建策略…</div>
+                <div class="nm"><span class="chk"></span>停用此分流</div>
+              </div></div>
+            <div class="srow"><div class="drag"></div><div class="sicon"><svg class="ic"><use href="#i-play"/></svg></div><div class="lbl"><div class="t">流媒体</div><div class="s">Netflix、YouTube、Disney+、Spotify、TikTok</div></div><div class="spop"><span class="sd" style="--c:var(--c-hk)"></span>香港优选<svg class="ic"><use href="#i-updown"/></svg></div></div>
+            <div class="srow"><div class="drag"></div><div class="sicon"><svg class="ic"><use href="#i-plane"/></svg></div><div class="lbl"><div class="t">Telegram</div><div class="s">消息、通话与文件</div></div><div class="spop"><span class="sd" style="--c:var(--c-default)"></span>默认代理<svg class="ic"><use href="#i-updown"/></svg></div></div>
+            <div class="srow"><div class="drag"></div><div class="sicon"><svg class="ic"><use href="#i-code"/></svg></div><div class="lbl"><div class="t">GitHub</div><div class="s">代码托管、Actions、Copilot</div></div><div class="spop"><span class="sd" style="--c:var(--c-fast)"></span>自动最快<svg class="ic"><use href="#i-updown"/></svg></div></div>
+            <div class="srow"><div class="drag"></div><div class="sicon"><svg class="ic"><use href="#i-laptop"/></svg></div><div class="lbl"><div class="t">苹果服务</div><div class="s">App Store、iCloud、系统更新</div></div><div class="spop"><span class="sd" style="--c:var(--c-direct)"></span>直连<svg class="ic"><use href="#i-updown"/></svg></div></div>
+            <div class="srow"><div class="drag"></div><div class="sicon"><svg class="ic"><use href="#i-globe"/></svg></div><div class="lbl"><div class="t">国外网站</div><div class="s">其余境外域名</div></div><div class="spop"><span class="sd" style="--c:var(--c-default)"></span>默认代理<svg class="ic"><use href="#i-updown"/></svg></div></div>
+            <div class="srow"><div class="drag"></div><div class="sicon"><svg class="ic"><use href="#i-pin"/></svg></div><div class="lbl"><div class="t">国内网站</div><div class="s">境内域名与 IP</div></div><div class="spop"><span class="sd" style="--c:var(--c-direct)"></span>直连<svg class="ic"><use href="#i-updown"/></svg></div></div>
+            <div class="srow"><div class="drag none"></div><div class="sicon"><svg class="ic"><use href="#i-turn"/></svg></div><div class="lbl"><div class="t">其他流量</div><div class="s">以上都不匹配时（兜底，固定在最后）</div></div><div class="spop"><span class="sd" style="--c:var(--c-default)"></span>默认代理<svg class="ic"><use href="#i-updown"/></svg></div></div>
+            <div class="srow"><div class="btns"><div class="pbtn">添加分流…</div><div class="pbtn">从链接或文件添加规则集…</div></div></div>
+          </div>
+          <div class="grp-f">分类规则来自 MetaCubeX/meta-rules-dat，由内核每天自动更新；安装包里带一份快照，首次使用不必先访问 GitHub。</div>
+        </div>
+      </div>
+    </main>
+  </div>
+</template>
+
+<template id="tpl-editors">
+  <div class="editor mid" data-editor="strategy">
+    <div class="ed-title">编辑策略</div><div class="ed-sub">美国优选 · 用于 AI 服务</div>
+    <div class="ed-grid top">
+      <label>名称</label><div class="fld-row"><div class="fld">美国优选</div><div class="colors"><i style="--c:var(--c-default)"></i><i style="--c:var(--c-fast)"></i><i class="on" style="--c:var(--c-us)"></i><i style="--c:var(--c-hk)"></i><i style="--c:var(--c-stable)"></i></div></div>
+      <label>类型</label><div><div class="eseg"><span>手动选择</span><span class="on">自动选择</span><span>故障转移</span><span>负载均衡</span></div><div class="fhint">定时测速，自动使用延迟最低的节点。</div></div>
+      <label>来源</label><div class="chips"><span class="chip on">全部来源</span><span class="chip">机场 A</span><span class="chip">机场 B</span><span class="chip">自建节点</span></div>
+      <label>地区</label><div class="chips"><span class="chip">🇭🇰 香港</span><span class="chip">🇯🇵 日本</span><span class="chip on">🇺🇸 美国</span><span class="chip">🇸🇬 新加坡</span><span class="chip">台湾</span><span class="chip">🇰🇷 韩国</span><span class="chip">自定义…</span></div>
+      <label>排除</label><div class="fld mono">过期|剩余|官网|倍率</div>
+      <label>测速</label><div class="fld-row"><div class="fld mono">www.gstatic.com/generate_204</div><div class="fld w-s">每 5 分钟</div><div class="fld w-s">容差 50 ms</div></div>
+    </div>
+    <div class="ed-preview"><svg class="ic"><use href="#i-check"/></svg>匹配 21 个节点 · 机场 A 13 · 机场 B 8<span class="flags" style="letter-spacing:0">美国 01 156 ms · 美国 02 171 ms…</span></div>
+    <div class="dbtns"><div class="dbtn cancel">取消</div><div class="dbtn primary">保存</div></div>
+  </div>
+
+  <div class="editor wide" data-editor="rules">
+    <div class="ed-title">我的规则</div><div class="ed-sub">12 条 · 从上到下匹配，优先于所有分流</div>
+    <div class="toolbar"><div class="sfield"><svg class="ic"><use href="#i-search"/></svg>筛选规则…</div><div class="ibtn"><svg class="ic"><use href="#i-plus"/></svg>添加</div><div class="ibtn">导入…</div></div>
+    <div class="rtable">
+      <div class="rhead"><span></span><span>类型</span><span>内容</span><span>策略</span><span></span></div>
+      <div class="rrow sel"><div class="drag"></div><span>域名后缀</span><span class="mono">openai.com</span><span class="tchip"><span class="sd" style="--c:var(--c-us)"></span>美国优选<svg class="ic"><use href="#i-updown"/></svg></span><span class="more">···</span></div>
+      <div class="rrow"><div class="drag"></div><span>域名后缀</span><span class="mono">claude.ai</span><span class="tchip"><span class="sd" style="--c:var(--c-us)"></span>美国优选<svg class="ic"><use href="#i-updown"/></svg></span><span class="more">···</span></div>
+      <div class="rrow"><div class="drag"></div><span>域名关键词</span><span class="mono">github</span><span class="tchip"><span class="sd" style="--c:var(--c-fast)"></span>自动最快<svg class="ic"><use href="#i-updown"/></svg></span><span class="more">···</span></div>
+      <div class="rrow"><div class="drag"></div><span>进程名</span><span class="mono">Telegram</span><span class="tchip"><span class="sd" style="--c:var(--c-default)"></span>默认代理<svg class="ic"><use href="#i-updown"/></svg></span><span class="more">···</span></div>
+      <div class="rrow"><div class="drag"></div><span>域名后缀</span><span class="mono">bilibili.com</span><span class="tchip"><span class="sd" style="--c:var(--c-direct)"></span>直连<svg class="ic"><use href="#i-updown"/></svg></span><span class="more">···</span></div>
+      <div class="rrow"><div class="drag"></div><span>IP 段</span><span class="mono">10.0.0.0/8</span><span class="tchip"><span class="sd" style="--c:var(--c-direct)"></span>直连<svg class="ic"><use href="#i-updown"/></svg></span><span class="more">···</span></div>
+      <div class="rrow"><div class="drag"></div><span>域名</span><span class="mono">api.example.com</span><span class="tchip"><span class="sd" style="--c:var(--c-stable)"></span>稳定优先<svg class="ic"><use href="#i-updown"/></svg></span><span class="more">···</span></div>
+      <div class="rrow"><div class="drag"></div><span>规则集</span><span class="mono">公司内网 · 来自链接</span><span class="tchip"><span class="sd" style="--c:var(--c-direct)"></span>直连<svg class="ic"><use href="#i-updown"/></svg></span><span class="more">···</span></div>
+      <div class="rrow"><div class="drag"></div><span>域名后缀</span><span class="mono">doubleclick.net</span><span class="tchip"><span class="sd" style="--c:var(--c-reject)"></span>拒绝<svg class="ic"><use href="#i-updown"/></svg></span><span class="more">···</span></div>
+    </div>
+    <div class="testbar"><span class="t3">测试</span><div class="fld mono" style="flex:1">chat.openai.com</div><svg class="ic"><use href="#i-check"/></svg><span>命中第 1 条 → <b>美国优选</b> · 🇺🇸 美国 01</span></div>
+    <div class="dbtns"><div class="dbtn cancel">取消</div><div class="dbtn primary">保存</div></div>
+  </div>
+
+  <div class="editor mid" data-editor="sub">
+    <div class="ed-title">编辑订阅</div><div class="ed-sub">机场 A · 103 个节点</div>
+    <div class="ed-grid">
+      <label>名称</label><div class="fld">机场 A</div>
+      <label>订阅链接</label><div class="fld">https://sub.example.com/s/<span class="ph">••••••••••••••••</span><span class="end"><svg class="ic"><use href="#i-eye"/></svg></span></div>
+      <label>名称前缀</label><div class="fld-row"><div class="fld" style="flex:0 0 90px">A</div><span class="fhint" style="margin:0">合并后区分同名节点，只在冲突时显示</span></div>
+      <label>节点筛选</label><div class="fld-row"><div class="fld"><span class="tag">包含</span><span class="ph">全部</span></div><div class="fld"><span class="tag">排除</span>过期|剩余|官网</div></div>
+      <label>重命名</label><div class="fld-row"><div class="fld mono">^\[.+?\]\s*</div><span class="arrow">→</span><div class="fld"><span class="ph">删除匹配部分</span></div></div>
+      <label>覆写脚本</label><div class="fld"><span class="ph">未设置</span><span class="end link">编辑脚本…</span></div>
+    </div>
+    <div class="ed-preview"><svg class="ic"><use href="#i-check"/></svg>保留 98 / 103 个节点<span class="flags">🇭🇰18 🇯🇵12 🇺🇸13 🇸🇬8</span></div>
+    <div class="dbtns"><div class="dbtn cancel">取消</div><div class="dbtn primary">保存</div></div>
+  </div>
+
+  <div class="editor wide" data-editor="file">
+    <div class="ed-head"><div><div class="ed-title">自建节点.yaml</div><div class="ed-sub">~/Documents/自建节点.yaml · 本地文件</div></div><div class="ibtn">在 Finder 中显示</div></div>
+    <div class="code">
+      <div class="cl"><span class="ln">1</span><span class="c"># 也可以每行粘贴一个分享链接：ss://、vless://、hysteria2:// …</span></div>
+      <div class="cl"><span class="ln">2</span><span class="p">proxies</span>:</div>
+      <div class="cl"><span class="ln">3</span>  - <span class="p">name</span>: <span class="s">VPS · 东京</span></div>
+      <div class="cl"><span class="ln">4</span>    <span class="p">type</span>: <span class="k">vless</span></div>
+      <div class="cl"><span class="ln">5</span>    <span class="p">server</span>: <span class="s">tokyo.example.com</span></div>
+      <div class="cl"><span class="ln">6</span>    <span class="p">port</span>: <span class="n">443</span></div>
+      <div class="cl"><span class="ln">7</span>    <span class="p">uuid</span>: <span class="s">7c1f2a9e-••••</span></div>
+      <div class="cl"><span class="ln">8</span>    <span class="p">tls</span>: <span class="k">true</span></div>
+      <div class="cl"><span class="ln">9</span>    <span class="p">reality-opts</span>: { <span class="p">public-key</span>: <span class="s">Zm9v••••</span> }</div>
+      <div class="cl"><span class="ln">10</span>  - <span class="p">name</span>: <span class="s">VPS · 洛杉矶</span></div>
+      <div class="cl cur"><span class="ln">11</span>    <span class="p">type</span>: <span class="k">hysteria2</span></div>
+      <div class="cl"><span class="ln">12</span>    <span class="p">server</span>: <span class="s">la.example.com</span></div>
+      <div class="cl"><span class="ln">13</span>    <span class="p">port</span>: <span class="n">8443</span></div>
+      <div class="cl"><span class="ln">14</span>    <span class="p">password</span>: <span class="s">••••••••</span></div>
+      <div class="cl"><span class="ln">15</span>  - <span class="p">name</span>: <span class="s">公司跳板</span></div>
+      <div class="cl"><span class="ln">16</span>    <span class="p">type</span>: <span class="k">ssh</span></div>
+      <div class="cl"><span class="ln">17</span>    <span class="p">server</span>: <span class="s">10.8.0.2</span></div>
+      <div class="cl"><span class="ln">18</span>    <span class="p">port</span>: <span class="n">22</span></div>
+    </div>
+    <div class="testbar"><svg class="ic"><use href="#i-check"/></svg>格式正确 · 3 个节点 · 由内核校验</div>
+    <div class="dbtns"><div class="dbtn cancel">取消</div><div class="dbtn primary">保存</div></div>
+  </div>
+</template>
+
+<script>
+  const params = new URLSearchParams(location.search);
+  function setPane(win, name) {
+    win.querySelectorAll('[data-pane]').forEach(p => p.hidden = p.dataset.pane !== name);
+    win.querySelectorAll('.pseg span').forEach(x => x.classList.toggle('on', x.dataset.p === name));
+  }
+  for (const mount of [...document.querySelectorAll('.mount')]) {
+    const { tpl, pane, editor, menu } = mount.dataset;
+    const win = document.getElementById(tpl).content.firstElementChild.cloneNode(true);
+    if (editor) {
+      const dim = document.createElement('div'); dim.className = 'dim';
+      const center = document.createElement('div'); center.className = 'overlay-center';
+      center.appendChild(document.getElementById('tpl-editors').content.cloneNode(true));
+      win.append(dim, center);
+      win.querySelectorAll('.editor').forEach(x => x.classList.toggle('show', x.dataset.editor === editor));
+    }
+    const syncMenu = name => win.classList.toggle('show-menu', !!menu && name === 'routing');
+    win.querySelectorAll('.pseg span').forEach(x => x.onclick = () => { setPane(win, x.dataset.p); syncMenu(x.dataset.p); });
+    setPane(win, pane);
+    syncMenu(pane);
+    mount.replaceWith(win);
+  }
+
+  function drawWires() {
+    const g = document.getElementById('modelGraph');
+    if (!g || g.offsetParent === null) return;
+    const svg = g.querySelector('svg.wires');
+    const box = g.getBoundingClientRect();
+    const mid = el => { const r = el.getBoundingClientRect(); return { l: r.left - box.left, r: r.right - box.left, y: r.top + r.height / 2 - box.top }; };
+    const curve = (x1, y1, x2, y2, color, w, op) => {
+      const dx = (x2 - x1) * 0.5;
+      return `<path d="M${x1},${y1} C${x1 + dx},${y1} ${x2 - dx},${y2} ${x2},${y2}" fill="none" stroke="${color}" stroke-width="${w}" stroke-opacity="${op}"/>`;
+    };
+    const ink = getComputedStyle(document.body).color;
+    const colorOf = s => getComputedStyle(s.querySelector('.sd')).backgroundColor;
+    const used = new Set([...g.querySelectorAll('[data-route]')].map(r => r.dataset.route));
+    const pool = mid(g.querySelector('[data-pool]'));
+    let out = '';
+    for (const s of g.querySelectorAll('[data-strategy]')) {
+      if (['direct', 'reject'].includes(s.dataset.strategy)) continue;
+      const m = mid(s);
+      out += curve(pool.r, pool.y, m.l, m.y, ink, 1, used.has(s.dataset.strategy) ? .28 : .12);
+    }
+    for (const r of g.querySelectorAll('[data-route]')) {
+      const s = g.querySelector(`[data-strategy="${r.dataset.route}"]`);
+      const a = mid(s), b = mid(r), c = colorOf(s);
+      out += curve(a.r, a.y, b.l, b.y, c, 1.6, .75);
+      r.style.boxShadow = `inset 3px 0 0 ${c}, inset 0 0 0 .5px var(--sep)`;
+    }
+    svg.innerHTML = out;
+  }
+
+  const seg = document.getElementById('themeSeg');
+  const setTheme = t => {
+    document.documentElement.dataset.theme = t;
+    for (const b of seg.querySelectorAll('button')) b.classList.toggle('on', b.dataset.t === t);
+    requestAnimationFrame(drawWires);
+  };
+  seg.addEventListener('click', e => { if (e.target.dataset.t) setTheme(e.target.dataset.t); });
+  if (params.get('theme')) setTheme(params.get('theme'));
+  if (params.get('only')) {
+    for (const b of document.querySelectorAll('.board')) if (b.id !== params.get('only')) b.style.display = 'none';
+    for (const sel of ['.top', '.nav']) { const el = document.querySelector(sel); if (el) el.style.display = 'none'; }
+    document.querySelector('.page').style.paddingTop = '0';
+    document.querySelector('.board:not([style*="none"])').style.marginTop = '20px';
+  }
+  window.addEventListener('resize', drawWires);
+  document.fonts.ready.then(drawWires);
+  drawWires();
+</script>
+</body>
+</html>

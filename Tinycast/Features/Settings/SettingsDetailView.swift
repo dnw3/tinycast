@@ -17,6 +17,7 @@ struct SettingsDetailView: View {
             case .fallbacks: FallbacksSettingsView()
             case .ai: AISettingsView()
             case .quickActions: QuickActionsSettingsView()
+            case .proxy: ProxySettingsView()
             case .dictation: DictationSettingsView()
             case .capture: CaptureSettingsView()
             case .translation: TranslationSettingsView()

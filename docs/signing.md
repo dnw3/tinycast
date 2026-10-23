@@ -108,7 +108,8 @@ on, and `node`, `ray` and shell commands are separate processes it never reaches
 hardened-runtime entitlement.
 
 `./Scripts/verify-signature.sh <path-to-.app>` asserts all of this — the runtime flag on the app *and*
-on `Contents/Helpers/TextRecognitionHelper`, `Contents/Helpers/CaptureWebPHelper` and the Dictation helper,
+on `Contents/Helpers/TextRecognitionHelper`, `Contents/Helpers/CaptureWebPHelper`, the Dictation helper,
+the proxy's `TinycastProxyHelper` and `mihomo` (each signed under the identifier root checks it by),
 an intact nested seal, no `get-task-allow`, and an
 entitlement for every usage string `Info.plist` declares. Both release jobs run it before packaging:
 a nested binary missing the runtime flag is the most common notarization rejection, and a usage string

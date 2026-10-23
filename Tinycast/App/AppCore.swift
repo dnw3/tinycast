@@ -72,6 +72,7 @@ final class AppCore {
     @ObservationIgnored private(set) lazy var diskUsage = DiskUsageSession()
     @ObservationIgnored private(set) lazy var cleanup = CleanupSession(
         runningApps: runningApps, settings: cleanupSettings)
+    @ObservationIgnored private(set) lazy var proxy = ProxyManager(store: ProxyStore())
     let notesStore: NotesStore
     let extensions: ExtensionManager
     let chatHistory: ChatHistoryStore
@@ -240,6 +241,9 @@ final class AppCore {
         visibility: visibility, ranking: launcherRanking, aliases: aliases,
         paletteCoordinator: paletteCoordinator, core: self)
     @ObservationIgnored private(set) lazy var captureCoordinator = CaptureCoordinator(core: self)
+    @ObservationIgnored private(set) lazy var proxyCoordinator = ProxyCoordinator(
+        manager: proxy, palette: palette, paletteCoordinator: paletteCoordinator,
+        settingsCoordinator: settingsCoordinator, appIndex: appIndex, core: self)
     @ObservationIgnored private(set) lazy var translationCoordinator = TranslationCoordinator(
         state: translation, store: translationSettings, core: self)
     @ObservationIgnored private(set) lazy var mcpCoordinator = MCPCoordinator(
@@ -379,6 +383,9 @@ final class AppCore {
             cleanupSchedule.onScheduledRunDue = { [weak self] in self?.cleanupCoordinator.runScheduled() }
             cleanupSchedule.onLowSpace = { [weak self] available in self?.cleanupCoordinator.presentLowSpace(available) }
             cleanupSchedule.start()
+            proxyCoordinator.applyPresence()
+            observeProxy()
+            Task { proxy.start() }
 
             hyperKey.healthTicker = healthTicker
             hotKeys.modifierTapMonitor.healthTicker = healthTicker
@@ -494,6 +501,7 @@ final class AppCore {
 
     func handleReopen() {
         if settingsCoordinator.focusExisting() { return }
+        if proxyCoordinator.focusExistingWindow() { return }
         if aiChatCoordinator.focusExisting() { return }
         if onboardingCoordinator.focusExisting() { return }
         if updateCoordinator.focusExisting() { return }
@@ -628,6 +636,7 @@ final class AppCore {
         mcpOAuth.stop()
         mcp.stop()
         installedAI.stop()
+        proxy.prepareForTermination()
         if relaunchRequested { RelaunchRunner.relaunchAfterExit(Bundle.main.bundleURL) }
     }
 
@@ -816,6 +825,21 @@ final class AppCore {
         track({ _ = $0.snippetsFolder }, reproject: { $0.applySnippetsFolder() })
         track({ _ = $0.notesFolder }, reproject: { $0.applyNotesFolder() })
         trackChatRoute()
+    }
+
+    /// Status, notices and intent change from the launcher, Settings and the core itself alike.
+    private func observeProxy() {
+        track(
+            proxy,
+            { manager in
+                _ = manager.status
+                _ = manager.notice
+                _ = manager.store.wantsConnection
+                _ = manager.store.mode
+                _ = manager.store.profile.isEnabled
+                _ = manager.store.profile.general.showsMenuBarItem
+                _ = manager.store.profile.general.showsMenuBarSpeed
+            }, reproject: { $0.proxyCoordinator.reflect() })
     }
 
     /// `.system` resolves to `nil`, so AppKit follows macOS with nothing polling.

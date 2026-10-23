@@ -1,0 +1,1722 @@
+<!doctype html>
+<html lang="zh-Hans" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tinycast 代理设计稿 v3</title>
+<style>
+/* Layout: one design document; each stage hosts a faithful Tinycast surface, all wired to one shared state. */
+:root {
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Helvetica Neue", sans-serif;
+  --display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "PingFang SC", "Helvetica Neue", sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, monospace;
+  color-scheme: dark;
+  /* page */
+  --page: #0b0c10; --ink: #f2f2f5; --ink2: rgba(242,242,245,.64); --ink3: rgba(242,242,245,.42);
+  --pcard: rgba(255,255,255,.035); --pline: rgba(255,255,255,.09);
+  /* Theme.Colors, dark column (frozen baseline) */
+  --t1: #fff; --t2: rgba(255,255,255,.60); --t3: rgba(255,255,255,.40);
+  --sel: rgba(255,255,255,.10); --hover: rgba(255,255,255,.05); --sep: rgba(255,255,255,.10);
+  --ctl: rgba(255,255,255,.10); --border: rgba(255,255,255,.20); --cardfill: rgba(255,255,255,.05);
+  --tile: rgba(255,255,255,.09); --tile-ink: rgba(255,255,255,.85);
+  --scrim: rgba(0,0,0,.40); --rim: rgba(255,255,255,.14);
+  --glass: rgba(255,255,255,.07);
+  --glass-sh: inset 0 .5px 0 rgba(255,255,255,.30), inset 0 0 0 .5px rgba(255,255,255,.12), 0 4px 14px rgba(0,0,0,.24);
+  /* titled windows: system sidebar material, window background */
+  --win: #1e1e20; --win-rim: rgba(255,255,255,.12); --sb: rgba(255,255,255,.055); --sb-rim: rgba(255,255,255,.08);
+  --sb-sel: rgba(255,255,255,.10); --wcard: rgba(255,255,255,.045); --wcard-rim: rgba(255,255,255,.085);
+  --solid: #29292c; --field: rgba(255,255,255,.06); --btn: rgba(255,255,255,.10); --btn-hover: rgba(255,255,255,.15);
+  --seg-on: rgba(255,255,255,.20); --sw-off: rgba(255,255,255,.18);
+  --menu: rgba(38,38,42,.86); --menu-rim: rgba(255,255,255,.14); --menu-hl: #0a84ff;
+  --dlg: rgba(40,40,44,.90); --mb-ink: #fff; --dim: rgba(0,0,0,.30);
+  /* system hues: strategy tints and semantic states */
+  --blue: #0a84ff; --cyan: #64d2ff; --purple: #bf5af2; --orange: #ff9f0a; --green: #30d158; --pink: #ff375f;
+  --red: #ff453a; --gray: #98989d; --green-ink: #30d158; --orange-ink: #ff9f0a;
+  --wall:
+    radial-gradient(70% 55% at 18% 22%, rgba(255,255,255,.14), transparent 60%),
+    radial-gradient(55% 60% at 88% 82%, rgba(255,255,255,.10), transparent 62%),
+    radial-gradient(40% 40% at 70% 12%, rgba(120,140,255,.10), transparent 60%),
+    linear-gradient(160deg, #101013 0%, #1a1a1e 45%, #070709 100%);
+  --streak: rgba(255,255,255,.08);
+}
+:root[data-theme="light"] {
+  color-scheme: light;
+  --page: #f3f3f6; --ink: #18181c; --ink2: rgba(24,24,28,.64); --ink3: rgba(24,24,28,.44);
+  --pcard: rgba(0,0,0,.035); --pline: rgba(0,0,0,.09);
+  --t1: #000; --t2: rgba(0,0,0,.60); --t3: rgba(0,0,0,.42);
+  --sel: rgba(0,0,0,.09); --hover: rgba(0,0,0,.045); --sep: rgba(0,0,0,.12);
+  --ctl: rgba(0,0,0,.08); --border: rgba(0,0,0,.18); --cardfill: rgba(0,0,0,.04);
+  --tile: rgba(0,0,0,.09); --tile-ink: rgba(0,0,0,.85);
+  --scrim: rgba(255,255,255,.55); --rim: rgba(0,0,0,.10);
+  --glass: rgba(255,255,255,.55);
+  --glass-sh: inset 0 .5px 0 rgba(255,255,255,.95), inset 0 0 0 .5px rgba(0,0,0,.08), 0 4px 14px rgba(0,0,0,.10);
+  --win: #f4f4f6; --win-rim: rgba(0,0,0,.14); --sb: rgba(0,0,0,.035); --sb-rim: rgba(0,0,0,.06);
+  --sb-sel: rgba(0,0,0,.08); --wcard: #ffffff; --wcard-rim: rgba(0,0,0,.08);
+  --solid: #ffffff; --field: #ffffff; --btn: rgba(0,0,0,.055); --btn-hover: rgba(0,0,0,.09);
+  --seg-on: #ffffff; --sw-off: rgba(0,0,0,.14);
+  --menu: rgba(248,248,250,.90); --menu-rim: rgba(0,0,0,.10); --menu-hl: #007aff;
+  --dlg: rgba(250,250,252,.94); --mb-ink: #000; --dim: rgba(0,0,0,.14);
+  --blue: #007aff; --cyan: #1aa7d6; --purple: #af52de; --orange: #ff9500; --green: #34c759; --pink: #ff2d55;
+  --red: #ff3b30; --gray: #8e8e93; --green-ink: #1f9d47; --orange-ink: #c46c00;
+  --wall:
+    radial-gradient(70% 55% at 18% 22%, rgba(255,255,255,.95), transparent 60%),
+    radial-gradient(55% 60% at 88% 82%, rgba(255,255,255,.80), transparent 62%),
+    radial-gradient(40% 40% at 70% 12%, rgba(90,110,255,.10), transparent 60%),
+    linear-gradient(160deg, #d8d9df 0%, #c8cad2 50%, #e3e4e9 100%);
+  --streak: rgba(255,255,255,.55);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-font-smoothing: antialiased; }
+body { font-family: var(--font); font-size: 14px; background: var(--page); color: var(--ink); }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; text-align: inherit; }
+input, select { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+.ic { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+.t3 { color: var(--t3); }
+.sm { font-size: 11px; }
+
+/* ---------- document ---------- */
+.page { max-width: 1180px; margin: 0 auto; padding-block: 44px 120px;
+  padding-left: max(24px, env(safe-area-inset-left, 0px)); padding-right: max(24px, env(safe-area-inset-right, 0px)); }
+.top { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
+.kicker { font-size: 12px; color: var(--ink3); letter-spacing: .04em; }
+h1 { margin-top: 8px; font: 700 34px/1.18 var(--display); letter-spacing: -.02em; text-wrap: balance; }
+.lede { margin-top: 12px; max-width: 46em; font-size: 15px; line-height: 1.72; color: var(--ink2); }
+.theme { display: inline-flex; padding: 3px; border-radius: 10px; background: var(--pcard); box-shadow: inset 0 0 0 .5px var(--pline); }
+.theme button { font-size: 12px; font-weight: 500; color: var(--ink2); padding: 6px 14px; border-radius: 8px; }
+.theme button.on { background: var(--ctl); color: var(--ink); }
+.pr { margin-top: 26px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.pr div { padding: 14px 16px; border-radius: 14px; background: var(--pcard); box-shadow: inset 0 0 0 .5px var(--pline); }
+.pr b { display: block; font-size: 13.5px; }
+.pr span { display: block; margin-top: 5px; font-size: 12.5px; line-height: 1.6; color: var(--ink2); }
+@media (max-width: 860px) { .pr { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 480px) { .pr { grid-template-columns: 1fr; } }
+.nav { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 60; margin-top: 28px; padding: 10px 0; display: flex; gap: 4px; flex-wrap: wrap;
+  background: color-mix(in srgb, var(--page) 88%, transparent); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); border-bottom: .5px solid var(--pline); }
+.nav a { font-size: 12.5px; color: var(--ink2); text-decoration: none; padding: 5px 10px; border-radius: 8px; }
+.nav a:hover { background: var(--pcard); color: var(--ink); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 61; background: var(--page); }
+.sec { margin-top: 64px; scroll-margin-top: 64px; }
+.sec h2 { font: 650 21px/1.3 var(--display); letter-spacing: -.01em; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; text-wrap: balance; }
+.sec h2 i { font-style: normal; font-size: 12.5px; font-weight: 500; color: var(--ink3); }
+.cap { margin-top: 8px; max-width: 64em; font-size: 13.5px; line-height: 1.72; color: var(--ink2); }
+.cap b { color: var(--ink); font-weight: 600; }
+.ctrl { margin-top: 14px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; font-size: 12.5px; color: var(--ink2); }
+.chipbtn { padding: 6px 12px; border-radius: 9px; background: var(--pcard); box-shadow: inset 0 0 0 .5px var(--pline); font-size: 12.5px; color: var(--ink); }
+.chipbtn.on { background: color-mix(in srgb, var(--blue) 18%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--blue) 50%, transparent); }
+.scroller { margin-top: 16px; overflow-x: auto; border-radius: 24px; }
+.stage { position: relative; min-width: 1100px; border-radius: 24px; overflow: hidden; background: var(--wall); display: flex; align-items: center; justify-content: center; padding: 40px; isolation: isolate; }
+.stage::before { content: ""; position: absolute; inset: -20%; z-index: -1; pointer-events: none;
+  background: repeating-linear-gradient(118deg, transparent 0 150px, var(--streak) 190px, transparent 250px); filter: blur(10px); }
+
+/* ---------- proxy window (AI Chat recipe: split view, sidebar material, unified toolbar) ---------- */
+.pw { position: relative; width: 1010px; height: 820px; border-radius: 26px; background: var(--win); display: flex; flex: none; overflow: hidden; color: var(--t1); font-size: 13px;
+  box-shadow: 0 0 0 .5px var(--win-rim), 0 40px 100px rgba(0,0,0,.45); }
+.lights { position: absolute; top: 21px; left: 23px; display: flex; gap: 8px; z-index: 6; }
+.lights i { width: 12px; height: 12px; border-radius: 50%; }
+.lights i:nth-child(1) { background: #ff5f57; } .lights i:nth-child(2) { background: #febc2e; } .lights i:nth-child(3) { background: #28c840; }
+.side { width: 210px; margin: 8px 0 8px 8px; padding: 50px 10px 12px; border-radius: 18px; background: var(--sb); box-shadow: inset 0 0 0 .5px var(--sb-rim); display: flex; flex-direction: column; flex: none; }
+.side-sec { font-size: 11px; font-weight: 600; color: var(--t3); padding: 4px 8px 5px; }
+.navi { width: 100%; height: 30px; display: flex; align-items: center; gap: 9px; padding: 0 8px; border-radius: 9px; font-size: 13px; }
+.navi:hover { background: var(--hover); }
+.navi.on { background: var(--sb-sel); font-weight: 600; }
+.navi .ic { color: var(--blue); }
+.navi em { margin-left: auto; font-style: normal; font-size: 12px; font-weight: 400; color: var(--t3); font-variant-numeric: tabular-nums; }
+.side-foot { margin-top: auto; padding: 0 8px; display: flex; flex-direction: column; gap: 6px; }
+.sf-state { display: flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 600; }
+.sf-speed { display: flex; gap: 12px; font-size: 11.5px; color: var(--t2); font-variant-numeric: tabular-nums; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--c, var(--gray)); flex: none; display: inline-block; }
+.dot.live { box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 24%, transparent); }
+.main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.bar { height: 60px; flex: none; display: flex; align-items: center; gap: 8px; padding: 0 14px 0 22px; }
+.bar-t { flex: 1; min-width: 0; }
+.bar-t b { display: block; font-size: 15px; font-weight: 700; }
+.bar-t small { display: block; margin-top: 1px; font-size: 11px; color: var(--t2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tg { height: 32px; padding: 0 3px; border-radius: 16px; display: flex; align-items: center; gap: 2px; flex: none;
+  background: var(--glass); box-shadow: var(--glass-sh); -webkit-backdrop-filter: blur(14px) saturate(180%); backdrop-filter: blur(14px) saturate(180%); }
+.tb { height: 26px; padding: 0 10px; border-radius: 13px; display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; white-space: nowrap; }
+.tb:hover { background: var(--hover); }
+.tb .ic { width: 14px; height: 14px; }
+.tb.on { background: var(--seg-on); font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,.16); }
+.tb.icon { width: 30px; padding: 0; justify-content: center; }
+.tg.off { opacity: .4; pointer-events: none; }
+.sw { width: 36px; height: 21px; border-radius: 11px; background: var(--sw-off); position: relative; flex: none; transition: background .2s; display: inline-block; }
+.sw::after { content: ""; position: absolute; top: 2px; left: 2px; width: 17px; height: 17px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.3); transition: left .2s; }
+.sw.on { background: var(--blue); }
+.sw.on::after { left: 17px; }
+.sw.sm { width: 30px; height: 18px; } .sw.sm::after { width: 14px; height: 14px; } .sw.sm.on::after { left: 14px; }
+.power { height: 26px; padding: 0 5px 0 10px; display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; border-radius: 13px; }
+.body { flex: 1; min-height: 0; overflow: auto; padding: 4px 22px 24px; position: relative; }
+.fade-in { animation: fadein .22s ease-out; }
+@keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
+
+.card { background: var(--wcard); border-radius: 16px; box-shadow: inset 0 0 0 .5px var(--wcard-rim); }
+.card-h { display: flex; align-items: center; gap: 8px; padding: 12px 14px 0 16px; min-height: 36px; font-size: 12px; font-weight: 600; color: var(--t2); }
+.card-h .r { margin-left: auto; display: flex; gap: 8px; align-items: center; font-weight: 400; }
+.btn { height: 24px; padding: 0 10px; border-radius: 7px; background: var(--btn); font-size: 12.5px; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; flex: none; }
+.btn:hover { background: var(--btn-hover); }
+.btn.primary { background: var(--blue); color: #fff; }
+.btn .ic { width: 13px; height: 13px; }
+.ibtn { width: 26px; height: 26px; border-radius: 7px; display: grid; place-items: center; color: var(--t2); flex: none; }
+.ibtn:hover { background: var(--btn); color: var(--t1); }
+.ibtn .ic { width: 14px; height: 14px; }
+.lat { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.lat.good { color: var(--green-ink); } .lat.slow { color: var(--orange-ink); } .lat.bad { color: var(--red); } .lat.none { color: var(--t3); }
+.fl { font-size: 14px; line-height: 1; display: inline-grid; place-items: center; flex: none; }
+.fl.gl .ic { width: 14px; height: 14px; color: var(--t2); }
+.nn { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kind { font-size: 11px; font-weight: 500; color: var(--t2); background: var(--btn); padding: 2px 7px; border-radius: 6px; white-space: nowrap; }
+.note { margin-top: 12px; padding: 10px 12px; border-radius: 12px; font-size: 12px; line-height: 1.55; color: var(--t2); background: var(--btn); display: flex; gap: 8px; align-items: flex-start; }
+.note .ic { width: 14px; height: 14px; margin-top: 1px; color: var(--blue); }
+.note .btn { margin-left: auto; }
+
+/* overview */
+.ov { display: flex; flex-direction: column; gap: 14px; }
+.ov-top { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 14px; }
+.exit { padding-bottom: 14px; display: flex; flex-direction: column; }
+.exit-main { display: flex; align-items: center; gap: 14px; padding: 10px 16px 0; }
+.exit-flag { width: 50px; height: 50px; border-radius: 14px; display: grid; place-items: center; font-size: 34px; line-height: 1; background: var(--btn); flex: none; }
+.exit-flag .ic { width: 24px; height: 24px; color: var(--t2); }
+.exit-text { min-width: 0; flex: 1; }
+.exit-name { font-size: 21px; font-weight: 650; letter-spacing: -.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.path { margin-top: 6px; display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--t2); flex-wrap: wrap; }
+.pchip { display: inline-flex; align-items: center; gap: 5px; height: 20px; padding: 0 8px; border-radius: 10px; background: color-mix(in srgb, var(--c) 15%, transparent); color: var(--t1); font-size: 11.5px; font-weight: 600; }
+.pchip .dot { width: 6px; height: 6px; }
+.arrow { color: var(--t3); }
+.exit-lat { text-align: right; flex: none; }
+.exit-lat b { font-size: 30px; font-weight: 650; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.exit-lat small { font-size: 12px; color: var(--t2); margin-left: 2px; }
+.exit-lat.good b, .exit-lat.good .tests { color: var(--green-ink); } .exit-lat.slow b, .exit-lat.slow .tests { color: var(--orange-ink); }
+.tests { display: flex; gap: 3px; justify-content: flex-end; align-items: flex-end; height: 14px; margin-top: 3px; }
+.tests i { width: 4px; border-radius: 2px; background: currentColor; opacity: .5; }
+.tests i:last-child { opacity: 1; }
+.exit-foot { margin-top: auto; display: flex; align-items: center; gap: 8px; padding: 14px 16px 0; font-size: 12px; color: var(--t2); }
+.exit-foot .sp { flex: 1; }
+.traffic { padding-bottom: 12px; display: flex; flex-direction: column; }
+.leg { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: var(--t2); }
+.leg .dot { width: 6px; height: 6px; }
+.tr-nums { display: flex; gap: 24px; padding: 6px 16px 0; }
+.tr-n small { display: block; font-size: 11px; color: var(--t2); }
+.tr-n b { font-size: 20px; font-weight: 650; font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+.tr-n b span { font-size: 12px; font-weight: 500; color: var(--t2); margin-left: 3px; }
+.tr-chart { height: 62px; margin: 8px 16px 0; }
+.tr-chart svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.tr-foot { padding: 6px 16px 0; font-size: 11.5px; color: var(--t2); font-variant-numeric: tabular-nums; }
+.flow { padding-bottom: 12px; }
+.status { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.st { display: block; text-align: left; padding: 11px 13px; border-radius: 14px; background: var(--wcard); box-shadow: inset 0 0 0 .5px var(--wcard-rim); }
+button.st:hover { background: color-mix(in srgb, var(--btn) 60%, var(--wcard)); }
+.st b { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; }
+.st small { display: block; margin-top: 4px; font-size: 11.5px; color: var(--t2); line-height: 1.45; }
+.ubar { height: 4px; border-radius: 2px; background: var(--btn); overflow: hidden; margin-top: 7px; }
+.ubar i { display: block; height: 100%; border-radius: 2px; background: var(--blue); }
+
+/* flow map: the three layers drawn as one picture */
+.fm { position: relative; margin: 2px 8px 0; transition: opacity .2s; }
+.fm-svg { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
+.fm-col { position: absolute; top: 6px; font-size: 11px; font-weight: 600; color: var(--t3); }
+.fm-src { position: absolute; left: 0; height: 25px; transform: translateY(-50%); display: flex; align-items: center; gap: 8px; padding: 0 8px; border-radius: 8px; font-size: 12.5px; white-space: nowrap; transition: opacity .18s, background .18s; }
+.fm-src:hover, .fm-src.hl { background: var(--btn); }
+.fm-src .ic { width: 14px; height: 14px; color: var(--t2); }
+.fm-src .nm { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.fm-src em { margin-left: auto; font-style: normal; font-size: 11px; color: var(--t3); }
+.fm-mid { position: absolute; transform: translateY(-50%); height: 28px; padding: 0 12px 0 10px; border-radius: 14px; display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; font-weight: 600; white-space: nowrap;
+  background: color-mix(in srgb, var(--c) 16%, var(--solid)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 50%, transparent); transition: opacity .18s; }
+.fm-mid small { font-weight: 400; font-size: 11px; color: var(--t2); }
+.fm-exit { position: absolute; transform: translateY(-50%); width: 228px; height: 36px; padding: 0 12px 0 10px; border-radius: 11px; display: flex; align-items: center; gap: 9px; font-size: 12.5px;
+  background: var(--solid); box-shadow: inset 0 0 0 .5px var(--wcard-rim), 0 1px 3px rgba(0,0,0,.14); transition: opacity .18s; }
+.fm-exit .fl { font-size: 17px; }
+.fm-exit .nn { flex: 1; }
+.fm-exit .gl { width: 20px; height: 20px; border-radius: 6px; display: grid; place-items: center; background: var(--btn); color: var(--t2); flex: none; }
+.fm-exit .gl .ic { width: 12px; height: 12px; stroke-width: 2.2; }
+.fm-exit .gl.rej { color: var(--red); }
+.fm path { fill: none; stroke: var(--c); stroke-linecap: round; transition: stroke-opacity .18s; }
+.fm path.base { stroke-width: 2; stroke-opacity: .42; }
+.fm path.trunk.base { stroke-width: 2.5; stroke-opacity: .6; }
+.fm path.run { stroke-width: 2; stroke-opacity: .95; stroke-dasharray: 1.5 10; animation: run 1.5s linear infinite; }
+@keyframes run { to { stroke-dashoffset: -23; } }
+.fm.hov path.base { stroke-opacity: .08; }
+.fm.hov path.run { stroke-opacity: .12; }
+.fm.hov path.hl.base { stroke-opacity: .95; }
+.fm.hov path.hl.run { stroke-opacity: 1; }
+.fm.hov .fm-src:not(.hl), .fm.hov .fm-mid:not(.hl), .fm.hov .fm-exit:not(.hl) { opacity: .4; }
+.fm.off { opacity: .5; }
+@media (prefers-reduced-motion: reduce) { .fm path.run { display: none; } .fade-in { animation: none; } }
+
+/* nodes */
+.tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+.stab { height: 30px; padding: 0 12px 0 10px; border-radius: 15px; display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; background: var(--btn); white-space: nowrap; }
+.stab:hover { background: var(--btn-hover); }
+.stab.on { background: color-mix(in srgb, var(--c, var(--blue)) 20%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c, var(--blue)) 55%, transparent); font-weight: 600; }
+.stab em { font-style: normal; font-weight: 400; color: var(--t3); font-size: 11.5px; }
+.stab .ic { width: 13px; height: 13px; color: var(--t2); }
+.np-head { margin-top: 14px; padding: 14px 16px; display: flex; gap: 14px; align-items: center; }
+.np-sw { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; background: color-mix(in srgb, var(--c) 18%, transparent); color: var(--c); flex: none; }
+.np-sw .ic { width: 18px; height: 18px; }
+.np-t { flex: 1; min-width: 0; }
+.np-t > b { font-size: 16px; font-weight: 650; display: flex; align-items: center; gap: 8px; }
+.np-t small { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 4px; font-size: 12px; color: var(--t2); line-height: 1.5; }
+.np-t small b { font-weight: 600; color: var(--t1); }
+.np-head .btn { align-self: flex-start; }
+.rg-h { display: flex; align-items: center; gap: 8px; margin: 18px 4px 8px; font-size: 12.5px; font-weight: 600; }
+.rg-h em { font-style: normal; font-weight: 400; color: var(--t3); }
+.rg-h .fl { font-size: 15px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(166px, 1fr)); gap: 8px; }
+.nc { position: relative; height: 58px; padding: 9px 11px; border-radius: 12px; display: flex; flex-direction: column; justify-content: space-between; text-align: left;
+  background: var(--wcard); box-shadow: inset 0 0 0 .5px var(--wcard-rim); transition: transform .12s, box-shadow .12s, background .12s; }
+button.nc:hover { box-shadow: inset 0 0 0 .5px var(--wcard-rim), 0 3px 10px rgba(0,0,0,.18); transform: translateY(-1px); }
+.nc.fixed { cursor: default; }
+.nc.on { background: color-mix(in srgb, var(--c) 13%, var(--wcard)); box-shadow: inset 0 0 0 1.5px var(--c); }
+button.nc.on:hover { box-shadow: inset 0 0 0 1.5px var(--c), 0 3px 10px rgba(0,0,0,.18); }
+.nc-t { display: flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 600; min-width: 0; padding-right: 16px; }
+.nc-t .fl { font-size: 15px; }
+.nc-b { display: flex; align-items: center; justify-content: space-between; gap: 6px; font-size: 11.5px; color: var(--t2); min-width: 0; }
+.nc-b > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nc-b .lat { font-size: 12px; font-weight: 600; }
+.chk { position: absolute; top: 8px; right: 8px; width: 16px; height: 16px; border-radius: 50%; background: var(--c); color: #fff; display: grid; place-items: center; }
+.chk .ic { width: 10px; height: 10px; stroke-width: 3; }
+.ord { position: absolute; top: 9px; right: 10px; font-size: 11px; color: var(--t3); font-variant-numeric: tabular-nums; }
+.nc.more { justify-content: center; align-items: center; font-size: 12px; color: var(--t2); background: transparent; box-shadow: inset 0 0 0 1px var(--wcard-rim); }
+
+/* routes */
+.probe { display: flex; align-items: center; gap: 12px; padding: 10px 14px; }
+.probe .ic { color: var(--t2); }
+.probe input { width: 230px; height: 28px; border: 0; border-radius: 8px; padding: 0 10px; background: var(--field); box-shadow: inset 0 0 0 .5px var(--wcard-rim); font-size: 13px; outline: none; flex: none; }
+.probe input:focus { box-shadow: inset 0 0 0 1.5px var(--blue); }
+.probe-r { flex: 1; min-width: 0; display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--t2); flex-wrap: wrap; }
+.probe-r b { color: var(--t1); font-weight: 600; }
+.probe-r .ex { display: inline-flex; align-items: center; gap: 5px; color: var(--t1); }
+.lh { display: flex; align-items: baseline; gap: 8px; margin: 20px 4px 8px; }
+.lh b { font-size: 13px; font-weight: 650; }
+.lh em { font-style: normal; font-size: 12px; color: var(--t3); }
+.lh .btn { margin-left: auto; align-self: center; }
+.list { overflow: hidden; }
+.rr { position: relative; min-height: 52px; display: flex; align-items: center; gap: 12px; padding: 8px 12px; background: var(--wcard); }
+.rr + .rr::before { content: ""; position: absolute; top: 0; left: 52px; right: 12px; height: .5px; background: var(--sep); }
+.rr.off .rr-tx, .rr.off .tile { opacity: .45; }
+.rr.final { background: color-mix(in srgb, var(--btn) 45%, var(--wcard)); }
+.rr.dragging { opacity: .35; }
+.rr.over { box-shadow: inset 0 2px 0 var(--blue); }
+.tile { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; background: var(--btn); color: var(--t1); flex: none; }
+.tile .ic { width: 15px; height: 15px; }
+.rr-tx { flex: 1; min-width: 0; }
+.rr-tx b { display: block; font-size: 13px; font-weight: 600; }
+.rr-tx small { display: block; margin-top: 2px; font-size: 11.5px; color: var(--t2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rr-tx code { font: 600 12.5px var(--mono); }
+.tgt { height: 28px; padding: 0 8px 0 10px; border-radius: 9px; display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; background: var(--btn); white-space: nowrap; flex: none; max-width: 320px; }
+.tgt:hover { background: var(--btn-hover); }
+.tgt b { font-weight: 600; }
+.tgt .x { display: inline-flex; align-items: center; gap: 5px; color: var(--t2); font-size: 11.5px; overflow: hidden; }
+.tgt > .ic { width: 11px; height: 11px; color: var(--t2); stroke-width: 2.2; }
+.grip { width: 14px; color: var(--t3); opacity: 0; cursor: grab; display: grid; place-items: center; flex: none; }
+.grip .ic { width: 14px; height: 14px; }
+.rr:hover .grip { opacity: 1; }
+.rsline { margin: 12px 4px 0; display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--t2); flex-wrap: wrap; }
+.link { color: var(--blue); cursor: pointer; }
+
+/* subscriptions */
+.info { display: flex; gap: 10px; align-items: center; padding: 11px 14px; font-size: 12.5px; color: var(--t2); line-height: 1.55; }
+.info .ic { color: var(--blue); }
+.subs { margin-top: 14px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.sc { padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+.sc.off > *:not(.sc-h) { opacity: .45; }
+.sc-h { display: flex; align-items: center; gap: 9px; }
+.sc-h b { font-size: 15px; font-weight: 650; }
+.sc-h .sw { margin-left: auto; }
+.sc-m { font-size: 12px; color: var(--t2); }
+.sc-m code { font: 11.5px var(--mono); }
+.big-bar { height: 6px; border-radius: 3px; background: var(--btn); overflow: hidden; }
+.big-bar i { display: block; height: 100%; border-radius: 3px; background: var(--blue); }
+.sc-u { display: flex; justify-content: space-between; gap: 10px; margin-top: 6px; font-size: 11.5px; color: var(--t2); font-variant-numeric: tabular-nums; }
+.sc-a { display: flex; gap: 6px; flex-wrap: wrap; }
+.sc.add { background: transparent; box-shadow: none; border: 1.2px dashed var(--border); }
+.sc.add input { height: 28px; border: 0; border-radius: 8px; padding: 0 10px; background: var(--field); box-shadow: inset 0 0 0 .5px var(--wcard-rim); font-size: 12.5px; outline: none; min-width: 0; flex: 1; }
+.row { display: flex; gap: 8px; align-items: center; }
+
+/* activity */
+.ac-bar { display: flex; gap: 10px; align-items: center; }
+.seg { display: inline-flex; padding: 2px; border-radius: 8px; background: var(--btn); flex: none; }
+.seg button { height: 24px; padding: 0 10px; border-radius: 6px; font-size: 12px; color: var(--t2); white-space: nowrap; }
+.seg button.on { background: var(--seg-on); color: var(--t1); font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,.15); }
+.search { height: 28px; flex: 1; max-width: 260px; display: flex; align-items: center; gap: 6px; padding: 0 9px; border-radius: 8px; background: var(--field); box-shadow: inset 0 0 0 .5px var(--wcard-rim); color: var(--t3); font-size: 12.5px; }
+.search .ic { width: 13px; height: 13px; }
+.live-tag { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--t2); }
+.tbl { margin-top: 12px; padding: 4px; }
+.th, .trw { display: grid; grid-template-columns: 58px minmax(0, 1.6fr) 120px 96px minmax(0, 1.55fr) 62px 26px; gap: 10px; align-items: center; padding: 0 10px; }
+.th { height: 30px; font-size: 11px; font-weight: 600; color: var(--t3); }
+.trw { height: 38px; font-size: 12.5px; border-radius: 9px; }
+.trw:hover { background: var(--hover); }
+.trw .h { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
+.trw .tm, .trw .sz { color: var(--t2); font-variant-numeric: tabular-nums; font-size: 12px; }
+.trw .sz { text-align: right; }
+.app { display: flex; align-items: center; gap: 6px; color: var(--t2); overflow: hidden; white-space: nowrap; min-width: 0; }
+.appic { width: 16px; height: 16px; border-radius: 4px; background: var(--btn); color: var(--t2); font-size: 9.5px; font-weight: 700; display: grid; place-items: center; flex: none; }
+.rchip { font-size: 11.5px; padding: 2px 8px; border-radius: 6px; background: var(--btn); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; justify-self: start; max-width: 100%; }
+.ex { display: flex; align-items: center; gap: 6px; overflow: hidden; white-space: nowrap; font-size: 12px; min-width: 0; }
+.ex .dot { width: 7px; height: 7px; }
+.more-btn { width: 24px; height: 24px; border-radius: 6px; display: grid; place-items: center; color: var(--t2); opacity: 0; }
+.more-btn .ic { width: 14px; height: 14px; }
+.trw:hover .more-btn, .more-btn:focus-visible { opacity: 1; }
+.more-btn:hover { background: var(--btn-hover); }
+
+/* first run */
+.onb { max-width: 560px; margin: 26px auto 0; }
+.onb h3 { font: 700 22px/1.3 var(--display); letter-spacing: -.01em; }
+.onb > p { margin-top: 6px; font-size: 13px; color: var(--t2); line-height: 1.6; }
+.steps { list-style: none; margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
+.step { display: flex; gap: 14px; padding: 16px; border-radius: 16px; background: var(--wcard); box-shadow: inset 0 0 0 .5px var(--wcard-rim); }
+.step.later { opacity: .5; }
+.num { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-size: 12.5px; font-weight: 700; background: var(--btn); flex: none; }
+.step.cur .num { background: var(--blue); color: #fff; }
+.step.done .num { background: color-mix(in srgb, var(--green) 22%, transparent); color: var(--green-ink); }
+.step.done .num .ic { width: 13px; height: 13px; stroke-width: 3; }
+.step-b { flex: 1; min-width: 0; }
+.step-b b { font-size: 14px; font-weight: 650; }
+.step-b small { display: block; margin-top: 4px; font-size: 12px; color: var(--t2); line-height: 1.55; }
+.step-b .row { margin-top: 12px; }
+.step-b input { height: 28px; flex: 1; min-width: 0; border: 0; border-radius: 8px; padding: 0 10px; background: var(--field); box-shadow: inset 0 0 0 .5px var(--wcard-rim); font-size: 12.5px; outline: none; }
+
+/* in-window menus, sheets and popovers */
+.pmenu { position: absolute; z-index: 40; min-width: 240px; padding: 5px; border-radius: 12px; background: var(--menu); color: var(--t1); font-size: 13px;
+  -webkit-backdrop-filter: blur(30px) saturate(180%); backdrop-filter: blur(30px) saturate(180%); box-shadow: inset 0 0 0 .5px var(--menu-rim), 0 14px 40px rgba(0,0,0,.35); }
+.pm-i { width: 100%; height: 26px; display: flex; align-items: center; gap: 8px; padding: 0 10px 0 6px; border-radius: 6px; white-space: nowrap; }
+.pm-i:hover, .pm-i:focus-visible { background: var(--menu-hl); color: #fff; outline: none; }
+.pm-i:hover .pm-x, .pm-i:hover .lat, .pm-i:focus-visible .pm-x { color: rgba(255,255,255,.88); }
+.ck { width: 14px; display: grid; place-items: center; flex: none; }
+.ck .ic { width: 12px; height: 12px; stroke-width: 2.6; }
+.pm-x { margin-left: auto; padding-left: 16px; display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--t2); }
+.pm-sep { height: 1px; margin: 5px 8px; background: var(--sep); }
+.pm-h { font-size: 11px; font-weight: 600; color: var(--t3); padding: 6px 10px 3px 26px; }
+.layer { position: absolute; inset: 0; z-index: 30; }
+.layer-dim { position: absolute; inset: 0; background: var(--dim); }
+.sheet { position: absolute; left: 50%; top: 66px; transform: translateX(-50%); width: 540px; padding: 22px 22px 18px; border-radius: 22px; background: var(--dlg);
+  -webkit-backdrop-filter: blur(36px) saturate(180%); backdrop-filter: blur(36px) saturate(180%); box-shadow: inset 0 0 0 .5px var(--rim), 0 30px 80px rgba(0,0,0,.45); }
+.sh-h b { display: block; font-size: 15px; font-weight: 700; }
+.sh-h small { display: block; margin-top: 3px; font-size: 12px; color: var(--t2); }
+.sh-grid { margin-top: 18px; display: grid; grid-template-columns: 70px minmax(0, 1fr); gap: 12px 12px; align-items: start; }
+.sh-grid > label { padding-top: 7px; font-size: 12px; color: var(--t2); text-align: right; }
+.fld { height: 30px; border: 0; border-radius: 12px; padding: 0 11px; background: var(--field); box-shadow: inset 0 0 0 1px var(--border); font-size: 13px; outline: none; min-width: 0; }
+.fld:focus { box-shadow: inset 0 0 0 2px var(--border); }
+.sh-row { display: flex; gap: 8px; align-items: center; }
+.sh-row + .sh-row, .regs + .sh-row { margin-top: 8px; }
+.sh-row .fld { flex: 1; }
+.sws { display: flex; gap: 7px; padding: 0 4px; }
+.swc { width: 18px; height: 18px; border-radius: 50%; background: var(--c); flex: none; }
+.swc.on { box-shadow: 0 0 0 2px var(--win), 0 0 0 3.5px var(--c); }
+.seg.wide { display: flex; } .seg.wide button { flex: 1; }
+.sh-d { display: block; margin-top: 6px; font-size: 11.5px; line-height: 1.5; color: var(--t2); }
+.regs { display: flex; flex-wrap: wrap; gap: 6px; }
+.reg { height: 28px; padding: 0 10px; border-radius: 14px; background: var(--btn); font-size: 12.5px; display: inline-flex; gap: 6px; align-items: center; }
+.reg em { font-style: normal; color: var(--t3); font-size: 11.5px; }
+.reg.on { background: color-mix(in srgb, var(--c) 22%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 60%, transparent); }
+.sh-prev { margin-top: 16px; padding: 10px 12px; border-radius: 12px; background: var(--btn); font-size: 12.5px; display: flex; gap: 8px; align-items: center; color: var(--t2); }
+.sh-prev .ic { color: var(--green-ink); stroke-width: 2.4; width: 14px; height: 14px; }
+.sh-prev b { color: var(--t1); }
+.sh-prev .flags { margin-left: auto; font-variant-numeric: tabular-nums; }
+.sh-f { margin-top: 18px; display: flex; gap: 8px; align-items: center; }
+.sh-f .sp { flex: 1; }
+.mbtn { height: 30px; padding: 0 16px; border-radius: 15px; background: var(--btn); font-size: 13px; }
+.mbtn:hover { background: var(--btn-hover); }
+.mbtn.primary { background: var(--blue); color: #fff; }
+.mbtn.danger { color: var(--red); }
+.pop { position: absolute; z-index: 35; width: 330px; padding: 16px; border-radius: 18px; background: var(--dlg); color: var(--t1);
+  -webkit-backdrop-filter: blur(36px) saturate(180%); backdrop-filter: blur(36px) saturate(180%); box-shadow: inset 0 0 0 .5px var(--rim), 0 20px 60px rgba(0,0,0,.40); }
+.pop > b { display: block; font-size: 13.5px; font-weight: 700; }
+.pop label { display: flex; align-items: center; gap: 8px; margin-top: 9px; font-size: 12.5px; cursor: pointer; }
+.pop label code { font: 12px var(--mono); }
+.pop .row { margin-top: 12px; }
+.pop select { height: 28px; border-radius: 8px; border: 0; padding: 0 8px; background: var(--btn); font-size: 12.5px; flex: 1; }
+.pop small { display: block; margin-top: 10px; font-size: 11.5px; color: var(--t2); }
+
+/* HUD (HUDCapsule: tone glow over the scrim, fading rim) */
+.hud { --tint: var(--green); position: fixed; left: 50%; bottom: calc(28px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 90;
+  display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px 10px 12px; border-radius: 999px; font-size: 12px; font-weight: 600; color: var(--t1); max-width: 420px;
+  background: radial-gradient(150px circle at 22px 50%, color-mix(in srgb, var(--tint) 16%, transparent), transparent 100%), var(--scrim);
+  -webkit-backdrop-filter: blur(30px) saturate(170%); backdrop-filter: blur(30px) saturate(170%); box-shadow: 0 12px 30px rgba(0,0,0,.25), inset 0 0 0 .5px var(--rim); }
+.hud .ic { width: 15px; height: 15px; color: var(--tint); stroke-width: 2.6; }
+.hud span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ---------- menu bar ---------- */
+.mbstage { height: 640px; align-items: flex-start; justify-content: flex-start; padding: 0; }
+.menubar { position: absolute; left: 0; right: 0; top: 0; height: 30px; display: flex; align-items: center; padding: 0 12px 0 20px; font-size: 13px; color: var(--mb-ink); text-shadow: 0 0 6px color-mix(in srgb, var(--page) 40%, transparent); }
+.mb-l { display: flex; gap: 20px; }
+.mb-l b { font-weight: 700; }
+.mb-r { margin-left: auto; display: flex; align-items: center; gap: 4px; }
+.mbi { height: 24px; padding: 0 7px; border-radius: 7px; display: flex; align-items: center; gap: 5px; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.mbi.on { background: color-mix(in srgb, var(--mb-ink) 18%, transparent); }
+.mbi .ic { width: 16px; height: 16px; }
+.mbi .ic.f { fill: currentColor; stroke: none; }
+.mb-speed { font-size: 11px; }
+.nsm { position: absolute; width: 272px; padding: 5px; border-radius: 13px; background: var(--menu); color: var(--t1); font-size: 13px; z-index: 5;
+  -webkit-backdrop-filter: blur(30px) saturate(180%); backdrop-filter: blur(30px) saturate(180%); box-shadow: inset 0 0 0 .5px var(--menu-rim), 0 16px 44px rgba(0,0,0,.36); }
+.mi { width: 100%; height: 24px; display: flex; align-items: center; gap: 7px; padding: 0 10px 0 6px; border-radius: 7px; white-space: nowrap; cursor: default; }
+.mi.tall { height: 40px; }
+.mi .mt { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.mi .mt > span:first-child { overflow: hidden; text-overflow: ellipsis; }
+.mi .sub { font-size: 11px; color: var(--t2); overflow: hidden; text-overflow: ellipsis; }
+.mi .chev { margin-left: auto; width: 12px; height: 12px; color: var(--t2); stroke-width: 2.2; }
+.mi .kbd { margin-left: auto; color: var(--t3); font-size: 12px; letter-spacing: .06em; }
+.mi .badge-r { margin-left: auto; padding-left: 14px; font-size: 12px; color: var(--t2); }
+.mi .ord { position: static; width: 14px; text-align: center; }
+.mi .mixed { width: 7px; height: 2px; border-radius: 1px; background: currentColor; display: block; }
+button.mi:hover, .mi.open { background: var(--menu-hl); color: #fff; }
+button.mi:hover .sub, .mi.open .sub, button.mi:hover .chev, .mi.open .chev, button.mi:hover .badge-r, .mi.open .badge-r, button.mi:hover .lat, .mi.open .lat, button.mi:hover .kbd { color: rgba(255,255,255,.86); }
+.mi.info { cursor: default; }
+.ms { height: 1px; margin: 5px 9px; background: var(--sep); }
+.mh { padding: 6px 10px 2px 27px; font-size: 11.5px; font-weight: 700; color: var(--t2); }
+.desk-note { position: absolute; left: 32px; bottom: 28px; max-width: 360px; font-size: 12.5px; line-height: 1.65; color: var(--t2); }
+.desk-note b { color: var(--t1); }
+
+/* ---------- launcher palette ---------- */
+.p-panel { position: relative; width: 750px; height: 475px; border-radius: 26px; overflow: hidden; flex: none; color: var(--t1); background: var(--scrim);
+  -webkit-backdrop-filter: blur(42px) saturate(170%); backdrop-filter: blur(42px) saturate(170%); box-shadow: inset 0 0 0 .5px var(--rim), 0 30px 80px rgba(0,0,0,.42), 0 0 0 .5px rgba(0,0,0,.30); }
+.p-hdr { position: absolute; left: 0; right: 0; top: 0; height: 60px; display: flex; align-items: center; padding: 0 16px; z-index: 3; }
+.p-hdr .lead { width: 26px; height: 26px; display: grid; place-items: center; color: var(--t2); }
+.p-hdr .lead .ic { width: 19px; height: 19px; stroke-width: 2; }
+.p-q { margin-left: 10px; font-size: 20px; letter-spacing: -.01em; flex: 1; white-space: nowrap; }
+.caret { display: inline-block; width: 2px; height: 23px; background: var(--blue); vertical-align: -5px; border-radius: 1px; margin-left: 1px; }
+.p-list { position: absolute; left: 8px; right: 8px; top: 56px; bottom: 0; padding-bottom: 80px; overflow: hidden;
+  -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - 104px), rgba(0,0,0,.25) calc(100% - 50px), transparent 100%);
+          mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - 104px), rgba(0,0,0,.25) calc(100% - 50px), transparent 100%); }
+.p-sec { font-size: 11px; font-weight: 500; color: var(--t2); padding: 0 8px; margin: 12px 0 4px; height: 16px; display: flex; align-items: flex-end; }
+.p-row { height: 38px; display: flex; align-items: center; gap: 10px; padding: 0 8px; border-radius: 10px; }
+.p-slot { width: 26px; height: 26px; display: grid; place-items: center; flex: none; }
+.p-tile { width: 22px; height: 22px; border-radius: 5px; background: var(--tile); color: var(--tile-ink); display: grid; place-items: center; }
+.p-tile .ic { width: 13px; height: 13px; stroke-width: 2; }
+.p-ttl { font-size: 13px; white-space: nowrap; }
+.p-sub { font-size: 12px; color: var(--t3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.p-trail { margin-left: auto; font-size: 12px; color: var(--t3); white-space: nowrap; padding-left: 10px; }
+.lead-card { position: relative; height: 92px; border-radius: 10px; background: var(--cardfill); display: flex; align-items: center; }
+.lead-card.sel::before { content: ""; position: absolute; inset: 0; border-radius: 10px; background: var(--sel); }
+.lc { position: relative; flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; min-width: 0; padding: 0 12px; }
+.lc.narrow { flex: none; min-width: 150px; }
+.lc + .lc::after { content: ""; position: absolute; left: 0; top: 4px; bottom: 4px; width: 1px; background: var(--sep); }
+.lc .v { font-size: 22px; font-weight: 500; letter-spacing: -.01em; display: flex; align-items: center; gap: 8px; white-space: nowrap; max-width: 100%; }
+.lc .v .fl { font-size: 20px; }
+.badge { font-size: 10px; color: var(--t2); background: var(--ctl); padding: 2px 7px; border-radius: 6px; white-space: nowrap; }
+.p-foot { position: absolute; left: 8px; right: 8px; bottom: 8px; height: 36px; display: flex; align-items: center; justify-content: space-between; z-index: 4; }
+.glass { background: var(--glass); -webkit-backdrop-filter: blur(16px) saturate(180%); backdrop-filter: blur(16px) saturate(180%); box-shadow: var(--glass-sh); }
+.mcircle { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; }
+.capsule { height: 36px; border-radius: 18px; display: flex; align-items: center; padding: 4px; gap: 2px; }
+.bb { height: 28px; border-radius: 14px; padding: 0 8px; display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.bb.second { color: var(--t2); font-weight: 500; }
+.kc { min-width: 18px; height: 18px; padding: 0 4px; border-radius: 6px; display: inline-grid; place-items: center; font-size: 10px; color: var(--t2); }
+.kc.o { box-shadow: inset 0 0 0 1px var(--border); } .kc.f { background: var(--ctl); }
+
+/* ---------- settings window (grouped form) ---------- */
+.s-win { position: relative; width: 900px; height: 760px; border-radius: 26px; overflow: hidden; display: flex; flex: none; color: var(--t1); font-size: 13px;
+  background: var(--win); box-shadow: 0 0 0 .5px var(--win-rim), 0 34px 90px rgba(0,0,0,.45); }
+.s-side { width: 215px; margin: 8px 0 8px 8px; padding: 48px 10px 10px; border-radius: 18px; flex: none; background: var(--sb); box-shadow: inset 0 0 0 .5px var(--sb-rim); overflow: hidden; }
+.s-search { height: 28px; border-radius: 8px; background: var(--field); box-shadow: inset 0 0 0 .5px var(--sb-rim); display: flex; align-items: center; gap: 6px; padding: 0 8px; font-size: 13px; color: var(--t3); margin: 0 2px 8px; }
+.s-search .ic { width: 13px; height: 13px; }
+.s-sec { font-size: 11px; font-weight: 600; color: var(--t3); padding: 10px 8px 4px; }
+.s-item { height: 28px; display: flex; align-items: center; gap: 8px; padding: 0 6px; border-radius: 8px; font-size: 13px; }
+.s-item .si { width: 22px; height: 22px; border-radius: 6px; display: grid; place-items: center; background: color-mix(in srgb, var(--blue) 12%, transparent); color: var(--blue); flex: none; }
+.s-item .si .ic { width: 14px; height: 14px; }
+.s-item.sel { background: var(--sb-sel); font-weight: 600; }
+.s-content { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.s-title { height: 58px; flex: none; display: flex; align-items: center; padding: 0 30px; font-size: 15px; font-weight: 700; }
+.s-form { flex: 1; overflow: auto; padding: 0 30px 30px; }
+.grp { background: var(--wcard); border-radius: 12px; box-shadow: inset 0 0 0 .5px var(--wcard-rim); }
+.grp-h { font-size: 13px; font-weight: 600; margin: 22px 10px 8px; }
+.grp-f { font-size: 11px; line-height: 1.5; color: var(--t2); margin: 8px 10px 0; }
+.srow { position: relative; min-height: 44px; display: flex; align-items: center; gap: 10px; padding: 9px 12px; }
+.srow + .srow::before { content: ""; position: absolute; top: 0; left: 12px; right: 12px; height: .5px; background: var(--sep); }
+.lbl { flex: 1; min-width: 0; }
+.lbl .t { font-size: 13px; display: flex; align-items: center; gap: 6px; }
+.lbl .t.b { font-weight: 600; }
+.lbl .s { font-size: 11px; line-height: 1.45; color: var(--t2); margin-top: 2px; }
+.mic { width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; background: color-mix(in srgb, var(--blue) 12%, transparent); color: var(--blue); flex: none; }
+.mic .ic { width: 18px; height: 18px; }
+.pbtn { height: 24px; padding: 0 12px; border-radius: 12px; background: var(--btn); font-size: 13px; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; flex: none; }
+.pbtn.primary { background: var(--blue); color: #fff; }
+.popup { height: 24px; padding: 0 6px 0 11px; border-radius: 12px; background: var(--btn); font-size: 13px; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; flex: none; }
+.popup .ic { width: 11px; height: 11px; stroke-width: 2.2; color: var(--t2); }
+.tfield { height: 24px; padding: 0 8px; border-radius: 7px; background: var(--field); box-shadow: inset 0 0 0 .5px var(--wcard-rim); font-size: 12.5px; display: flex; align-items: center; font-variant-numeric: tabular-nums; flex: none; max-width: 260px; overflow: hidden; white-space: nowrap; }
+
+/* ---------- analysis ---------- */
+.diag { margin-top: 18px; display: flex; flex-direction: column; gap: 10px; }
+.dg { display: grid; grid-template-columns: minmax(0, 1fr) 28px minmax(0, 1fr); align-items: stretch; }
+.dg > div { padding: 14px 16px; border-radius: 14px; background: var(--pcard); box-shadow: inset 0 0 0 .5px var(--pline); }
+.dg b { display: block; font-size: 13.5px; }
+.dg span { display: block; margin-top: 5px; font-size: 12.5px; line-height: 1.65; color: var(--ink2); }
+.dg .to { background: color-mix(in srgb, var(--blue) 7%, var(--pcard)); box-shadow: inset 0 0 0 .5px color-mix(in srgb, var(--blue) 28%, transparent); }
+.dg i { display: grid; place-items: center; color: var(--ink3); font-style: normal; }
+@media (max-width: 760px) { .dg { grid-template-columns: 1fr; gap: 6px; } .dg i { transform: rotate(90deg); height: 18px; } }
+.peers { margin-top: 18px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 860px) { .peers { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 520px) { .peers { grid-template-columns: 1fr; } }
+.peer { padding: 14px 16px; border-radius: 14px; background: var(--pcard); box-shadow: inset 0 0 0 .5px var(--pline); display: flex; flex-direction: column; gap: 6px; }
+.peer b { font-size: 13.5px; }
+.peer p { font-size: 12.5px; line-height: 1.65; color: var(--ink2); }
+.peer em { margin-top: auto; padding-top: 4px; font-style: normal; font-size: 12.5px; color: var(--blue); }
+.aside { margin-top: 14px; font-size: 13px; line-height: 1.7; color: var(--ink2); max-width: 64em; }
+.aside b { color: var(--ink); }
+.tblwrap { margin-top: 18px; overflow-x: auto; border-radius: 14px; box-shadow: inset 0 0 0 .5px var(--pline); }
+table.tasks { width: 100%; min-width: 760px; border-collapse: collapse; font-size: 13px; }
+.tasks th { text-align: left; font-size: 12px; font-weight: 600; color: var(--ink3); padding: 12px 16px; background: var(--pcard); }
+.tasks td { padding: 12px 16px; border-top: .5px solid var(--pline); line-height: 1.6; vertical-align: top; color: var(--ink2); }
+.tasks td:first-child { color: var(--ink); font-weight: 600; white-space: nowrap; }
+.tasks td:last-child { color: var(--ink); }
+.plan { margin-top: 18px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 860px) { .plan { grid-template-columns: 1fr; } }
+.plan > div { padding: 16px 18px; border-radius: 14px; background: var(--pcard); box-shadow: inset 0 0 0 .5px var(--pline); }
+.plan h3 { font-size: 13.5px; font-weight: 650; display: flex; align-items: center; gap: 8px; }
+.plan ul { margin-top: 10px; padding-left: 18px; display: flex; flex-direction: column; gap: 7px; }
+.plan li { font-size: 12.5px; line-height: 1.6; color: var(--ink2); }
+.plan code, .aside code, .cap code { font: 12px var(--mono); background: var(--pcard); padding: 1px 5px; border-radius: 5px; box-shadow: inset 0 0 0 .5px var(--pline); }
+.phases { margin-top: 12px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 860px) { .phases { grid-template-columns: 1fr; } }
+.phase { padding: 14px 16px; border-radius: 14px; background: var(--pcard); box-shadow: inset 0 0 0 .5px var(--pline); }
+.phase b { display: block; font-size: 13px; }
+.phase span { display: block; margin-top: 5px; font-size: 12.5px; line-height: 1.6; color: var(--ink2); }
+.asks { margin-top: 18px; counter-reset: ask; display: flex; flex-direction: column; gap: 10px; }
+.ask { counter-increment: ask; display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 4px 10px; padding: 14px 16px; border-radius: 14px; background: var(--pcard); box-shadow: inset 0 0 0 .5px var(--pline); }
+.ask::before { content: counter(ask); grid-row: span 2; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 700; background: var(--ctl); }
+.ask b { font-size: 13.5px; }
+.ask span { font-size: 12.5px; line-height: 1.65; color: var(--ink2); }
+.ask span em { font-style: normal; color: var(--ink); font-weight: 600; }
+.foot-note { margin-top: 28px; font-size: 13px; color: var(--ink2); }
+.dot-legend { display: inline-flex; align-items: center; gap: 6px; }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="i-gauge" viewBox="0 0 24 24"><path d="M4.5 16a7.5 7.5 0 1 1 15 0"/><path d="M12 16l3.6-4.4"/><circle cx="12" cy="16" r="1.1"/></symbol>
+    <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.6"/><path d="M3.6 12h16.8M12 3.4c2.6 2.8 2.6 14.4 0 17.2M12 3.4c-2.6 2.8-2.6 14.4 0 17.2"/></symbol>
+    <symbol id="i-branch" viewBox="0 0 24 24"><path d="M12 21v-7.5L5.5 6.5M12 13.5l6.5-7"/><path d="M5 10V6h4M19 10V6h-4"/></symbol>
+    <symbol id="i-tray" viewBox="0 0 24 24"><path d="M4.5 13.5 6.5 5h11l2 8.5V19h-15z"/><path d="M4.5 13.5h4.8l1 2h3.4l1-2h4.8"/></symbol>
+    <symbol id="i-pulse" viewBox="0 0 24 24"><path d="M3 12h4l2.2-6 4.6 12 2.2-6h5"/></symbol>
+    <symbol id="i-sparkles" viewBox="0 0 24 24"><path d="M11 3.5l1.7 4.6 4.6 1.7-4.6 1.7L11 16.1l-1.7-4.6L4.7 9.8l4.6-1.7z"/><path d="M18 14.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><rect x="3.5" y="5.5" width="17" height="13" rx="3"/><path d="M10.2 9.4v5.2l4.4-2.6z"/></symbol>
+    <symbol id="i-plane" viewBox="0 0 24 24"><path d="M20.5 4.5 3.5 11l6 2.3 2.3 6.2 2.8-4.6 4.6 2.6z"/><path d="M9.5 13.3 20.5 4.5"/></symbol>
+    <symbol id="i-code" viewBox="0 0 24 24"><path d="M8 8l-4 4 4 4M16 8l4 4-4 4M13.6 5l-3.2 14"/></symbol>
+    <symbol id="i-apple" viewBox="0 0 24 24"><path d="M12.2 7.6c-.4-2 .9-3.8 2.8-4.1.3 2-1 3.8-2.8 4.1z"/><path d="M12 8.4c-1.6-1-5.6-1.2-6.5 2.8-.9 3.6 1.4 8.6 3.6 9.1 1.2.3 1.8-.5 2.9-.5s1.7.8 2.9.5c2.2-.5 4.5-5.5 3.6-9.1-1-4-4.9-3.8-6.5-2.8z"/></symbol>
+    <symbol id="i-house" viewBox="0 0 24 24"><path d="M4.5 11 12 4.5l7.5 6.5V19.5h-15z"/><path d="M10 19.5v-5h4v5"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3.5l7 2.8v5.6c0 4.3-2.9 7.4-7 8.6-4.1-1.2-7-4.3-7-8.6V6.3z"/><path d="M8.6 8.6l6.8 6.8"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 20.5s-6-5.4-6-10.6a6 6 0 0 1 12 0c0 5.2-6 10.6-6 10.6z"/><circle cx="12" cy="9.8" r="2.1"/></symbol>
+    <symbol id="i-dots" viewBox="0 0 24 24"><circle cx="6" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="18" cy="12" r="1.2"/></symbol>
+    <symbol id="i-person" viewBox="0 0 24 24"><circle cx="12" cy="8.2" r="3.4"/><path d="M5.5 19.5c.9-3.6 3.6-5.6 6.5-5.6s5.6 2 6.5 5.6"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5.5v13M5.5 12h13"/></symbol>
+    <symbol id="i-chev" viewBox="0 0 24 24"><path d="M7.5 10l4.5 4.5 4.5-4.5"/></symbol>
+    <symbol id="i-chevr" viewBox="0 0 24 24"><path d="M10 7l5 5-5 5"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M5.5 12.5l4.2 4.2 8.8-9.2"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.2"/><path d="M15.6 15.6 20 20"/></symbol>
+    <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13.2 3.5 5.5 13.6h6l-1 6.9 7.7-10.1h-6z"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"/><path d="M19.5 4.5v4.6h-4.6"/></symbol>
+    <symbol id="i-stack" viewBox="0 0 24 24"><path d="M12 4 3.8 8.4 12 12.8l8.2-4.4z"/><path d="M3.8 12.4 12 16.8l8.2-4.4M3.8 16.2 12 20.6l8.2-4.4"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.6"/><path d="M12 11v5.2M12 7.9v.1"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h13.5M13 6.5l5.5 5.5-5.5 5.5"/></symbol>
+    <symbol id="i-block" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.4"/><path d="M6.1 6.1l11.8 11.8"/></symbol>
+    <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></symbol>
+    <symbol id="i-app" viewBox="0 0 24 24"><rect x="4.5" y="4.5" width="15" height="15" rx="4.2"/><path d="M9 12h6"/></symbol>
+    <symbol id="i-file" viewBox="0 0 24 24"><path d="M7 3.5h6.8l4.2 4.2v12.8H7z"/><path d="M13.6 3.5v4.4H18"/></symbol>
+    <symbol id="i-grip" viewBox="0 0 24 24"><circle cx="9" cy="7" r=".9"/><circle cx="15" cy="7" r=".9"/><circle cx="9" cy="12" r=".9"/><circle cx="15" cy="12" r=".9"/><circle cx="9" cy="17" r=".9"/><circle cx="15" cy="17" r=".9"/></symbol>
+    <symbol id="i-wifi" viewBox="0 0 24 24"><path d="M3.8 9.6a11.6 11.6 0 0 1 16.4 0M6.9 12.9a7.2 7.2 0 0 1 10.2 0M10 16.1a2.8 2.8 0 0 1 4 0"/></symbol>
+    <symbol id="i-power" viewBox="0 0 24 24"><path d="M12 3.5v8"/><path d="M7 6.6a7.2 7.2 0 1 0 10 0"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24"><path d="M9 6.5v11M15 6.5v11"/></symbol>
+    <symbol id="i-net" viewBox="0 0 24 24"><circle cx="12" cy="5.6" r="2.2"/><circle cx="5.4" cy="17.8" r="2.2"/><circle cx="18.6" cy="17.8" r="2.2"/><path d="M12 7.8v4.2M12 12l-5.1 4.2M12 12l5.1 4.2"/></symbol>
+    <symbol id="i-bat" viewBox="0 0 24 24"><rect x="2.8" y="7.5" width="16.4" height="9" rx="2.4"/><rect x="4.6" y="9.3" width="10.4" height="5.4" rx="1.1" fill="currentColor" stroke="none"/><path d="M21.2 10.6v2.8"/></symbol>
+    <symbol id="i-thunder" viewBox="4.6 1.7 14.8 20.6"><path fill="currentColor" stroke="none" d="M18.82 9.18A2 2 0 0 0 17 8h-1.81l1.33-3.26a2 2 0 0 0-.19-1.84 2.06 2.06 0 0 0-1.71-.9h-4.34a2 2 0 0 0-1.91 1.27l-3.23 8a2 2 0 0 0 .2 1.83 2.06 2.06 0 0 0 1.71.9h2.76L8 20.74a1 1 0 0 0 .5 1.15A1.1 1.1 0 0 0 9 22a1 1 0 0 0 .76-.35l8.8-10.37a2 2 0 0 0 .26-2.1"/></symbol>
+    <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3.5v2.6M12 17.9v2.6M3.5 12h2.6M17.9 12h2.6M6 6l1.8 1.8M16.2 16.2 18 18M6 18l1.8-1.8M16.2 7.8 18 6"/></symbol>
+    <symbol id="i-camera" viewBox="0 0 24 24"><path d="M4 8.5h3.2l1.6-2.3h6.4l1.6 2.3H20v10H4z"/><circle cx="12" cy="13.2" r="3.2"/></symbol>
+    <symbol id="i-cal" viewBox="0 0 24 24"><rect x="4" y="5.5" width="16" height="14" rx="2.5"/><path d="M4 10h16M8.5 3.8v3.4M15.5 3.8v3.4"/></symbol>
+    <symbol id="i-note" viewBox="0 0 24 24"><path d="M6 3.8h9l3 3v13.4H6z"/><path d="M9 11h6M9 14.5h6"/></symbol>
+    <symbol id="i-translate" viewBox="0 0 24 24"><path d="M4 6h9M8.5 4v2c0 4-2.2 7-4.5 8.2M6.5 9.5c1.2 2.3 3 3.8 5 4.6"/><path d="M12.5 20l3.6-8.5 3.6 8.5M13.8 17h4.6"/></symbol>
+    <symbol id="i-puzzle" viewBox="0 0 24 24"><path d="M9 5.5a2 2 0 1 1 4 0v1h4v4h1a2 2 0 1 1 0 4h-1v4h-4v-1a2 2 0 1 0-4 0v1H5v-4h1a2 2 0 1 0 0-4H5v-4h4z"/></symbol>
+    <symbol id="i-wand" viewBox="0 0 24 24"><path d="M5 19 15.5 8.5M14 5.5l.6 1.6 1.6.6-1.6.6-.6 1.6-.6-1.6-1.6-.6 1.6-.6zM18.5 11l.5 1.2 1.2.5-1.2.5-.5 1.2-.5-1.2-1.2-.5 1.2-.5z"/></symbol>
+    <symbol id="i-archive" viewBox="0 0 24 24"><rect x="3.8" y="5" width="16.4" height="4" rx="1.2"/><path d="M5.2 9v9.5h13.6V9M10 12.5h4"/></symbol>
+  </defs>
+</svg>
+
+<div class="page">
+  <header class="top">
+    <div>
+      <div class="kicker">Tinycast · 内置代理 · 设计稿 v3 · 2026 年 10 月</div>
+      <h1>先看见状态，再谈配置</h1>
+      <p class="lede">现在的代理功能几乎全是配置：设置里四页表单，加上一层层弹出的编辑器。最常问的三件事是连着没有、走哪个节点、快不快，现在却要在启动器卡片、设置和节点列表之间拼着看。新设计参考了 Clash Verge Rev、Surge、ClashX 和 sing-box 的共同做法：状态放在最前，把节点、策略、分流三层画成一张流向图，日常操作放到菜单栏，管理收进独立的代理窗口，设置里只留偏好。数据模型、内核和 TUN 助手都不变。</p>
+    </div>
+    <div class="theme" role="group" aria-label="外观">
+      <button type="button" data-theme-set="dark" class="on">深色</button>
+      <button type="button" data-theme-set="light">浅色</button>
+    </div>
+  </header>
+
+  <div class="pr">
+    <div><b>状态在前</b><span>每个入口先回答四件事：连着没有、出口在哪、多快、什么模式。</span></div>
+    <div><b>把三层画出来</b><span>哪类流量走哪个策略，策略此刻用哪个节点，一张流向图看全。</span></div>
+    <div><b>一个模式开关</b><span>规则、全局、直连三选一，取代「方案」和「临时全局代理」。</span></div>
+    <div><b>两步换节点</b><span>菜单栏、启动器、代理窗口都能直接切换，不必进设置。</span></div>
+  </div>
+
+  <nav class="nav" aria-label="目录">
+    <a href="#window">代理窗口</a><a href="#menubar">菜单栏</a><a href="#launcher">启动器</a><a href="#settings">设置</a>
+    <a href="#why">为什么这样改</a><a href="#peers">同类产品</a><a href="#tasks">常用操作对比</a><a href="#plan">落地方案</a><a href="#asks">待确认</a>
+  </nav>
+
+  <section class="sec" id="window">
+    <h2>代理窗口 <i>新增 · 管理节点、策略、分流和订阅的地方</i></h2>
+    <p class="cap">和 AI 对话窗口同一种结构：系统侧边栏加统一工具栏，工具栏右侧的<b>模式</b>和<b>开关</b>在每一页都在。下面可以直接操作：切换侧边栏页面；改模式，看流向图怎么变；悬停流向图，看一类流量的完整路径；点一类流量改它的去向，点策略或出口跳到它的节点；在节点页点卡片换节点；在分流页拖动排序、在顶部输入网址看它走哪；在活动页给一条连接加规则。数据是示例，节点只节选了一部分。</p>
+    <div class="ctrl">
+      <button type="button" class="chipbtn" id="first-run">看首次使用</button>
+      <span>窗口、菜单栏和启动器共用同一份状态，在任一处的改动会同步到其他地方。</span>
+    </div>
+    <div class="scroller"><div class="stage" style="padding:44px">
+      <div class="pw" id="pw">
+        <div class="lights"><i></i><i></i><i></i></div>
+        <aside class="side" id="pw-side"></aside>
+        <div class="main">
+          <div class="bar" id="pw-bar"></div>
+          <div class="body" id="pw-body"></div>
+        </div>
+        <div class="layer" id="pw-layer" hidden></div>
+      </div>
+    </div></div>
+  </section>
+
+  <section class="sec" id="menubar">
+    <h2>菜单栏 <i>新增 · 每天最常用的操作</i></h2>
+    <p class="cap">独立的代理图标，和日历的菜单栏图标一样可以单独开关，菜单里只放代理自己的操作。模式三选一；每个策略一个子菜单，节点多的再按地区分一层，延迟靠右对齐并着色。分区标题、副标题和右侧角标都是原生 <code>NSMenuItem</code> 的能力（macOS 14 起提供，已对照 SDK 核对）。把指针移到策略和地区上展开子菜单，点节点即可切换，上面的窗口会跟着变。</p>
+    <div class="scroller"><div class="stage mbstage" id="mb-stage">
+      <div class="menubar" id="mb"></div>
+      <div id="mb-menus"></div>
+      <p class="desk-note"><b>图标即状态。</b>连接时图标正常显示，可以在后面附上实时网速；断开时图标变淡。菜单顶部一行就是当前出口和延迟，不用展开任何东西。</p>
+    </div></div>
+  </section>
+
+  <section class="sec" id="launcher">
+    <h2>启动器 <i>保留 · 内容和文案调整</i></h2>
+    <p class="cap">输入「代理」仍然先出状态卡，三栏改为<b>出口节点</b>、<b>模式</b>、<b>连接</b>，回车选择节点。「代理分流」「代理策略」两个列表屏幕去掉，命令改为打开代理窗口的对应页面；「添加代理规则」保留，因为它能读到当前浏览器的网址，这是窗口做不到的。</p>
+    <div class="scroller"><div class="stage" style="min-height:560px">
+      <div class="p-panel">
+        <div class="p-hdr">
+          <span class="lead"><svg class="ic"><use href="#i-search"/></svg></span>
+          <span class="p-q">代理<span class="caret"></span></span>
+        </div>
+        <div class="p-list" id="p-list"></div>
+        <div class="p-foot">
+          <span class="mcircle glass"><svg class="ic" style="width:16px;height:16px;stroke-width:2"><use href="#i-thunder"/></svg></span>
+          <span class="capsule glass"><span class="bb" id="p-primary">选择节点 <span class="kcs"><span class="kc f">↵</span></span></span><span class="bb second">操作 <span class="kc o">⌘</span><span class="kc o">K</span></span></span>
+        </div>
+      </div>
+    </div></div>
+  </section>
+
+  <section class="sec" id="settings">
+    <h2>设置 › 代理 <i>精简 · 只留偏好</i></h2>
+    <p class="cap">节点、策略、分流三页搬到代理窗口后，剩下的基本就是现在「通用」页的内容，再加上订阅自动更新和菜单栏图标两项。顶部一行直接打开代理窗口；搜索设置时搜到节点、策略、分流相关的词，结果会指向代理窗口的对应页面。</p>
+    <div class="scroller"><div class="stage" style="padding:44px">
+      <div class="s-win">
+        <div class="lights"><i></i><i></i><i></i></div>
+        <aside class="s-side">
+          <div class="s-search"><svg class="ic"><use href="#i-search"/></svg>搜索设置</div>
+          <div class="s-sec">功能</div>
+          <div class="s-item"><span class="si"><svg class="ic"><use href="#i-cal"/></svg></span>日历</div>
+          <div class="s-item"><span class="si"><svg class="ic"><use href="#i-camera"/></svg></span>截图</div>
+          <div class="s-item"><span class="si"><svg class="ic"><use href="#i-translate"/></svg></span>翻译</div>
+          <div class="s-item"><span class="si"><svg class="ic"><use href="#i-sparkles"/></svg></span>AI</div>
+          <div class="s-item"><span class="si"><svg class="ic"><use href="#i-wand"/></svg></span>快捷操作</div>
+          <div class="s-item sel"><span class="si"><svg class="ic"><use href="#i-globe"/></svg></span>代理</div>
+          <div class="s-item"><span class="si"><svg class="ic"><use href="#i-puzzle"/></svg></span>扩展</div>
+          <div class="s-sec">高级</div>
+          <div class="s-item"><span class="si"><svg class="ic"><use href="#i-archive"/></svg></span>备份</div>
+          <div class="s-item"><span class="si"><svg class="ic"><use href="#i-info"/></svg></span>关于</div>
+        </aside>
+        <div class="s-content">
+          <div class="s-title">代理</div>
+          <div class="s-form">
+            <div class="grp">
+              <div class="srow"><span class="mic"><svg class="ic"><use href="#i-globe"/></svg></span><div class="lbl"><div class="t b">代理窗口</div><div class="s">节点、策略、分流和订阅都在代理窗口里管理。</div></div><span class="pbtn primary">打开代理窗口</span></div>
+            </div>
+            <div class="grp-h">连接</div>
+            <div class="grp">
+              <div class="srow"><div class="lbl"><div class="t">Tinycast 启动时连接</div></div><span class="sw on"></span></div>
+              <div class="srow"><div class="lbl"><div class="t">退出 Tinycast 后保持连接</div><div class="s">TUN 助手继续运行内核；再次打开 Tinycast 时会直接接上。</div></div><span class="sw"></span></div>
+              <div class="srow"><div class="lbl"><div class="t">在菜单栏显示代理</div><div class="s">和 Tinycast 的菜单栏图标分开，可以只留一个。</div></div><span class="popup">图标和网速<svg class="ic"><use href="#i-chev"/></svg></span><span class="sw on"></span></div>
+            </div>
+            <div class="grp-h">TUN 助手</div>
+            <div class="grp">
+              <div class="srow"><div class="lbl"><div class="t"><i class="dot" style="--c:var(--green)"></i>已安装，正在运行内核</div><div class="s">以系统助手的身份接管全部网络流量。卸载时会请求管理员密码。</div></div><span class="pbtn">卸载…</span></div>
+            </div>
+            <div class="grp-h">DNS</div>
+            <div class="grp">
+              <div class="srow"><div class="lbl"><div class="t">DNS 模式</div></div><span class="popup">Fake-IP<svg class="ic"><use href="#i-chev"/></svg></span></div>
+              <div class="srow"><div class="lbl"><div class="t">国内 DNS</div></div><span class="tfield">223.5.5.5, 119.29.29.29</span></div>
+              <div class="srow"><div class="lbl"><div class="t">境外 DNS</div><div class="s">经「默认」策略查询。</div></div><span class="tfield">https://1.1.1.1/dns-query, https://8.8.8.8/dns-query</span></div>
+            </div>
+            <div class="grp-h">订阅</div>
+            <div class="grp">
+              <div class="srow"><div class="lbl"><div class="t">自动更新</div></div><span class="popup">每 12 小时<svg class="ic"><use href="#i-chev"/></svg></span></div>
+              <div class="srow"><div class="lbl"><div class="t">通过代理更新订阅</div><div class="s">机场的订阅地址在国内打不开时打开它。</div></div><span class="sw"></span></div>
+            </div>
+            <div class="grp-h">内核</div>
+            <div class="grp">
+              <div class="srow"><div class="lbl"><div class="t">mihomo 1.19.33</div><div class="s">已是最新。更新失败会自动回到上一个版本。</div></div><span class="pbtn">检查更新</span><span class="pbtn">显示日志</span></div>
+            </div>
+            <div class="grp-h">高级</div>
+            <div class="grp">
+              <div class="srow"><div class="lbl"><div class="t">混合端口</div><div class="s">给不走 TUN 的程序手动设置代理用。</div></div><span class="tfield">7897</span></div>
+              <div class="srow"><div class="lbl"><div class="t">允许局域网连接</div></div><span class="sw"></span></div>
+              <div class="srow"><div class="lbl"><div class="t">生成的配置</div><div class="s">内核实际读取的配置，只读。</div></div><span class="pbtn">查看…</span></div>
+              <div class="srow"><div class="lbl"><div class="t">恢复默认</div><div class="s">订阅和本地文件保留，其余回到初始状态。</div></div><span class="pbtn">恢复…</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+  </section>
+
+  <section class="sec" id="why">
+    <h2>为什么这样改 <i>现在的设计哪里不直观</i></h2>
+    <div class="diag">
+      <div class="dg"><div><b>没有首页</b><span>“现在走哪、快不快”散在启动器卡片、设置通用页和节点列表里，要拼起来看。</span></div><i>→</i><div class="to"><b>概览</b><span>出口、流量、流向、健康状况放在同一屏，打开窗口第一眼就是答案。</span></div></div>
+      <div class="dg"><div><b>配置成了主体</b><span>四页设置表单加六七个弹出编辑器，日常用不到的东西占满视野；表单行里的菜单还藏着上移、下移、关闭这些操作。</span></div><i>→</i><div class="to"><b>管理进窗口，偏好留设置</b><span>节点、策略、分流、订阅各有一页，用卡片和列表直接操作；拖动排序，开关在行尾。</span></div></div>
+      <div class="dg"><div><b>三层只能靠记</b><span>节点、策略、分流分在三页，彼此的关系只出现在菜单标题里。用户得在脑子里把它们连起来。</span></div><i>→</i><div class="to"><b>流向图</b><span>把“流量 → 策略 → 节点”画出来；节点页也标明每个策略用于哪些分流。</span></div></div>
+      <div class="dg"><div><b>两个“全局”，没有“直连”</b><span>「方案：全局代理」和「临时全局代理」意思不同；想临时不走代理只能断开，TUN 和 DNS 一起停。</span></div><i>→</i><div class="to"><b>模式：规则 / 全局 / 直连</b><span>和 Clash 系客户端、Surge 一致。去掉「方案」，保留一个「恢复推荐分流」。</span></div></div>
+      <div class="dg"><div><b>实时信息写成了句子</b><span>“12 个规则集中已下载 12 个”“最早更新于 3 小时前”，延迟、用量也都是副标题文字。</span></div><i>→</i><div class="to"><b>用形状和颜色表达</b><span>延迟着色、用量进度条、状态圆点、国旗、策略色。文字只在补充信息时出现。</span></div></div>
+      <div class="dg"><div><b>日常入口太少</b><span>换节点要开启动器或进设置，没有菜单栏入口。</span></div><i>→</i><div class="to"><b>代理菜单栏图标</b><span>模式、各策略的节点、测速都在菜单里，两次点击完成。</span></div></div>
+      <div class="dg"><div><b>看不到流量实际怎么走</b><span>某个网站走错了，只能猜它属于哪个分类再去改。</span></div><i>→</i><div class="to"><b>活动页</b><span>每个连接命中的分流和出口一目了然，在那一行直接加规则。</span></div></div>
+    </div>
+    <p class="aside">美观上的问题和不直观是同一个根源：界面在<b>描述配置</b>，而不是<b>展示状态</b>。表单行、副标题和菜单本身没有错，错在它们承担了全部信息。新设计把颜色留给一件事：<b>策略色</b>。同一个策略在流向图的线条、节点卡片的选中框、分流的目标、菜单的圆点上都是同一种颜色，看颜色就知道流量归谁；其余部分沿用 Tinycast 的透明度色阶和语义色。</p>
+  </section>
+
+  <section class="sec" id="peers">
+    <h2>同类产品怎么做 <i>取它们的共同点</i></h2>
+    <div class="peers">
+      <div class="peer"><b>先给状态</b><p>Clash Verge Rev 首页的当前节点、代理模式、流量统计卡片；sing-box 的仪表盘卡片；Surge 的概览页。</p><em>→ 概览，菜单顶部的状态行</em></div>
+      <div class="peer"><b>一个模式开关</b><p>规则、全局、直连三种出站模式。ClashX、Clash Verge Rev、sing-box、Surge 都有，而且位置固定、随手可切。</p><em>→ 工具栏和菜单栏的模式</em></div>
+      <div class="peer"><b>菜单栏随手切换</b><p>ClashX、Surge 和 sing-box 的 macOS 状态栏菜单：每个策略组一个子菜单，列出节点和延迟，当前项打勾。</p><em>→ 代理菜单栏图标</em></div>
+      <div class="peer"><b>节点用卡片</b><p>Clash Verge Rev 和 sing-box 的节点卡片：名称、协议、着色的延迟，选中的那张描边。</p><em>→ 节点页，按地区分组</em></div>
+      <div class="peer"><b>订阅用卡片</b><p>Clash Verge Rev 的订阅卡片：已用流量进度条、到期时间、更新时间、一键更新。</p><em>→ 订阅页，概览底部的用量</em></div>
+      <div class="peer"><b>看见每个连接</b><p>Surge 的最近请求、Clash Verge Rev 的连接页：每条连接命中了哪条规则、走了哪个策略。</p><em>→ 活动页，可直接加规则</em></div>
+    </div>
+    <p class="aside"><b>不照搬的部分：</b>多份配置文件切换（Tinycast 只有一份配置，订阅只提供节点）；直接编辑 YAML（保留只读的「查看生成的配置」）；单独的日志页（日志在 设置 › 内核 › 显示日志）。<b>它们没有、我们有的：</b>流向图。别家的策略组来自订阅，用户很少需要看懂整体；Tinycast 的策略和分流由用户自己搭，所以需要一张能看全的图。</p>
+  </section>
+
+  <section class="sec" id="tasks">
+    <h2>常用操作对比 <i>现在 vs 新设计</i></h2>
+    <div class="tblwrap">
+      <table class="tasks">
+        <thead><tr><th>想做的事</th><th>现在</th><th>新设计</th></tr></thead>
+        <tbody>
+          <tr><td>换「默认」的节点</td><td>启动器输入「代理」，回车，再选节点</td><td>菜单栏 › 默认 › 节点；或在代理窗口点卡片。启动器的做法保留</td></tr>
+          <tr><td>看 AI 现在走哪个节点</td><td>启动器「代理分流」逐行看文字；在设置里要跨分流、策略两页对照</td><td>概览的流向图一眼看到，悬停高亮整条路径</td></tr>
+          <tr><td>让全部流量走代理</td><td>「代理分流」里按 ⌘K，选「临时全局代理」</td><td>工具栏或菜单栏把模式切到「全局」</td></tr>
+          <tr><td>暂时不走代理</td><td>断开代理，TUN 和 DNS 接管一起停掉</td><td>模式切到「直连」，连接保持，随时切回</td></tr>
+          <tr><td>某个网站走错了</td><td>先猜它属于哪个分类，再去加规则</td><td>活动页找到这条连接，看它命中的分流，点「添加规则」</td></tr>
+          <tr><td>看订阅还剩多少</td><td>设置 › 节点，来源那一行的副标题</td><td>概览底部的状态卡；订阅页的进度条和剩余天数</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="sec" id="plan">
+    <h2>落地方案 <i>只动界面，不动数据和助手</i></h2>
+    <div class="plan">
+      <div>
+        <h3><i class="dot" style="--c:var(--green)"></i>保留</h3>
+        <ul>
+          <li>数据模型原样：<code>ProxyProfile</code>、订阅、策略、分流、我的规则；现有配置无需迁移。</li>
+          <li><code>ProxyManager</code>、配置生成、内核 API、内核升级与回滚。</li>
+          <li>TUN 助手一行不改，<code>ProxyHelperWire.version</code> 不变，不需要重新输入管理员密码。</li>
+          <li>启动器的「选择节点」「添加代理规则」，对话框和 HUD。</li>
+          <li>各编辑器的字段与校验逻辑，换到新窗口的面板里。</li>
+        </ul>
+      </div>
+      <div>
+        <h3><i class="dot" style="--c:var(--blue)"></i>新增</h3>
+        <ul>
+          <li>代理窗口：照 AI 对话窗口的 <code>NSSplitViewController</code> 做，系统侧边栏材质加统一工具栏，五个页面。</li>
+          <li>流向图：SwiftUI <code>Canvas</code> 配合锚点偏好绘制。</li>
+          <li>代理菜单栏项：和日历一样是独立的菜单栏项；子菜单用分区标题、副标题和角标。</li>
+          <li>内核接口：<code>/traffic</code> 每秒一行 JSON，复用读日志的流式读取；<code>/connections</code> 只在活动页可见时轮询。</li>
+          <li>模式加入「直连」并持久保存；新偏好 <code>showsProxyInMenuBar</code>，同时登记 <code>SettingsFileKey</code>。</li>
+          <li>网址测试：经混合端口真实发起一次连接，从 <code>/connections</code> 读出命中的规则和出口后立即断开。</li>
+        </ul>
+      </div>
+      <div>
+        <h3><i class="dot" style="--c:var(--red)"></i>去掉</h3>
+        <ul>
+          <li>设置 › 代理 的「节点」「策略」「分流」三页和节点池弹窗，设置里只剩偏好。</li>
+          <li>「方案」选择器（智能分流、全局代理、大陆直连、自定义）和「临时全局代理」。</li>
+          <li>启动器的「代理分流」「代理策略」两个屏幕；命令保留，改为打开窗口对应页面。</li>
+          <li>延迟着色阈值从 300 ms 改为 150 ms，否则几乎所有节点都是绿色，颜色失去意义。</li>
+        </ul>
+      </div>
+    </div>
+    <div class="phases">
+      <div class="phase"><b>第一步 · 骨架与概览</b><span>窗口、侧边栏、工具栏的模式与开关；概览的出口、流量、流向、状态；三态模式；菜单栏项。</span></div>
+      <div class="phase"><b>第二步 · 管理页面</b><span>节点页（策略标签、卡片、全部节点）；分流页（拖动排序、目标菜单、网址测试）；订阅页；编辑面板迁过来。</span></div>
+      <div class="phase"><b>第三步 · 收尾与验收</b><span>活动页；设置瘦身；启动器文案；文档、测试和端到端验收。全部验证通过后再一起提交。</span></div>
+    </div>
+  </section>
+
+  <section class="sec" id="asks">
+    <h2>需要你确认的 <i>每项都有推荐答案</i></h2>
+    <div class="asks">
+      <div class="ask"><b>管理界面放进独立的代理窗口？</b><span>推荐：<em>是</em>。另一个做法是继续留在设置里只换样式，但设置窗口是偏好表单，放不下流向图和节点卡片这种实时内容。</span></div>
+      <div class="ask"><b>去掉「方案」，统一用规则、全局、直连三种模式？</b><span>推荐：<em>是</em>。三个预设里「全局代理」和临时全局重复，「大陆直连」和「智能分流」只差广告拦截与 Apple 直连，留一个「恢复推荐分流」就够了。</span></div>
+      <div class="ask"><b>活动页放进第一批？</b><span>推荐：<em>放</em>。它是看懂分流、发现走错的网站最直接的办法，实现上只是在页面可见时轮询一个接口。</span></div>
+      <div class="ask"><b>菜单栏代理图标默认显示？</b><span>推荐：<em>开启代理功能后默认显示</em>，可以在设置里关掉，或拖出菜单栏。</span></div>
+    </div>
+    <p class="foot-note">确认方向后我再动手。已有的改动照旧不提交，等全部完成并验证通过再一起提交。</p>
+  </section>
+</div>
+
+<div class="hud" id="hud" role="status" aria-live="polite" hidden><svg class="ic"><use href="#i-check"/></svg><span id="hud-text"></span></div>
+
+<script>
+(() => {
+'use strict';
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
+const ic = (n, c = '') => `<svg class="ic ${c}" aria-hidden="true"><use href="#i-${n}"/></svg>`;
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+const REGIONS = [
+  {id: 'hk', f: '🇭🇰', t: '香港', total: 18}, {id: 'jp', f: '🇯🇵', t: '日本', total: 22},
+  {id: 'sg', f: '🇸🇬', t: '新加坡', total: 12}, {id: 'kr', f: '🇰🇷', t: '韩国', total: 6},
+  {id: 'us', f: '🇺🇸', t: '美国', total: 20}, {id: 'uk', f: '🇬🇧', t: '英国', total: 5},
+  {id: 'de', f: '🇩🇪', t: '德国', total: 4}, {id: 'nl', f: '🇳🇱', t: '荷兰', total: 3},
+  {id: 'xx', f: '', t: '其他地区', total: 23},
+];
+const RG = Object.fromEntries(REGIONS.map(r => [r.id, r]));
+const NODES = [
+  ['香港 01 · IEPL', 'hk', 'Trojan', 1, 42, 'yf'], ['香港 02 · IEPL', 'hk', 'Trojan', 1, 47, 'yf'],
+  ['香港 A1', 'hk', 'VMess', 1, 55, 'jg'], ['香港 03', 'hk', 'Shadowsocks', 1, 63, 'yf'],
+  ['香港 04', 'hk', 'Shadowsocks', 0, -1, 'yf'], ['东京 02', 'jp', 'Shadowsocks', 1, 68, 'yf'],
+  ['东京 VPS', 'jp', 'VLESS', 1, 72, 'self'], ['东京 A2', 'jp', 'VMess', 1, 79, 'jg'],
+  ['东京 01', 'jp', 'VMess', 0, 91, 'yf'], ['大阪 01', 'jp', 'Trojan', 1, 104, 'yf'],
+  ['新加坡 01', 'sg', 'Trojan', 1, 75, 'yf'], ['新加坡 02', 'sg', 'Shadowsocks', 1, 88, 'yf'],
+  ['新加坡 A1', 'sg', 'Trojan', 1, 93, 'jg'], ['首尔 A1', 'kr', 'Shadowsocks', 1, 96, 'jg'],
+  ['洛杉矶 01', 'us', 'Hysteria2', 1, 166, 'yf'], ['硅谷 VPS', 'us', 'VLESS', 1, 171, 'self'],
+  ['洛杉矶 03', 'us', 'Trojan', 1, 182, 'yf'], ['圣何塞 02', 'us', 'VMess', 0, 201, 'yf'],
+  ['伦敦 01', 'uk', 'Shadowsocks', 1, 238, 'yf'], ['法兰克福 01', 'de', 'Trojan', 0, 254, 'yf'],
+  ['阿姆斯特丹 A1', 'nl', 'Trojan', 1, null, 'jg'], ['IPLC 中转 01', 'xx', 'Shadowsocks', 1, 58, 'yf'],
+].map(([n, r, k, u, ms, s]) => ({n, r, k, u: !!u, ms, s}));
+const NONE = {n: '没有可用的节点', r: 'xx', k: '', u: false, ms: null, s: '', none: true};
+const SRC = {yf: '云帆加速', jg: '极光云', self: '自建节点'};
+const TINT = {blue: 'var(--blue)', cyan: 'var(--cyan)', purple: 'var(--purple)', orange: 'var(--orange)', green: 'var(--green)', pink: 'var(--pink)'};
+const KIND = {select: '手动选择', urltest: '自动选择', fallback: '故障转移', balance: '负载均衡'};
+const KIND_DESC = {
+  select: '你来选用哪个节点或策略；分到这里的流量都走它。',
+  urltest: '每 5 分钟测一次延迟，自动用最快的节点；新节点快 50 ms 以上才切换。',
+  fallback: '按顺序使用第一个可用的节点；排在前面的恢复后自动切回。',
+  balance: '把连接分散到这些节点上，适合下载。',
+};
+const MODE = {rule: '规则', global: '全局', direct: '直连'};
+const RULE_KIND = {suffix: '域名后缀 · 包括所有子域名', domain: '完整域名', keyword: '域名关键词', app: '应用 · 按进程名匹配', ip: 'IP 地址'};
+const ROUTE_RX = {
+  ads: /(^|\.)(doubleclick\.net|googlesyndication\.com|googleadservices\.com)$/, lan: /^(localhost|.+\.local|192\.168\.|10\.|172\.(1[6-9]|2\d|3[01])\.)/,
+  ai: /(openai|chatgpt|anthropic|claude\.ai|gemini|copilot|perplexity)/, stream: /(youtube|googlevideo|netflix|nflx|disney|spotify|tiktok)/,
+  tg: /(telegram|^t\.me$|^149\.154\.)/, gh: /(github|githubusercontent)/, apple: /(apple\.com|icloud|mzstatic|cdn-apple)/,
+  cn: /(\.cn$|baidu|bilibili|taobao|qq\.com|weibo|zhihu|jd\.com|163\.com|aliyun)/,
+};
+
+const S = {
+  connected: true, mode: 'rule', page: 'overview', firstRun: false, onb: 0,
+  tab: 'def', allSrc: 'all', acFilter: 'all', mbOpen: 'def', mbRegion: 'hk',
+  strategies: [
+    {id: 'def', name: '默认', kind: 'select', tint: 'blue', members: ['fast'], regions: [], sel: '@fast'},
+    {id: 'fast', name: '自动最快', kind: 'urltest', tint: 'cyan', members: [], regions: []},
+    {id: 'ai', name: 'AI 专用', kind: 'select', tint: 'purple', members: [], regions: ['us', 'jp', 'sg'], sel: '洛杉矶 03'},
+    {id: 'sgp', name: '新加坡优先', kind: 'fallback', tint: 'orange', members: [], regions: [], order: ['新加坡 01', '新加坡 02', '香港 03']},
+  ],
+  routes: [
+    {id: 'ads', t: '广告拦截', d: '广告与跟踪域名', icon: 'shield', to: 'reject', on: true},
+    {id: 'lan', t: '局域网', d: '私有地址和本地域名', icon: 'house', to: 'direct', on: true},
+    {id: 'ai', t: 'AI 服务', d: 'ChatGPT、Claude、Gemini、Copilot 等', icon: 'sparkles', to: 'ai', on: true},
+    {id: 'stream', t: '流媒体', d: 'Netflix、YouTube、Disney+、Spotify、TikTok', icon: 'play', to: 'sgp', on: true},
+    {id: 'tg', t: 'Telegram', d: '消息、通话和文件', icon: 'plane', to: 'def', on: true},
+    {id: 'gh', t: 'GitHub', d: '代码托管、Actions 与 Copilot', icon: 'code', to: 'def', on: true},
+    {id: 'apple', t: 'Apple 服务', d: 'App Store、iCloud 与系统更新', icon: 'apple', to: 'direct', on: true},
+    {id: 'foreign', t: '国外网站', d: '其余所有境外域名', icon: 'globe', to: 'def', on: true},
+    {id: 'cn', t: '国内网站', d: '中国大陆的域名和地址', icon: 'pin', to: 'direct', on: true},
+  ],
+  final: 'def',
+  rules: [
+    {kind: 'suffix', v: 'corp.example.com', to: 'direct', on: true},
+    {kind: 'app', v: 'Steam Helper', to: 'direct', on: true},
+    {kind: 'domain', v: 'cdn.jsdelivr.net', to: 'def', on: true},
+  ],
+  subs: [
+    {id: 'yf', name: '云帆加速', kind: 'sub', nodes: 86, updated: '2 小时前更新', used: 128.4, total: 300, expire: '12 月 31 日', left: 68, on: true},
+    {id: 'jg', name: '极光云', kind: 'sub', nodes: 24, updated: '2 小时前更新', used: 36.2, total: 200, expire: '2027 年 3 月 15 日', left: 142, on: true},
+    {id: 'self', name: '自建节点', kind: 'file', nodes: 3, updated: '10 月 20 日修改', path: '~/Documents/代理/自建节点.yaml', on: true},
+  ],
+};
+const CONNS = [
+  ['14:02:31', 'chat.openai.com', 'Safari', 'ai', '2.1 MB'], ['14:02:29', 'api.anthropic.com', 'Claude', 'ai', '846 KB'],
+  ['14:02:18', 'rr3---sn-oguesnzr.googlevideo.com', 'Safari', 'stream', '48.6 MB'], ['14:02:11', 'github.com', 'git-remote-https', 'gh', '3.4 MB'],
+  ['14:01:58', 'www.bilibili.com', 'Safari', 'cn', '5.2 MB'], ['14:01:52', '149.154.167.51', 'Telegram', 'tg', '128 KB'],
+  ['14:01:40', 'registry.npmjs.org', 'node', 'foreign', '12.7 MB'], ['14:01:33', 'mesu.apple.com', 'softwareupdated', 'apple', '64 KB'],
+  ['14:01:20', 'googleads.g.doubleclick.net', 'Safari', 'ads', '—'], ['14:01:12', 'wiki.corp.example.com', 'Safari', 'rule:0', '220 KB'],
+  ['14:01:05', '192.168.1.1', 'Safari', 'lan', '18 KB'], ['14:00:57', 'cdn.jsdelivr.net', 'Chrome', 'rule:2', '1.1 MB'],
+  ['14:00:41', 'news.ycombinator.com', 'Safari', 'foreign', '236 KB'],
+].map(([t, h, app, r, sz]) => ({t, h, app, r, sz}));
+
+/* ---------- model ---------- */
+const strat = id => S.strategies.find(s => s.id === id);
+const alive = n => n && n.ms != null && n.ms >= 0;
+const byDelay = list => list.filter(alive).sort((a, b) => a.ms - b.ms);
+function pool(st) {
+  const on = new Set(S.subs.filter(s => s.on).map(s => s.id));
+  if (st.order) return st.order.map(name => NODES.find(n => n.n === name)).filter(n => n && on.has(n.s));
+  return NODES.filter(n => on.has(n.s) && (!st.regions.length || st.regions.includes(n.r)));
+}
+function reach(id, seen = new Set()) {
+  const st = strat(id);
+  if (!st || seen.has(id)) return {node: NONE, via: []};
+  seen.add(id);
+  if (st.kind === 'urltest' || st.kind === 'balance') return {node: byDelay(pool(st))[0] || NONE, via: []};
+  if (st.kind === 'fallback') return {node: pool(st).find(alive) || NONE, via: []};
+  if (st.sel && st.sel.startsWith('@')) {
+    const sub = st.sel.slice(1), r = reach(sub, seen);
+    return {node: r.node, via: [sub, ...r.via]};
+  }
+  const p = pool(st);
+  return {node: p.find(n => n.n === st.sel) || p[0] || NONE, via: []};
+}
+function tgt(key) {
+  if (key === 'direct') return {key, name: '直连', c: 'var(--gray)'};
+  if (key === 'reject') return {key, name: '拒绝', c: 'var(--red)'};
+  const st = strat(key);
+  if (!st) return {key, name: '策略已不存在', c: 'var(--gray)'};
+  const r = reach(key);
+  return {key, name: st.name, c: TINT[st.tint], st, node: r.node, via: r.via};
+}
+const forced = () => S.mode === 'global' ? 'def' : S.mode === 'direct' ? 'direct' : null;
+const tone = n => !n || n.none || n.ms == null ? 'none' : n.ms < 0 ? 'bad' : n.ms < 150 ? 'good' : 'slow';
+const lat = n => !n || n.none ? '' : n.ms == null ? '未测' : n.ms < 0 ? '超时' : `${n.ms} ms`;
+const latSpan = n => lat(n) ? `<span class="lat ${tone(n)}">${lat(n)}</span>` : '';
+const flag = n => RG[n.r] && RG[n.r].f ? `<span class="fl">${RG[n.r].f}</span>` : `<span class="fl gl">${ic('globe')}</span>`;
+const nodeLine = n => n.none ? `<span class="nn t3">${esc(n.n)}</span>` : `${flag(n)}<span class="nn">${esc(n.n)}</span>`;
+const dot = c => `<i class="dot" style="--c:${c}"></i>`;
+const routeTitle = key => key.startsWith('rule:') ? `我的规则 · ${S.rules[+key.slice(5)].v}` : (S.routes.find(r => r.id === key) || {t: key}).t;
+const routeTarget = key => key.startsWith('rule:') ? S.rules[+key.slice(5)].to : (S.routes.find(r => r.id === key) || {to: S.final}).to;
+function usedBy(id) {
+  const items = S.routes.filter(r => r.on && r.to === id).map(r => r.t);
+  if (S.final === id) items.push('其他流量');
+  const rules = S.rules.filter(r => r.on && r.to === id).length;
+  if (rules) items.push(`${rules} 条我的规则`);
+  S.strategies.forEach(s => { if (s.members.includes(id)) items.push(`策略「${s.name}」`); });
+  if (id === 'def') items.push('DNS 和规则集下载');
+  return items.length ? items.join('、') : '还没有分流用到它';
+}
+
+/* ---------- traffic ---------- */
+let seed = 11, tick = 0;
+const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+const T = {down: [], up: [], totDown: 6.8e9, totUp: 4.12e8};
+function sample() {
+  tick += 1;
+  const burst = rnd() > 0.88 ? 2.6e6 * rnd() : 0;
+  T.down.push(Math.max(1.2e5, 1.7e6 + Math.sin(tick / 6) * 0.9e6 + rnd() * 1.2e6 + burst));
+  T.up.push(6e4 + rnd() * 2.1e5);
+  if (T.down.length > 60) { T.down.shift(); T.up.shift(); }
+}
+for (let i = 0; i < 60; i++) sample();
+const rate = v => v >= 1e6 ? [(v / 1e6).toFixed(1), 'MB/s'] : [String(Math.round(v / 1e3)), 'KB/s'];
+const rateText = v => rate(v).join(' ');
+const rateParts = v => { const [n, u] = rate(v); return `${n}<span>${u}</span>`; };
+const bytes = v => v >= 1e9 ? `${(v / 1e9).toFixed(2)} GB` : `${Math.round(v / 1e6)} MB`;
+function chart() {
+  const max = Math.max(...T.down) * 1.15, w = 300, h = 62;
+  const xy = (arr, i) => `${(i * w / (arr.length - 1)).toFixed(1)} ${(h - arr[i] / max * h).toFixed(1)}`;
+  const line = arr => arr.map((_, i) => (i ? 'L' : 'M') + xy(arr, i)).join(' ');
+  const last = xy(T.down, T.down.length - 1).split(' ');
+  return `<defs><linearGradient id="g-down" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--blue);stop-opacity:.42"/><stop offset="1" style="stop-color:var(--blue);stop-opacity:0"/></linearGradient></defs>
+    <path d="M0 ${h / 3}H${w}M0 ${h * 2 / 3}H${w}" style="stroke:var(--sep);stroke-width:1;fill:none" vector-effect="non-scaling-stroke"/>
+    <path d="${line(T.down)} L${w} ${h} L0 ${h}Z" style="fill:url(#g-down)"/>
+    <path d="${line(T.down)}" style="fill:none;stroke:var(--blue);stroke-width:1.6" vector-effect="non-scaling-stroke"/>
+    <path d="${line(T.up)}" style="fill:none;stroke:var(--t3);stroke-width:1.3" vector-effect="non-scaling-stroke"/>
+    <circle cx="${last[0]}" cy="${last[1]}" r="2.6" style="fill:var(--blue)"/>`;
+}
+
+/* ---------- window: sidebar and toolbar ---------- */
+function renderSide() {
+  const pages = [
+    ['overview', 'gauge', '概览', ''], ['nodes', 'globe', '节点', S.firstRun ? '' : '113'],
+    ['routes', 'branch', '分流', S.firstRun ? '' : String(S.rules.filter(r => r.on).length + S.routes.filter(r => r.on).length)],
+    ['subs', 'tray', '订阅', S.firstRun ? '' : String(S.subs.length)], ['activity', 'pulse', '活动', S.connected ? String(CONNS.length) : ''],
+  ];
+  const state = !S.connected ? '未连接' : `已连接 · ${MODE[S.mode]}`;
+  $('#pw-side').innerHTML = `<div class="side-sec">代理</div>` + pages.map(([id, i, t, n]) =>
+    `<button type="button" class="navi ${S.page === id ? 'on' : ''}" data-page="${id}">${ic(i)}<span>${t}</span>${n ? `<em>${n}</em>` : ''}</button>`).join('') +
+    `<div class="side-foot"><div class="sf-state"><i class="dot ${S.connected ? 'live' : ''}" style="--c:${S.connected ? 'var(--green)' : 'var(--gray)'}"></i>${state}</div>` +
+    (S.connected ? `<div class="sf-speed"><span>↓ <span id="sf-down">${rateText(T.down.at(-1))}</span></span><span>↑ <span id="sf-up">${rateText(T.up.at(-1))}</span></span></div>` : '') + `</div>`;
+}
+function renderBar() {
+  const title = {overview: '概览', nodes: '节点', routes: '分流', subs: '订阅', activity: '活动'}[S.page];
+  const sub = {
+    overview: S.firstRun ? '还没有节点' : S.connected ? '已连接 2 小时 13 分 · TUN' : '未连接',
+    nodes: `${S.strategies.length} 个策略 · 113 个节点`,
+    routes: `${S.rules.length} 条我的规则 · ${S.routes.length} 个分类，从上到下匹配`,
+    subs: `${S.subs.length} 个订阅 · 113 个节点`,
+    activity: S.connected ? `最近 ${CONNS.length} 个连接` : '未连接',
+  }[S.page];
+  const act = {
+    overview: `<button type="button" class="tb icon" data-act="test" title="全部测速">${ic('bolt')}</button>`,
+    nodes: `<button type="button" class="tb" data-act="test">${ic('bolt')}全部测速</button>`,
+    routes: `<button type="button" class="tb" data-act="add-rule">${ic('plus')}添加规则</button>`,
+    subs: `<button type="button" class="tb" data-act="update-subs">${ic('refresh')}全部更新</button>`,
+    activity: `<button type="button" class="tb" data-act="pause">${ic('pause')}暂停</button>`,
+  }[S.page];
+  const idle = S.firstRun ? 'off' : '';
+  $('#pw-bar').innerHTML = `<div class="bar-t"><b>${title}</b><small>${sub}</small></div>` +
+    (S.firstRun ? '' : `<div class="tg">${act}</div>`) +
+    `<div class="tg ${idle}" role="group" aria-label="模式">${['rule', 'global', 'direct'].map(m =>
+      `<button type="button" class="tb ${S.mode === m ? 'on' : ''}" data-mode="${m}" aria-pressed="${S.mode === m}">${MODE[m]}</button>`).join('')}</div>` +
+    `<div class="tg ${idle}"><button type="button" class="power" data-act="power" aria-pressed="${S.connected}">${S.connected ? '已连接' : '未连接'}<span class="sw ${S.connected ? 'on' : ''}"></span></button></div>`;
+}
+
+/* ---------- overview ---------- */
+function exitCard() {
+  if (!S.connected) {
+    return `<div class="card exit"><div class="card-h">出口</div><div class="exit-main"><div class="exit-flag">${ic('power')}</div>
+      <div class="exit-text"><div class="exit-name">未连接</div><div class="path">连接后，流量按下方的流向分配。</div></div></div>
+      <div class="exit-foot"><button type="button" class="btn primary" data-act="power">连接</button><span class="sp"></span><span>TUN 助手已就绪</span></div></div>`;
+  }
+  if (S.mode === 'direct') {
+    return `<div class="card exit"><div class="card-h">出口</div><div class="exit-main"><div class="exit-flag">${ic('arrow')}</div>
+      <div class="exit-text"><div class="exit-name">直连</div><div class="path">所有流量直接访问，不经过任何节点；TUN 和 DNS 接管保持。</div></div></div>
+      <div class="exit-foot"><button type="button" class="btn" data-mode="rule">切回规则模式</button><span class="sp"></span><span>已连接 2 小时 13 分 · TUN</span></div></div>`;
+  }
+  const d = tgt('def'), n = d.node;
+  const chain = [`<span class="pchip" style="--c:${d.c}">${dot(d.c)}${esc(d.name)}</span>`].concat(d.via.map(v => {
+    const m = strat(v), c = TINT[m.tint];
+    return `<span class="arrow">›</span><span class="pchip" style="--c:${c}">${dot(c)}${esc(m.name)}</span>`;
+  })).join('');
+  const hist = n.none || !alive(n) ? [] : [9, -4, 6, 0, 13, -2, 5, 0].map(o => Math.max(8, n.ms + o));
+  const top = Math.max(1, ...hist);
+  return `<div class="card exit"><div class="card-h">${S.mode === 'global' ? '全局出口' : '默认出口'}<span class="r"><button type="button" class="ibtn" data-act="test" title="测速">${ic('bolt')}</button></span></div>
+    <div class="exit-main"><div class="exit-flag">${RG[n.r].f || ic('globe')}</div>
+      <div class="exit-text"><div class="exit-name">${esc(n.n)}</div><div class="path">${chain}<span>${n.none ? '' : `${esc(n.k)}${n.u ? ' · UDP' : ''} · ${SRC[n.s]}`}</span></div></div>
+      <div class="exit-lat ${tone(n)}"><b>${alive(n) ? n.ms : '—'}</b><small>${alive(n) ? 'ms' : ''}</small><div class="tests">${hist.map(v => `<i style="height:${Math.round(v / top * 14)}px"></i>`).join('')}</div></div></div>
+    <div class="exit-foot"><button type="button" class="btn" data-go-tab="def">更换节点${ic('chevr')}</button><span class="sp"></span><span>上次测速 2 分钟前</span></div></div>`;
+}
+function trafficCard() {
+  return `<div class="card traffic"><div class="card-h">流量<span class="r"><span class="leg">${dot('var(--blue)')}下载</span><span class="leg">${dot('var(--t3)')}上传</span></span></div>
+    <div class="tr-nums"><div class="tr-n"><small>下载</small><b id="tr-down">${S.connected ? rateParts(T.down.at(-1)) : '—'}</b></div><div class="tr-n"><small>上传</small><b id="tr-up">${S.connected ? rateParts(T.up.at(-1)) : '—'}</b></div></div>
+    <div class="tr-chart" ${S.connected ? '' : 'style="opacity:.25"'}><svg viewBox="0 0 300 62" preserveAspectRatio="none" id="tr-svg" aria-label="最近 60 秒的下载和上传速度">${chart()}</svg></div>
+    <div class="tr-foot" id="tr-foot">${S.connected ? `本次连接 ↓ ${bytes(T.totDown)} · ↑ ${bytes(T.totUp)}` : '连接后显示实时流量'}</div></div>`;
+}
+function statusTiles() {
+  const on = S.connected, sub = S.subs[0], pct = Math.round(sub.used / sub.total * 100);
+  const tile = (t, c, s) => `<div class="st"><b>${dot(c)}${t}</b><small>${s}</small></div>`;
+  return tile('TUN', on ? 'var(--green)' : 'var(--gray)', on ? '已接管全部流量' : '助手已安装，未运行') +
+    tile('DNS', on ? 'var(--green)' : 'var(--gray)', on ? '系统 DNS 临时设为 223.5.5.5' : '未接管') +
+    tile('规则集', 'var(--green)', '12 个已下载 · 3 小时前更新') +
+    `<button type="button" class="st" data-page="subs"><b>${dot('var(--blue)')}${esc(sub.name)}</b><small>已用 ${pct}% · 剩 ${sub.left} 天</small><div class="ubar"><i style="width:${pct}%"></i></div></button>`;
+}
+function overviewHTML() {
+  if (S.firstRun) return onboardingHTML();
+  const caption = !S.connected ? '未连接 · 连接后按这里分配' : S.mode === 'rule' ? '先匹配我的规则，再按分类从上到下' : S.mode === 'global' ? '全局模式 · 全部走「默认」，分流暂不生效' : '直连模式 · 不经过任何节点';
+  return `<div class="ov"><div class="ov-top">${exitCard()}${trafficCard()}</div>
+    <div class="card flow"><div class="card-h">流向<span class="r"><span>${caption}</span><button type="button" class="btn" data-page="routes">编辑分流</button></span></div><div class="fm ${S.connected ? '' : 'off'}" id="fm"></div></div>
+    <div class="status">${statusTiles()}</div></div>`;
+}
+
+/* flow map: traffic kinds → strategies → exits */
+let FLOW = null;
+function flowModel() {
+  const order = k => k === 'direct' ? 900 : k === 'reject' ? 901 : S.strategies.findIndex(s => s.id === k);
+  const rows = S.routes.filter(r => r.on).map(r => ({id: r.id, label: r.t, icon: r.icon, orig: [r.to]}));
+  rows.push({id: 'final', label: '其他流量', icon: 'dots', orig: [S.final]});
+  rows.sort((a, b) => order(a.orig[0]) - order(b.orig[0]));
+  const on = S.rules.filter(r => r.on);
+  const list = on.length ? [{id: 'rules', label: '我的规则', icon: 'person', badge: on.length, orig: [...new Set(on.map(r => r.to))], multi: true}, ...rows] : rows;
+  const f = forced();
+  list.forEach(s => { s.to = f ? [f] : s.orig; });
+  return {list, order};
+}
+function drawFlow() {
+  const fm = $('#fm');
+  if (!fm) return;
+  const W = fm.clientWidth, ROW = 27, GAP = 10, TOP = 32, SRC_W = 176;
+  const {list, order} = flowModel();
+  let y = TOP, prev = null;
+  list.forEach((s, i) => {
+    const g = s.multi ? '*' : s.orig[0];
+    if (i && g !== prev) y += GAP;
+    s.y = y + ROW / 2; y += ROW; prev = g;
+  });
+  const keys = [...new Set(list.flatMap(s => s.to))].sort((a, b) => order(a) - order(b));
+  const tg = keys.map(k => {
+    let ys = list.filter(s => !s.multi && s.to[0] === k).map(s => s.y);
+    if (!ys.length) ys = list.filter(s => s.to.includes(k)).map(s => s.y);
+    return {k, y: (Math.min(...ys) + Math.max(...ys)) / 2};
+  }).sort((a, b) => a.y - b.y);
+  for (let i = 1; i < tg.length; i++) if (tg[i].y - tg[i - 1].y < 46) tg[i].y = tg[i - 1].y + 46;
+  const H = Math.max(y + 8, tg.length ? tg[tg.length - 1].y + 26 : 0);
+  const xMid = Math.round(W * 0.405), xExit = W - 230;
+  FLOW = {list};
+  let h = `<svg class="fm-svg" width="${W}" height="${H}" aria-hidden="true"></svg>
+    <span class="fm-col" style="left:8px">流量</span><span class="fm-col" style="left:${xMid + 4}px">策略</span><span class="fm-col" style="left:${xExit + 4}px">出口</span>`;
+  list.forEach(s => {
+    h += `<button type="button" class="fm-src" data-k="s-${s.id}" data-src="${s.id}" style="top:${s.y}px;width:${SRC_W}px">${ic(s.icon)}<span class="nm">${esc(s.label)}</span>${s.badge ? `<em>${s.badge} 条</em>` : ''}</button>`;
+  });
+  tg.forEach(t => {
+    const d = tgt(t.k);
+    if (d.st) {
+      h += `<button type="button" class="fm-mid" data-k="t-${t.k}" data-go-tab="${t.k}" style="top:${t.y}px;left:${xMid}px;--c:${d.c}">${dot(d.c)}${esc(d.name)}${d.via.length ? `<small>经 ${esc(strat(d.via[0]).name)}</small>` : ''}</button>
+        <button type="button" class="fm-exit" data-k="t-${t.k}" data-go-tab="${t.k}" style="top:${t.y}px;left:${xExit}px">${nodeLine(d.node)}${latSpan(d.node)}</button>`;
+    } else {
+      const direct = t.k === 'direct';
+      h += `<div class="fm-exit" data-k="t-${t.k}" style="top:${t.y}px;left:${xExit}px"><span class="gl ${direct ? '' : 'rej'}">${ic(direct ? 'arrow' : 'block')}</span><span class="nn">${direct ? '直连' : '拒绝'}</span><span class="t3 sm">${direct ? '不经过代理' : '直接拦下'}</span></div>`;
+    }
+  });
+  fm.style.height = `${H}px`;
+  fm.innerHTML = h;
+  const yOf = Object.fromEntries(tg.map(t => [t.k, t.y]));
+  const midRight = {};
+  $$('.fm-mid', fm).forEach(el => { midRight[el.dataset.goTab] = xMid + el.offsetWidth; });
+  const stroke = (d, c, cls) => `<path class="base ${cls}" d="${d}" style="--c:${c}"/>` + (S.connected ? `<path class="run ${cls}" d="${d}" style="--c:${c}"/>` : '');
+  let paths = '';
+  list.forEach(s => s.to.forEach(k => {
+    const d = tgt(k), y2 = yOf[k], end = d.st ? xMid : xExit, bend = d.st ? 70 : 150;
+    paths += stroke(`M${SRC_W} ${s.y} C${SRC_W + bend} ${s.y} ${end - bend} ${y2} ${end} ${y2}`, d.c, `s-${s.id} t-${k}`);
+  }));
+  tg.forEach(t => {
+    const d = tgt(t.k);
+    if (d.st) paths += stroke(`M${midRight[t.k]} ${t.y} L${xExit} ${t.y}`, d.c, `trunk t-${t.k}`);
+  });
+  $('.fm-svg', fm).innerHTML = paths;
+}
+function flowHover(k) {
+  const fm = $('#fm');
+  if (!fm || !FLOW) return;
+  $$('.hl', fm).forEach(x => x.classList.remove('hl'));
+  if (!k) { fm.classList.remove('hov'); return; }
+  fm.classList.add('hov');
+  const mark = sel => $$(sel, fm).forEach(x => x.classList.add('hl'));
+  if (k.startsWith('s-')) {
+    const s = FLOW.list.find(x => `s-${x.id}` === k);
+    if (!s) return;
+    mark(`[data-k="${k}"]`); mark(`path.${k}`);
+    s.to.forEach(t => { mark(`[data-k="t-${t}"]`); mark(`path.trunk.t-${t}`); });
+  } else {
+    const t = k.slice(2);
+    mark(`[data-k="${k}"]`); mark(`path.t-${t}`);
+    FLOW.list.filter(s => s.to.includes(t)).forEach(s => mark(`[data-k="s-${s.id}"]`));
+  }
+}
+
+/* first run */
+function onboardingHTML() {
+  const step = (i, title, body, ctl) => {
+    const cls = S.onb > i ? 'done' : S.onb === i ? 'cur' : 'later';
+    return `<li class="step ${cls}"><span class="num">${S.onb > i ? ic('check') : i + 1}</span><div class="step-b"><b>${title}</b><small>${body}</small>${S.onb === i ? ctl : ''}</div></li>`;
+  };
+  return `<div class="onb fade-in"><h3>开始使用代理</h3><p>三步。完成后这里会显示连接状态、出口节点和流量的去向。</p><ol class="steps">
+    ${step(0, '添加节点', '粘贴机场给你的订阅链接，或导入本地的节点文件。Tinycast 只读取其中的节点，分组和分流在这里另外设置。',
+      `<div class="row"><input id="onb-link" aria-label="订阅链接" placeholder="https://…" value="https://sub.example.com/api/v1/client/…"><button type="button" class="btn primary" data-onb="1">添加</button><button type="button" class="btn" data-onb="1">导入文件…</button></div>`)}
+    ${step(1, '安装 TUN 助手', '接管全部网络流量需要一个系统助手。安装时会请求一次管理员密码，之后连接和断开都不用再输。',
+      `<div class="row"><button type="button" class="btn primary" data-onb="2">安装…</button></div>`)}
+    ${step(2, '连接', '默认分流：国内网站和局域网直连，广告拦截，其余走「默认」策略。之后随时可以改。',
+      `<div class="row"><button type="button" class="btn primary" data-onb="3">连接</button></div>`)}
+  </ol></div>`;
+}
+
+/* ---------- nodes ---------- */
+function card(n, {c, on = false, pick = null, st = null, sub = null, ord = null}) {
+  const tag = pick ? 'button type="button"' : 'div';
+  const attrs = pick ? ` data-pick="${esc(pick)}" data-st="${st}"` : '';
+  return `<${tag} class="nc ${on ? 'on' : ''} ${pick ? '' : 'fixed'}" style="--c:${c}"${attrs}>${on ? `<span class="chk">${ic('check')}</span>` : ''}${ord != null ? `<span class="ord">${ord}</span>` : ''}
+    <div class="nc-t">${flag(n)}<span class="nn">${esc(n.n)}</span></div><div class="nc-b"><span>${sub ?? `${esc(n.k)}${n.u ? ' · UDP' : ''}`}</span>${latSpan(n)}</div></${pick ? 'button' : 'div'}>`;
+}
+function regionSections(list, render) {
+  return REGIONS.map(rg => {
+    const ns = list.filter(n => n.r === rg.id);
+    if (!ns.length) return '';
+    const more = rg.total - ns.length;
+    return `<div class="rg-h">${rg.f ? `<span class="fl">${rg.f}</span>` : ic('globe')}${rg.t}<em>${rg.total}</em></div>
+      <div class="grid">${ns.map(render).join('')}${more > 0 ? `<div class="nc more">还有 ${more} 个</div>` : ''}</div>`;
+  }).join('');
+}
+function nodesHTML() {
+  const tabs = S.strategies.map(st => {
+    const c = TINT[st.tint], n = reach(st.id).node;
+    return `<button type="button" class="stab ${S.tab === st.id ? 'on' : ''}" data-tab="${st.id}" style="--c:${c}">${dot(c)}${esc(st.name)}${n.none ? '' : RG[n.r].f ? `<span class="fl">${RG[n.r].f}</span>` : ''}</button>`;
+  }).join('') + `<button type="button" class="stab ${S.tab === 'all' ? 'on' : ''}" data-tab="all">全部节点 <em>113</em></button>
+    <button type="button" class="stab" data-act="new-strategy">${ic('plus')}新建策略</button>`;
+  return `<div class="tabs">${tabs}</div>${S.tab === 'all' ? allNodesHTML() : strategyHTML(strat(S.tab))}`;
+}
+function strategyHTML(st) {
+  const c = TINT[st.tint], r = reach(st.id), cur = r.node;
+  let h = `<div class="card np-head" style="--c:${c}"><span class="np-sw">${ic('stack')}</span>
+    <div class="np-t"><b>${esc(st.name)}<span class="kind">${KIND[st.kind]}</span>${st.id === 'def' ? '<span class="kind">默认策略</span>' : ''}</b>
+      <small>当前 <b>${cur.none ? '—' : `${RG[cur.r].f} ${esc(cur.n)}`}</b>${latSpan(cur)}${r.via.length ? `<span class="t3">经 ${esc(strat(r.via[0]).name)}</span>` : ''}</small>
+      <small>用于 ${esc(usedBy(st.id))}</small></div>
+    <button type="button" class="btn" data-act="test">${ic('bolt')}测速</button><button type="button" class="btn" data-act="edit-strategy" data-id="${st.id}">编辑…</button></div>`;
+  if (st.kind !== 'select') h += `<div class="note">${ic('info')}<span>${KIND_DESC[st.kind]}${st.kind === 'urltest' ? ' 想固定某个节点，就在「默认」里直接选它。' : ''}</span></div>`;
+  if (st.members.length) {
+    h += `<div class="rg-h">策略<em>${st.members.length}</em></div><div class="grid">` + st.members.map(id => {
+      const m = strat(id), mn = reach(id).node, on = st.sel === `@${id}`;
+      return `<button type="button" class="nc ${on ? 'on' : ''}" style="--c:${c}" data-pick="@${id}" data-st="${st.id}">${on ? `<span class="chk">${ic('check')}</span>` : ''}
+        <div class="nc-t">${dot(TINT[m.tint])}<span class="nn">${esc(m.name)}</span></div><div class="nc-b"><span>${mn.none ? '' : `${RG[mn.r].f} ${esc(mn.n)}`}</span>${latSpan(mn)}</div></button>`;
+    }).join('') + `</div>`;
+  }
+  const list = pool(st);
+  if (!list.length) return h + `<div class="note">${ic('info')}<span>这个策略的范围里没有节点。检查订阅是否启用，或在「编辑…」里放宽地区。</span></div>`;
+  if (st.kind === 'fallback') {
+    return h + `<div class="rg-h">顺序<em>${list.length}</em></div><div class="grid">${list.map((n, i) => card(n, {c, on: n === cur, ord: i + 1})).join('')}</div>`;
+  }
+  const manual = st.kind === 'select';
+  return h + regionSections(list, n => card(n, {c, on: n === cur && !(st.sel || '').startsWith('@'), pick: manual ? n.n : null, st: st.id}));
+}
+function allNodesHTML() {
+  const counts = {all: 113, yf: 86, jg: 24, self: 3};
+  const list = NODES.filter(n => S.allSrc === 'all' || n.s === S.allSrc);
+  const head = `<div class="card np-head" style="--c:var(--blue)"><span class="np-sw">${ic('globe')}</span>
+    <div class="np-t"><b>全部节点</b><small>来自 ${S.subs.length} 个订阅的 113 个节点。这里只是查看；要使用某个节点，在策略里选它。</small></div>
+    <div class="seg">${[['all', '全部'], ['yf', '云帆加速'], ['jg', '极光云'], ['self', '自建节点']].map(([k, t]) =>
+      `<button type="button" class="${S.allSrc === k ? 'on' : ''}" data-src-filter="${k}">${t} ${counts[k]}</button>`).join('')}</div></div>`;
+  return head + regionSections(list, n => card(n, {c: 'var(--blue)', sub: `${esc(n.k)} · ${SRC[n.s]}`}));
+}
+
+/* ---------- routes ---------- */
+function chip(key, data) {
+  const d = tgt(key);
+  const x = d.st ? `<span class="x">${d.node.none ? '' : `${RG[d.node.r].f} ${esc(d.node.n)}`}${latSpan(d.node)}</span>` : '';
+  return `<button type="button" class="tgt" data-chip="${data}">${dot(d.c)}<b>${esc(d.name)}</b>${x}${ic('chev')}</button>`;
+}
+function probe(input) {
+  const host = input.trim().toLowerCase().replace(/^[a-z]+:\/\//, '').split(/[/?#:]/)[0];
+  if (!host) return null;
+  for (const r of S.rules) {
+    if (!r.on) continue;
+    if ((r.kind === 'suffix' && (host === r.v || host.endsWith(`.${r.v}`))) || (r.kind === 'domain' && host === r.v) || (r.kind === 'keyword' && host.includes(r.v))) {
+      return {host, by: `我的规则 · ${r.v}`, to: r.to};
+    }
+  }
+  for (const r of S.routes) if (r.on && ROUTE_RX[r.id] && ROUTE_RX[r.id].test(host)) return {host, by: r.t, to: r.to};
+  const foreign = S.routes.find(r => r.id === 'foreign' && r.on);
+  if (foreign && /\.[a-z]{2,}$/.test(host)) return {host, by: foreign.t, to: foreign.to};
+  return {host, by: '其他流量', to: S.final};
+}
+function probeHTML(value) {
+  const p = probe(value);
+  if (!p) return '<span>输入网址或域名，看它会命中哪一条，最后从哪里出去。</span>';
+  const f = forced(), key = f || p.to, d = tgt(key);
+  const exit = d.st ? `<span class="arrow">→</span><span class="ex">${nodeLine(d.node)}${latSpan(d.node)}</span>` : '';
+  return `<span>命中</span><b>${esc(f ? (S.mode === 'global' ? '全局模式' : '直连模式') : p.by)}</b><span class="arrow">→</span><span class="ex">${dot(d.c)}<b>${esc(d.name)}</b></span>${exit}`;
+}
+function routesHTML() {
+  const banner = S.mode === 'rule' ? '' : `<div class="note" style="margin:0 0 12px">${ic('info')}<span>现在是${MODE[S.mode]}模式，${S.mode === 'global' ? '所有流量都走「默认」' : '所有流量都直连'}，下面的规则和分流暂不生效。</span><button type="button" class="btn" data-mode="rule">切回规则模式</button></div>`;
+  const rules = S.rules.map((r, i) => `<div class="rr ${r.on ? '' : 'off'}"><span class="tile">${ic(r.kind === 'app' ? 'app' : 'link')}</span>
+      <div class="rr-tx"><b><code>${esc(r.v)}</code></b><small>${RULE_KIND[r.kind]}</small></div>${chip(r.to, `rule:${i}`)}
+      <button type="button" class="sw sm ${r.on ? 'on' : ''}" data-sw="rule:${i}" aria-label="启用规则" aria-pressed="${r.on}"></button></div>`).join('');
+  const routes = S.routes.map((r, i) => `<div class="rr ${r.on ? '' : 'off'}" draggable="true" data-ri="${i}"><span class="grip" title="拖动调整顺序">${ic('grip')}</span><span class="tile">${ic(r.icon)}</span>
+      <div class="rr-tx"><b>${esc(r.t)}</b><small>${esc(r.d)}</small></div>${chip(r.to, `route:${r.id}`)}
+      <button type="button" class="sw sm ${r.on ? 'on' : ''}" data-sw="route:${r.id}" aria-label="启用分流" aria-pressed="${r.on}"></button></div>`).join('');
+  return `${banner}<div class="card probe">${ic('search')}<input id="probe" aria-label="测试网址" placeholder="输入网址或域名" value="chat.openai.com"><div class="probe-r" id="probe-out">${probeHTML('chat.openai.com')}</div><span class="t3 sm">由内核实际匹配</span></div>
+    <div class="lh"><b>我的规则</b><em>${S.rules.length} 条 · 最先匹配</em><button type="button" class="btn" data-act="add-rule">${ic('plus')}添加规则</button></div>
+    <div class="card list">${rules}</div>
+    <div class="lh"><b>按类别</b><em>从上到下，命中即停 · 拖动调整顺序</em><button type="button" class="btn" data-act="add-category">${ic('plus')}添加类别${ic('chev')}</button></div>
+    <div class="card list">${routes}<div class="rr final"><span class="grip"></span><span class="tile">${ic('dots')}</span><div class="rr-tx"><b>其他流量</b><small>以上都不匹配时；始终在最后</small></div>${chip(S.final, 'final')}<span class="sw sm" style="visibility:hidden"></span></div></div>
+    <div class="rsline">${dot('var(--green)')}<span>12 个规则集已下载 · 3 小时前更新</span><span class="link" data-act="update-rules">立即更新</span><span class="t3">·</span><span class="link" data-act="restore-routes">恢复推荐分流…</span></div>`;
+}
+
+/* ---------- subscriptions ---------- */
+function subsHTML() {
+  const cards = S.subs.map(s => {
+    const pct = s.total ? Math.round(s.used / s.total * 100) : 0;
+    const usage = s.kind === 'sub' ? `<div><div class="big-bar"><i style="width:${pct}%"></i></div><div class="sc-u"><span>已用 ${s.used} GB / ${s.total} GB</span><span>${s.expire}到期 · 剩 ${s.left} 天</span></div></div>`
+      : `<div class="sc-m"><code>${esc(s.path)}</code></div>`;
+    const acts = s.kind === 'sub' ? `<button type="button" class="btn" data-act="update-sub" data-id="${s.id}">${ic('refresh')}更新</button><button type="button" class="btn">编辑…</button>`
+      : `<button type="button" class="btn">在访达中显示</button><button type="button" class="btn">编辑…</button>`;
+    return `<div class="card sc ${s.on ? '' : 'off'}"><div class="sc-h"><b>${esc(s.name)}</b><span class="kind">${s.kind === 'sub' ? '订阅' : '本地文件'}</span>
+      <button type="button" class="sw sm ${s.on ? 'on' : ''}" data-subsw="${s.id}" aria-label="启用${esc(s.name)}" aria-pressed="${s.on}"></button></div>
+      <div class="sc-m">${s.nodes} 个节点 · ${s.updated}</div>${usage}<div class="sc-a">${acts}<button type="button" class="btn" data-src-show="${s.id}">查看节点</button></div></div>`;
+  }).join('');
+  return `<div class="card info">${ic('info')}<span>订阅和本地文件只提供节点。分组和分流在 Tinycast 里设置，订阅自带的策略组和规则不会生效。</span></div>
+    <div class="subs">${cards}<div class="sc add"><div class="sc-h"><b>添加订阅</b></div><div class="sc-m">粘贴机场给你的订阅链接，名称会按网址自动填好。</div>
+      <div class="row"><input id="add-link" aria-label="订阅链接" placeholder="https://…"><button type="button" class="btn primary" data-act="add-sub">添加</button></div>
+      <div class="sc-m">或者 <span class="link">导入本地文件…</span>，支持 Clash 配置和每行一个分享链接。</div></div></div>`;
+}
+
+/* ---------- activity ---------- */
+function connExit(c) {
+  const key = forced() || routeTarget(c.r), d = tgt(key);
+  return d.st ? `<span class="ex">${dot(d.c)}<span>${esc(d.name)}</span><span class="arrow">›</span>${nodeLine(d.node)}</span>` : `<span class="ex">${dot(d.c)}<span>${esc(d.name)}</span></span>`;
+}
+function activityHTML() {
+  if (!S.connected) return `<div class="note">${ic('info')}<span>连接后，这里实时列出每个连接命中的分流和出口。</span></div>`;
+  const kind = c => { const k = forced() || routeTarget(c.r); return k === 'direct' ? 'direct' : k === 'reject' ? 'reject' : 'proxy'; };
+  const count = f => CONNS.filter(c => f === 'all' || kind(c) === f).length;
+  const rows = CONNS.map((c, i) => ({c, i})).filter(({c}) => S.acFilter === 'all' || kind(c) === S.acFilter).map(({c, i}) =>
+    `<div class="trw"><span class="tm">${c.t}</span><span class="h" title="${esc(c.h)}">${esc(c.h)}</span><span class="app"><span class="appic">${esc(c.app[0].toUpperCase())}</span><span class="nn">${esc(c.app)}</span></span>
+      <span class="rchip" title="${esc(routeTitle(c.r))}">${esc(routeTitle(c.r))}</span>${connExit(c)}<span class="sz">${c.sz}</span>
+      <button type="button" class="more-btn" data-conn="${i}" title="为它添加规则" aria-label="为 ${esc(c.h)} 添加规则">${ic('plus')}</button></div>`).join('');
+  return `<div class="ac-bar"><div class="seg">${[['all', '全部'], ['proxy', '代理'], ['direct', '直连'], ['reject', '拒绝']].map(([k, t]) =>
+      `<button type="button" class="${S.acFilter === k ? 'on' : ''}" data-ac="${k}">${t} ${count(k)}</button>`).join('')}</div>
+    <span class="search">${ic('search')}搜索域名或应用</span><span class="live-tag"><i class="dot live" style="--c:var(--green)"></i>实时</span></div>
+    <div class="card tbl"><div class="th"><span>时间</span><span>目标</span><span>应用</span><span>分流</span><span>出口</span><span style="text-align:right">流量</span><span></span></div>${rows}</div>`;
+}
+
+/* ---------- window body ---------- */
+function renderBody() {
+  const body = $('#pw-body');
+  const html = {overview: overviewHTML, nodes: nodesHTML, routes: routesHTML, subs: subsHTML, activity: activityHTML}[S.page]();
+  body.innerHTML = `<div class="fade-in">${html}</div>`;
+  if (S.page === 'overview' && !S.firstRun) drawFlow();
+}
+function render() { closeMenu(); renderSide(); renderBar(); renderBody(); renderMenus(); renderLauncher(); }
+
+/* ---------- in-window menu, sheet, popover, HUD ---------- */
+let menuEl = null;
+function closeMenu() { if (menuEl) { menuEl.remove(); menuEl = null; } }
+function openMenu(anchor, items, onPick) {
+  closeMenu();
+  const host = $('#pw'), hr = host.getBoundingClientRect(), ar = anchor.getBoundingClientRect();
+  const m = document.createElement('div');
+  m.className = 'pmenu'; m.setAttribute('role', 'menu');
+  m.innerHTML = items.map((it, i) => it.sep ? '<div class="pm-sep"></div>' : it.head ? `<div class="pm-h">${esc(it.head)}</div>` :
+    `<button type="button" class="pm-i" role="menuitem" data-i="${i}"><span class="ck">${it.checked ? ic('check') : ''}</span>${it.dot ? dot(it.dot) : ''}<span>${esc(it.label)}</span>${it.x ? `<span class="pm-x">${it.x}</span>` : ''}</button>`).join('');
+  host.appendChild(m);
+  let left = ar.left - hr.left, top = ar.bottom - hr.top + 4;
+  if (left + m.offsetWidth > hr.width - 8) left = ar.right - hr.left - m.offsetWidth;
+  if (top + m.offsetHeight > hr.height - 8) top = ar.top - hr.top - m.offsetHeight - 4;
+  m.style.left = `${Math.max(8, left)}px`; m.style.top = `${Math.max(8, top)}px`;
+  m.addEventListener('click', e => {
+    const b = e.target.closest('.pm-i');
+    if (!b) return;
+    const it = items[+b.dataset.i];
+    closeMenu(); onPick(it);
+  });
+  menuEl = m;
+  const first = m.querySelector('.pm-i');
+  if (first) first.focus({preventScroll: true});
+}
+document.addEventListener('pointerdown', e => { if (menuEl && !menuEl.contains(e.target)) closeMenu(); }, true);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeMenu(); closeLayer(); } });
+function targetItems(current) {
+  return [{head: '策略'}, ...S.strategies.map(st => {
+    const n = reach(st.id).node;
+    return {key: st.id, label: st.name, dot: TINT[st.tint], checked: current === st.id, x: n.none ? '' : `${RG[n.r].f} ${esc(n.n)} ${latSpan(n)}`};
+  }), {sep: true}, {key: 'direct', label: '直连', dot: 'var(--gray)', checked: current === 'direct'},
+  {key: 'reject', label: '拒绝', dot: 'var(--red)', checked: current === 'reject'}, {sep: true}, {key: 'new', label: '新建策略…'}];
+}
+function setTarget(data, key) {
+  if (key === 'new') { openEditor(null); return; }
+  if (data === 'final') S.final = key;
+  else if (data.startsWith('rule:')) S.rules[+data.slice(5)].to = key;
+  else if (data.startsWith('route:')) S.routes.find(r => r.id === data.slice(6)).to = key;
+  render();
+  const what = data === 'final' ? '其他流量' : data.startsWith('rule:') ? S.rules[+data.slice(5)].v : S.routes.find(r => r.id === data.slice(6)).t;
+  hud(`${what} → ${tgt(key).name}`);
+}
+let hudTimer = 0;
+function hud(text) {
+  $('#hud-text').textContent = text;
+  $('#hud').hidden = false;
+  clearTimeout(hudTimer);
+  hudTimer = setTimeout(() => { $('#hud').hidden = true; }, 1800);
+}
+function closeLayer() { const l = $('#pw-layer'); if (l) { l.hidden = true; l.innerHTML = ''; } }
+
+let E = null;
+function openEditor(id) {
+  closeMenu();
+  const st = id ? strat(id) : {name: '美国', kind: 'select', tint: 'green', regions: ['us'], members: []};
+  E = {id, name: st.name, kind: st.kind, tint: st.tint, regions: [...(st.regions || [])], ordered: !!st.order};
+  renderEditor();
+}
+function renderEditor() {
+  const c = TINT[E.tint];
+  const count = E.ordered ? 3 : E.regions.length ? E.regions.reduce((a, r) => a + RG[r].total, 0) : 113;
+  const summary = E.ordered ? '按顺序排列的 3 个节点' : E.regions.length ? E.regions.map(r => `${RG[r].f || ''} ${RG[r].total}`).join(' · ') : '未选地区时包含全部节点';
+  $('#pw-layer').innerHTML = `<div class="layer-dim" data-ed="cancel"></div><div class="sheet" role="dialog" aria-label="${E.id ? '编辑策略' : '新建策略'}" style="--c:${c}">
+    <div class="sh-h"><b>${E.id ? '编辑策略' : '新建策略'}</b><small>${E.id ? `用于 ${esc(usedBy(E.id))}` : '保存后，在分流的目标菜单里就能选它。'}</small></div>
+    <div class="sh-grid">
+      <label for="ed-name">名称</label><div class="sh-row"><input class="fld" id="ed-name" value="${esc(E.name)}"><div class="sws">${Object.keys(TINT).map(k => `<button type="button" class="swc ${E.tint === k ? 'on' : ''}" style="--c:${TINT[k]}" data-tint="${k}" aria-label="${k}"></button>`).join('')}</div></div>
+      <label>类型</label><div><div class="seg wide">${Object.keys(KIND).map(k => `<button type="button" class="${E.kind === k ? 'on' : ''}" data-kind="${k}">${KIND[k]}</button>`).join('')}</div><span class="sh-d">${KIND_DESC[E.kind]}</span></div>
+      <label>节点</label><div>${E.ordered ? `<span class="sh-d" style="margin-top:7px">新加坡 01 → 新加坡 02 → 香港 03，按顺序尝试。</span>` : `<div class="regs">${REGIONS.filter(r => r.id !== 'xx').map(r => `<button type="button" class="reg ${E.regions.includes(r.id) ? 'on' : ''}" data-reg="${r.id}">${r.f} ${r.t}<em>${r.total}</em></button>`).join('')}</div>
+        <div class="sh-row"><input class="fld" aria-label="名称包含" placeholder="名称包含，如 IEPL"><input class="fld" aria-label="名称排除" placeholder="名称排除，如 0.5x"></div>`}</div>
+    </div>
+    <div class="sh-prev">${ic('check')}<span>匹配到 <b>${count}</b> 个节点</span><span class="flags">${summary}</span></div>
+    <div class="sh-f">${E.id && E.id !== 'def' ? '<button type="button" class="mbtn danger" data-ed="delete">删除策略</button>' : E.id === 'def' ? '<span class="t3 sm">默认策略不能删除</span>' : ''}<span class="sp"></span><button type="button" class="mbtn" data-ed="cancel">取消</button><button type="button" class="mbtn primary" data-ed="save">保存</button></div>
+  </div>`;
+  $('#pw-layer').hidden = false;
+}
+function saveEditor() {
+  const name = ($('#ed-name').value || '').trim() || '新策略';
+  if (E.id) Object.assign(strat(E.id), {name, kind: E.kind, tint: E.tint, regions: E.regions});
+  else {
+    const id = `s${S.strategies.length + 1}`;
+    S.strategies.push({id, name, kind: E.kind, tint: E.tint, members: [], regions: E.regions, sel: E.kind === 'select' ? undefined : undefined});
+    S.tab = id;
+  }
+  closeLayer(); render(); hud(`已保存策略「${name}」`);
+}
+function openRulePop(anchor, c) {
+  closeMenu(); closeLayer();
+  const isIP = /^\d+\.\d+\.\d+\.\d+$/.test(c.h), parts = c.h.split('.'), base = parts.slice(-2).join('.'), word = parts.length > 1 ? parts.at(-2) : c.h;
+  const opts = isIP ? [['ip', `仅 <code>${esc(c.h)}</code>`]] : [['domain', `仅 <code>${esc(c.h)}</code>`], ['suffix', `<code>${esc(base)}</code> 及其子域名`], ['keyword', `域名包含「${esc(word)}」`]];
+  const sel = isIP ? 'ip' : 'suffix', cur = forced() || routeTarget(c.r);
+  const host = $('#pw'), hr = host.getBoundingClientRect(), ar = anchor.getBoundingClientRect();
+  const layer = $('#pw-layer');
+  layer.innerHTML = `<div class="layer-dim" style="background:transparent" data-pop="cancel"></div><div class="pop" role="dialog" aria-label="添加规则">
+    <b>为这条连接添加规则</b>${opts.map(([k, t]) => `<label><input type="radio" name="rk" value="${k}" ${k === sel ? 'checked' : ''}>${t}</label>`).join('')}
+    <div class="row"><span class="sm t3" style="font-size:12px">走</span><select id="rp-to" aria-label="目标">${S.strategies.map(s => `<option value="${s.id}" ${cur === s.id ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}<option value="direct" ${cur === 'direct' ? 'selected' : ''}>直连</option><option value="reject" ${cur === 'reject' ? 'selected' : ''}>拒绝</option></select></div>
+    <div class="row" style="justify-content:flex-end"><button type="button" class="mbtn" data-pop="cancel">取消</button><button type="button" class="mbtn primary" data-pop="add" data-h="${esc(c.h)}">添加</button></div>
+    <small>现在命中「${esc(routeTitle(c.r))}」。规则会排在所有分类之前。</small></div>`;
+  layer.hidden = false;
+  const pop = $('.pop', layer);
+  pop.style.left = `${Math.min(hr.width - pop.offsetWidth - 12, ar.right - hr.left - pop.offsetWidth)}px`;
+  pop.style.top = `${Math.min(hr.height - pop.offsetHeight - 12, ar.bottom - hr.top + 6)}px`;
+}
+
+/* ---------- window events ---------- */
+const pw = $('#pw');
+pw.addEventListener('click', e => {
+  const el = e.target.closest('[data-page],[data-mode],[data-act],[data-tab],[data-pick],[data-chip],[data-go-tab],[data-sw],[data-src],[data-subsw],[data-conn],[data-onb],[data-ac],[data-src-filter],[data-src-show],[data-ed],[data-tint],[data-kind],[data-reg],[data-pop]');
+  if (!el) return;
+  const ds = el.dataset;
+  if (ds.ed) {
+    if (ds.ed === 'cancel') closeLayer();
+    else if (ds.ed === 'save') saveEditor();
+    else if (ds.ed === 'delete') {
+      const name = strat(E.id).name;
+      S.strategies = S.strategies.filter(s => s.id !== E.id);
+      S.routes.forEach(r => { if (r.to === E.id) r.to = 'def'; });
+      S.rules.forEach(r => { if (r.to === E.id) r.to = 'def'; });
+      if (S.tab === E.id) S.tab = 'def';
+      closeLayer(); render(); hud(`已删除策略「${name}」，它的分流改走「默认」`);
+    }
+    return;
+  }
+  if (ds.tint) { E.name = $('#ed-name').value; E.tint = ds.tint; renderEditor(); return; }
+  if (ds.kind) { E.name = $('#ed-name').value; E.kind = ds.kind; renderEditor(); return; }
+  if (ds.reg) { E.name = $('#ed-name').value; E.regions = E.regions.includes(ds.reg) ? E.regions.filter(r => r !== ds.reg) : [...E.regions, ds.reg]; renderEditor(); return; }
+  if (ds.pop) {
+    if (ds.pop === 'add') {
+      const kind = $('input[name="rk"]:checked').value, h = ds.h, parts = h.split('.');
+      const v = kind === 'suffix' ? parts.slice(-2).join('.') : kind === 'keyword' ? parts.at(-2) : h;
+      const to = $('#rp-to').value;
+      S.rules.push({kind: kind === 'ip' ? 'ip' : kind, v, to, on: true});
+      closeLayer(); render(); hud(`已添加规则：${v} → ${tgt(to).name}`);
+    } else closeLayer();
+    return;
+  }
+  if (ds.page) { S.page = ds.page; render(); return; }
+  if (ds.mode) { if (S.mode !== ds.mode) { S.mode = ds.mode; render(); hud(`已切换到${MODE[ds.mode]}模式`); } return; }
+  if (ds.goTab) { S.page = 'nodes'; S.tab = ds.goTab; render(); return; }
+  if (ds.tab) { S.tab = ds.tab; render(); return; }
+  if (ds.srcFilter) { S.allSrc = ds.srcFilter; render(); return; }
+  if (ds.srcShow) { S.page = 'nodes'; S.tab = 'all'; S.allSrc = ds.srcShow; render(); return; }
+  if (ds.ac) { S.acFilter = ds.ac; render(); return; }
+  if (ds.pick) {
+    const st = strat(ds.st);
+    st.sel = ds.pick; render();
+    const n = reach(st.id).node;
+    hud(`「${st.name}」现在用 ${ds.pick.startsWith('@') ? strat(ds.pick.slice(1)).name + '：' : ''}${n.n}`);
+    return;
+  }
+  if (ds.chip) { const cur = ds.chip === 'final' ? S.final : ds.chip.startsWith('rule:') ? S.rules[+ds.chip.slice(5)].to : S.routes.find(r => r.id === ds.chip.slice(6)).to; openMenu(el, targetItems(cur), it => setTarget(ds.chip, it.key)); return; }
+  if (ds.src) {
+    if (ds.src === 'rules') { S.page = 'routes'; render(); return; }
+    if (forced()) { hud(`${MODE[S.mode]}模式下所有流量去向相同；切回规则模式再分配`); return; }
+    const data = ds.src === 'final' ? 'final' : `route:${ds.src}`, cur = ds.src === 'final' ? S.final : S.routes.find(r => r.id === ds.src).to;
+    openMenu(el, targetItems(cur), it => setTarget(data, it.key));
+    return;
+  }
+  if (ds.sw) {
+    const [kind, id] = ds.sw.split(':');
+    const item = kind === 'rule' ? S.rules[+id] : S.routes.find(r => r.id === id);
+    item.on = !item.on; render(); return;
+  }
+  if (ds.subsw) { const s = S.subs.find(x => x.id === ds.subsw); s.on = !s.on; render(); hud(`${s.name}已${s.on ? '启用' : '停用'}，策略随之更新`); return; }
+  if (ds.conn) { openRulePop(el, CONNS[+ds.conn]); return; }
+  if (ds.onb) {
+    S.onb = +ds.onb;
+    if (S.onb >= 3) { S.firstRun = false; S.connected = true; $('#first-run').classList.remove('on'); hud('代理已连接'); }
+    render(); return;
+  }
+  if (ds.act) {
+    const a = ds.act;
+    if (a === 'power') { S.connected = !S.connected; render(); hud(S.connected ? '代理已连接' : '代理已断开'); }
+    else if (a === 'test') hud('正在测速 113 个节点…');
+    else if (a === 'edit-strategy') openEditor(ds.id);
+    else if (a === 'new-strategy') openEditor(null);
+    else if (a === 'add-rule') { S.page = 'activity'; render(); hud('在连接旁点 ＋ 为它添加规则'); }
+    else if (a === 'add-category') openMenu(el, ['Google', 'Microsoft', 'X', 'Steam', '游戏平台', '哔哩哔哩'].map(t => ({label: t, key: t})).concat([{sep: true}, {label: '从链接添加规则集…', key: 'link'}]), it => hud(it.key === 'link' ? '打开规则集编辑面板' : `已添加「${it.label}」，排在国外网站之前`));
+    else if (a === 'update-subs') hud('订阅已更新');
+    else if (a === 'update-sub') hud(`${S.subs.find(s => s.id === ds.id).name}已更新`);
+    else if (a === 'update-rules') hud('规则集已更新');
+    else if (a === 'restore-routes') hud('会先确认，再把分类恢复为推荐的顺序和去向');
+    else if (a === 'add-sub') hud('已添加订阅，正在读取节点');
+    else if (a === 'pause') hud('已暂停刷新');
+  }
+});
+pw.addEventListener('mouseover', e => {
+  if (!e.target.closest('#fm')) return;
+  const el = e.target.closest('[data-k]');
+  flowHover(el ? el.dataset.k : null);
+});
+pw.addEventListener('mouseout', e => { if (e.target.closest('#fm') && !e.relatedTarget?.closest?.('#fm')) flowHover(null); });
+pw.addEventListener('input', e => { if (e.target.id === 'probe') $('#probe-out').innerHTML = probeHTML(e.target.value); });
+let dragFrom = null;
+pw.addEventListener('dragstart', e => { const r = e.target.closest('[data-ri]'); if (!r) return; dragFrom = +r.dataset.ri; r.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', String(dragFrom)); });
+pw.addEventListener('dragover', e => { const r = e.target.closest('[data-ri]'); if (!r || dragFrom == null) return; e.preventDefault(); $$('.rr.over', pw).forEach(x => x.classList.remove('over')); r.classList.add('over'); });
+pw.addEventListener('drop', e => {
+  const r = e.target.closest('[data-ri]');
+  if (!r || dragFrom == null) return;
+  e.preventDefault();
+  const to = +r.dataset.ri, [moved] = S.routes.splice(dragFrom, 1);
+  S.routes.splice(to, 0, moved); dragFrom = null; render(); hud(`「${moved.t}」移到第 ${to + 1} 位`);
+});
+pw.addEventListener('dragend', () => { dragFrom = null; $$('.rr.over,.rr.dragging', pw).forEach(x => x.classList.remove('over', 'dragging')); });
+
+/* ---------- menu bar ---------- */
+function renderMenus() {
+  const bar = $('#mb');
+  if (!bar) return;
+  const on = S.connected;
+  bar.innerHTML = `<div class="mb-l"><b>Safari</b><span>文件</span><span>编辑</span><span>显示</span><span>历史记录</span><span>书签</span><span>窗口</span><span>帮助</span></div>
+    <div class="mb-r"><span class="mbi on" id="mb-proxy" style="${on ? '' : 'opacity:.5'}">${ic('net')}${on ? `<span class="mb-speed" id="mb-speed">${rateText(T.down.at(-1))}</span>` : ''}</span>
+    <span class="mbi"><svg class="ic f" style="width:11px;height:15px"><use href="#i-thunder"/></svg></span><span class="mbi">${ic('wifi')}</span><span class="mbi">${ic('bat')}</span><span class="mbi">10月24日 周六 14:02</span></div>`;
+  const stage = $('#mb-stage'), sr = stage.getBoundingClientRect(), ir = $('#mb-proxy').getBoundingClientRect();
+  const W = 272, left = Math.min(ir.left - sr.left, sr.width - W - 12), top = 32;
+  const d = tgt('def'), n = d.node;
+  let main = `<div class="mh">${on ? `代理已连接 · ${MODE[S.mode]}模式` : '代理未连接'}</div>`;
+  if (on && S.mode !== 'direct') main += `<div class="mi tall info"><span class="ck"></span>${flag(n)}<span class="mt"><span>${esc(n.n)}</span><span class="sub">${esc(d.name)}${d.via.length ? ` › ${esc(strat(d.via[0]).name)}` : ''}</span></span><span class="badge-r">${latSpan(n)}</span></div>`;
+  else if (on) main += `<div class="mi info"><span class="ck"></span><span class="t3">所有流量直连</span></div>`;
+  main += `<div class="ms"></div><button type="button" class="mi" data-mb="power"><span class="ck"></span>${on ? '断开代理' : '连接代理'}</button><div class="ms"></div><div class="mh">模式</div>` +
+    ['rule', 'global', 'direct'].map(m => `<button type="button" class="mi" data-mb="mode:${m}"><span class="ck">${S.mode === m ? ic('check') : ''}</span>${MODE[m]}</button>`).join('') +
+    `<div class="ms"></div><div class="mh">策略</div>` + S.strategies.map(st => {
+      const sn = reach(st.id).node;
+      return `<button type="button" class="mi tall ${S.mbOpen === st.id ? 'open' : ''}" data-mb-sub="${st.id}"><span class="ck"></span>${dot(TINT[st.tint])}<span class="mt"><span>${esc(st.name)}</span><span class="sub">${sn.none ? '没有可用的节点' : `${RG[sn.r].f} ${esc(sn.n)} · ${lat(sn)}`}</span></span>${ic('chevr', 'chev')}</button>`;
+    }).join('') +
+    `<div class="ms"></div><button type="button" class="mi" data-mb="test"><span class="ck"></span>全部测速</button><button type="button" class="mi" data-mb="update"><span class="ck"></span>更新订阅</button>
+    <div class="ms"></div><button type="button" class="mi" data-mb="open"><span class="ck"></span>打开代理窗口<span class="kbd">⌘O</span></button><button type="button" class="mi" data-mb="settings"><span class="ck"></span>代理设置…<span class="kbd">⌘,</span></button>`;
+  let html = `<div class="nsm" id="mb-main" role="menu" style="left:${left}px;top:${top}px">${main}</div>`;
+  $('#mb-menus').innerHTML = html;
+  const st = strat(S.mbOpen);
+  if (st) {
+    const anchor = $(`[data-mb-sub="${st.id}"]`), ar = anchor.getBoundingClientRect();
+    const subLeft = left - W + 4, subTop = ar.top - sr.top - 5;
+    html += `<div class="nsm" role="menu" style="left:${subLeft}px;top:${subTop}px">${subMenu(st)}</div>`;
+    $('#mb-menus').innerHTML = html;
+    if (S.mbRegion && st.kind === 'select') {
+      const ra = $(`[data-mb-reg="${S.mbRegion}"]`);
+      if (ra) {
+        const rr = ra.getBoundingClientRect(), list = pool(st).filter(x => x.r === S.mbRegion), rg = RG[S.mbRegion];
+        const cur = reach(st.id).node, manual = !(st.sel || '').startsWith('@');
+        const rows = `<div class="mh">${rg.f} ${rg.t} · ${rg.total} 个</div>` + list.map(x => `<button type="button" class="mi" data-mb-pick="${st.id}|${esc(x.n)}"><span class="ck">${manual && x === cur ? ic('check') : ''}</span><span class="nn">${esc(x.n)}</span><span class="badge-r">${latSpan(x)}</span></button>`).join('');
+        html += `<div class="nsm" role="menu" style="left:${subLeft - W + 4}px;top:${Math.min(rr.top - sr.top - 5, sr.height - 30 - list.length * 24 - 40)}px">${rows}</div>`;
+        $('#mb-menus').innerHTML = html;
+      }
+    }
+  }
+}
+function subMenu(st) {
+  const cur = reach(st.id).node;
+  if (st.kind === 'select') {
+    let rows = '';
+    if (st.members.length) {
+      rows += `<div class="mh">策略</div>` + st.members.map(id => {
+        const m = strat(id), mn = reach(id).node;
+        return `<button type="button" class="mi tall" data-mb-pick="${st.id}|@${id}"><span class="ck">${st.sel === `@${id}` ? ic('check') : ''}</span>${dot(TINT[m.tint])}<span class="mt"><span>${esc(m.name)}</span><span class="sub">${mn.none ? '' : `${RG[mn.r].f} ${esc(mn.n)}`}</span></span><span class="badge-r">${latSpan(mn)}</span></button>`;
+      }).join('') + `<div class="ms"></div>`;
+    }
+    const manual = !(st.sel || '').startsWith('@');
+    rows += `<div class="mh">节点</div>` + REGIONS.filter(rg => pool(st).some(x => x.r === rg.id)).map(rg => {
+      const has = manual && cur.r === rg.id, best = byDelay(pool(st).filter(x => x.r === rg.id))[0];
+      return `<button type="button" class="mi ${S.mbRegion === rg.id ? 'open' : ''}" data-mb-reg="${rg.id}"><span class="ck">${has ? '<i class="mixed"></i>' : ''}</span>${rg.f ? `<span class="fl">${rg.f}</span>` : `<span class="fl gl">${ic('globe')}</span>`}${rg.t}<span class="badge-r">${best ? `最快 ${best.ms} ms` : ''}</span>${ic('chevr', 'chev')}</button>`;
+    }).join('');
+    return rows;
+  }
+  if (st.kind === 'urltest') {
+    return `<div class="mh">自动选择最快的节点</div>` + byDelay(pool(st)).slice(0, 6).map(x => `<div class="mi info"><span class="ck">${x === cur ? ic('check') : ''}</span>${flag(x)}<span class="nn">${esc(x.n)}</span><span class="badge-r">${latSpan(x)}</span></div>`).join('') +
+      `<div class="ms"></div><button type="button" class="mi" data-mb="test"><span class="ck"></span>立即测速</button>`;
+  }
+  return `<div class="mh">按顺序使用第一个可用的</div>` + pool(st).map((x, i) => `<div class="mi info"><span class="ck">${x === cur ? ic('check') : ''}</span><span class="ord t3">${i + 1}</span>${flag(x)}<span class="nn">${esc(x.n)}</span><span class="badge-r">${latSpan(x)}</span></div>`).join('');
+}
+const mb = $('#mb-stage');
+mb.addEventListener('mouseover', e => {
+  const sub = e.target.closest('[data-mb-sub]'), reg = e.target.closest('[data-mb-reg]');
+  if (sub && S.mbOpen !== sub.dataset.mbSub) {
+    S.mbOpen = sub.dataset.mbSub;
+    const st = strat(S.mbOpen), cur = reach(S.mbOpen).node;
+    S.mbRegion = st.kind === 'select' && !(st.sel || '').startsWith('@') ? cur.r : null;
+    renderMenus();
+  } else if (reg && S.mbRegion !== reg.dataset.mbReg) {
+    S.mbRegion = reg.dataset.mbReg; renderMenus();
+  }
+});
+mb.addEventListener('click', e => {
+  const pick = e.target.closest('[data-mb-pick]'), act = e.target.closest('[data-mb]');
+  if (pick) {
+    const [sid, val] = pick.dataset.mbPick.split('|'), st = strat(sid);
+    st.sel = val; if (!val.startsWith('@')) S.mbRegion = (NODES.find(x => x.n === val) || {}).r || S.mbRegion;
+    render(); hud(`「${st.name}」现在用 ${reach(sid).node.n}`);
+    return;
+  }
+  if (!act) return;
+  const a = act.dataset.mb;
+  if (a === 'power') { S.connected = !S.connected; render(); hud(S.connected ? '代理已连接' : '代理已断开'); }
+  else if (a.startsWith('mode:')) { S.mode = a.slice(5); render(); hud(`已切换到${MODE[S.mode]}模式`); }
+  else if (a === 'test') hud('正在测速 113 个节点…');
+  else if (a === 'update') hud('订阅已更新');
+  else if (a === 'open') { $('#window').scrollIntoView({behavior: reduced ? 'auto' : 'smooth'}); }
+  else if (a === 'settings') { $('#settings').scrollIntoView({behavior: reduced ? 'auto' : 'smooth'}); }
+});
+
+/* ---------- launcher ---------- */
+function renderLauncher() {
+  const el = $('#p-list');
+  if (!el) return;
+  const d = tgt('def'), n = d.node, on = S.connected;
+  const v1 = S.mode === 'direct' ? '直连' : `${flag(n)}<span class="nn">${esc(n.n)}</span>`;
+  const b1 = S.mode === 'direct' ? '不经过代理' : `${esc(d.name)} · ${lat(n) || '—'}`;
+  const row = (icon, title, sub, sel) => `<div class="p-row ${sel ? 'sel' : ''}"><span class="p-slot"><span class="p-tile">${ic(icon)}</span></span><span class="p-ttl">${title}</span>${sub ? `<span class="p-sub">${sub}</span>` : ''}<span class="p-trail">命令</span></div>`;
+  const other = ['rule', 'global', 'direct'].filter(m => m !== S.mode);
+  el.innerHTML = `<div class="lead-card sel"><div class="lc"><div class="v">${v1}</div><span class="badge">${b1}</span></div>
+      <div class="lc narrow"><div class="v">${MODE[S.mode]}</div><span class="badge">模式</span></div>
+      <div class="lc narrow"><div class="v">${on ? `${dot('var(--green)')}已连接` : '未连接'}</div><span class="badge">${on ? 'TUN · 2 小时 13 分' : '回车连接'}</span></div></div>
+    <div class="p-sec">代理</div>
+    ${row('globe', '选择节点', `${esc(d.name)} · 当前 ${n.none ? '—' : esc(n.n)}`)}
+    ${other.map(m => row(m === 'direct' ? 'arrow' : m === 'global' ? 'net' : 'branch', `切换到${MODE[m]}模式`, m === 'global' ? '全部流量走「默认」' : m === 'direct' ? '保持连接，不经过任何节点' : '按分流分配')).join('')}
+    ${row('plus', '为当前网页添加规则…', 'Safari · chat.openai.com')}
+    ${row('gauge', '打开代理窗口', '')}
+    ${row('power', on ? '断开代理' : '连接代理', '')}`;
+  $('#p-primary').innerHTML = `${on ? '选择节点' : '连接代理'} <span class="kc f">↵</span>`;
+}
+
+/* ---------- page controls ---------- */
+$$('[data-theme-set]').forEach(b => b.addEventListener('click', () => {
+  document.documentElement.dataset.theme = b.dataset.themeSet;
+  $$('[data-theme-set]').forEach(x => x.classList.toggle('on', x === b));
+  render();
+}));
+$('#first-run').addEventListener('click', e => {
+  S.firstRun = !S.firstRun;
+  e.currentTarget.classList.toggle('on', S.firstRun);
+  if (S.firstRun) { S.onb = 0; S.connected = false; S.page = 'overview'; } else S.connected = true;
+  render();
+});
+window.addEventListener('resize', () => renderMenus());
+
+render();
+if (!reduced) {
+  setInterval(() => {
+    if (!S.connected) return;
+    sample();
+    T.totDown += T.down.at(-1); T.totUp += T.up.at(-1);
+    const svg = $('#tr-svg');
+    if (svg) svg.innerHTML = chart();
+    const set = (id, v) => { const x = document.getElementById(id); if (x) x.innerHTML = v; };
+    set('tr-down', rateParts(T.down.at(-1))); set('tr-up', rateParts(T.up.at(-1)));
+    set('tr-foot', `本次连接 ↓ ${bytes(T.totDown)} · ↑ ${bytes(T.totUp)}`);
+    set('sf-down', rateText(T.down.at(-1))); set('sf-up', rateText(T.up.at(-1))); set('mb-speed', rateText(T.down.at(-1)));
+  }, 1000);
+}
+})();
+</script>
+</body>
+</html>

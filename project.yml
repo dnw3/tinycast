@@ -68,6 +68,7 @@ targets:
           - Features/Capture/Service/WebPHelper
           - Features/Dictation/Helper
           - Features/FileSearch/Helper
+          - Features/Proxy/Helper
           - Resources/EmojiKeywords
       # A folder reference keeps the packs in their own directory, which `EmojiIndex` lists.
       - path: Tinycast/Resources/EmojiKeywords
@@ -78,6 +79,9 @@ targets:
       - path: Vendor/libwebp/COPYING
         buildPhase: resources
       - path: Vendor/libwebp/PATENTS
+        buildPhase: resources
+      # GPL-3.0 asks for its text beside the binary, which ships only when fetched but is always disclosed.
+      - path: Vendor/mihomo/mihomo-LICENSE
         buildPhase: resources
     dependencies:
       - target: DictationHelper
@@ -114,6 +118,47 @@ targets:
         copy:
           destination: wrapper
           subpath: Contents/Helpers
+      # Embedded by its own phase below, which signs it under the identifier the helper's grant pins.
+      - target: TinycastProxyHelper
+        link: false
+        embed: false
+    postBuildScripts:
+      # The proxy's core is fetched, not committed; a build without it runs and reports the core missing.
+      - name: Embed mihomo
+        shell: /bin/bash
+        basedOnDependencyAnalysis: false
+        script: |
+          core="$SRCROOT/build/vendor/mihomo/mihomo"
+          helper="$TARGET_BUILD_DIR/$CONTENTS_FOLDER_PATH/Helpers/mihomo"
+          if [ ! -x "$core" ]; then
+            echo "note: no mihomo core in build/vendor; run Scripts/fetch-mihomo.sh to bundle one"
+            rm -f "$helper"
+            exit 0
+          fi
+          mkdir -p "$(dirname "$helper")"
+          rm -f "$helper"
+          cp -c "$core" "$helper"
+          if [ "$CODE_SIGNING_ALLOWED" = YES ] && [ -n "$EXPANDED_CODE_SIGN_IDENTITY" ]; then
+            options=""
+            if [ "$ENABLE_HARDENED_RUNTIME" = YES ]; then options="--options runtime"; fi
+            codesign --force --timestamp=none --sign "$EXPANDED_CODE_SIGN_IDENTITY" $options \
+              --identifier "$PRODUCT_BUNDLE_IDENTIFIER.mihomo" "$helper"
+          fi
+      # The TUN helper's copy in /Library is checked against this identifier and the signing leaf.
+      - name: Embed TUN helper
+        shell: /bin/bash
+        basedOnDependencyAnalysis: false
+        script: |
+          helper="$TARGET_BUILD_DIR/$CONTENTS_FOLDER_PATH/Helpers/TinycastProxyHelper"
+          mkdir -p "$(dirname "$helper")"
+          rm -f "$helper"
+          cp -c "$BUILT_PRODUCTS_DIR/TinycastProxyHelper" "$helper"
+          if [ "$CODE_SIGNING_ALLOWED" = YES ] && [ -n "$EXPANDED_CODE_SIGN_IDENTITY" ]; then
+            options=""
+            if [ "$ENABLE_HARDENED_RUNTIME" = YES ]; then options="--options runtime"; fi
+            codesign --force --timestamp=none --sign "$EXPANDED_CODE_SIGN_IDENTITY" $options \
+              --identifier "$PRODUCT_BUNDLE_IDENTIFIER.proxy-helper" "$helper"
+          fi
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: "$(TINYCAST_BUNDLE_IDENTIFIER)"
@@ -183,6 +228,28 @@ targets:
         # Pinned like TextRecognitionHelper's: release.yml's PRODUCT_NAME would otherwise rename it.
         EXECUTABLE_NAME: FileIndexHelper
         PRODUCT_MODULE_NAME: FileIndexHelper
+        SKIP_INSTALL: YES
+        SWIFT_OPTIMIZATION_LEVEL: -O
+
+  # Root's LaunchDaemon for TUN: shares the proxy model, and never the app's UI or AppKit.
+  TinycastProxyHelper:
+    type: tool
+    platform: macOS
+    sources:
+      - Tinycast/Features/Proxy/Helper
+      - Tinycast/Features/Proxy/Model
+      - Tinycast/Features/Proxy/Service/ProxyAPIService.swift
+      - Tinycast/Features/Proxy/Service/ProxyCodeSignature.swift
+      - Tinycast/Features/Proxy/Service/ProxyCoreRunner.swift
+      - Tinycast/Features/Proxy/Service/ProxyHelperWire.swift
+      - Tinycast/Features/Proxy/Service/ProxySocket.swift
+      - Tinycast/Features/Updates/Model/AppVersion.swift
+      - Tinycast/Features/Updates/Model/ReleaseArchitecture.swift
+      - Tinycast/Platform/ProcessExit.swift
+    settings:
+      base:
+        EXECUTABLE_NAME: TinycastProxyHelper
+        PRODUCT_MODULE_NAME: TinycastProxyHelper
         SKIP_INSTALL: YES
         SWIFT_OPTIMIZATION_LEVEL: -O
 

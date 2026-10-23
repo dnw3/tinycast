@@ -30,8 +30,13 @@ codesign -d --entitlements - --xml "$APP" > "$ENTITLEMENTS" 2>/dev/null
 
 # The helper is signed by its own embed phase, which is where the runtime flag goes missing.
 HELPER="$APP/Contents/Helpers/Tinycast Dictation.app"
+PROXY_HELPER="$APP/Contents/Helpers/TinycastProxyHelper"
+CORE="$APP/Contents/Helpers/mihomo"
+OPTIONAL=()
+[ -e "$CORE" ] && OPTIONAL+=("$CORE")
 for BIN in "$APP/Contents/MacOS/$NAME" "$APP/Contents/Helpers/TextRecognitionHelper" \
-    "$APP/Contents/Helpers/CaptureWebPHelper" "$HELPER/Contents/MacOS/Tinycast Dictation"; do
+    "$APP/Contents/Helpers/CaptureWebPHelper" "$HELPER/Contents/MacOS/Tinycast Dictation" \
+    "$PROXY_HELPER" ${OPTIONAL[@]+"${OPTIONAL[@]}"}; do
     INFO="$(codesign -dv --verbose=2 "$BIN" 2>&1)"
     [[ "$INFO" =~ flags=0x[0-9a-f]+\([^\)]*runtime ]] ||
         fail "${BIN##*/}: hardened runtime not enabled"
@@ -43,6 +48,14 @@ HELPER_ID="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$HELPER/Con
 HELPER_SIGNATURE="$(codesign -dv "$HELPER" 2>&1)"
 grep -Fxq "Identifier=$HELPER_ID" <<< "$HELPER_SIGNATURE" ||
     fail "Dictation helper's signature and bundle identifier disagree"
+
+# Root runs the proxy's helper and core only under these identifiers, pinned to the app's signer.
+grep -Fxq "Identifier=$APP_ID.proxy-helper" <<< "$(codesign -dv "$PROXY_HELPER" 2>&1)" ||
+    fail "TUN helper is not signed as $APP_ID.proxy-helper"
+if [ -e "$CORE" ]; then
+    grep -Fxq "Identifier=$APP_ID.mihomo" <<< "$(codesign -dv "$CORE" 2>&1)" ||
+        fail "mihomo is not signed as $APP_ID.mihomo"
+fi
 
 codesign --verify --deep --strict "$APP" || fail "$NAME.app: the seal does not verify"
 

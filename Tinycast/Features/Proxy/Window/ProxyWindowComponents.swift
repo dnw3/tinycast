@@ -1,0 +1,240 @@
+import SwiftUI
+
+/// A page of the proxy window: a scrolling column of cards, inset like a Settings pane.
+struct ProxyPage<Content: View>: View {
+    @ViewBuilder let content: Content
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: Theme.Spacing.xl) {
+                content
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(Theme.Spacing.xxl)
+        }
+    }
+}
+
+/// A rounded group on a page, filled and stroked with the card tokens.
+struct ProxyCard<Content: View>: View {
+    var padding = Theme.Spacing.xl
+    @ViewBuilder let content: Content
+
+    var body: some View {
+        content
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(padding)
+            .background(shape.fill(Theme.Colors.cardFill))
+            .overlay(shape.strokeBorder(Theme.Colors.cardStroke))
+    }
+
+    private var shape: RoundedRectangle {
+        RoundedRectangle(cornerRadius: Theme.Radius.card, style: .continuous)
+    }
+}
+
+/// A heading over a group of cards, with a caption and the group's own buttons.
+struct ProxySectionHeader<Accessory: View>: View {
+    let title: String
+    var caption: String?
+    @ViewBuilder var accessory: Accessory
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: Theme.Spacing.md) {
+            Text(title).font(.headline)
+            if let caption {
+                Text(caption).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+            }
+            Spacer(minLength: Theme.Spacing.md)
+            accessory
+        }
+        .padding(.top, Theme.Spacing.sm)
+    }
+}
+
+extension ProxySectionHeader where Accessory == EmptyView {
+    init(title: String, caption: String? = nil) {
+        self.init(title: title, caption: caption) { EmptyView() }
+    }
+}
+
+/// A note at the top of a page, such as why the routes do not apply in global mode.
+struct ProxyNote<Accessory: View>: View {
+    let text: String
+    var symbol = "info.circle"
+    @ViewBuilder var accessory: Accessory
+
+    var body: some View {
+        ProxyCard {
+            HStack(spacing: Theme.Spacing.md) {
+                SymbolImage(name: symbol, size: Theme.Size.settingsSidebarGlyph).foregroundStyle(.secondary)
+                Text(text).fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: Theme.Spacing.md)
+                accessory
+            }
+        }
+    }
+}
+
+extension ProxyNote where Accessory == EmptyView {
+    init(text: String, symbol: String = "info.circle") {
+        self.init(text: text, symbol: symbol) { EmptyView() }
+    }
+}
+
+/// A delay in the colour every list uses: green, orange once slow, red when it timed out.
+struct ProxyDelayText: View {
+    let delay: ProxyDelay
+
+    var body: some View {
+        if let label = delay.label {
+            Text(label)
+                .monospacedDigit()
+                .foregroundStyle(delay.color)
+        }
+    }
+}
+
+extension ProxyDelay {
+    var color: Color {
+        switch self {
+        case .untested: Theme.Colors.textTertiary
+        case .failed: Theme.Colors.destructive
+        case .milliseconds: isSlow ? Theme.Colors.warning : Theme.Colors.success
+        }
+    }
+}
+
+/// A target's colour: its strategy's tint, or the colours Direct and Reject always have.
+struct ProxyTargetDot: View {
+    let target: ProxyTarget
+    let profile: ProxyProfile
+
+    var body: some View {
+        Circle()
+            .fill(target.color(in: profile))
+            .frame(width: Theme.Size.colorDot, height: Theme.Size.colorDot)
+            .accessibilityHidden(true)
+    }
+}
+
+extension ProxyTarget {
+    func color(in profile: ProxyProfile) -> Color {
+        switch self {
+        case .direct: Theme.Colors.textTertiary
+        case .reject: Theme.Colors.destructive
+        case .strategy(let id): profile.strategy(id)?.tint.color ?? Theme.Colors.textTertiary
+        }
+    }
+}
+
+/// Sends a route or a rule to any strategy, Direct or Reject; each strategy shows its exit now.
+struct ProxyTargetMenu: View {
+    let target: ProxyTarget
+    let profile: ProxyProfile
+    let snapshot: ProxySnapshot?
+    let choose: (ProxyTarget) -> Void
+    var newStrategy: (() -> Void)?
+
+    var body: some View {
+        Menu {
+            Picker(selection: Binding(get: { target }, set: { choose($0) })) {
+                ForEach(profile.strategies) { strategy in
+                    Text(optionTitle(strategy)).tag(ProxyTarget.strategy(strategy.id))
+                }
+                Divider()
+                Text("Direct").tag(ProxyTarget.direct)
+                Text("Reject").tag(ProxyTarget.reject)
+            } label: {
+                EmptyView()
+            }
+            .pickerStyle(.inline)
+            .labelsHidden()
+            if let newStrategy {
+                Divider()
+                Button("New Strategy…", action: newStrategy)
+            }
+        } label: {
+            HStack(spacing: Theme.Spacing.sm) {
+                ProxyTargetDot(target: target, profile: profile)
+                Text(target.title(in: profile)).lineLimit(1)
+            }
+        }
+        .fixedSize()
+        .accessibilityLabel(Text("Goes to \(target.title(in: profile))"))
+    }
+
+    private func optionTitle(_ strategy: ProxyStrategy) -> String {
+        guard let node = snapshot?.node(reachedBy: strategy.id, in: profile) else { return strategy.name }
+        return "\(strategy.name)  ·  \(node.label)"
+    }
+}
+
+extension View {
+    /// A switched-off rule, route or source stays editable, so it fades rather than disables.
+    func proxyDimmed(_ isDimmed: Bool) -> some View {
+        opacity(isDimmed ? 0.55 : 1)
+    }
+}
+
+extension ProxySnapshot.Node {
+    /// The region's flag, which keeps Taiwan's unshown; the name's own only for an unknown region.
+    var flag: String? {
+        region.map(\.flag) ?? ProxyRegion.leadingFlag(of: name)?.flag
+    }
+
+    /// The name without the flag it opens with, which `flag` stands in for.
+    var bareName: String {
+        ProxyRegion.leadingFlag(of: name)?.rest ?? name
+    }
+
+    /// The flag and the name, as a card or a menu shows the node.
+    var label: String {
+        flag.map { "\($0) \(bareName)" } ?? bareName
+    }
+}
+
+extension ProxyRouteCategory {
+    var symbol: String {
+        switch self {
+        case .ads: return "hand.raised"
+        case .lan: return "house"
+        case .foreign: return "globe"
+        case .china: return "building.2"
+        case .apple: return "apple.logo"
+        case .telegram: return "paperplane"
+        case .icloud: return "icloud"
+        case .scholar: return "graduationcap"
+        case .chinaBanks: return "building.columns"
+        case .crypto: return "bitcoinsign.circle"
+        default: break
+        }
+        let section = ProxyRuleCatalog.Section.allCases.first { $0.categories.contains(self) }
+        return section?.symbol ?? "list.bullet"
+    }
+}
+
+extension ProxyRuleCatalog.Section {
+    var symbol: String {
+        switch self {
+        case .basics: "square.grid.2x2"
+        case .ai: "sparkles"
+        case .streaming: "play.rectangle"
+        case .social: "bubble.left.and.bubble.right"
+        case .development: "chevron.left.forwardslash.chevron.right"
+        case .platforms: "square.stack.3d.up"
+        case .games: "gamecontroller"
+        case .mainlandChina: "building.2"
+        case .finance: "creditcard"
+        }
+    }
+}
+
+extension ProxyRoute {
+    var symbol: String {
+        switch kind {
+        case .category(let category): category.symbol
+        case .custom(_, let ruleSets): ruleSets.contains(where: \.isLinked) ? "link" : "list.bullet"
+        }
+    }
+}
