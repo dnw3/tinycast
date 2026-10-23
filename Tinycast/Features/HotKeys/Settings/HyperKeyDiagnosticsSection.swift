@@ -52,11 +52,10 @@ struct HyperKeyDiagnosticsSection: View {
             if !diagnostics.capsLockMappingConflicts.isEmpty {
                 SettingsRow(
                     title: String(localized: "Caps Lock Mapping Conflicts"),
-                    subtitle:
-                        String(
-                            localized:
-                                "Modifier Keys in System Settings remaps Caps Lock, which blocks the Hyper Key."
-                        ),
+                    subtitle: String(
+                        localized: """
+                            Modifier Keys in System Settings remaps Caps Lock, which blocks the Hyper Key.
+                            """),
                     subtitleLineLimit: 2, alignment: .top
                 ) {
                     VStack(alignment: .trailing, spacing: Theme.Spacing.xs) {
@@ -117,7 +116,7 @@ struct HyperKeyDiagnosticsSection: View {
         ]
         if !secureInput.likelyOwners.isEmpty {
             sentences.append(
-                String(localized: "Probably \(secureInput.likelyOwners.joined(separator: " or "))."))
+                String(localized: "Probably \(secureInput.likelyOwners.formatted(.list(type: .or)))."))
         }
         if let owner = secureInput.reportedOwner {
             sentences.append(String(localized: "macOS names \(owner), which isn't always right."))
@@ -125,8 +124,8 @@ struct HyperKeyDiagnosticsSection: View {
         if !diagnostics.secureInputCompatibilityActive {
             sentences.append(
                 secureInput.ownerIsLoginWindow
-                    ? String(localized: "Logging out and back in turns it off.")
-                    : String(localized: "Closing that app turns it off."))
+                    ? String(localized: "Logging out and back in turns off Secure Input.")
+                    : String(localized: "Closing that app turns off Secure Input."))
         }
         return sentences.joined(separator: " ")
     }

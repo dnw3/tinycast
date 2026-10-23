@@ -24,9 +24,10 @@ struct HyperKeySettingsSection: View {
 
     private var hyperSubtitle: String {
         guard settings.hyperKey != .none else {
-            return String(localized: "Remap one key to \(hyperGlyphs) held together.")
+            return String(localized: "Use one key to hold \(hyperGlyphs) together.")
         }
-        return String(localized: "\(settings.hyperKey.title) sends \(hyperGlyphs), shown as ✦ in shortcuts.")
+        return String(
+            localized: "\(settings.hyperKey.title) sends \(hyperGlyphs), shown as ✦ in shortcuts.")
     }
 
     var body: some View {
@@ -34,7 +35,7 @@ struct HyperKeySettingsSection: View {
         Section {
             Picker(selection: hyperKeySelection) {
                 ForEach(HyperKeyPhysicalKey.allCases) { key in
-                    Text(LocalizedStringKey(key.title)).tag(key)
+                    Text(key.title).tag(key)
                 }
             } label: {
                 SettingsRowTitle(.generalHyperKey, "Hyper Key")
@@ -56,7 +57,7 @@ struct HyperKeySettingsSection: View {
                     Text("Trigger Escape").tag(HyperKeyQuickPress.escape)
                 } label: {
                     SettingsRowTitle(.generalHyperKey, "Quick Press")
-                    Text("When \(settings.hyperKey.title) is pressed alone.")
+                    Text("When you press and release \(settings.hyperKey.title) on its own.")
                 }
             }
 
@@ -70,9 +71,11 @@ struct HyperKeySettingsSection: View {
                 Toggle(isOn: $settings.hyperKeySecureInputCompatibility) {
                     SettingsRowTitle(.generalHyperKey, "Secure Input Compatibility")
                     Text(
-                        "Tinycast's Hyper shortcuts also work in password fields and secure terminals, "
-                            + "where Right Control (⌃) with the same key triggers them. "
-                            + "While on, Right Control (⌃) acts as the Hyper Key too.")
+                        """
+                        Tinycast's Hyper shortcuts also work in password fields and secure terminals, \
+                        where Right Control (⌃) with the same key triggers them. \
+                        While on, Right Control (⌃) acts as the Hyper Key too.
+                        """)
                 }
             }
         } header: {
@@ -107,9 +110,7 @@ struct HyperKeySettingsSection: View {
                         Button("Grant Access…") { Permissions.openAccessibilitySettings() }
                     }
                     Button(
-                        isShowingDiagnostics
-                            ? String(localized: "Hide Diagnostics") : String(localized: "Diagnostics…"),
-                        action: toggleDiagnostics)
+                        isShowingDiagnostics ? "Hide Diagnostics" : "Diagnostics…", action: toggleDiagnostics)
                 }
             }
         }
@@ -131,7 +132,8 @@ struct HyperKeySettingsSection: View {
                 return String(localized: "\(appName) runs its own Hyper Key. Quit it to use this one.")
             case .remapUnavailable: return String(localized: "macOS refused to remap the keyboard.")
             case .paused:
-                return String(localized: "Handed back while the Mac sleeps, locks or switches user.")
+                return String(
+                    localized: "The key works normally during sleep, screen lock or user switching.")
             case .off, .active, .needsAccessibility: return nil
             }
         }

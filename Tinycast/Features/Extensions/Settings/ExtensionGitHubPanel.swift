@@ -19,19 +19,20 @@ struct ExtensionGitHubPanel: View {
             ExtensionSettingsEditorHeader(
                 title: String(localized: "Install from GitHub"),
                 subtitle: String(
-                    localized:
-                        "Builds an extension from source on this Mac. Only the build is kept — the source and its dependencies are deleted once it installs."
-                ))
+                    localized: """
+                        Builds an extension from source on this Mac. Only the build is kept — the source \
+                        and its dependencies are deleted once it installs.
+                        """))
 
             repositoryField
             ExtensionToolchainFields()
                 .disabled(isInstalling)
 
             Text(
-                String(
-                    localized:
-                        "Installing runs your package manager and the extension's own build script. Install only from someone you trust."
-                )
+                """
+                Installing runs your package manager and the extension's own build script. Install \
+                only from someone you trust.
+                """
             )
             .font(.caption)
             .foregroundStyle(.secondary)
@@ -40,12 +41,9 @@ struct ExtensionGitHubPanel: View {
             status
 
             HStack(spacing: Theme.Spacing.md) {
-                Button(
-                    installedTitle == nil ? String(localized: "Cancel") : String(localized: "Done"),
-                    action: onClose
-                )
-                .buttonStyle(ExtensionSettingsEditorButtonStyle(role: .cancel))
-                .keyboardShortcut(.cancelAction)
+                Button(installedTitle == nil ? "Cancel" : "Done", action: onClose)
+                    .buttonStyle(ExtensionSettingsEditorButtonStyle(role: .cancel))
+                    .keyboardShortcut(.cancelAction)
                 Button("Install", action: install)
                     .buttonStyle(ExtensionSettingsEditorButtonStyle(role: .primary))
                     .keyboardShortcut(.defaultAction)
@@ -156,17 +154,18 @@ private struct ExtensionToolchainFields: View {
 
             VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
                 Text("Custom search paths").font(.callout.weight(.medium))
-                TextField("", text: $searchPathsText, prompt: Text("~/.local/share/mise/shims"))
+                TextField("", text: $searchPathsText, prompt: Text(verbatim: "~/.local/share/mise/shims"))
                     .extensionSettingsEditorTextField()
                     .pointerStyle(.horizontalText)
                     .onChange(of: searchPathsText) { _, value in
                         settings.extensionCustomSearchPaths = Self.parseSearchPaths(value)
                     }
                 Text(
-                    String(
-                        localized:
-                            "Colon-separated, like PATH — checked before Homebrew and the rest. For mise: ~/.local/share/mise/shims. For Nix (Home Manager): /etc/profiles/per-user/<you>/home-path/bin."
-                    )
+                    """
+                    Colon-separated, like PATH — checked before Homebrew and the rest. For mise: \
+                    ~/.local/share/mise/shims. For Nix (Home Manager): \
+                    /etc/profiles/per-user/<you>/home-path/bin.
+                    """
                 )
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -184,8 +183,9 @@ private struct ExtensionToolchainFields: View {
         guard let resolved = chosen.resolve(additionalSearchPaths: additionalSearchPaths) else {
             return chosen == .automatic
                 ? String(
-                    localized: "None found on this Mac. Install pnpm, npm, Yarn or Bun to build an extension."
-                )
+                    localized: """
+                        None found on this Mac. Install pnpm, npm, Yarn or Bun to build an extension.
+                        """)
                 : String(localized: "\(chosen.title) isn't installed on this Mac.")
         }
         return chosen == .automatic

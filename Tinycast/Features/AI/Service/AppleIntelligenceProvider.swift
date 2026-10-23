@@ -26,7 +26,7 @@ struct AppleIntelligenceProvider: AIProvider {
             let task = Task.detached {
                 do {
                     if let message = Self.status().message {
-                        throw AIProviderError.unavailable(Bundle.main.localizedString(forKey: message, value: nil, table: nil))
+                        throw AIProviderError.unavailable(message)
                     }
                     let turn = Self.turn(for: request)
                     guard let prompt = turn.prompt else {
@@ -94,8 +94,9 @@ struct AppleIntelligenceProvider: AIProvider {
         case .exceededContextWindowSize:
             return .responseFailed(
                 String(
-                    localized:
-                        "This conversation is longer than the on-device model can hold. Start a new chat."))
+                    localized: """
+                        This conversation is longer than the on-device model can hold. Start a new chat.
+                        """))
         case .guardrailViolation, .refusal:
             return .responseFailed(String(localized: "Apple Intelligence declined to answer that."))
         case .unsupportedLanguageOrLocale:
@@ -111,7 +112,8 @@ struct AppleIntelligenceProvider: AIProvider {
         case .decodingFailure, .unsupportedGuide:
             return .malformedResponse
         @unknown default:
-            return .responseFailed(String(localized: "Apple Intelligence could not complete the response."))
+            return .responseFailed(
+                String(localized: "Apple Intelligence could not complete the response."))
         }
     }
 }

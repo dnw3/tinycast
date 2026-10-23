@@ -228,8 +228,9 @@ final class AIChatCoordinator {
             await core.confirm(
                 title: String(localized: "Delete all chats?"),
                 message: String(
-                    localized:
-                        "Every saved conversation except pinned ones will be removed. This can't be undone."),
+                    localized: """
+                        Every saved conversation except pinned ones will be removed. This can't be undone.
+                        """),
                 symbol: "trash", confirmTitle: String(localized: "Delete All"))
         else { return }
         for conversation in core.chatHistory.conversations where !conversation.isPinned {
@@ -328,7 +329,7 @@ final class AIChatCoordinator {
             let sent = chat.send(
                 address.rest, using: try provider(for: chat, scopedTo: address.slug),
                 model: model(for: chat), webSearch: webSearch(for: chat),
-                instructions: instructions, contextBudget: contextBudget(for: chat),
+                instructions: instructions(for: chat), contextBudget: contextBudget(for: chat),
                 toolScope: address.slug)
             // Named while the answer streams, so the sidebar has a title before the reply ends.
             if sent { nameIfNeeded(chat) }
@@ -347,7 +348,7 @@ final class AIChatCoordinator {
             chat.regenerate(
                 using: try provider(for: chat, scopedTo: scope),
                 model: model(for: chat), webSearch: webSearch(for: chat),
-                instructions: instructions, contextBudget: contextBudget(for: chat))
+                instructions: instructions(for: chat), contextBudget: contextBudget(for: chat))
         } catch {
             chat.report(error.localizedDescription)
         }
@@ -357,10 +358,12 @@ final class AIChatCoordinator {
         core.aiSettings.webSearchEnabled && capabilities(for: chat).webSearch
     }
 
-    private var instructions: String? {
+    private func instructions(for chat: AIChatState) -> String? {
         AIInstructions.compose(
             userPrompt: core.aiSettings.systemPrompt,
-            isEnabled: core.aiSettings.systemPromptEnabled)
+            isEnabled: core.aiSettings.systemPromptEnabled,
+            offersChoices: core.aiSettings.choicesEnabled,
+            model: model(for: chat))
     }
 
     /// A turn's route and its tools: a CLI with its own client is handed servers, others the loop.
@@ -451,9 +454,10 @@ final class AIChatCoordinator {
             let index = await core.choose(
                 title: String(localized: "Let the agent edit files without asking?"),
                 message: String(
-                    localized:
-                        "Edits in \u{201C}\(folder)\u{201D} go ahead unasked. Commands, deletions and outside edits still ask."
-                ),
+                    localized: """
+                        Edits in \u{201C}\(folder)\u{201D} go ahead unasked. Commands, deletions and \
+                        outside edits still ask.
+                        """),
                 symbol: "bolt",
                 options: [
                     DialogAction(title: String(localized: "Allow Edits")),
@@ -635,8 +639,9 @@ final class AIChatCoordinator {
         panel.canChooseFiles = true
         panel.canChooseDirectories = false
         panel.allowsMultipleSelection = true
-        panel.prompt = "Attach"
-        panel.message = String(localized: "Choose images, PDFs or text files to send with your next message.")
+        panel.prompt = String(localized: "Attach")
+        panel.message = String(
+            localized: "Choose images, PDFs or text files to send with your next message.")
         let id = chat.session.id
         Task {
             guard await window.runSheet(panel) == .OK, chat.session.id == id else { return }

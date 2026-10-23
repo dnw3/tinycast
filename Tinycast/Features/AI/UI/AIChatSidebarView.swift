@@ -24,7 +24,8 @@ struct AIChatSidebarView: View {
         for conversation in history.search(query).pinnedFirst {
             let title =
                 conversation.isPinned
-                ? String(localized: "Pinned") : DateBucket(for: conversation.updatedAt).title
+                ? String(localized: "ai-pinned-conversations", defaultValue: "Pinned")
+                : DateBucket(for: conversation.updatedAt).title
             if sections.last?.title == title {
                 sections[sections.count - 1].conversations.append(conversation)
             } else {
@@ -64,11 +65,14 @@ struct AIChatSidebarView: View {
                 ForEach(sections) { section in
                     Section(section.title) {
                         ForEach(section.conversations) { conversation in
-                            row(
-                                conversation, isAnswering: answering.contains(conversation.id),
+                            ChatSidebarRow(
+                                conversation: conversation,
+                                isAnswering: answering.contains(conversation.id),
                                 isWaiting: waiting.contains(conversation.id),
                                 isSelected: conversation.id == openID
-                            )
+                            ) {
+                                title(of: conversation)
+                            }
                             .tag(conversation.id)
                         }
                     }
@@ -102,9 +106,7 @@ struct AIChatSidebarView: View {
         }
     }
 
-    @ViewBuilder private func row(
-        _ conversation: ChatConversation, isAnswering: Bool, isWaiting: Bool, isSelected: Bool
-    ) -> some View {
+    @ViewBuilder private func title(of conversation: ChatConversation) -> some View {
         if renaming == conversation.id {
             TextField("Chat name", text: $renameText, prompt: Text(conversation.title))
                 .textFieldStyle(.plain)
@@ -115,15 +117,15 @@ struct AIChatSidebarView: View {
                     if !focused { commitRename(conversation.id) }
                 }
         } else {
-            ChatSidebarRow(
-                conversation: conversation, isAnswering: isAnswering, isWaiting: isWaiting,
-                isSelected: isSelected)
+            Text(conversation.displayTitle)
+                .lineLimit(1)
+                .truncationMode(.tail)
         }
     }
 
     @ViewBuilder private func menu(for conversation: ChatConversation) -> some View {
         Button(
-            conversation.isPinned ? String(localized: "Unpin Chat") : String(localized: "Pin Chat"),
+            conversation.isPinned ? "Unpin Chat" : "Pin Chat",
             systemImage: conversation.isPinned ? "pin.slash" : "pin"
         ) {
             coordinator.togglePin(id: conversation.id)
@@ -168,35 +170,34 @@ struct AIChatSidebarView: View {
 
 }
 
-private struct ChatSidebarRow: View {
+private struct ChatSidebarRow<Title: View>: View {
     let conversation: ChatConversation
     let isAnswering: Bool
     /// Its agent stopped to ask the reader something, which outranks still being at work.
     let isWaiting: Bool
     let isSelected: Bool
+    @ViewBuilder let title: Title
     @State private var isHovered = false
 
     var body: some View {
         HStack(spacing: Theme.Spacing.sm) {
-            Text(conversation.displayTitle)
-                .lineLimit(1)
-                .truncationMode(.tail)
+            title
             Spacer(minLength: 0)
             if isWaiting {
                 Circle()
                     .fill(Theme.Colors.waiting)
                     .frame(width: Theme.Size.colorDot, height: Theme.Size.colorDot)
                     .accessibilityElement()
-                    .accessibilityLabel(String(localized: "Waiting for you"))
+                    .accessibilityLabel("Waiting for you")
             } else if isAnswering {
                 ProgressView()
                     .controlSize(.mini)
-                    .accessibilityLabel(String(localized: "Answering"))
+                    .accessibilityLabel("Answering")
             } else if conversation.isPinned {
                 Image(systemName: "pin.fill")
                     .font(.caption)
                     .foregroundStyle(.tertiary)
-                    .accessibilityLabel(String(localized: "Pinned"))
+                    .accessibilityLabel("Pinned")
             }
         }
         // The whole cell, so the pointer never crosses a gap where no row is hovered.
@@ -240,7 +241,7 @@ private struct ChatSearchField: View {
                         .foregroundStyle(.tertiary)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel(String(localized: "Clear search"))
+                .accessibilityLabel("Clear search")
             }
         }
         .padding(.horizontal, Theme.Spacing.lg)
@@ -248,6 +249,6 @@ private struct ChatSearchField: View {
         .background { Color.clear.frosted(in: Capsule()) }
         .contentShape(.rect)
         .onTapGesture { focused = true }
-        .accessibilityLabel(String(localized: "Search chats"))
+        .accessibilityLabel("Search chats")
     }
 }

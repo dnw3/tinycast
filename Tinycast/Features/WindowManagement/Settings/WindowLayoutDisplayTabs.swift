@@ -11,7 +11,7 @@ struct WindowLayoutDisplayTabs: View {
                 tab(display, ordinal: index + 1)
             }
         }
-        .accessibilityLabel(String(localized: "Display"))
+        .accessibilityLabel("Display")
     }
 
     private func tab(_ display: WindowLayoutDisplay, ordinal: Int) -> some View {
@@ -20,7 +20,7 @@ struct WindowLayoutDisplayTabs: View {
         return Button {
             draft.select(displayUUID: display.uuid)
         } label: {
-            Text("\(ordinal)")
+            Text(ordinal, format: .number)
                 .font(Theme.Typography.keyCap)
                 .monospacedDigit()
                 .foregroundStyle(isSelected ? Theme.Colors.textPrimary : Theme.Colors.textSecondary)
@@ -31,7 +31,7 @@ struct WindowLayoutDisplayTabs: View {
         }
         .buttonStyle(.plain)
         .help(display.name)
-        .accessibilityLabel(String(localized: "Display \(ordinal), \(display.name)"))
+        .accessibilityLabel("Display \(ordinal), \(display.name)")
         .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
     }
 }
@@ -56,7 +56,7 @@ struct WindowLayoutPositionGrid: View {
             }
         }
         .frame(maxWidth: .infinity)
-        .accessibilityLabel(String(localized: "Position"))
+        .accessibilityLabel("Position")
     }
 
     private func cell(_ anchor: WindowLayoutAnchor) -> some View {

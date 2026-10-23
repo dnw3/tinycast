@@ -11,8 +11,7 @@ struct CalendarSettingsView: View {
             FeatureSwitchSection(
                 anchor: .calendarCalendar,
                 enableTitle: "Join meetings from Tinycast",
-                enableSubtitle:
-                    settings.calendarSpan.readEventsDescription,
+                enableSubtitle: enableSubtitle,
                 isEnabled: enabledBinding,
                 showsInLauncher: $settings.calendarShowInLauncher,
                 showsIcon: true,
@@ -57,7 +56,7 @@ struct CalendarSettingsView: View {
                         Text(window.title).tag(window)
                     }
                 } label: {
-                    SettingsRowTitle(.calendarJoining, "Show the join card")
+                    SettingsRowTitle(.calendarJoining, "Show the meeting card")
                     Text("Before and after a meeting starts.")
                 }
                 Toggle(isOn: $settings.autoJoinMeetings) {
@@ -95,7 +94,7 @@ struct CalendarSettingsView: View {
                 }
                 Picker(selection: $settings.calendarSpan) {
                     ForEach(MeetingSpan.allCases) { span in
-                        Text(LocalizedStringKey(span.title)).tag(span)
+                        Text(span.title).tag(span)
                     }
                 } label: {
                     SettingsRowTitle(.calendarMenuBar, "Days to Show")
@@ -147,6 +146,17 @@ struct CalendarSettingsView: View {
         .onAppear { store.refreshAccess() }
     }
 
+    private var enableSubtitle: LocalizedStringResource {
+        switch settings.calendarSpan {
+        case .today:
+            "Reads today's events for join links. Nothing leaves this Mac."
+        case .todayAndTomorrow:
+            "Reads today's and tomorrow's events for join links. Nothing leaves this Mac."
+        case .nextSevenDays:
+            "Reads the next 7 days' events for join links. Nothing leaves this Mac."
+        }
+    }
+
     /// Routed through the coordinator so enabling, which is also consent, confirms first.
     private var enabledBinding: Binding<Bool> {
         Binding(
@@ -162,7 +172,7 @@ private struct MeetingBrowserPicker: View {
 
     var body: some View {
         Picker(selection: installedSelection) {
-            Text(String(localized: "Default Browser")).tag(String?.none)
+            Text("Default Browser").tag(String?.none)
             Divider()
             ForEach(browsers) { browser in
                 Text(browser.name).tag(Optional(browser.id))
@@ -198,7 +208,7 @@ private struct CalendarPickerSection: View {
 
     var body: some View {
         Section {
-            SettingsFilterField(prompt: String(localized: "Search calendars…"), query: $query)
+            SettingsFilterField(prompt: "Search calendars…", query: $query)
 
             if calendars.isEmpty {
                 Text(emptyMessage)
@@ -215,7 +225,7 @@ private struct CalendarPickerSection: View {
     }
 
     private var emptyMessage: String {
-        if !query.isEmpty { return "No matches for “\(query)”." }
+        if !query.isEmpty { return String(localized: "No matches for “\(query)”.") }
         return store.access == .granted
             ? String(localized: "No calendars on this Mac.") : String(localized: "Nothing to show yet.")
     }
@@ -230,7 +240,7 @@ private struct CalendarRow: View {
             Toggle("", isOn: binding)
                 .labelsHidden()
                 .toggleStyle(.checkbox)
-                .accessibilityLabel(String(localized: "Include \(calendar.title) in meetings"))
+                .accessibilityLabel("Include \(calendar.title) in meetings")
         }
     }
 

@@ -13,7 +13,8 @@ struct NoteFormattingBar: View {
 
     private static let styles = [
         Control(
-            symbol: "bold", title: String(localized: "Bold"), shortcut: "⌘B", action: .toggleInline(.bold)
+            symbol: "bold", title: String(localized: "Bold"), shortcut: "⌘B",
+            action: .toggleInline(.bold)
         ) {
             $0.inlineStyles.contains(.bold)
         },
@@ -29,8 +30,7 @@ struct NoteFormattingBar: View {
         ) { $0.inlineStyles.contains(.strikethrough) },
         Control(
             symbol: "chevron.left.forwardslash.chevron.right", title: String(localized: "Inline Code"),
-            shortcut: "⌘E",
-            action: .toggleInline(.code)
+            shortcut: "⌘E", action: .toggleInline(.code)
         ) { $0.inlineStyles.contains(.code) },
         Control(symbol: "link", title: String(localized: "Link"), shortcut: "⌘K", action: .toggleLink) {
             $0.isLink
@@ -45,7 +45,8 @@ struct NoteFormattingBar: View {
             $0.isCodeBlock
         },
         Control(
-            symbol: "text.quote", title: String(localized: "Quote"), shortcut: "⇧⌘B", action: .toggleQuote
+            symbol: "text.quote", title: String(localized: "Quote"), shortcut: "⇧⌘B",
+            action: .toggleQuote
         ) { $0.isQuote }
     ]
 
@@ -95,7 +96,7 @@ struct NoteFormattingBar: View {
         // Behind the buttons, not around them: glass clips content, tooltips draw outside it.
         .background { Capsule().fill(Color.clear).frosted(in: Capsule()) }
         .accessibilityElement(children: .contain)
-        .accessibilityLabel(String(localized: "Formatting"))
+        .accessibilityLabel("Formatting")
     }
 
     private func group(_ controls: [Control], _ formatting: NoteFormatting) -> some View {
@@ -108,7 +109,7 @@ struct NoteFormattingBar: View {
                 .focusable(false)
                 .accessibilityLabel(control.title)
                 .accessibilityAddTraits(lit ? .isSelected : [])
-                .tooltip(String(localized: "\(control.title)  \(control.shortcut)"))
+                .tooltip("\(control.title)  \(control.shortcut)")
             }
         }
     }
@@ -123,8 +124,8 @@ private struct NoteFormattingToggle: View {
             NoteBarGlyph(name: "paintbrush")
         }
         .focusable(false)
-        .accessibilityLabel(String(localized: "Formatting"))
-        .accessibilityValue(isExpanded ? String(localized: "Expanded") : String(localized: "Collapsed"))
+        .accessibilityLabel("Formatting")
+        .accessibilityValue(isExpanded ? "Expanded" : "Collapsed")
         // Against the window's trailing edge, so a centred label would run off it.
         .tooltip(String(localized: "Formatting  ⌥⌘T"), alignment: .trailing)
     }
@@ -167,7 +168,7 @@ private struct NoteHeadingButton: View {
             onFrameChange($0)
         }
         .focusable(false)
-        .accessibilityLabel(String(localized: "Heading"))
+        .accessibilityLabel("Heading")
         .accessibilityValue(accessibilityValue)
         .accessibilityAddTraits(isHeading ? .isSelected : [])
         // The leading end of an expanded capsule, which a narrow note pushes against the edge.

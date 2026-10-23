@@ -8,21 +8,22 @@ struct CommandsSettingsView: View {
     var body: some View {
         @Bindable var settings = settings
         return Form {
-            LauncherCategorySwitchSection(kind: .command, anchor: .commandsCommands)
+            LauncherCategorySwitchSection(
+                kind: .command, anchor: .commandsCommands, title: "Enable Commands")
 
             LauncherItemsSection(
                 kind: .command,
                 anchor: .commandsCommands,
-                searchPrompt: String(localized: "Search commands…"))
+                searchPrompt: "Search commands…",
+                emptyMessage: LocalizedStringResource("commands-empty", defaultValue: "Nothing here yet."))
 
             FeatureSwitchSection(
                 anchor: .commandsCustomCommands,
                 enableTitle: "Enable custom commands",
-                enableSubtitle:
-                    String(
-                        localized:
-                            "Run as you in /bin/zsh, or the interpreter a #! line names. Use full executable paths."
-                    ),
+                enableSubtitle: """
+                    Run as you in /bin/zsh, or the interpreter a #! line names. \
+                    Use full executable paths.
+                    """,
                 isEnabled: $settings.customCommandsEnabled,
                 showsInLauncher: $settings.customCommandsShowInLauncher)
 
@@ -91,7 +92,7 @@ private struct CustomCommandSettingsRow: View {
             if !command.showsInRootSearch {
                 Image(systemName: "eye.slash")
                     .foregroundStyle(.secondary)
-                    .help(String(localized: "Hidden from root search"))
+                    .help("Hidden from root search")
             }
 
             // An alias only reaches the ranker through the launcher slice, so it dims with it.
@@ -106,22 +107,22 @@ private struct CustomCommandSettingsRow: View {
                 Image(systemName: "pencil")
             }
             .buttonStyle(.plain)
-            .help(String(localized: "Edit Custom Command"))
-            .accessibilityLabel(String(localized: "Edit \(command.name)"))
+            .help("Edit Custom Command")
+            .accessibilityLabel("Edit \(command.name)")
 
             Button(action: onDelete) {
                 Image(systemName: "trash")
                     .foregroundStyle(.red)
             }
             .buttonStyle(.plain)
-            .help(String(localized: "Delete Custom Command"))
-            .accessibilityLabel(String(localized: "Delete \(command.name)"))
+            .help("Delete Custom Command")
+            .accessibilityLabel("Delete \(command.name)")
 
             Toggle("", isOn: $isEnabled)
                 .labelsHidden()
                 .toggleStyle(.checkbox)
-                .help(String(localized: "Enabled"))
-                .accessibilityLabel(String(localized: "Enable \(command.name)"))
+                .help("Enabled")
+                .accessibilityLabel("Enable \(command.name)")
         }
     }
 }

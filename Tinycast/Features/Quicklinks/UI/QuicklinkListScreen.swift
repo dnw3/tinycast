@@ -15,7 +15,7 @@ struct QuicklinkListScreen: PaletteScreen {
         return store.enabled.filter { $0.name.localizedCaseInsensitiveContains(query) }
     }
 
-    var primaryActionTitle: String { "Open Quicklink" }
+    var primaryActionTitle: String { String(localized: "Open Quicklink") }
 
     /// A prompt for one row opens on that row, so the show's reset can't move it back to the top.
     var landingSelection: Int {
@@ -152,7 +152,9 @@ enum QuicklinkActionsMenu {
                 core.quicklinkCoordinator.editQuicklink(quicklink)
             })
         items.append(
-            PopoverMenuItem(title: "Create Quicklink", systemImage: "plus", shortcut: "⌘N") {
+            PopoverMenuItem(
+                title: String(localized: "Create Quicklink"), systemImage: "plus", shortcut: "⌘N"
+            ) {
                 core.quicklinkCoordinator.editQuicklink(nil)
             })
         items.append(
@@ -166,8 +168,7 @@ enum QuicklinkActionsMenu {
             quicklink.isPinned
                 ? PopoverMenuItem(
                     title: String(localized: "Unpin Quicklink"), systemImage: "pin.slash",
-                    startsSection: true,
-                    shortcut: "⌘."
+                    startsSection: true, shortcut: "⌘."
                 ) {
                     core.quicklinkCoordinator.toggleQuicklinkPinned(id: quicklink.id)
                 }
@@ -189,8 +190,7 @@ enum QuicklinkActionsMenu {
         items.append(
             PopoverMenuItem(
                 title: String(localized: "Delete Quicklink"), systemImage: "trash", startsSection: true,
-                shortcut: "⌃X",
-                isDestructive: true
+                shortcut: "⌃X", isDestructive: true
             ) {
                 Task { await core.quicklinkCoordinator.deleteQuicklink(id: quicklink.id) }
             })

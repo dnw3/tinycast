@@ -112,7 +112,7 @@ struct NotesView: View {
             .font(Theme.Typography.rowTrailing)
             .foregroundStyle(Theme.Colors.textTertiary)
             .lineLimit(1)
-            .accessibilityLabel(String(localized: "\(notes.characterCountLabel) in this note"))
+            .accessibilityLabel("\(notes.characterCount) characters in this note")
     }
 }
 
@@ -151,11 +151,11 @@ private struct NoteTitlebarActions: View {
                 "plus", String(localized: "Create Note"), String(localized: "Create Note  ⌘N"),
                 notes.createNote)
             action(
-                "rectangle.stack", String(localized: "Browse Notes"), String(localized: "Browse Notes  ⌘P"),
-                notes.searchNotes)
+                "rectangle.stack", String(localized: "Browse Notes"),
+                String(localized: "Browse Notes  ⌘P"), notes.searchNotes)
             action(
-                "folder", String(localized: "Open Notes Folder"), String(localized: "Open Notes Folder  ⌘O"),
-                notes.openNotesFolder)
+                "folder", String(localized: "Open Notes Folder"),
+                String(localized: "Open Notes Folder  ⌘O"), notes.openNotesFolder)
         }
         .padding(Theme.Spacing.xs)
         .frosted(in: Capsule())

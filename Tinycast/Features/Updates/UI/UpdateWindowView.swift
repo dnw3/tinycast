@@ -68,7 +68,8 @@ struct UpdateWindowView: View {
         switch updates.stage {
         case .checking: return String(localized: "Checking for updates…")
         case .upToDate: return String(localized: "\(Bundle.main.appDisplayName) is up to date")
-        case .localBuild: return String(localized: "\(Bundle.main.appDisplayName) doesn't update itself")
+        case .localBuild:
+            return String(localized: "\(Bundle.main.appDisplayName) doesn't update itself")
         case .available(let release), .blocked(_, let release), .installing(let release, _):
             return String(
                 localized: "\(Bundle.main.appDisplayName) \(release.version.description) is available")

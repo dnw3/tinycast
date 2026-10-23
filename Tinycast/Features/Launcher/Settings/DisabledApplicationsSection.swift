@@ -57,7 +57,7 @@ private struct DisabledAppRow: View {
                     .foregroundStyle(.tertiary)
             }
             .buttonStyle(.plain)
-            .accessibilityLabel(String(localized: "Stop excluding \(name)"))
+            .accessibilityLabel("Stop excluding \(name)")
         } label: {
             Label {
                 Text(name).lineLimit(1)

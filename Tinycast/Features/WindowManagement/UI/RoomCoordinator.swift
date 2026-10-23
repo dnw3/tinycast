@@ -540,7 +540,7 @@ final class RoomCoordinator {
         let openSettings = await core.reportFailure(
             title: String(localized: "Tinycast Needs Accessibility Access"),
             message: String(localized: "Rooms move and hide other apps' windows."),
-            symbol: Room.sfSymbol, recovery: "Open Settings")
+            symbol: Room.sfSymbol, recovery: String(localized: "Open Settings"))
         if openSettings { Permissions.openAccessibilitySettings() }
     }
 }

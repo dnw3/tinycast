@@ -66,6 +66,19 @@ struct WindowLayoutPlan: Equatable, Sendable {
     /// One open per launching placement; the plan already guarantees they are distinct.
     var opens: [Placement] { placements.filter { $0.source == .launch } }
 
+    /// The HUD's second clause, derived here so the coordinator stays declarative.
+    var skippedSummary: String? {
+        guard !skipped.isEmpty else { return nil }
+        let displays = Set(
+            skipped.compactMap { skip -> String? in
+                guard case .displayDisconnected(let name) = skip.reason else { return nil }
+                return name
+            })
+        if !displays.isEmpty, displays.count == skipped.count {
+            return String(localized: "\(displays.count) displays not connected")
+        }
+        return String(localized: "\(skipped.count) entries skipped")
+    }
 
     /// Deliberately blind to `isEnabled`: that guard lives in the coordinator, and only there.
     static func make(

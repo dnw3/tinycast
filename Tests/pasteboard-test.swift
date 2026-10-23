@@ -30,6 +30,7 @@ struct PasteboardTests {
         secretMarkersAreSkipped()
         richTextIsReadOnlyWithinTheCap()
         try await richEntriesPasteBothFlavours()
+        imageEntriesWriteBackWithTheirFile()
 
         print("\(passes)/\(passes + failures) passed")
         if failures > 0 { exit(1) }
@@ -415,12 +416,12 @@ struct PasteboardTests {
     }
 
     static func longTextFitsUnderTheCap() {
-        let cap = ClipboardManager.maxTextLength
-        expect(ClipboardManager.fitsTextLimit(String(repeating: "a", count: 40_000)), "40k is kept")
-        expect(ClipboardManager.fitsTextLimit(String(repeating: "a", count: cap)), "the cap is kept")
-        expect(!ClipboardManager.fitsTextLimit(String(repeating: "a", count: cap + 1)), "past it is not")
+        let cap = ClipboardStore.maxTextLength
+        expect(ClipboardStore.fitsTextLimit(String(repeating: "a", count: 40_000)), "40k is kept")
+        expect(ClipboardStore.fitsTextLimit(String(repeating: "a", count: cap)), "the cap is kept")
+        expect(!ClipboardStore.fitsTextLimit(String(repeating: "a", count: cap + 1)), "past it is not")
         expect(
-            ClipboardManager.fitsTextLimit(String(repeating: "é", count: cap / 2 + 1)),
+            ClipboardStore.fitsTextLimit(String(repeating: "é", count: cap / 2 + 1)),
             "the cap counts characters, not UTF-8 bytes")
     }
 
@@ -492,6 +493,29 @@ struct PasteboardTests {
         let fallback = board()
         expect(Paster.write(store.items[0], store: store, to: fallback), "a lost sidecar still pastes")
         expect(fallback.types?.contains(.rtf) == false, "as text alone")
+    }
+
+    /// A text-only receiver ignores image data, so the stored file goes out beside it.
+    static func imageEntriesWriteBackWithTheirFile() {
+        withScratch { dir in
+            let image = dir.appendingPathComponent("shot.png")
+            let bytes = Data("png".utf8)
+            try? bytes.write(to: image)
+            let store = ClipboardStore(directory: dir.appendingPathComponent("store"))
+            store.importEntries([ClipboardItem(imagePath: image.path, sourceBundleID: nil)])
+            let pb = board()
+
+            expect(Paster.write(store.items[0], store: store, to: pb), "a present image writes")
+            expect(pb.data(forType: .png) == bytes, "as its image data")
+            let read = pb.readObjects(forClasses: [NSURL.self]) as? [URL]
+            expect(read?.first?.path == image.path, "and as its stored file")
+            expect(
+                pb.string(forType: .string) == nil,
+                "but not as text, which a rich text field would take over the image")
+            expect(
+                pb.types?.contains(ClipboardManager.internalType) == true,
+                "marked, so the poller skips our own write")
+        }
     }
 
     // MARK: - Harness

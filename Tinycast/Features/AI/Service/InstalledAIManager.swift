@@ -249,7 +249,9 @@ final class InstalledAIManager {
                     phase: models.isEmpty
                         ? .failed(
                             String(
-                                localized: "Claude listed no models. Update Claude Code, then Check Again."))
+                                localized: """
+                                    Claude listed no models. Update Claude Code, then Check Again.
+                                    """))
                         : .ready,
                     version: version, executable: executable, models: models,
                     account: InstalledAIModel.claudeAccount(catalog.output))
@@ -260,7 +262,10 @@ final class InstalledAIManager {
                     kind,
                     InstalledAIStatus(
                         phase: .failed(
-                            String(localized: "Tinycast needs OpenCode 2. Update OpenCode, then Check Again.")),
+                            String(
+                                localized: """
+                                    Tinycast needs OpenCode 2. Update OpenCode, then Check Again.
+                                    """)),
                         version: version, executable: executable)
                 )
             }

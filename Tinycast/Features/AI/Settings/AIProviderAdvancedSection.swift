@@ -99,8 +99,8 @@ struct AIProviderAdvancedSection: View {
                         .foregroundStyle(.secondary)
                 }
                 .buttonStyle(.plain)
-                .help(String(localized: "Remove"))
-                .accessibilityLabel(String(localized: "Remove \(draft.name)"))
+                .help("Remove")
+                .accessibilityLabel("Remove \(draft.name)")
             }
             if let note = note(for: draft.name) {
                 Text(note)
@@ -117,16 +117,18 @@ struct AIProviderAdvancedSection: View {
         return saveFailed
             ? String(localized: "The variables could not be saved to your login Keychain.")
             : String(
-                localized:
-                    "Values stay in your login Keychain. A change applies the next time \(kind.title) starts."
-            )
+                localized: """
+                    Values stay in your login Keychain. A change applies the next time \(kind.title) starts.
+                    """)
     }
 
     private func note(for name: String) -> String? {
         guard !name.isEmpty else { return nil }
         if !InstalledAILaunch.isVariableName(name) {
             return String(
-                localized: "A name is letters, digits and underscores, and does not start with a digit.")
+                localized: """
+                    A name is letters, digits and underscores, and does not start with a digit.
+                    """)
         }
         if kind.isManagedVariable(name) {
             return String(localized: "Tinycast sets \(name) itself, so this value is not used.")

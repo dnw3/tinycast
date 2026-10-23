@@ -14,7 +14,7 @@ struct DictionaryScreen: PaletteScreen {
     /// The one entry, so the footer and ⌘K act on it exactly as on a selected row.
     var rows: [DictionaryEntry] { entry.map { [$0] } ?? [] }
 
-    var primaryActionTitle: String { "Copy Definition" }
+    var primaryActionTitle: String { String(localized: "Copy Definition") }
 
     func actions(at selection: Int) -> PopoverMenuContent? {
         guard let entry else { return nil }

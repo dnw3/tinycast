@@ -47,7 +47,7 @@ struct NoteSwitcherView: View {
                 .textFieldStyle(.plain)
                 .focused($searchFocused)
                 .onExitCommand { notes.closeSwitcher() }
-                .accessibilityLabel(String(localized: "Search Notes"))
+                .accessibilityLabel("Search Notes")
             if !notes.searchQueryBinding.wrappedValue.isEmpty {
                 Button {
                     notes.searchQueryBinding.wrappedValue = ""
@@ -56,7 +56,7 @@ struct NoteSwitcherView: View {
                         .foregroundStyle(Theme.Colors.textTertiary)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel(String(localized: "Clear Search"))
+                .accessibilityLabel("Clear Search")
             }
         }
         .padding(.horizontal, Theme.Spacing.xl)
@@ -72,11 +72,8 @@ struct NoteSwitcherView: View {
                     size: Theme.Size.noteGlyph
                 )
                 .foregroundStyle(Theme.Colors.textSecondary)
-                Text(
-                    notes.isSearching
-                        ? String(localized: "Searching notes…") : String(localized: "No notes found")
-                )
-                .foregroundStyle(Theme.Colors.textSecondary)
+                Text(notes.isSearching ? "Searching notes…" : "No notes found")
+                    .foregroundStyle(Theme.Colors.textSecondary)
             }
             .frame(maxWidth: .infinity)
             .frame(height: Theme.Size.noteSwitcherEmptyHeight)

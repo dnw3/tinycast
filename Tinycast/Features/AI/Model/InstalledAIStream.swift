@@ -4,7 +4,6 @@ struct InstalledAIStreamFrame: Equatable, Sendable {
     var events: [AIStreamEvent] = []
     var sessionID: String?
     var error: String?
-    var failedKind: InstalledAIKind?
     var completed = false
     /// A tool call the CLI is holding open; the runner answers it and the turn carries on.
     var controlRequest: ClaudeControlProtocol.Request?
@@ -53,8 +52,8 @@ enum InstalledAIStreamDecoder {
                 frame.events = [.usage(openCodeUsage(tokens, cost: part?["cost"]))]
             }
         case "error":
-            frame.error = message(in: object)
-            frame.failedKind = .openCode
+            frame.error =
+                message(in: object) ?? String(localized: "OpenCode could not finish the response.")
         default:
             break
         }
@@ -131,8 +130,10 @@ enum InstalledAIStreamDecoder {
         }
         if object["is_error"] as? Bool == true {
             // A run that never reached the model, like a lost session's, says why in `errors`.
-            frame.error = (object["result"] as? String).flatMap { $0.isEmpty ? nil : $0 } ?? failure(of: object)
-            frame.failedKind = .claude
+            frame.error =
+                (object["result"] as? String).flatMap { $0.isEmpty ? nil : $0 }
+                ?? failure(of: object)
+                ?? String(localized: "Claude could not finish the response.")
             return frame
         }
         if let usage = object["usage"] as? [String: Any] {
@@ -216,8 +217,7 @@ enum InstalledAIStreamDecoder {
             frame.sessionID = sessionID
         }
         if type == "result", object["is_error"] as? Bool == true {
-            frame.error = failure(of: object)
-            frame.failedKind = .grok
+            frame.error = failure(of: object) ?? String(localized: "Grok could not finish the response.")
         }
         return frame
     }
@@ -262,7 +262,7 @@ enum InstalledAIStreamDecoder {
                 frame.error =
                     (object["result"] as? String)
                     ?? message(in: object)
-                frame.failedKind = .cursor
+                    ?? String(localized: "Cursor could not finish the response.")
                 return frame
             }
             frame.completed = true

@@ -88,7 +88,8 @@ struct SnippetEditorView: View {
                 placeholderMenuFrame = $0
             }
             .tooltip(
-                String(localized: "Insert a dynamic placeholder"), alignment: .leading, dismissOnPress: true
+                String(localized: "Insert a dynamic placeholder"), alignment: .leading,
+                dismissOnPress: true
             )
             .accessibilityLabel("Insert a placeholder")
     }
@@ -120,13 +121,15 @@ struct SnippetEditorView: View {
     private var properties: some View {
         VStack(alignment: .leading, spacing: metrics.spacing.xxl) {
             field(
-                String(localized: "Name"), placeholder: String(localized: "Snippet name"), text: $editor.name,
+                String(localized: "Name"), placeholder: String(localized: "Snippet name"),
+                label: String(localized: "Snippet name"), text: $editor.name,
                 focus: .name,
                 hint: String(localized: "Required. Shown in the library and launcher."))
             field(
                 String(localized: "Keyword"), placeholder: String(localized: "Optional, for example !notes"),
-                text: $editor.keyword,
-                focus: .keyword, hint: String(localized: "Optional. Type this to expand the snippet."))
+                label: String(localized: "Snippet keyword"), text: $editor.keyword,
+                focus: .keyword, hint: String(localized: "Optional. Type this to expand the snippet.")
+            )
             option(
                 String(localized: "Enabled"),
                 detail: String(localized: "Disabled snippets cannot be expanded."),
@@ -155,14 +158,14 @@ struct SnippetEditorView: View {
     }
 
     private func field(
-        _ title: String, placeholder: String, text: Binding<String>,
+        _ title: String, placeholder: String, label: String, text: Binding<String>,
         focus: SnippetEditorSession.Field, hint: String
     ) -> some View {
         VStack(alignment: .leading, spacing: metrics.spacing.md) {
             fieldTitle(title)
             FormTextInput(
                 text: text, focused: focusBinding(focus), placeholder: placeholder,
-                label: String(localized: "Snippet \(title.lowercased())"), moveFocus: editor.advanceFocus
+                label: label, moveFocus: editor.advanceFocus
             )
             .frame(height: metrics.size.dialogButtonHeight)
             .formFieldChrome(focused: focusedField == focus)

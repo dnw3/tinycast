@@ -11,11 +11,11 @@ struct ExtensionInstaller: Sendable {
 
         var message: String {
             switch self {
-            case .downloading: return "Downloading…"
+            case .downloading: return String(localized: "Downloading…")
             case .installingDependencies(let manager):
                 return String(localized: "Installing dependencies with \(manager)…")
-            case .building: return "Building…"
-            case .installing: return "Installing…"
+            case .building: return String(localized: "Building…")
+            case .installing: return String(localized: "Installing…")
             }
         }
     }

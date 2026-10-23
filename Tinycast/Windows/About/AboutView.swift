@@ -145,24 +145,22 @@ private struct AboutLink: Identifiable {
     static let all: [AboutLink] = [
         AboutLink(
             id: "website", glyph: .symbol("globe"), title: String(localized: "Website"),
-            detail: String(localized: "tinycast.dev"),
+            detail: "tinycast.dev",
             url: URL(string: "https://tinycast.dev/")!),
         AboutLink(
-            id: "github", glyph: .brand("BrandGitHub"), title: String(localized: "GitHub"),
-            detail: String(localized: "github.com/abue-ammar/tinycast"),
+            id: "github", glyph: .brand("BrandGitHub"), title: "GitHub",
+            detail: "github.com/abue-ammar/tinycast",
             url: URL(string: "https://github.com/abue-ammar/tinycast")!),
         AboutLink(
-            id: "discord", glyph: .brand("BrandDiscord"), title: String(localized: "Discord"),
+            id: "discord", glyph: .brand("BrandDiscord"), title: "Discord",
             detail: String(localized: "Join the Tinycast community"),
             url: URL(string: "https://discord.gg/v2Eeb4QQy3")!),
         AboutLink(
-            id: "x", glyph: .brand("BrandX"), title: String(localized: "X"),
-            detail: String(localized: "@abue_ammar"),
+            id: "x", glyph: .brand("BrandX"), title: "X", detail: "@abue_ammar",
             url: URL(string: "https://x.com/abue_ammar")!),
         AboutLink(
             id: "email", glyph: .symbol("envelope"), title: String(localized: "Email"),
-            detail: String(localized: "iabueammar@gmail.com"),
-            url: URL(string: "mailto:iabueammar@gmail.com")!)
+            detail: "iabueammar@gmail.com", url: URL(string: "mailto:iabueammar@gmail.com")!)
     ]
 }
 

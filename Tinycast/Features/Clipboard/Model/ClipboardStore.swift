@@ -53,7 +53,7 @@ struct ClipboardItem: Identifiable, Hashable, Sendable {
             sourceBundleID: sourceBundleID)
     }
 
-    /// Referenced where it lies: `imagePath` stays nil, keeping an unowned file from `deleteBlob`.
+    /// Referenced where it lies: `imagePath` stays nil, keeping an unowned file from `deleteOwned`.
     init(filePath: String, createdAt: Date = Date(), sourceBundleID: String?) {
         self.init(
             id: UUID(), kind: .file, text: filePath, imagePath: nil, createdAt: createdAt,
@@ -108,13 +108,13 @@ enum ClipboardRetention: Int, CaseIterable, Identifiable, Sendable {
 
     var title: String {
         switch self {
-        case .day: return "1 Day"
-        case .week: return "1 Week"
-        case .month: return "1 Month"
-        case .threeMonths: return "3 Months"
-        case .sixMonths: return "6 Months"
-        case .year: return "1 Year"
-        case .forever: return "Forever"
+        case .day: return String(localized: "1 Day")
+        case .week: return String(localized: "1 Week")
+        case .month: return String(localized: "1 Month")
+        case .threeMonths: return String(localized: "3 Months")
+        case .sixMonths: return String(localized: "6 Months")
+        case .year: return String(localized: "1 Year")
+        case .forever: return String(localized: "Forever")
         }
     }
 
@@ -133,9 +133,9 @@ enum ClipboardDefaultAction: String, CaseIterable, Identifiable, Sendable {
 
     var title: String {
         switch self {
-        case .paste: return "Paste"
-        case .copy: return "Copy to Clipboard"
-        case .pastePlainText: return "Paste as Plain Text"
+        case .paste: return String(localized: "Paste")
+        case .copy: return String(localized: "Copy to Clipboard")
+        case .pastePlainText: return String(localized: "Paste as Plain Text")
         }
     }
 
@@ -182,6 +182,8 @@ enum ClipboardChord: CaseIterable, Sendable {
 @MainActor
 @Observable
 final class ClipboardStore {
+    enum UpdateError: Error { case tooLong, writeFailed }
+
     /// Newest-first with pins in place, every pin resident. docs/features/clipboard.md
     private(set) var items: [ClipboardItem] = [] {
         didSet {
@@ -220,6 +222,8 @@ final class ClipboardStore {
     /// Same memo for the empty query, so the pinned split runs once per mutation.
     @ObservationIgnored private var orderedCache: [ClipboardItem]?
 
+    /// Longest text history holds; a longer copy is skipped, since truncation would lose the tail.
+    nonisolated static let maxTextLength = 1_000_000
     nonisolated private static let memoryWindow = 1000
     /// The most unpinned rows any one query answers with, ordinary and OCR-only alike.
     nonisolated private static let searchLimit = 200
@@ -391,6 +395,7 @@ final class ClipboardStore {
         sqlite3_reset(stmt)
         sqlite3_clear_bindings(stmt)
         items = loaded
+        ImageDerivative.removeOrphans(in: imagesDir)
         // Age passes while the app isn't running; insert-time pruning alone can't catch that.
         enforceLimits()
     }
@@ -512,8 +517,8 @@ final class ClipboardStore {
             if let hash, surfaceDuplicate(hash) != nil { continue }
             if let stmt = insertStmt { Self.bindAndInsert(stmt, item, hash: hash) }
             items.insert(item, at: 0)
+            trimWindow()
         }
-        trimWindow()
         prune()
     }
 
@@ -597,6 +602,43 @@ final class ClipboardStore {
         if item.isPinned { unpin(item) } else { pin(item) }
     }
 
+    func updateText(_ text: String, of item: ClipboardItem) throws(UpdateError) -> ClipboardItem? {
+        guard item.kind == .text else { return nil }
+        guard Self.fitsTextLimit(text) else { throw .tooLong }
+        guard let select = prepare("SELECT rich_path FROM items WHERE id = ?1") else {
+            throw .writeFailed
+        }
+        sqlite3_bind_text(select, 1, item.id.uuidString, -1, SQLITE_TRANSIENT)
+        let staleRichText = sqlite3_step(select) == SQLITE_ROW ? Self.columnString(select, 0) : nil
+        sqlite3_finalize(select)
+        // The rich copy still holds the old text, so the edit drops it rather than paste stale RTF.
+        guard
+            let stmt = prepare(
+                "UPDATE items SET text = ?1, content_hash = ?3, rich_path = NULL WHERE id = ?2")
+        else { throw .writeFailed }
+        defer { sqlite3_finalize(stmt) }
+        sqlite3_bind_text(stmt, 1, text, -1, SQLITE_TRANSIENT)
+        sqlite3_bind_text(stmt, 2, item.id.uuidString, -1, SQLITE_TRANSIENT)
+        sqlite3_bind_text(stmt, 3, Self.contentHash(.text, Data(text.utf8)), -1, SQLITE_TRANSIENT)
+        guard sqlite3_step(stmt) == SQLITE_DONE else { throw .writeFailed }
+        guard sqlite3_changes(db) > 0 else { return nil }
+        richTextWrites[item.id] = nil
+        deleteOwned([staleRichText])
+        let index = items.firstIndex { $0.id == item.id }
+        let current = index.map { items[$0] } ?? item
+        let edited = ClipboardItem(
+            id: current.id, kind: .text, text: text, imagePath: nil, createdAt: current.createdAt,
+            sourceBundleID: current.sourceBundleID, pinnedAt: current.pinnedAt)
+        if let index {
+            items[index] = edited
+        } else {
+            // An FTS hit past the memory window: only the memo still holds the old text.
+            invalidateSearch()
+            searchRevision += 1
+        }
+        return edited
+    }
+
     func remove(_ item: ClipboardItem) {
         textSearchMatches.removeAll { $0.id == item.id }
         richTextWrites[item.id] = nil
@@ -634,7 +676,7 @@ final class ClipboardStore {
             sqlite3_finalize(stmt)
             if !orphaned.isEmpty {
                 Task.detached(priority: .utility) {
-                    for path in orphaned { try? FileManager.default.removeItem(atPath: path) }
+                    for path in orphaned { Self.removeBlob(atPath: path) }
                 }
             }
         }
@@ -727,6 +769,11 @@ final class ClipboardStore {
         invalidateSearch(preservingMatches: true)
         searchRevision += 1
         return true
+    }
+
+    /// Only an owned blob is immutable and ours, so only it may grow downscaled copies.
+    func ownsImage(of item: ClipboardItem) -> Bool {
+        item.imagePath.map(owns) ?? false
     }
 
     func imageURL(for item: ClipboardItem) -> URL? {
@@ -1023,6 +1070,12 @@ final class ClipboardStore {
         prune()
     }
 
+    /// `utf8.count` is O(1), so a giant copy is refused before any character walk begins.
+    nonisolated static func fitsTextLimit(_ text: String) -> Bool {
+        text.utf8.count <= maxTextLength
+            || (text.utf8.count <= 4 * maxTextLength && text.count <= maxTextLength)
+    }
+
     /// Kind-prefixed, so a path and the same characters copied as text never collide.
     nonisolated static func contentHash(_ kind: ClipboardItem.Kind, _ data: Data) -> String {
         var hasher = SHA256()
@@ -1125,9 +1178,7 @@ final class ClipboardStore {
             // A retention cut can strand hundreds of files, so delete them off the main actor.
             if !staleOwnedPaths.isEmpty {
                 Task.detached(priority: .utility) {
-                    for path in staleOwnedPaths {
-                        try? FileManager.default.removeItem(atPath: path)
-                    }
+                    for path in staleOwnedPaths { Self.removeBlob(atPath: path) }
                 }
             }
         }
@@ -1139,8 +1190,14 @@ final class ClipboardStore {
 
     private func deleteOwned(_ paths: [String?]) {
         for case let path? in paths where owns(path) {
-            try? FileManager.default.removeItem(atPath: path)
+            Self.removeBlob(atPath: path)
         }
+    }
+
+    nonisolated private static func removeBlob(atPath path: String) {
+        let url = URL(fileURLWithPath: path)
+        try? FileManager.default.removeItem(at: url)
+        ImageDerivative.removeCopies(of: url)
     }
 
     private func openDatabase() -> Bool {

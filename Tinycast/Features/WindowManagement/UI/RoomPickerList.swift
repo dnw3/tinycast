@@ -120,7 +120,7 @@ private struct RoomPickerRowView: View {
                 .strokeBorder(place == nil ? Theme.Colors.cardStroke : .clear, lineWidth: 1)
                 .background(Circle().fill(place == nil ? .clear : Theme.Colors.roomCardStroke))
             if let place {
-                Text("\(place)")
+                Text(place, format: .number)
                     .font(metrics.typography.rowTrailing.weight(.semibold))
                     .foregroundStyle(.white)
             }

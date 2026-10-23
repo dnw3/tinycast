@@ -11,7 +11,7 @@ struct NotesSettingsView: View {
                 Toggle(isOn: $settings.notesEnabled) {
                     SettingsFeatureToggleLabel(
                         anchor: .notesNotes, title: "Enable Notes",
-                        subtitle: String(localized: "Plain Markdown in a floating editor."))
+                        subtitle: "Plain Markdown in a floating editor.")
                 }
             }
             .settingsAnchor(.notesNotes)
@@ -28,7 +28,9 @@ struct NotesSettingsView: View {
                 .settingsEnabled(settings.notesEnabled && settings.notesRendersMarkdown)
                 LabeledContent {
                     if settings.notesFolder != nil {
-                        Button("Use Default", action: core.notesCoordinator.resetNotesFolder)
+                        Button(
+                            String(localized: "notes-use-default-folder", defaultValue: "Use Default"),
+                            action: core.notesCoordinator.resetNotesFolder)
                     }
                     Button("Choose…", action: core.notesCoordinator.chooseNotesFolder)
                 } label: {

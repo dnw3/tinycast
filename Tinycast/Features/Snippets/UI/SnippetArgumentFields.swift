@@ -40,7 +40,7 @@ struct SnippetArgumentFields: View {
                     }
                 }
                 .accessibilityElement(children: .contain)
-                .accessibilityLabel(String(localized: "Snippet argument \(argument.name)"))
+                .accessibilityLabel("Snippet argument \(argument.name)")
             }
         }
     }

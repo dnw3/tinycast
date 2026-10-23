@@ -30,10 +30,9 @@ struct RevealableSecureField: View {
                     .foregroundStyle(.secondary)
             }
             .buttonStyle(.plain)
-            .help(isRevealed ? String(localized: "Hide") : String(localized: "Show"))
+            .help(isRevealed ? "Hide" : "Show")
             .disabled(text.isEmpty)
-            .accessibilityLabel(
-                isRevealed ? String(localized: "Hide \(title)") : String(localized: "Show \(title)"))
+            .accessibilityLabel(isRevealed ? "Hide \(title)" : "Show \(title)")
         }
         .onChange(of: text.isEmpty) { _, isEmpty in
             if isEmpty, isRevealed { setRevealed(false) }

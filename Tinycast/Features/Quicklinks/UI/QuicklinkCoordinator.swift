@@ -455,11 +455,12 @@ final class QuicklinkCoordinator {
                 skipped == 0
                 ? String(localized: "Imported \(added.count) quicklinks.")
                 : String(
-                    localized:
-                        "Imported \(added.count) quicklinks. Skipped \(skipped) already in your library.")
+                    localized: """
+                        Imported \(added.count) quicklinks. Skipped \(skipped) already in your library.
+                        """)
             await core.showNotice(
-                title: String(localized: "Quicklinks Imported"), message: summary, symbol: Quicklink.sfSymbol,
-                tone: .success)
+                title: String(localized: "Quicklinks Imported"), message: summary,
+                symbol: Quicklink.sfSymbol, tone: .success)
         } catch {
             await core.showNotice(
                 title: String(localized: "Import Failed"), message: error.localizedDescription,

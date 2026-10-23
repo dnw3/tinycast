@@ -17,9 +17,7 @@ struct SettingsSidebarView: View {
                 found
             }
         }
-        .searchable(
-            text: $query, isPresented: $searching, placement: .sidebar, prompt: String(localized: "Search")
-        )
+        .searchable(text: $query, isPresented: $searching, placement: .sidebar, prompt: "Search")
         .onExitCommand { query = "" }
         .background(focusShortcut)
     }
@@ -27,10 +25,10 @@ struct SettingsSidebarView: View {
     private var browse: some View {
         List(selection: selection) {
             ForEach(SettingsSection.allCases) { section in
-                Section(LocalizedStringKey(section.title)) {
+                Section(section.title) {
                     ForEach(section.tabs) { tab in
                         Label {
-                            Text(LocalizedStringKey(tab.title))
+                            Text(tab.title)
                         } icon: {
                             SettingsTabIcon(
                                 systemImage: tab.systemImage,
@@ -95,8 +93,8 @@ private struct SettingsSearchResultRow: View {
     var body: some View {
         Label {
             VStack(alignment: .leading, spacing: Theme.Spacing.xxs) {
-                Text(LocalizedStringKey(entry.title)).lineLimit(1)
-                Text(entry.localizedBreadcrumb)
+                Text(entry.title).lineLimit(1)
+                Text(entry.breadcrumb)
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)

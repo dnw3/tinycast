@@ -35,10 +35,7 @@ final class FallbackCoordinator {
     /// Nil for a quicklink deleted since the order was stored.
     func entry(for fallback: Fallback) -> AppEntry? {
         switch fallback {
-        case .builtin(let builtin):
-            var entry = CommandCatalog.makeEntry(builtin.command)
-            entry.buildSearchProfile()
-            return entry
+        case .builtin(let builtin): return CommandCatalog.makeEntry(builtin.command)
         case .quicklink(let id): return quicklinks.quicklink(id: id).map(AppEntry.init)
         }
     }

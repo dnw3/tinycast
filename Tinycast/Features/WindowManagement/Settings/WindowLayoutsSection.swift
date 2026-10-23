@@ -20,7 +20,7 @@ struct WindowLayoutsSection: View {
             }
 
             if store.layouts.count > Self.filterThreshold {
-                SettingsFilterField(prompt: String(localized: "Search layouts…"), query: $query)
+                SettingsFilterField(prompt: "Search layouts…", query: $query)
             }
 
             if results.isEmpty {
@@ -75,7 +75,7 @@ private struct WindowLayoutSettingsRow: View {
     var body: some View {
         let entry = AppEntry(layout)
         let isVisible = visibility.isItemVisible(entry)
-        SettingsRow(title: layout.name, subtitle: layout.summary()) {
+        SettingsRow(title: layout.name, subtitle: layout.summary) {
             SymbolImage(name: layout.symbol, size: 13)
         } trailing: {
             AliasField(entry: entry)
@@ -89,15 +89,15 @@ private struct WindowLayoutSettingsRow: View {
                 Image(systemName: "play")
             }
             .buttonStyle(.plain)
-            .help(String(localized: "Run this layout"))
-            .accessibilityLabel(String(localized: "Run \(layout.name)"))
+            .help("Run this layout")
+            .accessibilityLabel("Run \(layout.name)")
 
             Button(action: onEdit) {
                 Image(systemName: "pencil")
             }
             .buttonStyle(.plain)
-            .help(String(localized: "Edit"))
-            .accessibilityLabel(String(localized: "Edit \(layout.name)"))
+            .help("Edit")
+            .accessibilityLabel("Edit \(layout.name)")
 
             Button {
                 core.windowLayoutCoordinator.duplicateWindowLayout(id: layout.id)
@@ -105,16 +105,16 @@ private struct WindowLayoutSettingsRow: View {
                 Image(systemName: "plus.square.on.square")
             }
             .buttonStyle(.plain)
-            .help(String(localized: "Duplicate"))
-            .accessibilityLabel(String(localized: "Duplicate \(layout.name)"))
+            .help("Duplicate")
+            .accessibilityLabel("Duplicate \(layout.name)")
 
             Button(action: onDelete) {
                 Image(systemName: "trash")
                     .foregroundStyle(Theme.Colors.destructive)
             }
             .buttonStyle(.plain)
-            .help(String(localized: "Delete"))
-            .accessibilityLabel(String(localized: "Delete \(layout.name)"))
+            .help("Delete")
+            .accessibilityLabel("Delete \(layout.name)")
 
             Toggle(
                 "", isOn: Binding(get: { isVisible }, set: { visibility.setItemVisible($0, for: entry) })
@@ -122,7 +122,7 @@ private struct WindowLayoutSettingsRow: View {
             .labelsHidden()
             .toggleStyle(.checkbox)
             .launcherVisibilityHelp()
-            .accessibilityLabel(String(localized: "Show \(layout.name) in launcher"))
+            .accessibilityLabel("Show \(layout.name) in launcher")
         }
     }
 }

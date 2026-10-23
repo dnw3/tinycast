@@ -41,7 +41,7 @@ private struct RoomSettingsRow: View {
     @Environment(VisibilityStore.self) private var visibility
 
     private var subtitle: String {
-        String(localized: "\(room.summary) · \(coordinator.layout(of: room).title)")
+        "\(room.summary) · \(coordinator.layout(of: room).title)"
     }
 
     var body: some View {
@@ -61,8 +61,8 @@ private struct RoomSettingsRow: View {
                 Image(systemName: "play")
             }
             .buttonStyle(.plain)
-            .help(String(localized: "Enter this room"))
-            .accessibilityLabel(String(localized: "Enter \(room.name)"))
+            .help("Enter this room")
+            .accessibilityLabel("Enter \(room.name)")
 
             Button {
                 coordinator.editWindows(of: room)
@@ -70,8 +70,8 @@ private struct RoomSettingsRow: View {
                 Image(systemName: "macwindow.badge.plus")
             }
             .buttonStyle(.plain)
-            .help(String(localized: "Choose its windows"))
-            .accessibilityLabel(String(localized: "Choose windows for \(room.name)"))
+            .help("Choose its windows")
+            .accessibilityLabel("Choose windows for \(room.name)")
 
             Button {
                 coordinator.deleteRoom(room)
@@ -80,8 +80,8 @@ private struct RoomSettingsRow: View {
                     .foregroundStyle(Theme.Colors.destructive)
             }
             .buttonStyle(.plain)
-            .help(String(localized: "Delete"))
-            .accessibilityLabel(String(localized: "Delete \(room.name)"))
+            .help("Delete")
+            .accessibilityLabel("Delete \(room.name)")
 
             Toggle(
                 "", isOn: Binding(get: { isVisible }, set: { visibility.setItemVisible($0, for: entry) })
@@ -89,7 +89,7 @@ private struct RoomSettingsRow: View {
             .labelsHidden()
             .toggleStyle(.checkbox)
             .launcherVisibilityHelp()
-            .accessibilityLabel(String(localized: "Show \(room.name) in launcher"))
+            .accessibilityLabel("Show \(room.name) in launcher")
         }
     }
 }

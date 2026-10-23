@@ -73,7 +73,8 @@ struct ClipboardList: View {
                         case .item(let item, let slot):
                             ClipboardRow(
                                 item: item, selected: item.id == selectedID,
-                                imageURL: store.imageURL(for: item), slot: slot
+                                imageURL: store.imageURL(for: item),
+                                ownsImage: store.ownsImage(of: item), slot: slot
                             )
                             .selectionFrame(item.id == selectedID)
                             .contentShape(Rectangle())
@@ -140,6 +141,7 @@ private struct ClipboardRow: View {
     let item: ClipboardItem
     let selected: Bool
     let imageURL: URL?
+    let ownsImage: Bool
     /// This row's ⌘-digit, or nil when it is not among the first ten visible pins.
     let slot: Character?
     @Environment(PaletteState.self) private var palette
@@ -205,7 +207,7 @@ private struct ClipboardRow: View {
                 Image(nsImage: IconCache.symbolIcon(named: "doc.text")).resizable()
             }
         case .image:
-            AsyncThumbnail(url: imageURL, maxPixel: 64) { image in
+            AsyncThumbnail(url: imageURL, maxPixel: 64, source: .image(derived: ownsImage)) { image in
                 image
                     .resizable()
                     .scaledToFill()
@@ -281,7 +283,8 @@ private enum ClipTitle {
 
 /// ImageIO for a blob we hold; QuickLook for a referenced file, which may be any type.
 private enum ThumbnailSource {
-    case image
+    /// `derived` only for a blob we hold, so no copy is ever written beside someone else's file.
+    case image(derived: Bool)
     case file
 
     func cached(_ url: URL, maxPixel: CGFloat) -> NSImage? {
@@ -293,7 +296,9 @@ private enum ThumbnailSource {
 
     func loadAsync(_ url: URL, maxPixel: CGFloat) async -> NSImage? {
         switch self {
-        case .image: return await ImageThumbnail.loadAsync(url, maxPixel: maxPixel)
+        case .image(let derived):
+            return await ImageThumbnail.loadAsync(
+                url, maxPixel: maxPixel, copyingWith: derived ? TextRecognitionWorker.executable : nil)
         case .file: return await FilePreviewThumbnail.loadAsync(url, maxPixel: maxPixel)
         }
     }
@@ -304,7 +309,7 @@ private struct AsyncThumbnail<Content: View, Placeholder: View>: View {
     let url: URL?
     let maxPixel: CGFloat
     /// Not nested here: the off-main decode would carry this view's isolated `View` conformances.
-    var source: ThumbnailSource = .image
+    var source: ThumbnailSource = .image(derived: false)
     @ViewBuilder let content: (Image) -> Content
     @ViewBuilder let placeholder: () -> Placeholder
 
@@ -375,8 +380,10 @@ struct ClipboardPreview: View {
                 }
             }
         case .image:
-            AsyncThumbnail(url: store.imageURL(for: item), maxPixel: metrics.size.clipboardPreviewPixel) {
-                image in
+            AsyncThumbnail(
+                url: store.imageURL(for: item), maxPixel: metrics.size.clipboardPreviewPixel,
+                source: .image(derived: store.ownsImage(of: item))
+            ) { image in
                 image
                     .resizable()
                     .scaledToFit()
@@ -499,10 +506,11 @@ private struct ClipboardInfoSection: View {
             rows.append(
                 InfoRow(
                     label: String(localized: "Type"),
-                    value: details.typeName ?? Bundle.main.localizedString(forKey: ClipboardFileKind.of(path: path).title, value: nil, table: nil)))
+                    value: details.typeName ?? ClipboardFileKind.of(path: path).title))
             rows.append(
                 InfoRow(
-                    label: String(localized: "Path"), value: (path as NSString).abbreviatingWithTildeInPath))
+                    label: String(localized: "Path"),
+                    value: (path as NSString).abbreviatingWithTildeInPath))
             if let bytes = details.fileBytes {
                 rows.append(
                     InfoRow(
@@ -512,7 +520,8 @@ private struct ClipboardInfoSection: View {
         }
         rows.append(
             InfoRow(
-                label: String(localized: "Copied"), value: Self.copiedFormatter.string(from: item.createdAt)))
+                label: String(localized: "Copied"),
+                value: Self.copiedFormatter.string(from: item.createdAt)))
         return rows
     }
 

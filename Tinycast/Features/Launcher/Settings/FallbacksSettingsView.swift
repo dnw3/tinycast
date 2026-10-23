@@ -55,18 +55,18 @@ private struct FallbackRow: View {
                     Image(systemName: "chevron.up")
                 }
                 .disabled(index == 0)
-                .accessibilityLabel(String(localized: "Move \(entry.name) up"))
+                .accessibilityLabel("Move \(entry.name) up")
                 Button {
                     move(by: 1)
                 } label: {
                     Image(systemName: "chevron.down")
                 }
                 .disabled(index == order.count - 1)
-                .accessibilityLabel(String(localized: "Move \(entry.name) down"))
+                .accessibilityLabel("Move \(entry.name) down")
                 Toggle("", isOn: enabledBinding)
                     .labelsHidden()
                     .toggleStyle(.checkbox)
-                    .accessibilityLabel(String(localized: "Offer \(entry.name) as a fallback"))
+                    .accessibilityLabel("Offer \(entry.name) as a fallback")
             }
         }
     }

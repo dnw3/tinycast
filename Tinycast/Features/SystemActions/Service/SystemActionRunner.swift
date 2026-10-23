@@ -129,9 +129,7 @@ enum SystemActionRunner {
             guard ejected > 0 else {
                 return SystemActionFeedback(String(localized: "No Disks to Eject"), isNoOp: true)
             }
-            return SystemActionFeedback(
-                ejected == 1
-                    ? String(localized: "1 Disk Ejected") : String(localized: "\(ejected) Disks Ejected"))
+            return SystemActionFeedback(String(localized: "\(ejected) Disks Ejected"))
         case .toggleHiddenFiles:
             let shown = try await toggleDefault(
                 domain: "com.apple.finder", key: "AppleShowAllFiles")
@@ -226,7 +224,7 @@ enum SystemActionRunner {
                 device, &address, 0, nil, UInt32(MemoryLayout<Float32>.size), &applied)
             guard status == noErr else {
                 throw SystemActionFailure(
-                    String(localized: "macOS could not change the output volume (error \(status))."))
+                    String(localized: "macOS could not change the output volume (error \(String(status)))."))
             }
         }
         if value > 0 { try? setMuted(false, on: device) }
@@ -332,7 +330,7 @@ enum SystemActionRunner {
             device, &address, 0, nil, UInt32(MemoryLayout<UInt32>.size), &value)
         guard status == noErr else {
             throw SystemActionFailure(
-                String(localized: "macOS could not change mute state (error \(status))."))
+                String(localized: "macOS could not change mute state (error \(String(status)))."))
         }
     }
 
@@ -344,7 +342,8 @@ enum SystemActionRunner {
         defer { dlclose(handle) }
         typealias LockScreen = @convention(c) () -> Int32
         guard let symbol = dlsym(handle, "SACLockScreenImmediate") else {
-            throw SystemActionFailure(String(localized: "This macOS version does not expose screen locking."))
+            throw SystemActionFailure(
+                String(localized: "This macOS version does not expose screen locking."))
         }
         _ = unsafeBitCast(symbol, to: LockScreen.self)()
     }
@@ -353,8 +352,9 @@ enum SystemActionRunner {
         guard Permissions.ensureAccessibility() else {
             throw SystemActionFailure(
                 String(
-                    localized: "Allow Tinycast to control your Mac in Accessibility settings, then try again."
-                ),
+                    localized: """
+                        Allow Tinycast to control your Mac in Accessibility settings, then try again.
+                        """),
                 settings: .accessibility)
         }
         // The same route as the keyboard's media keys; 0xA/0xB are down and up.
@@ -417,9 +417,8 @@ enum SystemActionRunner {
             }
         }
         guard failures.isEmpty else {
-            throw SystemActionFailure(
-                String(localized: "Some disks could not be ejected:\n\n")
-                    + failures.joined(separator: String(localized: "\n")))
+            let list = failures.joined(separator: "\n")
+            throw SystemActionFailure(String(localized: "Some disks could not be ejected:\n\n\(list)"))
         }
         return ejected
     }
@@ -474,8 +473,9 @@ enum SystemActionRunner {
         guard Permissions.ensureAccessibility() else {
             throw SystemActionFailure(
                 String(
-                    localized: "Allow Tinycast to control your Mac in Accessibility settings, then try again."
-                ),
+                    localized: """
+                        Allow Tinycast to control your Mac in Accessibility settings, then try again.
+                        """),
                 settings: .accessibility)
         }
         guard
@@ -491,9 +491,9 @@ enum SystemActionRunner {
             guard let action = dismissAction(of: notification) else {
                 throw SystemActionFailure(
                     String(
-                        localized:
-                            "This version of Notification Center exposes no dismiss control Tinycast can use."
-                    ))
+                        localized: """
+                            This version of Notification Center exposes no dismiss control Tinycast can use.
+                            """))
             }
             let result = AXUIElementPerformAction(notification, action as CFString)
             guard result == .success || result == .invalidUIElement else {
@@ -603,9 +603,10 @@ enum SystemActionRunner {
             if number == -1743 {
                 throw SystemActionFailure(
                     String(
-                        localized:
-                            "Allow Tinycast to control the requested app in Automation settings, then try again."
-                    ),
+                        localized: """
+                            Allow Tinycast to control the requested app in Automation settings, \
+                            then try again.
+                            """),
                     settings: .automation)
             }
             throw SystemActionFailure(detail)
@@ -628,12 +629,9 @@ enum SystemActionRunner {
             process.standardOutput = stdout
             process.standardError = stderr
             do { try process.runObservingExit().wait() } catch {
+                let name = URL(fileURLWithPath: executable).lastPathComponent
                 throw SystemActionFailure(
-                    String(
-                        localized:
-                            "\(URL(fileURLWithPath: executable).lastPathComponent) could not start: \(error.localizedDescription)"
-                    )
-                )
+                    String(localized: "\(name) could not start: \(error.localizedDescription)"))
             }
             let outData = stdout.fileHandleForReading.readDataToEndOfFile()
             let errorData = stderr.fileHandleForReading.readDataToEndOfFile()

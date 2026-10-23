@@ -145,9 +145,12 @@ private struct SnippetInfoSection: View {
         if let keycaps = hotKeys.binding(for: .snippet(id: record.id))?.keycaps {
             rows.append(InfoRow(label: String(localized: "Shortcut"), keycaps: keycaps))
         }
-        rows.append(InfoRow(label: String(localized: "File"), value: record.fileURL.lastPathComponent))
         rows.append(
-            InfoRow(label: String(localized: "Characters"), value: record.snippet.text.count.formatted()))
+            InfoRow(label: String(localized: "File"), value: record.fileURL.lastPathComponent))
+        rows.append(
+            InfoRow(
+                label: String(localized: "Characters"),
+                value: record.snippet.text.count.formatted()))
         return rows
     }
 

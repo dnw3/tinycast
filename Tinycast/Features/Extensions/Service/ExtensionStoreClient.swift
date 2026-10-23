@@ -80,9 +80,10 @@ struct ExtensionStoreClient: Sendable {
             else {
                 throw ExtensionStoreError.rejected(
                     String(
-                        localized:
-                            "\(source.owner)/\(source.repository) has no \(source.path) folder at \(source.ref)."
-                    ))
+                        localized: """
+                            \(source.owner)/\(source.repository) has no \(source.path) folder at \
+                            \(source.ref).
+                            """))
             }
             sha = next
         }
@@ -106,8 +107,9 @@ struct ExtensionStoreClient: Sendable {
             if isGitHubAPI, http.statusCode == 404 {
                 throw ExtensionStoreError.rejected(
                     String(
-                        localized:
-                            "That repository or branch wasn't found. A private repository can't be read."))
+                        localized: """
+                            That repository or branch wasn't found. A private repository can't be read.
+                            """))
             }
             // GitHub explains a rate limit in the body; surfacing that beats a bare "403".
             struct Message: Decodable { let message: String }

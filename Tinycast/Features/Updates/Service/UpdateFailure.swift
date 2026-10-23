@@ -37,14 +37,16 @@ enum UpdateFailure: LocalizedError, Equatable {
         switch self {
         case .identityMismatch, .bundleMismatch, .versionMismatch:
             return String(
-                localized:
-                    "Nothing was installed. Download the release from GitHub instead, so you can check it yourself."
-            )
+                localized: """
+                    Nothing was installed. Download the release from GitHub instead, so you can \
+                    check it yourself.
+                    """)
         case .replaceFailed:
             return String(
-                localized:
-                    "Nothing was installed. This usually means /Applications is not writable by your account."
-            )
+                localized: """
+                    Nothing was installed. This usually means /Applications is not writable by \
+                    your account.
+                    """)
         case .quarantined:
             return String(localized: "Nothing was installed.")
         default:

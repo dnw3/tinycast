@@ -249,7 +249,7 @@ final class AIChatState {
             discardPendingText()
             return
         }
-        finishLast(state: .failed, fallback: "Cancelled", reports: false)
+        finishLast(state: .failed, fallback: String(localized: "Cancelled"), reports: false)
     }
 
     func startNewChat() {
@@ -354,7 +354,7 @@ final class AIChatState {
             message.usage = usage
             session.replaceLast(with: message)
         case .finished:
-            finishLast(state: .complete, fallback: "No response")
+            finishLast(state: .complete, fallback: String(localized: "No response"))
         }
     }
 
@@ -482,7 +482,7 @@ enum ChatAttachmentRefusal: Equatable, Sendable {
         case .count:
             return String(
                 localized: "\(AIAttachmentBudget.maxCount) attachments is all one message can carry.")
-        case .size: return String(localized: "That file is too big for this message — send these first.")
+        case .size: return String(localized: "This file is too large to attach.")
         case .textTooLong:
             let limit = AIAttachmentBudget.maxInlinedTextBytes / 1_024
             return String(localized: "That text file is too big to attach — \(limit) KB is the limit.")

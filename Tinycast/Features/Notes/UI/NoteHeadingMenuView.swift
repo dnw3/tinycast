@@ -37,7 +37,7 @@ struct NoteHeadingMenuView: View {
         .glassEffect(.regular, in: surface)
         .clipShape(surface)
         .accessibilityElement(children: .contain)
-        .accessibilityLabel(String(localized: "Heading"))
+        .accessibilityLabel("Heading")
     }
 }
 

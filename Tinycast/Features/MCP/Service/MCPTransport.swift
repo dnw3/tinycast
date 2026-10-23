@@ -54,8 +54,7 @@ enum MCPServerStatus: Equatable, Sendable {
         case .stopped: return String(localized: "Stopped")
         case .signInRequired: return String(localized: "Sign-in required")
         case .connecting: return String(localized: "Connecting…")
-        case .ready(let tools):
-            return tools == 1 ? String(localized: "1 tool") : String(localized: "\(tools) tools")
+        case .ready(let tools): return String(localized: "\(tools) tools")
         case .failed(let message): return message
         }
     }

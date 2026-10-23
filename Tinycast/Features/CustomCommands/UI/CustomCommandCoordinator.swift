@@ -217,7 +217,7 @@ final class CustomCommandCoordinator {
         panel.canChooseDirectories = true
         panel.canChooseFiles = false
         panel.allowsMultipleSelection = false
-        panel.prompt = "Import"
+        panel.prompt = String(localized: "Import")
         panel.message = String(localized: "Choose a folder of Raycast script commands.")
         NSApp.activate(ignoringOtherApps: true)
         guard panel.runModal() == .OK else { return nil }
@@ -227,22 +227,22 @@ final class CustomCommandCoordinator {
     /// Scripts run arbitrary code, so this warns the way a backup of custom commands does.
     private func confirmScriptImport(count: Int) async -> Bool {
         await core.confirm(
-            title: count == 1
-                ? String(localized: "Import 1 script?") : String(localized: "Import \(count) scripts?"),
-            message:
-                String(
-                    localized:
-                        "Imported commands run these files with your user account. Only import scripts you trust."
-                ),
-            symbol: CustomCommand.sfSymbol, confirmTitle: String(localized: "Import"), confirmRole: .standard)
+            title: String(localized: "Import \(count) scripts?"),
+            message: String(
+                localized: """
+                    Imported commands run these files with your user account. Only import scripts you \
+                    trust.
+                    """),
+            symbol: CustomCommand.sfSymbol, confirmTitle: String(localized: "Import"),
+            confirmRole: .standard)
     }
 
     private func importSummary(added: Int, offered: Int) -> String {
-        let imported =
-            added == 1
-            ? String(localized: "Imported 1 command.") : String(localized: "Imported \(added) commands.")
-        guard offered > added else { return imported }
-        return imported + String(localized: " Skipped \(offered - added) already in your library.")
+        guard offered > added else { return String(localized: "Imported \(added) commands.") }
+        return String(
+            localized: """
+                Imported \(added) commands. Skipped \(offered - added) already in your library.
+                """)
     }
 
     // MARK: - Running
@@ -405,7 +405,8 @@ final class CustomCommandCoordinator {
             return nil
         }
         return String(
-            localized:
-                "If this is a shell alias or function, turn on Load Shell Environment for this command.")
+            localized: """
+                If this is a shell alias or function, turn on Load Shell Environment for this command.
+                """)
     }
 }

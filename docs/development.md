@@ -155,6 +155,23 @@ already-running server does not re-read `.compile`.
 the repo root excludes the generated files and the two off-limits files in `DesignSystem/Scrolling/`.
 The comment policy in [standards.md](standards.md#comments) is deliberately not among its rules.
 
+`lint.sh` also runs `check-localizations.js`, which fails on a string missing from any language, a
+missing plural form, a stale entry, or a translation whose format specifiers differ from the source.
+
+## Localization
+
+```sh
+./Scripts/sync-strings.sh   # build, merge new UI strings into Localizable.xcstrings, then check it
+```
+
+`xcodebuild` extracts strings but never writes them back to the catalog — only a build in Xcode's IDE
+does — so run this after changing UI text, then translate what it added (Xcode's catalog editor, or
+the JSON directly). A string whose source changed leaves its old entry stale; delete it. The rules for
+writing localizable code are in [standards.md](standards.md#localization).
+
+To see a language without changing the setting, launch the Debug build with
+`-AppleLanguages '(de)'`; add `-NSDoubleLocalizedStrings YES` to find labels that truncate.
+
 ## Formatting
 
 ```sh
@@ -200,6 +217,10 @@ node Scripts/gen-currencies.js       # -> Tinycast/Features/Calculator/Model/Cur
 node Scripts/gen-countries.js        # -> Tinycast/Features/Calculator/Model/CountryZoneData.generated.swift
 ```
 
+`node Scripts/gen-dictation-sounds.js` synthesizes Dictation's start and stop chimes into
+`Tinycast/Resources/DictationStart.wav` and `DictationStop.wav`. It needs no network and writes the same
+bytes every run; change the notes or levels in the script, never the WAV files.
+
 `gen-emoji.js` also writes one CLDR keyword pack per language in its `KEYWORD_LOCALES`; adding a
 language is one line there. Pass a directory to keep the downloads between runs:
 `node Scripts/gen-emoji.js /tmp/emoji-sources`.
@@ -220,18 +241,3 @@ left out and decided by hand in `CalcCurrency.contested`. The crypto tickers are
 they have no external source of truth, so `CalcCurrency.crypto` is hand-written, and that same list is
 the set of symbols the fetch asks for. Re-run the script when a currency is added or retired; nothing
 breaks in the meantime, since an unquoted code just reports "no exchange rate".
-
-## Localization
-
-The app uses `Localizable.xcstrings` and `InfoPlist.xcstrings` with English as the source language
-and Simplified Chinese as the first translation. macOS chooses the application language.
-SwiftUI literal text is extracted directly; app-owned strings passed through variables or AppKit
-must use `String(localized:)` at their display boundary. Keep model values, persistent IDs, user
-content, third-party strings, protocol fields and paths independent of the app language.
-
-Debug builds emit compiler `.stringsdata`. After introducing or changing text, run
-`./Scripts/sync-localization.sh build/DerivedData` (or your DerivedData path), complete the catalog's
-translations, then rebuild. `./Scripts/lint.sh` checks missing Chinese and format arguments;
-`./Scripts/run-tests.sh localization-test` compiles and loads the actual resources. These checks
-cover extracted keys; they do not prove that every ordinary runtime string has been migrated.
-See [the current scan](plans/localization-audit.md) for the remaining audit boundaries.

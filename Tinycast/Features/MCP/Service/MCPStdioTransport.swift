@@ -36,7 +36,8 @@ final class MCPStdioTransport: MCPTransport {
     func connect() async throws {
         if isRunning { return }
         guard let executable = await ExecutableLocator.locate(command) else {
-            throw MCPTransportError.launchFailed(String(localized: "`\(command)` was not found on this Mac."))
+            throw MCPTransportError.launchFailed(
+                String(localized: "`\(command)` was not found on this Mac."))
         }
         // A second caller may have started it during the lookup.
         if isRunning { return }
@@ -182,7 +183,8 @@ final class MCPStdioTransport: MCPTransport {
         drainStderr()
         let detail = String(decoding: stderrBuffer, as: UTF8.self)
             .trimmingCharacters(in: .whitespacesAndNewlines)
-        let message = detail.isEmpty ? String(localized: "The server exited with status \(status).") : detail
+        let message =
+            detail.isEmpty ? String(localized: "The server exited with status \(status).") : detail
         // Pending calls are failed before the owner hears, or closing would overwrite the reason.
         cleanup(error: MCPTransportError.requestFailed(message))
         onExit?(message)

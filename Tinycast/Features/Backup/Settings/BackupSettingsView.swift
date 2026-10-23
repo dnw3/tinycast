@@ -40,7 +40,8 @@ struct BackupSettingsView: View {
         guard let name = raycastFile?.lastPathComponent else {
             return String(localized: "A .rayconfig file from Raycast 2.0 or later.")
         }
-        return isRaycastExport ? String(localized: "\(name) — Raycast export")
+        return isRaycastExport
+            ? String(localized: "\(name) — Raycast export")
             : String(localized: "\(name) — not a Raycast export")
     }
 

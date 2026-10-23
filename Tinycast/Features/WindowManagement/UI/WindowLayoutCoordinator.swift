@@ -135,7 +135,7 @@ final class WindowLayoutCoordinator {
             let openSettings = await core.reportFailure(
                 title: String(localized: "Tinycast Needs Accessibility Access"),
                 message: String(localized: "Arranging windows uses the same permission as pasting."),
-                symbol: layout.symbol, recovery: "Open Settings")
+                symbol: layout.symbol, recovery: String(localized: "Open Settings"))
             if openSettings { Permissions.openAccessibilitySettings() }
             return
         }
@@ -144,30 +144,24 @@ final class WindowLayoutCoordinator {
         guard outcome.didAnything else {
             await core.showNotice(
                 title: String(localized: "Couldn't Run “\(layout.name)”"), message: detail,
-                symbol: layout.symbol,
-                tone: .danger)
+                symbol: layout.symbol, tone: .danger)
             return
         }
-        core.showMessage(String(localized: "\(layout.name) — \(detail)"), tone: .neutral)
+        core.showMessage("\(layout.name) — \(detail)", tone: .neutral)
     }
 
     private func detail(for outcome: WindowLayoutRunner.Outcome) -> String? {
         var parts: [String] = []
-        if let skipped = WindowLayoutPlan(placements: [], skipped: outcome.skipped).skippedSummary() {
+        if let skipped = WindowLayoutPlan(placements: [], skipped: outcome.skipped).skippedSummary {
             parts.append(skipped)
         }
         if !outcome.neverAppeared.isEmpty {
             let count = outcome.neverAppeared.count
-            parts.append(
-                count == 1
-                    ? String(localized: "1 app didn't open") : String(localized: "\(count) apps didn't open"))
+            parts.append(String(localized: "\(count) apps didn't open"))
         }
         let failed = outcome.openFailures.count
         if failed > 0 {
-            parts.append(
-                failed == 1
-                    ? String(localized: "1 app couldn't open")
-                    : String(localized: "\(failed) apps couldn't open"))
+            parts.append(String(localized: "\(failed) apps couldn't open"))
         }
         return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }

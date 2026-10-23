@@ -319,7 +319,8 @@ final class CodexTurnRunner {
             })
         else {
             continuation.finish(
-                throwing: AIProviderError.unavailable(String(localized: "There is no user message to send.")))
+                throwing: AIProviderError.unavailable(
+                    String(localized: "There is no user message to send.")))
             return
         }
         let key = ObjectIdentifier(token)
@@ -348,7 +349,7 @@ final class CodexTurnRunner {
 
             guard models.isEmpty || models.contains(where: { $0.id == model }) else {
                 throw AIProviderError.unavailable(
-                    String(localized: "\(model) is no longer available. Choose another model in Settings."))
+                    "\(model) is no longer available. Choose another model in Settings.")
             }
 
             try await prepareThread(

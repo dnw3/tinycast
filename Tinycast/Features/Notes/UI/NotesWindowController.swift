@@ -3,7 +3,7 @@ import SwiftUI
 
 @MainActor
 final class NotesWindowController: NSObject, NSWindowDelegate {
-    private static let frameAutosaveName = String(localized: "Notes Window")
+    private static let frameAutosaveName = "Notes Window"
 
     private unowned let coordinator: NotesCoordinator
     private var panel: NotesPanel?
@@ -62,7 +62,7 @@ final class NotesWindowController: NSObject, NSWindowDelegate {
         let inset: CGFloat = 40
         let destination = NoteWindowPlacement.topRight(panel.frame, in: visible, inset: inset)
         NSAnimationContext.runAnimationGroup { context in
-            context.duration = Theme.Duration.enter
+            context.duration = Motion.duration(Theme.Duration.enter)
             context.timingFunction = CAMediaTimingFunction(name: .easeOut)
             panel.animator().setFrame(destination, display: false)
         }
@@ -169,7 +169,7 @@ final class NotesWindowController: NSObject, NSWindowDelegate {
 
     private func ensurePanel() -> NotesPanel {
         if let panel { return panel }
-        let root = NotesView().environment(coordinator)
+        let root = NotesView().environment(coordinator).motionScope()
         let hosting = NSHostingView(rootView: root)
         hosting.sizingOptions = []
         let panel = NotesPanel(

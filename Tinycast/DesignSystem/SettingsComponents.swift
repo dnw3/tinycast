@@ -7,10 +7,11 @@ struct SettingsTabIcon: View {
     let systemImage: String
     let tint: Color
     var size = Theme.Size.settingsSidebarGlyph + Theme.Spacing.xs * 2
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         let scale = size / (Theme.Size.settingsSidebarGlyph + Theme.Spacing.xs * 2)
-        Image(systemName: systemImage)
+        Image(systemName: SystemSymbolName.resolve(systemImage, isDark: colorScheme == .dark))
             .resizable()
             .scaledToFit()
             .frame(
@@ -28,8 +29,8 @@ struct SettingsTabIcon: View {
 
 struct SettingsFeatureToggleLabel: View {
     let anchor: SettingsAnchor
-    let title: String
-    let subtitle: String
+    let title: LocalizedStringResource
+    let subtitle: LocalizedStringResource
 
     var body: some View {
         HStack(spacing: Theme.Spacing.lg) {
@@ -65,7 +66,7 @@ struct SettingsRow<Icon: View, Trailing: View>: View {
             VStack(alignment: .leading, spacing: Theme.Spacing.xxs) {
                 Group {
                     if let anchor {
-                        SettingsRowTitle(anchor, title)
+                        SettingsRowTitle(anchor, verbatim: title)
                     } else {
                         Text(title)
                     }
@@ -95,15 +96,25 @@ enum SettingsListMetrics {
 extension SettingsRow where Icon == EmptyView {
     init(
         title: String, subtitle: String? = nil, subtitleLineLimit: Int = 1,
-        alignment: VerticalAlignment = .center,
-        labelOpacity: Double = 1, anchor: SettingsAnchor? = nil,
+        alignment: VerticalAlignment = .center, labelOpacity: Double = 1,
         @ViewBuilder trailing: () -> Trailing
     ) {
         self.init(
             title: title, subtitle: subtitle, subtitleLineLimit: subtitleLineLimit,
-            alignment: alignment, labelOpacity: labelOpacity,
-            anchor: anchor, icon: { EmptyView() },
+            alignment: alignment, labelOpacity: labelOpacity, icon: { EmptyView() },
             trailing: trailing)
+    }
+
+    /// A fixed row a search result lands on, so its title is always Tinycast's own text.
+    init(
+        title: LocalizedStringResource, subtitle: String? = nil, subtitleLineLimit: Int = 1,
+        alignment: VerticalAlignment = .center, anchor: SettingsAnchor,
+        @ViewBuilder trailing: () -> Trailing
+    ) {
+        self.init(
+            title: title.resolved(), subtitle: subtitle,
+            subtitleLineLimit: subtitleLineLimit, alignment: alignment, anchor: anchor,
+            icon: { EmptyView() }, trailing: trailing)
     }
 }
 
@@ -121,14 +132,14 @@ struct SettingsScopeRow: View {
                 if isMissing {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .foregroundStyle(.orange)
-                        .help(String(localized: "This location no longer exists."))
+                        .help("This location no longer exists.")
                 }
                 Button(action: onRemove) {
                     Image(systemName: "xmark.circle.fill")
                         .foregroundStyle(.tertiary)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel(String(localized: "Remove \(scope)"))
+                .accessibilityLabel("Remove \(scope)")
             }
         } label: {
             HStack {
@@ -191,13 +202,13 @@ extension View {
 
     /// The one place that says hiding a row from the launcher never unbinds its shortcut.
     func launcherVisibilityHelp() -> some View {
-        help(String(localized: "Show in launcher. Its shortcut works either way."))
+        help("Show in launcher. Its shortcut works either way.")
     }
 }
 
 struct SettingsEditorHeader: View {
-    let title: String
-    var subtitle: String?
+    let title: LocalizedStringResource
+    var subtitle: LocalizedStringResource?
 
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
@@ -214,12 +225,12 @@ struct SettingsEditorHeader: View {
 }
 
 struct SettingsEditorField<Content: View>: View {
-    let title: String
+    let title: LocalizedStringResource
     var labelFont: Font?
     @ViewBuilder var content: Content
 
     init(
-        _ title: String, labelFont: Font? = nil,
+        _ title: LocalizedStringResource, labelFont: Font? = nil,
         @ViewBuilder content: () -> Content
     ) {
         self.title = title
@@ -287,8 +298,8 @@ private struct SettingsEditorPanelSurface: ViewModifier {
 
 struct FeatureSwitchSection: View {
     let anchor: SettingsAnchor
-    let enableTitle: String
-    var enableSubtitle: String?
+    let enableTitle: LocalizedStringResource
+    var enableSubtitle: LocalizedStringResource?
     @Binding var isEnabled: Bool
     @Binding var showsInLauncher: Bool
     var showsIcon = false
@@ -324,7 +335,7 @@ struct FeatureSwitchSection: View {
 
 /// The filter row above a long list, shaped like a search field rather than a form text field.
 struct SettingsFilterField: View {
-    let prompt: String
+    let prompt: LocalizedStringResource
     @Binding var query: String
     /// The plain field has no bezel: without this only the glyphs are a target.
     @FocusState private var focused: Bool
@@ -347,7 +358,7 @@ struct SettingsFilterField: View {
                         .foregroundStyle(.tertiary)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel(String(localized: "Clear search"))
+                .accessibilityLabel("Clear search")
             }
         }
         .contentShape(.rect)
@@ -484,7 +495,7 @@ struct AliasField: View {
                         .foregroundStyle(.tertiary)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel(String(localized: "Clear alias for \(name)"))
+                .accessibilityLabel("Clear alias for \(name)")
             }
         }
         .onAppear { draft = aliases.alias(for: key) ?? "" }
@@ -505,7 +516,7 @@ struct AliasField: View {
         .background(shape.fill(Theme.Colors.cardFill))
         .overlay(shape.strokeBorder(Theme.Colors.cardStroke, lineWidth: 1))
         .clipShape(shape)
-        .accessibilityLabel(String(localized: "Alias for \(name)"))
+        .accessibilityLabel("Alias for \(name)")
     }
 
     /// The one commit path — ↵ or focus landing elsewhere; a blank draft removes the alias.

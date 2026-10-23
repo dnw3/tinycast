@@ -34,15 +34,9 @@ enum AppleTranslationService {
         let source = Locale.Language(identifier: request.source)
         let target = Locale.Language(identifier: request.target)
         if source.isEquivalent(to: target) { return request.texts }
-        let status = await LanguageAvailability().status(from: source, to: target)
+        let pair = try await installedPair(from: source, to: target)
         try Task.checkCancellation()
-        switch status {
-        case .installed: break
-        case .supported: throw Failure.needsLanguages
-        case .unsupported: throw Failure.unsupported
-        @unknown default: throw Failure.unsupported
-        }
-        let session = TranslationSession(installedSource: source, target: target)
+        let session = TranslationSession(installedSource: pair.source, target: pair.target)
         let result = try await session.translations(
             from: request.texts.enumerated().map {
                 .init(sourceText: $0.element, clientIdentifier: String($0.offset))
@@ -53,5 +47,38 @@ enum AppleTranslationService {
             return .init(id: id, text: response.targetText)
         }
         return try request.validated(items)
+    }
+
+    /// A download is a locale, so the region a bare code resolves to can miss the one installed.
+    private static func installedPair(
+        from source: Locale.Language, to target: Locale.Language
+    ) async throws -> (source: Locale.Language, target: Locale.Language) {
+        let availability = LanguageAvailability()
+        switch await availability.status(from: source, to: target) {
+        case .installed: return (source, target)
+        case .supported: break
+        case .unsupported: throw Failure.unsupported
+        @unknown default: throw Failure.unsupported
+        }
+        let supported = await availability.supportedLanguages
+        for candidate in variants(of: source, among: supported) {
+            for destination in variants(of: target, among: supported) {
+                if await availability.status(from: candidate, to: destination) == .installed {
+                    return (candidate, destination)
+                }
+            }
+        }
+        throw Failure.needsLanguages
+    }
+
+    /// Region may move, since one English is another's asset, but a different script is a language.
+    private static func variants(
+        of language: Locale.Language, among supported: [Locale.Language]
+    ) -> [Locale.Language] {
+        [language]
+            + supported.filter {
+                $0.languageCode == language.languageCode && $0.script == language.script
+                    && !$0.isEquivalent(to: language)
+            }
     }
 }

@@ -65,7 +65,7 @@ struct MeetingDetailsView: View {
 
     private var subtitle: String {
         let day = UpcomingWindow.dayLabel(meeting.start, calendar: .current)
-        return String(localized: "\(day) · \(MeetingTimeFormat.range(of: meeting)) · \(meeting.calendarName)")
+        return "\(day) · \(MeetingTimeFormat.range(of: meeting)) · \(meeting.calendarName)"
     }
 
     private func sectionHeader(_ title: String) -> some View {

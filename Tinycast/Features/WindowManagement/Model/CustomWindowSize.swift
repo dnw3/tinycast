@@ -104,6 +104,11 @@ struct CustomWindowSize: Codable, Hashable, Identifiable, Sendable {
 
     var entryID: String { Self.entryIDPrefix + id.uuidString.lowercased() }
 
+    var summary: String {
+        let base = "\(width.label) × \(height.label) · \(anchor.title)"
+        return offset == .zero ? base : String(localized: "\(base) · Offset \(offset.x), \(offset.y) pt")
+    }
+
     static func id(fromEntryID entryID: String) -> UUID? {
         guard entryID.hasPrefix(entryIDPrefix) else { return nil }
         return UUID(uuidString: String(entryID.dropFirst(entryIDPrefix.count)))
@@ -152,11 +157,18 @@ struct CustomWindowSize: Codable, Hashable, Identifiable, Sendable {
     }
 }
 
-enum CustomWindowSizeValidationError: Error, Equatable {
+enum CustomWindowSizeValidationError: LocalizedError, Equatable {
     case emptyName
     case duplicateName
     case invalidCharacter
 
+    var errorDescription: String? {
+        switch self {
+        case .emptyName: return String(localized: "Enter a name for the size.")
+        case .duplicateName: return String(localized: "A custom size with this name already exists.")
+        case .invalidCharacter: return String(localized: "Names cannot contain null characters.")
+        }
+    }
 }
 
 extension Int {

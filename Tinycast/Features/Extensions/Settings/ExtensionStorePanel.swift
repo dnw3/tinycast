@@ -27,10 +27,12 @@ struct ExtensionStorePanel: View {
                 title: storeInstall == nil
                     ? String(localized: "Search Extensions") : String(localized: "Install Extension"),
                 subtitle: String(
-                    localized: "The Raycast Store's extensions arrive built, so they install as they are."))
+                    localized: """
+                        The Raycast Store's extensions arrive built, so they install as they are.
+                        """))
             // The same borderless field the panes use, rather than a bordered capsule of its own.
             if storeInstall == nil {
-                SettingsFilterField(prompt: String(localized: "Search extensions…"), query: $query)
+                SettingsFilterField(prompt: "Search extensions…", query: $query)
             }
             content
             // The list scrolls right up to the footer without it, cutting the last row.
@@ -54,11 +56,8 @@ struct ExtensionStorePanel: View {
         } else if searching && results.isEmpty {
             VStack(spacing: Theme.Spacing.md) {
                 ProgressView()
-                Text(
-                    storeInstall == nil
-                        ? String(localized: "Searching…") : String(localized: "Looking up extension…")
-                )
-                .font(.callout).foregroundStyle(.secondary)
+                Text(storeInstall == nil ? "Searching…" : "Looking up extension…")
+                    .font(.callout).foregroundStyle(.secondary)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if let searchFailure {
@@ -67,8 +66,7 @@ struct ExtensionStorePanel: View {
             placeholder(
                 storeInstall.map {
                     String(localized: "“\($0.handle)/\($0.name)” is unavailable in the Raycast Store.")
-                }
-                    ?? String(localized: "Nothing matches “\(query)”."))
+                } ?? String(localized: "Nothing matches “\(query)”."))
         } else {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: Theme.Spacing.xxs) {
@@ -265,7 +263,7 @@ private struct StoreRow: View {
                 text: String(localized: "\(listing.commandCount) commands"))
             if let downloads = listing.downloadCount, downloads > 0 {
                 StoreFact(symbol: "arrow.down.circle", text: ExtensionListing.abbreviate(downloads))
-                    .help(String(localized: "\(downloads.formatted()) installs"))
+                    .help("\(downloads.formatted()) installs")
             }
         }
         .font(.caption)
@@ -291,7 +289,7 @@ private struct StoreRow: View {
         case .alreadyInstalled:
             Button("Reinstall", action: onInstall)
                 .buttonStyle(ExtensionSettingsEditorButtonStyle(role: .standard, fillsWidth: false))
-                .help(String(localized: "Already installed. Reinstalling replaces it with the store's copy."))
+                .help("Already installed. Reinstalling replaces it with the store's copy.")
         case .failed:
             Button("Retry", action: onInstall)
                 .buttonStyle(ExtensionSettingsEditorButtonStyle(role: .standard, fillsWidth: false))

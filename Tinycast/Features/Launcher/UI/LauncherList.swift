@@ -20,6 +20,7 @@ struct LauncherList: View {
     let onActivate: (AppEntry) -> Void
     let onActions: (AppEntry) -> Void
     let onDropped: () -> Void
+    var files: FileSection?
     /// The `Use "…" with` section, always last; nil when nothing is typed.
     var fallbacks: FallbackSection?
     @Environment(RunningAppsMonitor.self) private var runningApps
@@ -31,6 +32,12 @@ struct LauncherList: View {
         let onActivate: (Int) -> Void
         let onActions: (Int) -> Void
         let onConfigure: () -> Void
+    }
+
+    struct FileSection {
+        let results: [FileSearchResult]
+        let onActivate: (Int) -> Void
+        let onActions: (Int) -> Void
     }
 
     /// Calc answers a typed query and the card an empty one, so only one ever leads.
@@ -63,6 +70,7 @@ struct LauncherList: View {
         case card(LeadCard)
         /// `slot` is the row's ⌘-digit, carried from the section build rather than searched.
         case app(AppEntry, slot: Character?)
+        case file(FileSearchResult, index: Int)
         case fallback(AppEntry, index: Int)
         var id: String {
             switch self {
@@ -70,6 +78,7 @@ struct LauncherList: View {
             case .fallbackHeader: return "fallback-header"
             case .card(let card): return card.rowID
             case .app(let app, _): return app.id
+            case .file(let result, _): return "file-" + result.id
             case .fallback(let app, _): return "fallback-" + app.id
             }
         }
@@ -77,6 +86,12 @@ struct LauncherList: View {
 
     private var firstRowSelected: Bool {
         card != nil ? cardSelected : selectedRowID != nil && selectedRowID == results.first?.id
+    }
+
+    private var fileRows: [Row] {
+        guard let files else { return [] }
+        return [.header(String(localized: "Files"))]
+            + files.results.enumerated().map { Row.file($1, index: $0) }
     }
 
     /// Every row the fallback section contributes, always after the results.
@@ -105,7 +120,7 @@ struct LauncherList: View {
                 })
         }
         if !meetings.isEmpty {
-            rows.append(.header(AppEntry.Kind.meeting.descriptor.sectionTitle))
+            rows.append(.header(AppEntry.Kind.meeting.descriptor.sectionTitle.resolved()))
             rows.append(contentsOf: meetings.map { .app($0, slot: nil) })
         }
         if !suggestions.isEmpty {
@@ -124,7 +139,7 @@ struct LauncherList: View {
         ]
         for kind in kinds {
             guard let group = grouped[kind], !group.isEmpty else { continue }
-            rows.append(.header(kind.descriptor.sectionTitle))
+            rows.append(.header(kind.descriptor.sectionTitle.resolved()))
             rows.append(contentsOf: group.map { .app($0, slot: nil) })
         }
         // A missing kind would make every later row activate its neighbour: assert instead.
@@ -132,13 +147,13 @@ struct LauncherList: View {
             grouped.keys.allSatisfy(kinds.contains),
             "kind missing from the launcher's section order: "
                 + grouped.keys.filter { !kinds.contains($0) }.map(\.rawValue).joined(separator: ", "))
-        return rows + fallbackRows
+        return rows + fileRows + fallbackRows
     }
 
     var body: some View {
         let rows = rows
         return Group {
-            if results.isEmpty && card == nil && fallbacks == nil {
+            if results.isEmpty && card == nil && files == nil && fallbacks == nil {
                 EmptyResults(text: String(localized: "No apps found"))
             } else {
                 ScrollViewReader { proxy in
@@ -171,6 +186,17 @@ struct LauncherList: View {
                                     .onRowTap(drag: drag(for: app)) { onActivate(app) }
                                     .onRightClick { onActions(app) }
                                     .selectionFrame(app.id == selectedRowID)
+                                case .file(let result, let index):
+                                    FileSearchRow(
+                                        result: result, selected: row.id == selectedRowID,
+                                        showsLocation: true
+                                    )
+                                    .contentShape(Rectangle())
+                                    .onRowTap(drag: result.rowDrag(dropped: onDropped)) {
+                                        files?.onActivate(index)
+                                    }
+                                    .onRightClick { files?.onActions(index) }
+                                    .selectionFrame(row.id == selectedRowID)
                                 case .fallback(let app, let index):
                                     AppRow(
                                         app: app, selected: row.id == selectedRowID, running: false,

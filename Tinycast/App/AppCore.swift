@@ -107,9 +107,10 @@ final class AppCore {
             await self.confirm(
                 title: String(localized: "Enable Dictation?"),
                 message: String(
-                    localized:
-                        "Tinycast needs microphone access for dictation and Accessibility to paste into other apps. Audio is processed on this Mac."
-                ),
+                    localized: """
+                        Tinycast needs microphone access for dictation and Accessibility to paste into \
+                        other apps. Audio is processed on this Mac.
+                        """),
                 symbol: "waveform", confirmTitle: String(localized: "Continue"), tone: .neutral,
                 confirmRole: .standard)
         },
@@ -263,6 +264,9 @@ final class AppCore {
             isShowingDialog = isPresenting
         })
     private let healthTicker = HealthTicker()
+    /// Resolved once by AppKit, so it is what this process shows until it relaunches.
+    private let launchLocalization = Bundle.main.preferredLocalizations.first
+    private var relaunchRequested = false
 
     private init() {
         let launcherRanking = LauncherRankingStore()
@@ -290,13 +294,14 @@ final class AppCore {
             saveSelection: { UserDefaults.standard.set($0?.rawValue, forKey: noteSelectionKey) })
     }
 
-    func start() {
+    func start(launchedByUser: Bool) {
         Signposts.interval("AppCore.start") {
             // Shorten AppKit's ~2–3s tooltip delay; registration domain, so a user default wins.
             UserDefaults.standard.register(defaults: ["NSInitialToolTipDelay": 250])
             NSApp.setActivationPolicy(.accessory)
             dictationAudioDucker.recover()
             applyAppearance()
+            applyMotion()
             observeEffectiveAppearance()
             pinnedEmoji.onPersistenceFailure = { [weak self] in
                 self?.showMessage(String(localized: "Couldn't save Emoji & Symbols pins"), tone: .danger)
@@ -363,7 +368,7 @@ final class AppCore {
             updateCoordinator.applyEnabled()
             calendarCoordinator.applyEnabled()
             Task { await appIndex.refresh() }
-            Task { await emojiIndex.load(languages: Locale.preferredLanguages) }
+            Task { await emojiIndex.load(languages: SystemLanguages.preferred) }
             currencyRates.start()
             updateChecker.onUpdateAvailable = { [weak self] release in
                 self?.updateCoordinator.presentIfAvailable(release) ?? true
@@ -478,6 +483,11 @@ final class AppCore {
             if !OnboardingState.hasOnboarded {
                 OnboardingState.markShown()
                 onboardingCoordinator.showOnboarding()
+            } else if launchedByUser {
+                paletteCoordinator.showPalette(mode: .launcher)
+            }
+            if let version = updateChecker.takeInstalledVersion() {
+                showMessage(String(localized: "Updated to Tinycast \(version.description)"))
             }
         }
     }
@@ -561,7 +571,8 @@ final class AppCore {
         }
         guard clipboardStore.setTextSearchEnabled(true) else {
             showMessage(
-                String(localized: "Couldn't enable text recognition for clipboard history."), tone: .danger)
+                String(localized: "Couldn't enable text recognition for clipboard history."),
+                tone: .danger)
             return
         }
         clipboardStore.setTextSearchActive(palette.isVisible)
@@ -588,6 +599,15 @@ final class AppCore {
         if foregroundRecognitionCount == 0 { applyClipboardTextSearch() }
     }
 
+    func relaunch() {
+        guard !relaunchRequested else { return }
+        relaunchRequested = true
+        // AppKit's termination loop must start outside a Swift task or dispatch callback.
+        RunLoop.main.perform(inModes: [.common]) {
+            MainActor.assumeIsolated { NSApp.terminate(nil) }
+        }
+    }
+
     func prepareForTermination() {
         if settings.dictationEnabled { dictationCoordinator.prepareForTermination() }
         settingsFile?.flush()
@@ -608,6 +628,7 @@ final class AppCore {
         mcpOAuth.stop()
         mcp.stop()
         installedAI.stop()
+        if relaunchRequested { RelaunchRunner.relaunchAfterExit(Bundle.main.bundleURL) }
     }
 
     /// Only the tool whose own path or variables changed is checked again; the rest keep running.
@@ -713,6 +734,9 @@ final class AppCore {
         track(
             { _ = $0.clipboardTextSearchEnabled }, reproject: { $0.applyClipboardTextSearch() })
         track({ _ = $0.fileSearchEnabled }, reproject: { $0.fileSearchCoordinator.applyEnabled() })
+        track(
+            { _ = $0.fileSearchShowInLauncher },
+            reproject: { $0.fileSearchCoordinator.applyLauncherFiles() })
         // Two features, one switch: each coordinator gates only its own command and mode.
         track(
             { _ = $0.navigationEnabled },
@@ -768,6 +792,7 @@ final class AppCore {
             {
                 _ = $0.fileSearchScopes
                 _ = $0.fileSearchIgnorePatterns
+                _ = $0.fileSearchRemovedDefaultPatterns
             }, reproject: { $0.fileSearchCoordinator.applyPolicy() })
         track({ _ = $0.snippetsEnabled }, reproject: { $0.snippetCoordinator.applySnippetsEnabled() })
         // Not a feature switch, but the same re-projection: a combo has the chord's ⇧ bit baked in.
@@ -776,6 +801,8 @@ final class AppCore {
             { _ = $0.snippetsShowInLauncher },
             reproject: { $0.snippetCoordinator.applySnippetsLauncherPresence() })
         track({ _ = $0.appearance }, reproject: { $0.applyAppearance() })
+        track({ _ = $0.animationsEnabled }, reproject: { $0.applyMotion() })
+        track({ _ = $0.language }, reproject: { $0.offerLanguageRelaunch() })
         track({ _ = $0.interfaceSize }, reproject: { $0.windowController.applyInterfaceSize() })
         // Settings panes did these on change; settings.json can change them with no pane open.
         track(
@@ -794,6 +821,31 @@ final class AppCore {
     /// `.system` resolves to `nil`, so AppKit follows macOS with nothing polling.
     private func applyAppearance() {
         NSApp.appearance = settings.appearance.nsAppearance
+    }
+
+    /// A built panel keeps the behaviour it was made with, so the live ones are re-pointed.
+    private func applyMotion() {
+        Motion.isEnabled = settings.animationsEnabled
+        for case let panel as any AnimatedPanel in NSApp.windows {
+            panel.followMotion()
+        }
+    }
+
+    private var isLanguagePending: Bool { settings.language.rawValue != launchLocalization }
+
+    private func offerLanguageRelaunch() {
+        guard isLanguagePending else { return }
+        Task {
+            guard
+                await confirm(
+                    title: String(localized: "Relaunch Tinycast?"),
+                    message: String(localized: "The new language applies after Tinycast relaunches."),
+                    symbol: "globe", confirmTitle: String(localized: "Relaunch"), tone: .neutral,
+                    confirmRole: .standard, dismissTitle: String(localized: "Later")),
+                isLanguagePending
+            else { return }
+            relaunch()
+        }
     }
 
     /// IconCache is told here, not from `applyAppearance()`, which never fires under `.system`.
@@ -984,5 +1036,9 @@ final class AppCore {
         snippetName: String, arguments: [SnippetTemplateEngine.MissingArgument]
     ) async -> [String: String]? {
         await dialogs.fillSnippetArguments(snippetName: snippetName, arguments: arguments)
+    }
+
+    func editClipboardText(_ text: String) async -> String? {
+        await dialogs.editClipboardText(text)
     }
 }

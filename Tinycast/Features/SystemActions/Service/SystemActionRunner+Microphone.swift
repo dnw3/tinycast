@@ -34,7 +34,7 @@ extension SystemActionRunner {
             device, &address, 0, nil, UInt32(MemoryLayout<UInt32>.size), &value)
         guard status == noErr else {
             throw SystemActionFailure(
-                String(localized: "macOS could not change microphone mute (error \(status))."))
+                String(localized: "macOS could not change microphone mute (error \(String(status)))."))
         }
 
         // CoreAudio applies property writes asynchronously, so feedback waits for the device.
@@ -63,7 +63,7 @@ extension SystemActionRunner {
         let status = AudioObjectGetPropertyData(device, &address, 0, nil, &size, &value)
         guard status == noErr else {
             throw SystemActionFailure(
-                String(localized: "macOS could not read microphone mute (error \(status))."))
+                String(localized: "macOS could not read microphone mute (error \(String(status)))."))
         }
         return value != 0
     }

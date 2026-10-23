@@ -23,13 +23,10 @@ final class ExtensionFetcher: Sendable {
 
         var errorDescription: String? {
             switch self {
-            case .badURL(let url): return String(localized: "Invalid URL: \(url)")
+            case .badURL(let url): return "Invalid URL: \(url)"
             case .socketUnavailable(let path):
                 return
-                    String(
-                        localized:
-                            "Could not connect to the local service. Start its app or check the socket path: \(path)"
-                    )
+                    "Could not connect to the local service. Start its app or check the socket path: \(path)"
             }
         }
     }
@@ -160,7 +157,7 @@ enum ExtensionAsyncProcess {
     enum ProcessError: LocalizedError {
         case notStarted
 
-        var errorDescription: String? { String(localized: "No running child process with that pid.") }
+        var errorDescription: String? { "No running child process with that pid." }
     }
 
     struct Child: Sendable {

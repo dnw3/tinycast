@@ -21,7 +21,7 @@ struct ClipboardSettingsView: View {
                 Toggle(isOn: $settings.clipboardEnabled) {
                     SettingsFeatureToggleLabel(
                         anchor: .clipboardClipboard, title: "Enable Clipboard History",
-                        subtitle: String(localized: "Keep copied items ready to reuse."))
+                        subtitle: "Keep copied items ready to reuse.")
                 }
             }
             .settingsAnchor(.clipboardClipboard)
@@ -32,7 +32,7 @@ struct ClipboardSettingsView: View {
             Section {
                 Picker(selection: $settings.clipboardRetention) {
                     ForEach(ClipboardRetention.allCases) { retention in
-                        Text(LocalizedStringKey(retention.title)).tag(retention)
+                        Text(retention.title).tag(retention)
                     }
                 } label: {
                     SettingsRowTitle(.clipboardHistory, "Keep history for")
@@ -43,7 +43,7 @@ struct ClipboardSettingsView: View {
                 }
                 Picker(selection: $settings.clipboardDefaultAction) {
                     ForEach(ClipboardDefaultAction.allCases) { action in
-                        Text(LocalizedStringKey(action.title)).tag(action)
+                        Text(action.title).tag(action)
                     }
                 } label: {
                     SettingsRowTitle(.clipboardHistory, "Default action")
@@ -77,7 +77,7 @@ struct ClipboardSettingsView: View {
                     }
                 } label: {
                     SettingsRowTitle(.clipboardDisabledApplications, "Clear history")
-                    Text("Removes every clip and image.")
+                    Text("Removes every item in the history.")
                 }
             }
         }

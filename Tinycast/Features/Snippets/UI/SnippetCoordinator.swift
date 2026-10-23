@@ -77,11 +77,11 @@ final class SnippetCoordinator {
             guard
                 await core.confirm(
                     title: String(localized: "Enable snippets?"),
-                    message:
-                        String(
-                            localized:
-                                "Keyword expansion requires the Accessibility permission. Keystrokes stay on this Mac."
-                        ),
+                    message: String(
+                        localized: """
+                            Keyword expansion requires the Accessibility permission. Keystrokes stay on \
+                            this Mac.
+                            """),
                     symbol: "curlybraces", confirmTitle: String(localized: "Continue"), tone: .neutral,
                     confirmRole: .standard)
             else { return }
@@ -189,8 +189,7 @@ final class SnippetCoordinator {
         } catch {
             await core.showNotice(
                 title: String(localized: "Couldn’t Delete “\(record.snippet.name)”"),
-                message: error.localizedDescription,
-                symbol: "doc.text", tone: .danger)
+                message: error.localizedDescription, symbol: "doc.text", tone: .danger)
         }
     }
 

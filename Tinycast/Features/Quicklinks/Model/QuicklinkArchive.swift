@@ -15,10 +15,16 @@ enum QuicklinkArchive {
         var imported: Int { additions.count }
     }
 
-    enum ArchiveError: Error, Equatable {
+    enum ArchiveError: LocalizedError, Equatable {
         case unreadable
         case empty
 
+        var errorDescription: String? {
+            switch self {
+            case .unreadable: return String(localized: "This file isn't a Tinycast quicklinks export.")
+            case .empty: return String(localized: "This file contains no quicklinks.")
+            }
+        }
     }
 
     static func encode(_ quicklinks: [Quicklink]) throws -> Data {

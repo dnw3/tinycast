@@ -166,8 +166,9 @@ final class ClipboardCoordinator {
             await core.confirm(
                 title: String(localized: "Delete All Entries"),
                 message: String(
-                    localized: "Are you sure you want to proceed with deleting all clipboard history entries?"
-                ),
+                    localized: """
+                        Are you sure you want to proceed with deleting all clipboard history entries?
+                        """),
                 symbol: PaletteMode.clipboard.systemImage, confirmTitle: String(localized: "Delete All"))
         else { return }
         clearHistory()
@@ -265,6 +266,33 @@ final class ClipboardCoordinator {
             return nil
         }
         return url
+    }
+
+    func editClip(_ item: ClipboardItem) async {
+        guard item.kind == .text else { return }
+        guard let text = await core.editClipboardText(item.text ?? ""), !text.isEmpty else { return }
+        do {
+            guard let edited = try clipboardStore.updateText(text, of: item) else {
+                Paster.copyPlainText(text)
+                return
+            }
+            Paster.copy(edited, store: clipboardStore)
+            guard palette.mode == .clipboard else { return }
+            if !palette.clipboardFilter.matches(edited) { palette.clipboardFilter = .all }
+            if clipboardStore.rowIndex(of: edited, in: palette.query, filter: palette.clipboardFilter) == nil
+            {
+                palette.query = ""
+            }
+            selectClip(edited)
+            palette.preserveSelection()
+            palette.followToken = UUID()
+        } catch .tooLong {
+            let limit = ClipboardStore.maxTextLength.formatted()
+            core.showMessage(
+                String(localized: "Too long to save. Keep it under \(limit) characters."), tone: .danger)
+        } catch {
+            core.showMessage(String(localized: "Couldn’t save the clipboard entry"), tone: .danger)
+        }
     }
 
     /// Pin or unpin an entry; the selection and scroll follow the row as it moves.

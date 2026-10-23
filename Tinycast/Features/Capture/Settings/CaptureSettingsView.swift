@@ -13,7 +13,7 @@ struct CaptureSettingsView: View {
                 ) {
                     SettingsFeatureToggleLabel(
                         anchor: .captureCapture, title: "Enable Capture",
-                        subtitle: String(localized: "Capture, annotate, pin and extract text from screenshots."))
+                        subtitle: "Capture, annotate, pin and extract text from screenshots.")
                 }
             }
             .settingsAnchor(.captureCapture)
@@ -84,11 +84,11 @@ struct CaptureSettingsView: View {
             Section {
                 permissionRow(
                     anchor: .capturePermissions, title: "Screen Recording",
-                    subtitle: String(localized: "Captures the screen and records video."),
+                    subtitle: "Captures the screen and records video.",
                     granted: CGPreflightScreenCaptureAccess(), open: coordinator.openScreenPermission)
                 permissionRow(
                     anchor: .capturePermissions, title: "Accessibility",
-                    subtitle: String(localized: "Auto Scroll, element picking and keystroke display."),
+                    subtitle: "Auto Scroll, element picking and keystroke display.",
                     granted: Permissions.isAccessibilityTrusted(), open: Permissions.openAccessibilitySettings)
             } header: {
                 SettingsSectionHeader(.capturePermissions)
@@ -99,7 +99,7 @@ struct CaptureSettingsView: View {
     }
 
     private func permissionRow(
-        anchor: SettingsAnchor, title: String, subtitle: String, granted: Bool, open: @escaping () -> Void
+        anchor: SettingsAnchor, title: LocalizedStringResource, subtitle: LocalizedStringResource, granted: Bool, open: @escaping () -> Void
     ) -> some View {
         LabeledContent {
             HStack(spacing: Theme.Spacing.lg) {

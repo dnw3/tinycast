@@ -18,7 +18,10 @@ struct ChatToolDetailView: View {
             HStack(alignment: .top, spacing: metrics.spacing.md) {
                 ChatToolExcerpt(text: detail.input, fromEnd: false, naming: naming)
                     .foregroundStyle(Theme.Colors.textPrimary)
-                ChatCopyButton(text: detail.input, subject: use.kind == .command ? "Command" : "Input")
+                ChatCopyButton(
+                    text: detail.input,
+                    label: use.kind == .command
+                        ? String(localized: "Copy Command") : String(localized: "Copy Input"))
             }
             if let output {
                 Rectangle()

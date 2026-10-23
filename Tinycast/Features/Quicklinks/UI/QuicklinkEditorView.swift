@@ -19,10 +19,10 @@ struct QuicklinkEditorView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: metrics.spacing.xxl) {
-                FormRow(String(localized: "Link"), alignment: .top) { linkEditor }
-                FormRow(String(localized: "Name & Icon")) { nameField }
-                FormRow(String(localized: "Open With")) { applicationMenu }
-                FormRow("") {
+                FormRow("Link", alignment: .top) { linkEditor }
+                FormRow("Name & Icon") { nameField }
+                FormRow("Open With") { applicationMenu }
+                FormRow {
                     VStack(alignment: .leading, spacing: metrics.spacing.lg) {
                         option(
                             String(localized: "Show in root search"),
@@ -140,7 +140,8 @@ struct QuicklinkEditorView: View {
             insertMenuFrame = $0
         }
         .tooltip(
-            String(localized: "Insert a dynamic placeholder"), alignment: .trailing, dismissOnPress: true
+            String(localized: "Insert a dynamic placeholder"), alignment: .trailing,
+            dismissOnPress: true
         )
         .accessibilityLabel("Insert a placeholder")
     }

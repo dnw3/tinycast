@@ -546,7 +546,7 @@ struct AgentTests {
             "a lost session says why in the result itself, not only on stderr")
         let stopped = line(["type": "result", "subtype": "error_during_execution", "is_error": true])
         let interrupted = InstalledAIStreamDecoder.decode(stopped, kind: .claude, agent: true)
-        expect(interrupted.error == nil && interrupted.failedKind == .claude,
+        expect(interrupted.error == "Claude could not finish the response.",
             "an interrupted turn ends in an error with nothing to say")
     }
 

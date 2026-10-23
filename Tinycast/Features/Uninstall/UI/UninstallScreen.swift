@@ -15,7 +15,7 @@ struct UninstallScreen: PaletteScreen {
         }
     }
 
-    var primaryActionTitle: String { "Uninstall Application" }
+    var primaryActionTitle: String { String(localized: "Uninstall Application") }
 
     func isPrimaryActionDestructive(at selection: Int) -> Bool { true }
 
@@ -64,8 +64,8 @@ struct UninstallScreen: PaletteScreen {
             if rows.isEmpty {
                 EmptyResults(
                     text: vm.query.trimmingCharacters(in: .whitespaces).isEmpty
-                        ? String(localized: "Nothing left to remove") : String(localized: "No matching files")
-                )
+                        ? String(localized: "Nothing left to remove")
+                        : String(localized: "No matching files"))
             } else {
                 UninstallList(
                     results: rows,
@@ -95,7 +95,8 @@ enum UninstallActionsMenu {
         if session.canConfirm {
             items.append(
                 PopoverMenuItem(
-                    title: String(localized: "Uninstall Application"), systemImage: "trash", shortcut: "↵",
+                    title: String(localized: "Uninstall Application"), systemImage: "trash",
+                    shortcut: "↵",
                     isDestructive: true
                 ) { core.uninstallCoordinator.performUninstall() })
         }
@@ -110,8 +111,8 @@ enum UninstallActionsMenu {
         }
         items.append(
             PopoverMenuItem(
-                title: String(localized: "Copy Path"), systemImage: "doc.on.clipboard", startsSection: true,
-                shortcut: "⌥⌘C"
+                title: String(localized: "Copy Path"), systemImage: "doc.on.clipboard",
+                startsSection: true, shortcut: "⌥⌘C"
             ) {
                 core.uninstallCoordinator.copyUninstallPath(candidate)
             })
@@ -123,7 +124,8 @@ enum UninstallActionsMenu {
             })
         items.append(
             PopoverMenuItem(
-                title: String(localized: "Show Info in Finder"), systemImage: "info.circle", shortcut: "⇧⌘I"
+                title: String(localized: "Show Info in Finder"), systemImage: "info.circle",
+                shortcut: "⇧⌘I"
             ) {
                 core.uninstallCoordinator.showUninstallItemInfo(candidate)
             })

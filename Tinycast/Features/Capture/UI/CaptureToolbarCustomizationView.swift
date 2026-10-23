@@ -25,7 +25,7 @@ struct CaptureToolbarCustomizationView: View {
                 selection: $actions
             )
             .fixedSize()
-            SettingsFilterField(prompt: String(localized: "Search tools or shortcuts"), query: $query)
+            SettingsFilterField(prompt: "Search tools or shortcuts", query: $query)
                 .accessibilityLabel(String(localized: "Search Tools"))
             List(selection: $selection) {
                 ForEach(group.filter { $0.matches(query) }, id: \.self) { item in

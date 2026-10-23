@@ -23,10 +23,8 @@ struct BackupCategorySelection: View {
     }
 
     private func subtitle(_ category: BackupCategory) -> String? {
-        guard let noun = category.descriptor.countNoun, let count = available?[category] else {
-            return nil
-        }
-        return "\(count) \(noun)"
+        guard let count = available?[category] else { return nil }
+        return category.countText(count)
     }
 
     var body: some View {
@@ -38,7 +36,7 @@ struct BackupCategorySelection: View {
                             Image(systemName: category.descriptor.symbol)
                                 .foregroundStyle(.secondary)
                                 .frame(width: 16)
-                            Text(LocalizedStringKey(category.descriptor.label)).lineLimit(1)
+                            Text(category.descriptor.label).lineLimit(1)
                             if let subtitle = subtitle(category) {
                                 Text(subtitle)
                                     .foregroundStyle(.secondary)
@@ -49,7 +47,7 @@ struct BackupCategorySelection: View {
                     .toggleStyle(.checkbox)
                 }
             }
-            Button(selection.isEmpty ? String(localized: "Select All") : String(localized: "Deselect All")) {
+            Button(selection.isEmpty ? "Select All" : "Deselect All") {
                 selection = selection.isEmpty ? Set(offered) : []
             }
             .buttonStyle(.link)

@@ -90,8 +90,8 @@ private struct ArgumentField: View {
                     stroke, lineWidth: isFocused ? form.focusStrokeWidth : Theme.Size.hairline)
         )
         .help(
-            argument.required ? String(localized: "\(argument.placeholder) — required") : argument.placeholder
-        )
+            argument.required
+                ? String(localized: "\(argument.placeholder) — required") : argument.placeholder)
     }
 
     private var stroke: Color {

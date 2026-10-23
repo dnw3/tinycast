@@ -126,7 +126,8 @@ private final class InstalledCLITurnRunner {
             })
         else {
             continuation.finish(
-                throwing: AIProviderError.unavailable(String(localized: "There is no user message to send.")))
+                throwing: AIProviderError.unavailable(
+                    String(localized: "There is no user message to send.")))
             return
         }
         let resolvedExecutable: URL?
@@ -516,7 +517,7 @@ private final class InstalledCLITurnRunner {
             return
         }
         if let id = frame.unsupportedRequestID {
-            let refusal = String(localized: "Tinycast does not answer this request.")
+            let refusal = "Tinycast does not answer this request."
             if let line = ClaudeControlProtocol.error(to: id, message: refusal) {
                 write(line, closing: false)
             }
@@ -527,13 +528,11 @@ private final class InstalledCLITurnRunner {
             fail(
                 roundCap.map { String(localized: "Stopped after \($0) rounds of tool calls.") }
                     ?? String(localized: "\(kind.title) could not finish the response."))
-        } else if interrupted, frame.error != nil || frame.failedKind != nil {
+        } else if interrupted, frame.error != nil {
             finish()
             write(Data(), closing: true)
         } else if let error = frame.error {
             fail(error)
-        } else if let failedKind = frame.failedKind {
-            fail(String(localized: "\(failedKind.title) could not finish the response."))
         } else if frame.completed {
             finish()
             // A stream-json turn is answered; closing stdin is what lets the child leave.
@@ -556,7 +555,7 @@ private final class InstalledCLITurnRunner {
                 guard
                     let line = ClaudeControlProtocol.response(
                         to: request, allowed: allowed,
-                        message: String(localized: "The user declined this tool call."))
+                        message: "The user declined this tool call.")
                 else { return }
                 self.write(line, closing: false)
             })
@@ -625,7 +624,10 @@ private final class InstalledCLITurnRunner {
         var message = message
         if let agent, agent.resume != nil, message.contains("No conversation found") {
             agent.lost()
-            message = String(localized: "\(kind.title) no longer has this chat's session. Send again to start a new one.")
+            message = String(
+                localized: """
+                    \(kind.title) no longer has this chat's session. Send again to start a new one.
+                    """)
         }
         continuation?.finish(throwing: AIProviderError.responseFailed(message))
         continuation = nil

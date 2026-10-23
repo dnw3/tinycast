@@ -10,7 +10,7 @@ enum LauncherFileFormat {
         var isEmpty: Bool { shortcut == nil && alias == nil && showInLauncher }
     }
 
-    typealias Decoded = (records: [String: Record], problems: [LocalizedStringResource])
+    typealias Decoded = (records: [String: Record], problems: [String])
 
     static func json(_ records: [(name: String, record: Record)]) -> SettingsFileJSON {
         .object(
@@ -25,23 +25,25 @@ enum LauncherFileFormat {
             })
     }
 
-    static func records(from json: SettingsFileJSON, locale: Locale = Locale(identifier: "en"), bundle: LocalizedStringResource.BundleDescription = .main, current: (String) -> Record) -> Decoded? {
+    static func records(from json: SettingsFileJSON, current: (String) -> Record) -> Decoded? {
         guard let members = json.members else { return nil }
         var decoded: Decoded = ([:], [])
         for member in members {
             let fields = member.value
             guard fields.members != nil else {
                 decoded.records[member.key] = current(member.key)
-                decoded.problems.append(LocalizedStringResource("“\(member.key)” needs an object", locale: locale, bundle: bundle))
+                decoded.problems.append(String(localized: "“\(member.key)” needs an object"))
                 continue
             }
             var record = current(member.key)
-            text(fields["shortcut"], field: "shortcut", of: member.key, into: &record.shortcut, &decoded, locale: locale, bundle: bundle)
-            text(fields["alias"], field: "alias", of: member.key, into: &record.alias, &decoded, locale: locale, bundle: bundle)
+            text(fields["shortcut"], field: "shortcut", of: member.key, into: &record.shortcut, &decoded)
+            text(fields["alias"], field: "alias", of: member.key, into: &record.alias, &decoded)
             switch fields["showInLauncher"] {
             case nil: break
             case .bool(let shown)?: record.showInLauncher = shown
-            default: decoded.problems.append(LocalizedStringResource("“\(member.key)”: “showInLauncher” needs true or false", locale: locale, bundle: bundle))
+            default:
+                decoded.problems.append(
+                    String(localized: "“\(member.key)”: “showInLauncher” needs true or false"))
             }
             decoded.records[member.key] = record
         }
@@ -54,13 +56,14 @@ enum LauncherFileFormat {
 
     private static func text(
         _ json: SettingsFileJSON?, field: String, of name: String, into value: inout String?,
-        _ decoded: inout Decoded, locale: Locale, bundle: LocalizedStringResource.BundleDescription
+        _ decoded: inout Decoded
     ) {
         switch json {
         case nil: return
         case .null?: value = nil
         case .string(let text)?: value = text
-        default: decoded.problems.append(LocalizedStringResource("“\(name)”: “\(field)” needs quotes, or null", locale: locale, bundle: bundle))
+        default:
+            decoded.problems.append(String(localized: "“\(name)”: “\(field)” needs quotes, or null"))
         }
     }
 }

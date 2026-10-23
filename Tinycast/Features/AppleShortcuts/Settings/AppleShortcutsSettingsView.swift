@@ -22,7 +22,7 @@ struct AppleShortcutsSettingsView: View {
                     SettingsFeatureToggleLabel(
                         anchor: .appleShortcutsAppleShortcuts,
                         title: "Enable Apple Shortcuts",
-                        subtitle: String(localized: "Run your shortcuts from the launcher."))
+                        subtitle: "Run your shortcuts from the launcher.")
                 }
             }
             .settingsAnchor(.appleShortcutsAppleShortcuts)
@@ -40,8 +40,11 @@ struct AppleShortcutsSettingsView: View {
 
     private var library: some View {
         Section {
-            SettingsFilterField(prompt: String(localized: "Search shortcuts…"), query: $query)
-            LauncherItemsList(entries: entries, query: query, isEnabled: true)
+            SettingsFilterField(prompt: "Search shortcuts…", query: $query)
+            LauncherItemsList(
+                entries: entries, query: query, isEnabled: true,
+                emptyMessage: LocalizedStringResource(
+                    "apple-shortcuts-empty", defaultValue: "Nothing here yet."))
             Button("Open Shortcuts") { core.appleShortcutCoordinator.openShortcutsApp() }
         } header: {
             SettingsSectionHeader(.appleShortcutsShortcuts)

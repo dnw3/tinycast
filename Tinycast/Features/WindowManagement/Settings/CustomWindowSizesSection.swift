@@ -54,16 +54,16 @@ private struct CustomWindowSizeRow: View {
                 Image(systemName: "pencil")
             }
             .buttonStyle(.plain)
-            .help(String(localized: "Edit"))
-            .accessibilityLabel(String(localized: "Edit \(size.name)"))
+            .help("Edit")
+            .accessibilityLabel("Edit \(size.name)")
 
             Button(action: onDelete) {
                 Image(systemName: "trash")
                     .foregroundStyle(Theme.Colors.destructive)
             }
             .buttonStyle(.plain)
-            .help(String(localized: "Delete"))
-            .accessibilityLabel(String(localized: "Delete \(size.name)"))
+            .help("Delete")
+            .accessibilityLabel("Delete \(size.name)")
 
             Toggle(
                 "", isOn: Binding(get: { isVisible }, set: { visibility.setItemVisible($0, for: entry) })
@@ -71,7 +71,7 @@ private struct CustomWindowSizeRow: View {
             .labelsHidden()
             .toggleStyle(.checkbox)
             .launcherVisibilityHelp()
-            .accessibilityLabel(String(localized: "Show \(size.name) in launcher"))
+            .accessibilityLabel("Show \(size.name) in launcher")
         }
     }
 }

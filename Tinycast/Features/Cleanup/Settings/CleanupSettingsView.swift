@@ -13,7 +13,7 @@ struct CleanupSettingsView: View {
                 } label: {
                     SettingsFeatureToggleLabel(
                         anchor: .cleanupCleanup, title: "Disk Cleanup",
-                        subtitle: String(localized: "Finds caches, logs and build data you can remove."))
+                        subtitle: "Finds caches, logs and build data you can remove.")
                 }
             }
             .settingsAnchor(.cleanupCleanup)

@@ -43,12 +43,12 @@ struct ExtensionPickerField: View {
     private var hint: String {
         let state = open ? String(localized: "Showing choices") : String(localized: "Opens a list of choices")
         let parts = [error, info].compactMap { $0 }.filter { !$0.isEmpty }
-        return ([state] + parts).joined(separator: String(localized: ". "))
+        return ([state] + parts).joined(separator: ". ")
     }
 
     private var label: String {
         let titles = chosen.compactMap { value in items.first { $0.value == value }?.title }
-        return titles.isEmpty ? placeholder : titles.joined(separator: String(localized: ", "))
+        return titles.isEmpty ? placeholder : titles.joined(separator: ", ")
     }
 
     private var leadingIcon: ExtensionImage.Resolved? {
@@ -146,7 +146,7 @@ struct ExtensionPickerField: View {
                         .foregroundStyle(Theme.Colors.textSecondary)
                         .lineLimit(1)
                         .layoutPriority(-1)
-                    Text("·")
+                    Text(verbatim: "·")
                         .font(metrics.typography.rowTitle)
                         .foregroundStyle(Theme.Colors.textTertiary)
                 }

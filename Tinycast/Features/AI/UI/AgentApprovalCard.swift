@@ -53,16 +53,16 @@ struct AgentApprovalCard: View {
         HStack(spacing: Theme.Spacing.md) {
             Button(String(localized: "Don't Allow")) { onAnswer(.deny) }
                 .buttonStyle(.modalAction(.cancel, fillsWidth: false))
-                .tooltip(keyCap: "⎋")
+                .tooltip(keyCaps: ["⎋"])
             Spacer(minLength: Theme.Spacing.md)
             if AgentGrants.admits(request, in: workspace) {
                 Button(String(localized: "Allow This Chat")) { onAnswer(.allowForChat) }
                     .buttonStyle(.modalAction(.standard, fillsWidth: false))
-                    .tooltip(keyCap: "⌥↵")
+                    .tooltip(keyCaps: ["⌥↵"])
             }
             Button(request.allowTitle) { onAnswer(.allow) }
                 .buttonStyle(.modalAction(request.deletes ? .destructive : .primary, fillsWidth: false))
-                .tooltip(keyCap: request.deletes ? nil : "↵")
+                .tooltip(keyCaps: request.deletes ? [] : ["↵"])
         }
     }
 }

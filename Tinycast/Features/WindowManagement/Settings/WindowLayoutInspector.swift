@@ -67,7 +67,7 @@ struct WindowLayoutInspector: View {
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel(String(localized: "Choose an icon"))
+                .accessibilityLabel("Choose an icon")
                 .popover(isPresented: $showingIconPicker, arrowEdge: .bottom) {
                     SymbolPicker(
                         selection: $draft.iconSymbol, fallback: WindowLayout.sfSymbol,
@@ -84,8 +84,8 @@ struct WindowLayoutInspector: View {
     private var gapToggle: some View {
         @Bindable var draft = draft
         return switchRow(
-            String(localized: "Use preferred gap"),
-            detail: String(localized: "Inset every window by the gap set above, as the tiling commands do."),
+            "Use preferred gap",
+            detail: "Inset every window by the gap set above, as the tiling commands do.",
             isOn: $draft.usesPreferredGap)
     }
 
@@ -94,9 +94,8 @@ struct WindowLayoutInspector: View {
     private var frontmostToggle: some View {
         @Bindable var draft = draft
         return switchRow(
-            String(localized: "Bring to front"),
-            detail: String(
-                localized: "Focus this window once the layout finishes. Only one window per layout."),
+            "Bring to front",
+            detail: "Focus this window once the layout finishes. Only one window per layout.",
             isOn: $draft.isSelectedEntryFrontmost)
     }
 
@@ -105,12 +104,12 @@ struct WindowLayoutInspector: View {
             sectionLabel("Size")
             HStack(spacing: Theme.Spacing.md) {
                 WindowLayoutNumberField(
-                    label: String(localized: "W"), name: "Width", suffix: "%",
+                    label: String(localized: "W"), name: String(localized: "Width"), suffix: "%",
                     range: WindowLayoutDraft.percentRange,
                     value: WindowLayoutDraft.percent(entry.widthFraction),
                     onCommit: draft.setWidthPercent)
                 WindowLayoutNumberField(
-                    label: String(localized: "H"), name: "Height", suffix: "%",
+                    label: String(localized: "H"), name: String(localized: "Height"), suffix: "%",
                     range: WindowLayoutDraft.percentRange,
                     value: WindowLayoutDraft.percent(entry.heightFraction),
                     onCommit: draft.setHeightPercent)
@@ -123,13 +122,11 @@ struct WindowLayoutInspector: View {
             sectionLabel("Offset")
             HStack(spacing: Theme.Spacing.md) {
                 WindowLayoutNumberField(
-                    label: String(localized: "X"), name: String(localized: "Horizontal offset"),
-                    suffix: String(localized: "pt"),
+                    label: "X", name: String(localized: "Horizontal offset"), suffix: "pt",
                     range: WindowLayoutDraft.offsetRange, value: Int(entry.offset.x.rounded()),
                     onCommit: draft.setOffsetX)
                 WindowLayoutNumberField(
-                    label: String(localized: "Y"), name: String(localized: "Vertical offset"),
-                    suffix: String(localized: "pt"),
+                    label: "Y", name: String(localized: "Vertical offset"), suffix: "pt",
                     range: WindowLayoutDraft.offsetRange, value: Int(entry.offset.y.rounded()),
                     onCommit: draft.setOffsetY)
             }
@@ -146,7 +143,7 @@ struct WindowLayoutInspector: View {
     // MARK: - Helpers
 
     private func switchRow(
-        _ title: String, detail: String, isOn: Binding<Bool>
+        _ title: LocalizedStringResource, detail: LocalizedStringResource, isOn: Binding<Bool>
     ) -> some View {
         HStack(alignment: .top, spacing: Theme.Spacing.xl) {
             VStack(alignment: .leading, spacing: Theme.Spacing.xxs) {
@@ -166,7 +163,7 @@ struct WindowLayoutInspector: View {
         .accessibilityElement(children: .combine)
     }
 
-    private func sectionLabel(_ title: String) -> some View {
+    private func sectionLabel(_ title: LocalizedStringResource) -> some View {
         Text(title)
             .font(.callout.weight(.medium))
     }

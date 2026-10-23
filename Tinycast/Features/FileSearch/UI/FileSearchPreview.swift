@@ -41,14 +41,14 @@ private struct FileSearchPreviewStage: View {
             .padding(.top, metrics.spacing.xl)
     }
 
-    /// Unmounting is the teardown: an ordered-out panel keeps its tree, and the overlay hides this.
+    /// Unmounting is the teardown: an ordered-out panel keeps its tree.
     @ViewBuilder private var stage: some View {
         if result.isDirectory {
             Image(systemName: "folder")
                 .font(.system(.largeTitle))
                 .symbolRenderingMode(.hierarchical)
                 .foregroundStyle(.tertiary)
-        } else if palette.isVisible, !palette.fileSearchQuickLook {
+        } else if palette.isVisible {
             FileSearchSurface(url: result.url)
                 .clipShape(card)
                 .overlay(card.strokeBorder(Theme.Colors.cardStroke, lineWidth: 1))
@@ -116,23 +116,26 @@ private struct FileSearchInfoSection: View {
             InfoRow(label: String(localized: "Where"), value: result.parentPath),
             InfoRow(
                 label: String(localized: "Type"),
-                value: details.typeName ?? (result.isDirectory ? String(localized: "Folder") : String(localized: "File")))
+                value: details.typeName
+                    ?? (result.isDirectory ? String(localized: "Folder") : String(localized: "File")))
         ]
         if let bytes = details.bytes {
             rows.append(
                 InfoRow(
-                    label: String(localized: "Size"), value: Int64(bytes).formatted(.byteCount(style: .file)))
-            )
+                    label: String(localized: "Size"),
+                    value: Int64(bytes).formatted(.byteCount(style: .file))))
         }
         if let created = details.created {
             rows.append(
-                InfoRow(label: String(localized: "Created"), value: Self.stampFormatter.string(from: created))
-            )
+                InfoRow(
+                    label: String(localized: "Created"),
+                    value: Self.stampFormatter.string(from: created)))
         }
         if let modified = details.modified {
             rows.append(
                 InfoRow(
-                    label: String(localized: "Modified"), value: Self.stampFormatter.string(from: modified)))
+                    label: String(localized: "Modified"),
+                    value: Self.stampFormatter.string(from: modified)))
         }
         return rows
     }

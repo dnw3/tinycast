@@ -10,7 +10,7 @@ struct ChatHistoryScreen: PaletteScreen {
     let metrics: InterfaceMetrics
 
     var rows: [ChatConversation] { history.search(vm.query) }
-    let primaryActionTitle = "Open Chat"
+    let primaryActionTitle = String(localized: "Open Chat")
 
     private func conversation(at selection: Int) -> ChatConversation? {
         let rows = rows

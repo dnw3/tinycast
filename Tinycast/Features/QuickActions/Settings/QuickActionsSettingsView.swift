@@ -22,8 +22,7 @@ struct QuickActionsSettingsView: View {
                 Toggle(isOn: enabledBinding) {
                     SettingsFeatureToggleLabel(
                         anchor: .quickActionsQuickActions, title: "Enable Quick Actions",
-                        subtitle: String(
-                            localized: "Act on selected text. Nothing is read until you press a shortcut."))
+                        subtitle: "Act on selected text. Nothing is read until you press a shortcut.")
                 }
                 if appSettings.quickActionsEnabled, !isTrusted {
                     // Every shortcut fails without it; better said here than found one press later.
@@ -138,8 +137,8 @@ struct QuickActionsSettingsView: View {
             SymbolImage(name: "pencil", size: Theme.Size.quickActionHeaderIcon)
         }
         .buttonStyle(.plain)
-        .help(String(localized: "Edit \(title)"))
-        .accessibilityLabel(String(localized: "Edit \(title)"))
+        .help("Edit \(title)")
+        .accessibilityLabel("Edit \(title)")
     }
 
     private func resultPicker(title: String, selection: Binding<Bool>) -> some View {
@@ -149,7 +148,7 @@ struct QuickActionsSettingsView: View {
         }
         .labelsHidden()
         .fixedSize()
-        .accessibilityLabel(String(localized: "What \(title) does with its result"))
+        .accessibilityLabel("What \(title) does with its result")
     }
 
     private func launcherToggle(title: String, entry: AppEntry) -> some View {
@@ -157,7 +156,7 @@ struct QuickActionsSettingsView: View {
             .labelsHidden()
             .toggleStyle(.checkbox)
             .launcherVisibilityHelp()
-            .accessibilityLabel(String(localized: "Show \(title) in launcher"))
+            .accessibilityLabel("Show \(title) in launcher")
     }
 
     private var modelSection: some View {
@@ -280,9 +279,8 @@ struct QuickActionsSettingsView: View {
         var body: some View {
             VStack(alignment: .leading, spacing: Theme.Spacing.xl) {
                 SettingsEditorHeader(
-                    title: String(localized: "Customize \(action.title)"),
-                    subtitle: String(
-                        localized: "Tell Tinycast how you want \(action.title) to handle your selected text.")
+                    title: "Customize \(action.title)",
+                    subtitle: "Tell Tinycast how you want \(action.title) to handle your selected text."
                 )
 
                 TextEditor(text: $instructions)

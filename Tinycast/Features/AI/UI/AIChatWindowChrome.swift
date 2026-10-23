@@ -98,7 +98,7 @@ final class AIChatWindowChrome: NSObject, WindowChrome, NSToolbarDelegate, NSSea
         case Self.sidebar:
             let item = button(
                 identifier, symbol: "sidebar.left", label: String(localized: "Sidebar"),
-                toolTip: String(localized: "Show or Hide Sidebar") + "  ⌘B",
+                toolTip: String(localized: "Show or Hide Sidebar  ⌘B"),
                 action: #selector(toggleSidebar))
             item.showsIndicator = sidebarIndicates
             sidebarItem = item
@@ -113,7 +113,7 @@ final class AIChatWindowChrome: NSObject, WindowChrome, NSToolbarDelegate, NSSea
         case Self.actions:
             let item = NSToolbarItem(itemIdentifier: identifier)
             item.view = actionsButton
-            item.label = "Actions"
+            item.label = String(localized: "Actions")
             return item
         default:
             return nil
@@ -262,17 +262,19 @@ enum AIChatActionsMenu {
         let saved = coordinator.isSaved(chat)
         if chat.isStreaming {
             menu.addItem(
-                ClosureMenuItem("Stop Response", symbol: "stop.fill", key: ".") {
+                ClosureMenuItem(String(localized: "Stop Response"), symbol: "stop.fill", key: ".") {
                     coordinator.stopResponse(in: chat)
                 })
         }
         menu.addItem(
-            ClosureMenuItem("New Chat", symbol: "square.and.pencil", key: "n") {
+            ClosureMenuItem(String(localized: "New Chat"), symbol: "square.and.pencil", key: "n") {
                 coordinator.newChat()
             })
         if canRegenerate(chat) {
             menu.addItem(
-                ClosureMenuItem("Regenerate Response", symbol: "arrow.clockwise", key: "r") {
+                ClosureMenuItem(
+                    String(localized: "Regenerate Response"), symbol: "arrow.clockwise", key: "r"
+                ) {
                     coordinator.regenerate(in: chat)
                 })
         }
@@ -280,20 +282,21 @@ enum AIChatActionsMenu {
         if chat.lastAssistantText != nil {
             menu.addItem(
                 ClosureMenuItem(
-                    "Copy Last Response", symbol: "doc.on.doc", key: "c", modifiers: [.command, .shift]
+                    String(localized: "Copy Last Response"), symbol: "doc.on.doc", key: "c",
+                    modifiers: [.command, .shift]
                 ) {
                     coordinator.copyLastResponse(in: chat)
                 })
         }
         if saved {
             menu.addItem(
-                ClosureMenuItem("Copy Chat", symbol: "text.bubble") {
+                ClosureMenuItem(String(localized: "Copy Chat"), symbol: "text.bubble") {
                     coordinator.copyChat(id: chat.session.id)
                 })
         }
         if !chat.pendingAttachments.isEmpty {
             menu.addItem(
-                ClosureMenuItem("Remove Attachments", symbol: "paperclip") {
+                ClosureMenuItem(String(localized: "Remove Attachments"), symbol: "paperclip") {
                     coordinator.clearAttachments(in: chat)
                 })
         }
@@ -301,20 +304,25 @@ enum AIChatActionsMenu {
             menu.addItem(.separator())
             let pinned = coordinator.isPinned(chat)
             menu.addItem(
-                ClosureMenuItem(pinned ? String(localized: "Unpin Chat") : String(localized: "Pin Chat"), symbol: "pin") {
+                ClosureMenuItem(
+                    pinned ? String(localized: "Unpin Chat") : String(localized: "Pin Chat"),
+                    symbol: "pin"
+                ) {
                     coordinator.togglePin(id: chat.session.id)
                 })
             menu.addItem(
-                ClosureMenuItem("Delete Chat…", symbol: "trash") {
+                ClosureMenuItem(String(localized: "Delete Chat…"), symbol: "trash") {
                     Task { await coordinator.deleteChat(id: chat.session.id) }
                 })
         }
         menu.addItem(.separator())
         menu.addItem(
-            ClosureMenuItem("Find in Chat", symbol: "magnifyingglass", key: "f", findInChat))
+            ClosureMenuItem(
+                String(localized: "Find in Chat"), symbol: "magnifyingglass", key: "f", findInChat))
         menu.addItem(
             ClosureMenuItem(
-                "AI Settings", symbol: "slider.horizontal.3", key: ",", modifiers: [.command, .option]
+                String(localized: "AI Settings"), symbol: "slider.horizontal.3", key: ",",
+                modifiers: [.command, .option]
             ) {
                 coordinator.showSettings()
             })

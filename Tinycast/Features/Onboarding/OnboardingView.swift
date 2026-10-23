@@ -143,7 +143,7 @@ struct OnboardingView: View {
         return VStack(alignment: .leading, spacing: Theme.Spacing.md) {
             OnboardingCard {
                 OnboardingRow(
-                    title: String(localized: "App Launcher"),
+                    title: String(localized: "onboarding-open-launcher", defaultValue: "App Launcher"),
                     subtitle: String(localized: "Press this shortcut to open Tinycast."),
                     systemImage: "magnifyingglass", tint: .blue
                 ) {
@@ -168,10 +168,8 @@ struct OnboardingView: View {
             OnboardingCard {
                 OnboardingRow(
                     title: String(localized: "Accessibility"),
-                    subtitle:
-                        String(
-                            localized:
-                                "Allows pasting clipboard items and expanded snippets into active apps."),
+                    subtitle: String(
+                        localized: "Allows pasting clipboard items and expanded snippets into active apps."),
                     systemImage: "accessibility", tint: .blue
                 ) {
                     statusBadge
@@ -323,8 +321,7 @@ struct OnboardingView: View {
         case .success(let message):
             statusLine(message, systemImage: "checkmark.circle.fill", tint: .green)
         case .failure(let message):
-            statusLine(
-                message, systemImage: "exclamationmark.triangle.fill", tint: .orange)
+            statusLine(message, systemImage: "exclamationmark.triangle.fill", tint: .orange)
         }
     }
 
@@ -342,7 +339,7 @@ struct OnboardingView: View {
             Image(
                 systemName: accessibilityTrusted
                     ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
-            Text(accessibilityTrusted ? String(localized: "Granted") : String(localized: "Not granted"))
+            Text(accessibilityTrusted ? "Granted" : "Not granted")
         }
         .font(.caption.weight(.semibold))
         .foregroundStyle(accessibilityTrusted ? Color.green : Color.orange)
@@ -392,7 +389,8 @@ final class OnboardingModel {
         guard let name = file?.lastPathComponent else {
             return String(localized: "Choose a .rayconfig file exported from Raycast v2.0 or newer.")
         }
-        return isRaycastExport ? String(localized: "\(name) — Raycast export")
+        return isRaycastExport
+            ? String(localized: "\(name) — Raycast export")
             : String(localized: "\(name) — not a Raycast export")
     }
 

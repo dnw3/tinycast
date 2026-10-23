@@ -104,8 +104,7 @@ final class CalendarCoordinator {
             guard
                 await core.confirm(
                     title: String(localized: "Enable calendar?"),
-                    message:
-                        settings.calendarSpan.readEventsDescription,
+                    message: consentMessage,
                     symbol: "calendar", confirmTitle: String(localized: "Continue"), tone: .neutral,
                     confirmRole: .standard)
             else { return }
@@ -114,6 +113,24 @@ final class CalendarCoordinator {
             // The flag is consent, so it is written only once macOS has actually granted access.
             settings.calendarEnabled = true
             applyEnabled()
+        }
+    }
+
+    private var consentMessage: String {
+        switch settings.calendarSpan {
+        case .today:
+            String(localized: "Tinycast reads today's events to find join links. Nothing leaves this Mac.")
+        case .todayAndTomorrow:
+            String(
+                localized: """
+                    Tinycast reads today's and tomorrow's events to find join links. \
+                    Nothing leaves this Mac.
+                    """)
+        case .nextSevenDays:
+            String(
+                localized: """
+                    Tinycast reads the next 7 days' events to find join links. Nothing leaves this Mac.
+                    """)
         }
     }
 
@@ -282,7 +299,7 @@ final class CalendarCoordinator {
         store.refreshAccess()
         guard settings.calendarEnabled, store.access == .granted else {
             cancelEventEditing()
-            report("Turn Calendar on in Settings first")
+            report(String(localized: "Turn Calendar on in Settings first"))
             return
         }
         guard store.createEvent(editor.draft, now: Date()) else {
@@ -313,7 +330,7 @@ final class CalendarCoordinator {
 
     func openNextMeetingInCalendar() {
         guard let meeting = window.joinable(from: store.events, now: Date()) ?? agenda.first else {
-            report(settings.calendarSpan.emptyScheduleDescription)
+            report(settings.calendarSpan.nothingScheduledMessage)
             return
         }
         openInCalendar(meeting)
@@ -358,9 +375,10 @@ final class CalendarCoordinator {
             guard
                 await core.confirm(
                     title: String(localized: "Join \(meeting.title)?"),
-                    message: UpcomingWindow.countdown(to: meeting.start, now: Date()),
-                    symbol: link.provider.sfSymbol, confirmTitle: String(localized: "Join"), tone: .neutral,
-                    confirmRole: .standard, dismissTitle: String(localized: "Not Now"))
+                    message: UpcomingWindow.countdown(to: meeting.start, now: Date(), locale: .current),
+                    symbol: link.provider.sfSymbol, confirmTitle: String(localized: "Join"),
+                    tone: .neutral, confirmRole: .standard,
+                    dismissTitle: String(localized: "Not Now"))
             else { return }
         }
         if await MeetingLauncher.join(link, browserBundleID: settings.meetingBrowserBundleID) {

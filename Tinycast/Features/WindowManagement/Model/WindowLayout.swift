@@ -116,6 +116,12 @@ struct WindowLayout: Codable, Hashable, Identifiable, Sendable {
 
     var symbol: String { iconSymbol ?? Self.sfSymbol }
 
+    var summary: String {
+        let displays = Set(entries.map(\.display.uuid)).count
+        guard displays > 1 else { return String(localized: "\(entries.count) windows") }
+        return String(localized: "\(entries.count) windows · \(displays) displays")
+    }
+
     var entryID: String { Self.entryIDPrefix + id.uuidString.lowercased() }
 
     mutating func sanitizeEntries() {
@@ -160,10 +166,18 @@ extension String {
     }
 }
 
-enum WindowLayoutValidationError: Error, Equatable {
+enum WindowLayoutValidationError: LocalizedError, Equatable {
     case emptyName
     case duplicateName
     case noEntries
     case invalidCharacter
 
+    var errorDescription: String? {
+        switch self {
+        case .emptyName: return String(localized: "Enter a name for the layout.")
+        case .duplicateName: return String(localized: "A window layout with this name already exists.")
+        case .noEntries: return String(localized: "Add at least one app to the layout.")
+        case .invalidCharacter: return String(localized: "Names cannot contain null characters.")
+        }
+    }
 }

@@ -24,14 +24,16 @@ enum AppActionsMenu {
             items.append(
                 PopoverMenuItem(
                     title: favorites.isFavorite
-                        ? String(localized: "Remove from Favorites") : String(localized: "Add to Favorites"),
+                        ? String(localized: "Remove from Favorites")
+                        : String(localized: "Add to Favorites"),
                     systemImage: favorites.isFavorite ? "star.slash" : "star", startsSection: true,
                     shortcut: "⇧⌘F", action: favorites.toggle))
         }
         if favorites.canMoveUp {
             items.append(
                 PopoverMenuItem(
-                    title: String(localized: "Move Favorite Up"), systemImage: "arrow.up", shortcut: "⌥⌘↑"
+                    title: String(localized: "Move Favorite Up"), systemImage: "arrow.up",
+                    shortcut: "⌥⌘↑"
                 ) {
                     favorites.move(-1)
                 })
@@ -39,7 +41,8 @@ enum AppActionsMenu {
         if favorites.canMoveDown {
             items.append(
                 PopoverMenuItem(
-                    title: String(localized: "Move Favorite Down"), systemImage: "arrow.down", shortcut: "⌥⌘↓"
+                    title: String(localized: "Move Favorite Down"), systemImage: "arrow.down",
+                    shortcut: "⌥⌘↓"
                 ) {
                     favorites.move(1)
                 })
@@ -66,8 +69,7 @@ enum AppActionsMenu {
             items.append(
                 PopoverMenuItem(
                     title: String(localized: "Restart Application"), systemImage: "arrow.clockwise",
-                    startsSection: true,
-                    shortcut: "⌘R"
+                    startsSection: true, shortcut: "⌘R"
                 ) {
                     core.launcherCoordinator.restart(app)
                 })
@@ -85,12 +87,11 @@ enum AppActionsMenu {
                     core.launcherCoordinator.quit(app, force: true)
                 })
         }
-        if app.kind == .application {
+        if app.kind == .application, app.primaryInstallationID == nil {
             items.append(
                 PopoverMenuItem(
                     title: String(localized: "Uninstall Application"), systemImage: "trash",
-                    startsSection: true,
-                    isDestructive: true
+                    startsSection: true, isDestructive: true
                 ) {
                     core.uninstallCoordinator.beginUninstall(app)
                 })
@@ -99,8 +100,7 @@ enum AppActionsMenu {
             items.append(
                 PopoverMenuItem(
                     title: String(localized: "Copy Link"), systemImage: "doc.on.clipboard",
-                    startsSection: true,
-                    shortcut: "⌃⌘C"
+                    startsSection: true, shortcut: "⌃⌘C"
                 ) {
                     core.quicklinkCoordinator.copyQuicklink(id: quicklink.id)
                 })
@@ -141,7 +141,8 @@ enum AppActionsMenu {
                 })
             items.append(
                 PopoverMenuItem(
-                    title: String(localized: "Uninstall Extension"), systemImage: "trash", isDestructive: true
+                    title: String(localized: "Uninstall Extension"), systemImage: "trash",
+                    isDestructive: true
                 ) {
                     core.extensionCoordinator.confirmUninstall(app)
                 })
@@ -149,7 +150,6 @@ enum AppActionsMenu {
         return PopoverMenuContent(header: app.name, items: items)
     }
 
-    /// A meeting row leads with the same actions as the meeting's card.
     private static func leadingItems(
         app: AppEntry, searchQuery: String, core: AppCore
     ) -> [PopoverMenuItem] {
@@ -170,7 +170,7 @@ enum AppActionsMenu {
             }
         var items = [
             PopoverMenuItem(
-                title: app.kind.descriptor.openVerb, systemImage: primarySymbol,
+                title: app.kind.descriptor.openVerb.resolved(), systemImage: primarySymbol,
                 shortcut: "↵"
             ) { core.launcherCoordinator.launch(app, searchQuery: searchQuery) }
         ]
@@ -178,7 +178,9 @@ enum AppActionsMenu {
             let record = core.snippetsStore.record(id: id)
         {
             items.append(
-                PopoverMenuItem(title: "Edit Snippet", systemImage: "pencil", shortcut: "⌘E") {
+                PopoverMenuItem(
+                    title: String(localized: "Edit Snippet"), systemImage: "pencil", shortcut: "⌘E"
+                ) {
                     core.snippetCoordinator.editSnippet(record)
                 })
         }

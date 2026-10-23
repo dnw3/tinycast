@@ -84,10 +84,7 @@ struct SupportWindowView: View {
             .foregroundStyle(Theme.Colors.textSecondary)
             .frame(maxWidth: .infinity, alignment: .leading)
             .help(
-                String(
-                    localized:
-                        "About once a month. Turn this off and \(Bundle.main.appDisplayName) won't ask again."
-                ))
+                "About once a month. Turn this off and \(Bundle.main.appDisplayName) won't ask again.")
     }
 }
 

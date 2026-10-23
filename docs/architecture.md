@@ -102,8 +102,9 @@ app: the stores (`AppIndex`, `ClipboardStore`, `SnippetsStore`, `QuicklinkStore`
 `MeetingClock`), `NotesStore`, the twenty-one feature coordinators, and the
 window controllers.
 
-`AppDelegate.applicationDidFinishLaunching` calls `AppCore.shared.start()` and nothing else. That is the
-one wiring point, and `start()` reads as the app's whole boot sequence in one screen.
+`AppDelegate.applicationDidFinishLaunching` calls `AppCore.shared.start(launchedByUser:)` and nothing
+else; the delegate only reads the launch Apple Event to tell a plain open from a login-item or URL
+launch. That is the one wiring point, and `start` reads as the app's whole boot sequence in one screen.
 
 **Feature actions live on that feature's coordinator, and a view must never reach past a coordinator
 into a store to mutate it.** That is the rule; `AppCore` holds only the closure wiring that connects a
@@ -121,6 +122,8 @@ and pauses it while foreground screenshot recognition is active. `TextRecognitio
 bundled `TextRecognitionHelper` from `Contents/Helpers`, bounds its output and reaps it before returning.
 The helper has no database, clipboard or settings access. Search returns bounded text; screenshot OCR
 returns revision-tagged text boxes from composited tiles. Vision and PDFKit remain outside the app process.
+Its `thumbnail` mode writes the clipboard's downscaled image copies, so a full-size decode stays out of
+the app unless that fails.
 
 Capture WebP export runs one bundled `CaptureWebPHelper` per save. The app stages bounded final RGBA and ICC;
 the helper only encodes those pixels, has no UI or permissions, and exits before the app atomically publishes
@@ -134,7 +137,8 @@ store starts the helper on demand and reaps it after the selected idle delay or 
 
 ## Entry points and windows
 
-`TinycastApp` (`@main`) declares only two `MenuBarExtra` scenes — Tinycast's own item and the
+`TinycastLaunch` (`@main`) pins the interface language, then runs `TinycastApp`, which declares
+only two `MenuBarExtra` scenes — Tinycast's own item and the
 calendar's, each inserted by one preference and independent of the other; everything else visible is
 driven imperatively from AppKit. No feature can hide Tinycast's own item; the one mark a feature may
 put on it is AI Chat's blue dot while an agent waits on the reader. Extension menu extras are dynamic `NSStatusItem`s owned entirely by
@@ -151,7 +155,8 @@ put on it is AI Chat's blue dot while an agent waits on the reader. Extension me
 - **Settings and Onboarding** — titled `NSWindow`s, one `Windows/AppWindowController.swift` each, owned
   by `SettingsCoordinator` and `OnboardingCoordinator`. SwiftUI `Settings` and `Window` scenes are
   unreliable for accessory apps, so this is deliberate. Their lifecycles are independent of the
-  palette's in both directions.
+  palette's in both directions. Onboarding stays accessory rather than registering Dock ownership,
+  so completing it can open the palette without an activation-policy change stealing focus.
 - **Notes** — a persistent, titled, non-activating `NotesPanel` managed by `NotesWindowController`.
   Its height fits the note up to 860pt and AppKit autosaves the frame; its TextKit 2 editor renders
   Markdown over the literal source, switches among local Markdown files and stays visible on focus
@@ -191,7 +196,9 @@ put on it is AI Chat's blue dot while an agent waits on the reader. Extension me
 
 `NSAlert` is never used, and that is load-bearing. Appearance is a setting: `AppCore.applyAppearance()`
 assigns `NSApp.appearance` from `AppSettings.appearance`, and `.system` assigns `nil` so AppKit follows
-macOS by itself. Nothing else in the app sets an appearance.
+macOS by itself. Nothing else in the app sets an appearance. Animations take the same shape:
+`AppCore.applyMotion()` projects `AppSettings.animationsEnabled` into `Motion.isEnabled` and re-points
+every live `AnimatedPanel` (see [ui.md](ui.md#non-negotiable-invariants)).
 
 ## Observation
 

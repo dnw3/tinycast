@@ -19,7 +19,6 @@ struct CameraPreviewView: View {
         .background(Theme.Colors.panelScrim)
         .background(GlassEffectView())
         .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.dialog, style: .continuous))
-        .panelEntrance()
     }
 
     private var footer: some View {
@@ -28,14 +27,15 @@ struct CameraPreviewView: View {
                 Text(meeting.title)
                     .font(Theme.Typography.rowTitle)
                     .lineLimit(1)
-                Text(UpcomingWindow.countdown(to: meeting.start, now: now))
+                Text(UpcomingWindow.countdown(to: meeting.start, now: now, locale: .current))
                     .font(Theme.Typography.rowTrailing)
                     .foregroundStyle(Theme.Colors.textSecondary)
             }
             Spacer(minLength: Theme.Spacing.md)
             CameraButton(
-                title: String(localized: "Cancel"), keyCap: "esc", emphasis: .secondary, onActivate: onCancel)
-            CameraButton(title: String(localized: "Join"), keyCap: "↵", onActivate: onJoin)
+                title: String(localized: "Cancel"), keyCaps: ["esc"], emphasis: .secondary,
+                onActivate: onCancel)
+            CameraButton(title: String(localized: "Join"), keyCaps: ["↵"], onActivate: onJoin)
         }
         .padding(Theme.Spacing.xl)
     }

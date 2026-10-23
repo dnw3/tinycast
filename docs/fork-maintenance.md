@@ -49,7 +49,7 @@ Model import 纯度及严格签名检查通过。未重新执行截图、翻译�
 | --- | --- |
 | Capture | 截图、长截图、编辑、贴图、OCR、录制、导出与历史；源码在 `Tinycast/Features/Capture/`，约束见 [Capture](features/capture.md) |
 | Translation | 独立翻译窗口、Apple / AI 引擎、划词及截图文本、受校验的回填；源码在 `Tinycast/Features/Translation/`，约束见 [Translation](features/translation.md) |
-| 共享接入 | `AppCore` 所有权、命令与热键、设置、剪贴板、`Platform/TextRecognition/` 和 `TextInjector`；同步时适配上游的新 API，保留双方行为。「设置 › 通用 › 外观」的「语言」行加在上游的 `GeneralSettingsView` 和 `SettingsSearchCatalog` 中 |
+| 共享接入 | `AppCore` 所有权、命令与热键、设置、剪贴板、`Platform/TextRecognition/` 和 `TextInjector`；同步时适配上游的新 API，保留双方行为 |
 | Disk Cleanup | 磁盘清理（部分改编自 Purge，MIT，见 `NOTICE.md`）；源码在 `Tinycast/Features/Cleanup/`，约束见 [Disk Cleanup](features/cleanup.md)。动过的上游文件：`AppCore`、`PaletteMode`、`PaletteScreen`、`RootPaletteView`、`UninstallScreen`、`UpdateReadiness`、`CommandID`、`CommandCatalog`、`LauncherCoordinator`、`SettingsTab`、`SettingsAnchor`、`SettingsSearchCatalog`、`SettingsDetailView`、`SettingsFileKey`、`SettingsFileSchema`、`AppSettingsKey`、`SettingsBackupCoverage`、`MenuBarItem`（低空间时的「释放空间」行）、`ToolRunner`（新增环境变量、工作目录、关闭 stdin 与取消终止）、`DialogController`（确认框的「取消」默认值改为本地化，由 `AppCore.confirm` 提供）。设置页的完全磁盘访问权限行是有意从 File Search 复制的 |
 | Clipboard | 参照 Maccy 的改进与富文本后续方案见 [剪贴板 Plan](plans/clipboard-plan.md)。动过的上游文件：`ClipboardStore`（`content_hash` 与 `rich_path` 列、FTS 前缀索引迁移、图片与 RTF 的过期检查）、`ClipboardManager`（忽略类型、JPEG/HEIC、RTF 捕获、暂停记录）、`Paster`（RTF 写回、纯文本粘贴只写 `.string`）、`ASCIIKeyboardLayout`（⌘V 跟随布局）、`ClipboardCoordinator`、`ClipboardScreen`、`ClipboardView`（命中高亮）、`ClipboardSettingsView`（占用空间、确认框）、`CommandID`、`CommandCatalog`、`LauncherCoordinator`，以及 `RootPaletteView`（剪贴板与文件搜索筛选器标题改为本地化显示）；`GeneralSettingsView`、`MCPSettingsSection`、`AIProvidersPanel` 的系统确认框改为 `core.confirm` |
 | WebP | 用户批准的官方 libwebp 依赖及短生命周期 helper；版本、校验和、更新规则见 [Vendor/README.md](../Vendor/README.md) |
@@ -161,12 +161,11 @@ git merge --no-ff --no-commit origin/upstream-main
 其他生成文件也通过各自生成器更新。`Vendor/libwebp/` 保持官方源码，按其 README 更新。
 需要放弃本次合并时用 `git merge --abort`。
 
-上游新增的界面文案需要单独补本地化：`String` 参数（`FormRow`、`SettingsRow(title:)`、
-`primaryActionTitle`、`.tooltip`、`PopoverMenuItem` 等）在调用处改为 `String(localized:)`，
-Model 层不本地化。用 `SWIFT_EMIT_LOC_STRINGS=YES` 构建后运行
-`./Scripts/sync-localization.sh build/UpstreamCheck`，补齐它报告缺少的中文，删除 `stale` 条目。
-运行时才拼出键的显示名（如 `HyperKeyPhysicalKey.title`、命令标题、设置搜索条目）不会被提取，
-需在目录里以 `manual` 条目补齐。
+本地化以上游机制为准（[standards.md](standards.md#localization)）：上游自 #1620 起维护 8 种语言，
+共有文案的译文一律用上游的；`Localizable.xcstrings` 冲突时取上游目录，再并回 fork 独有的条目。
+fork 只做过本地化写法改动的文件直接取上游版本。合并后运行 `./Scripts/sync-strings.sh`，
+删除它报告的 `stale` 条目，并为 fork 新增或改动的文案补齐 8 种语言，`./Scripts/lint.sh` 才会通过。
+Capture 等 fork 功能里运行时才拼出键的显示名不会被提取，在目录里保留为 `manual` 条目。
 
 ## 只同步一个 feature 或 fix
 

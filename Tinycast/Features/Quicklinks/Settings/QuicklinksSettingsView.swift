@@ -12,7 +12,7 @@ struct QuicklinksSettingsView: View {
             FeatureSwitchSection(
                 anchor: .quicklinksQuicklinks,
                 enableTitle: "Enable quicklinks",
-                enableSubtitle: String(localized: "Open saved links and searches from the launcher."),
+                enableSubtitle: "Open saved links and searches from the launcher.",
                 isEnabled: $settings.quicklinksEnabled,
                 showsInLauncher: $settings.quicklinksShowInLauncher,
                 showsIcon: true,
@@ -47,13 +47,13 @@ struct QuicklinksSettingsView: View {
     private var library: some View {
         Section {
             if !store.quicklinks.isEmpty {
-                SettingsFilterField(prompt: String(localized: "Search quicklinks…"), query: $query)
+                SettingsFilterField(prompt: "Search quicklinks…", query: $query)
             }
             if results.isEmpty {
                 Text(
                     store.quicklinks.isEmpty
-                        ? String(localized: "No quicklinks yet.")
-                        : String(localized: "No quicklink matches “\(query)”.")
+                        ? "No quicklinks yet."
+                        : "No quicklink matches “\(query)”."
                 )
                 .foregroundStyle(.secondary)
             } else {
@@ -147,12 +147,12 @@ private struct QuicklinkSettingsRow: View {
             if quicklink.isPinned {
                 Image(systemName: "pin.fill")
                     .foregroundStyle(.secondary)
-                    .help(String(localized: "Pinned to the top"))
+                    .help("Pinned to the top")
             }
             if !quicklink.showsInRootSearch {
                 Image(systemName: "eye.slash")
                     .foregroundStyle(.secondary)
-                    .help(String(localized: "Hidden from root search"))
+                    .help("Hidden from root search")
             }
 
             // An alias only reaches the ranker through the root-search slice, so it dims with it.
@@ -167,22 +167,22 @@ private struct QuicklinkSettingsRow: View {
                 Image(systemName: "pencil")
             }
             .buttonStyle(.plain)
-            .help(String(localized: "Edit Quicklink"))
-            .accessibilityLabel(String(localized: "Edit \(quicklink.name)"))
+            .help("Edit Quicklink")
+            .accessibilityLabel("Edit \(quicklink.name)")
 
             Button(action: onDelete) {
                 Image(systemName: "trash")
                     .foregroundStyle(.red)
             }
             .buttonStyle(.plain)
-            .help(String(localized: "Delete Quicklink"))
-            .accessibilityLabel(String(localized: "Delete \(quicklink.name)"))
+            .help("Delete Quicklink")
+            .accessibilityLabel("Delete \(quicklink.name)")
 
             Toggle("", isOn: $isEnabled)
                 .labelsHidden()
                 .toggleStyle(.checkbox)
-                .help(String(localized: "Enabled"))
-                .accessibilityLabel(String(localized: "Enable \(quicklink.name)"))
+                .help("Enabled")
+                .accessibilityLabel("Enable \(quicklink.name)")
         }
     }
 }

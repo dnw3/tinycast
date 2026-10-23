@@ -69,7 +69,7 @@ private struct EmojiColumnCountPicker: View {
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(String(localized: "\(columns.rawValue) columns"))
+        .accessibilityLabel("\(columns.rawValue) columns")
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }

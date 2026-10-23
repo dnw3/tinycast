@@ -71,7 +71,8 @@ struct RoomsScreen: PaletteScreen {
                     coordinator.enterRoom(id: room.id)
                 },
                 PopoverMenuItem(
-                    title: String(localized: "Next Layout"), systemImage: "rectangle.3.group", shortcut: "⇥"
+                    title: String(localized: "Next Layout"), systemImage: "rectangle.3.group",
+                    shortcut: "⇥"
                 ) {
                     coordinator.cycleLayout(of: room, backwards: false)
                 },

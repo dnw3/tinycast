@@ -17,7 +17,7 @@ struct AISettingsView: View {
                 Toggle(isOn: $appSettings.aiEnabled) {
                     SettingsFeatureToggleLabel(
                         anchor: .aiAI, title: "Enable AI",
-                        subtitle: String(localized: "Nothing is loaded or sent while it is off."))
+                        subtitle: "Nothing is loaded or sent while it is off.")
                 }
                 SettingsRow(
                     title: "Providers", subtitle: providerSummary, anchor: .aiProviders
@@ -107,13 +107,10 @@ struct AISettingsView: View {
         }
         if !settings.connections.isEmpty {
             let count = settings.connections.count
-            providers.append(
-                count == 1
-                    ? String(localized: "1 API connection") : String(localized: "\(count) API connections"))
+            providers.append(String(localized: "\(count) API connections"))
         }
         return providers.isEmpty
-            ? String(localized: "No external providers ready")
-            : providers.joined(separator: String(localized: ", "))
+            ? String(localized: "No external providers ready") : providers.joined(separator: ", ")
     }
 
     private func syncSelection() {
@@ -127,15 +124,19 @@ struct AISettingsView: View {
                 SettingsRowTitle(.aiChat, "Web search")
                 Text("Codex and OpenRouter only. Prompts go to a search engine.")
             }
+            Toggle(isOn: $settings.choicesEnabled) {
+                SettingsRowTitle(.aiChat, "Suggested replies")
+                Text("Next steps the model offers as buttons after a reply.")
+            }
             Picker(selection: $settings.toolRounds) {
-                ForEach(AIToolRounds.allCases) { Text(LocalizedStringKey($0.title)).tag($0) }
+                ForEach(AIToolRounds.allCases) { Text($0.title).tag($0) }
             } label: {
                 SettingsRowTitle(.aiChat, "Tool call rounds")
                 Text(
-                    String(
-                        localized:
-                            "A reply stops after this many; Unlimited runs until Stop. API connections, Codex and Claude."
-                    ))
+                    """
+                    A reply stops after this many; Unlimited runs until Stop. API connections, Codex \
+                    and Claude.
+                    """)
             }
         } header: {
             SettingsSectionHeader(.aiChat)
@@ -146,17 +147,14 @@ struct AISettingsView: View {
         @Bindable var settings = settings
         return Section {
             Picker(selection: $settings.opensTo) {
-                ForEach(AIOpensTo.allCases) { Text(LocalizedStringKey($0.title)).tag($0) }
+                ForEach(AIOpensTo.allCases) { Text($0.title).tag($0) }
             } label: {
                 SettingsRowTitle(.aiConversations, "Opens to")
                 Text("What Quick AI and the AI Chat window show when you open them.")
             }
             if settings.opensTo == .recent {
                 Picker(selection: $settings.newChatAfter) {
-                    ForEach(AINewChatAfter.allCases) { interval in
-                        Text(interval == .never ? String(localized: "Never")
-                            : String(localized: "\(interval.rawValue) Minutes")).tag(interval)
-                    }
+                    ForEach(AINewChatAfter.allCases) { Text($0.title).tag($0) }
                 } label: {
                     SettingsRowTitle(.aiConversations, "Start a new conversation after")
                 }
@@ -166,7 +164,7 @@ struct AISettingsView: View {
                 Text("In the AI Chat window, at the left edge. ⌘B keeps it shown.")
             }
             Picker(selection: $settings.retention) {
-                ForEach(AIRetention.allCases) { Text(LocalizedStringKey($0.title)).tag($0) }
+                ForEach(AIRetention.allCases) { Text($0.title).tag($0) }
             } label: {
                 SettingsRowTitle(.aiConversations, "Keep conversations")
                 Text("Older ones are deleted, except pinned chats.")

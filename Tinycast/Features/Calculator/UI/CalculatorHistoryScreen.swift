@@ -31,7 +31,7 @@ struct CalculatorHistoryScreen: PaletteScreen {
         return [.calc(calc)] + entries
     }
 
-    var primaryActionTitle: String { "Copy Answer" }
+    var primaryActionTitle: String { String(localized: "Copy Answer") }
 
     private func row(at selection: Int) -> Row? {
         let rows = rows
@@ -120,8 +120,8 @@ struct CalculatorHistoryScreen: PaletteScreen {
         if rows.isEmpty {
             EmptyResults(
                 text: vm.query.trimmingCharacters(in: .whitespaces).isEmpty
-                    ? String(localized: "No calculations yet") : String(localized: "No matching calculations")
-            )
+                    ? String(localized: "No calculations yet")
+                    : String(localized: "No matching calculations"))
         } else {
             CalculatorHistoryList(
                 results: entries,

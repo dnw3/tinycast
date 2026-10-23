@@ -970,12 +970,12 @@ final class ExtensionManager: ExtensionRuntimeDelegate, ExtensionHostContext {
             return
         }
         let panel = NSAlert()
-        panel.messageText = "Open With"
+        panel.messageText = String(localized: "Open With")
         panel.informativeText = target.lastPathComponent
         for candidate in candidates.prefix(4) {
             panel.addButton(withTitle: candidate.deletingPathExtension().lastPathComponent)
         }
-        panel.addButton(withTitle: "Cancel")
+        panel.addButton(withTitle: String(localized: "Cancel"))
         let response = panel.runModal().rawValue - NSApplication.ModalResponse.alertFirstButtonReturn.rawValue
         guard response >= 0, response < min(candidates.count, 4) else { return }
         NSWorkspace.shared.open(
@@ -992,12 +992,9 @@ final class ExtensionManager: ExtensionRuntimeDelegate, ExtensionHostContext {
         guard let owningName, let owner = extensionNamed(owningName),
             let command = owner.command(named: name)
         else { throw ExtensionLaunchError.unknownCommand(name) }
-        guard isEnabled else {
-            throw ExtensionLaunchError.unsupported(String(localized: "Extensions are disabled."))
-        }
+        guard isEnabled else { throw ExtensionLaunchError.unsupported("Extensions are disabled.") }
         guard launchType != .background || command.mode != .view else {
-            throw ExtensionLaunchError.unsupported(
-                String(localized: "A view command cannot run in the background."))
+            throw ExtensionLaunchError.unsupported("A view command cannot run in the background.")
         }
         coordinator?.runExtensionCommand(
             entry(for: command, in: owner), arguments: arguments, fallbackText: fallbackText,

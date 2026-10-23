@@ -52,8 +52,7 @@ struct CustomCommandListScreen: PaletteScreen {
             items.append(
                 PopoverMenuItem(
                     title: String(localized: "Delete Custom Command"), systemImage: "trash",
-                    startsSection: true,
-                    shortcut: "⌃X", isDestructive: true
+                    startsSection: true, shortcut: "⌃X", isDestructive: true
                 ) {
                     Task { await coordinator.deleteCustomCommand(id: command.id) }
                 })

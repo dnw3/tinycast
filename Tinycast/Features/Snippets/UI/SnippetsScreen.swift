@@ -19,7 +19,7 @@ struct SnippetsScreen: PaletteScreen {
         }
     }
 
-    let primaryActionTitle = "Paste Snippet"
+    let primaryActionTitle = String(localized: "Paste Snippet")
 
     private func record(at selection: Int) -> StoredSnippet? {
         let rows = rows
@@ -126,7 +126,7 @@ enum SnippetActionsMenu {
                     core.snippetCoordinator.showSnippetInFinder(record)
                 },
                 PopoverMenuItem(
-                    title: "Delete Snippet", systemImage: "trash", startsSection: true,
+                    title: String(localized: "Delete Snippet"), systemImage: "trash", startsSection: true,
                     shortcut: "⌃X", isDestructive: true
                 ) {
                     Task { await core.snippetCoordinator.deleteSnippet(id: record.id) }

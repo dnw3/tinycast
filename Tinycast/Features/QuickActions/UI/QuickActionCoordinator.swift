@@ -87,12 +87,14 @@ final class QuickActionCoordinator {
             guard
                 await core.confirm(
                     title: String(localized: "Enable Quick Actions?"),
-                    message:
-                        String(
-                            localized:
-                                "Tinycast needs the Accessibility permission to read the text you have selected in other apps and replace it. Nothing is read until you press a shortcut."
-                        ),
-                    symbol: "wand.and.sparkles", confirmTitle: String(localized: "Continue"), tone: .neutral,
+                    message: String(
+                        localized: """
+                            Tinycast needs the Accessibility permission to read the text you have \
+                            selected in other apps and replace it. Nothing is read until you press \
+                            a shortcut.
+                            """),
+                    symbol: "wand.and.sparkles", confirmTitle: String(localized: "Continue"),
+                    tone: .neutral,
                     confirmRole: .standard)
             else { return }
             settings.quickActionsEnabled = true
@@ -248,12 +250,13 @@ final class QuickActionCoordinator {
             guard
                 await core.reportFailure(
                     title: String(localized: "Quick Actions can't read your selection"),
-                    message:
-                        String(
-                            localized:
-                                "Tinycast needs the Accessibility permission to read the text you have selected and replace it. If Tinycast is already listed, switch it off and on again — a rebuilt app keeps a stale entry."
-                        ),
-                    symbol: "wand.and.sparkles", recovery: "Open System Settings")
+                    message: String(
+                        localized: """
+                            Tinycast needs the Accessibility permission to read the text you have \
+                            selected and replace it. If Tinycast is already listed, switch it off \
+                            and on again — a rebuilt app keeps a stale entry.
+                            """),
+                    symbol: "wand.and.sparkles", recovery: String(localized: "Open System Settings"))
             else { return }
             Permissions.openAccessibilitySettings()
         }

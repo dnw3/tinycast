@@ -44,7 +44,7 @@ struct ExtensionPickerList: View {
     @ViewBuilder
     private var list: some View {
         if items.isEmpty {
-            Text(searchPlaceholder == nil ? String(localized: "No matches") : String(localized: "No Results"))
+            Text(searchPlaceholder == nil ? "No matches" : "No Results")
                 .font(metrics.typography.menuRow)
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity)

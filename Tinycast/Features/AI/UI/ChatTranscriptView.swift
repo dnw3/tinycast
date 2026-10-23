@@ -402,7 +402,7 @@ private struct ChatSourceChip: View {
             NSWorkspace.shared.open(reference.url)
         } label: {
             HStack(spacing: metrics.spacing.md) {
-                Text("\(index)")
+                Text(verbatim: "\(index)")
                     .font(metrics.typography.keyCap)
                     .monospacedDigit()
                     .foregroundStyle(Theme.Colors.textSecondary)
@@ -425,7 +425,7 @@ private struct ChatSourceChip: View {
         }
         .buttonStyle(.plain)
         .help(reference.url.absoluteString)
-        .accessibilityLabel(String(localized: "Source \(index): \(reference.title), \(reference.host)"))
+        .accessibilityLabel("Source \(index): \(reference.title), \(reference.host)")
     }
 }
 
@@ -442,8 +442,8 @@ private struct RegenerateButton: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .help(String(localized: "Regenerate Response"))
-        .accessibilityLabel(String(localized: "Regenerate Response"))
+        .help("Regenerate Response")
+        .accessibilityLabel("Regenerate Response")
     }
 }
 
@@ -459,7 +459,9 @@ private struct ChatReasoningBlock: View {
     private var title: String {
         if isThinking { return block.heading ?? String(localized: "Thinking…") }
         guard let duration = block.duration else { return String(localized: "Thoughts") }
-        return String(localized: "Thought for \(max(1, Int(duration.rounded())))s")
+        let seconds = Duration.seconds(max(1, Int(duration.rounded())))
+        return String(
+            localized: "Thought for \(seconds.formatted(.units(allowed: [.seconds], width: .narrow)))")
     }
 
     /// A match inside a folded block would be found and then invisible, so find unfolds it.
@@ -493,8 +495,7 @@ private struct ChatReasoningBlock: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel(
-                isOpen ? String(localized: "Hide reasoning") : String(localized: "Show reasoning"))
+            .accessibilityLabel(isOpen ? "Hide reasoning" : "Show reasoning")
             if isOpen {
                 let text = block.displayText
                 Text(highlight?.attributed(text, leaf: path) ?? AttributedString(text))
@@ -562,7 +563,7 @@ private struct ChatDocumentChip: View {
         .padding(.horizontal, metrics.spacing.sm)
         .padding(.vertical, metrics.spacing.xxs)
         .background(Capsule().fill(Theme.Colors.controlSurface))
-        .accessibilityLabel(String(localized: "Attached file \(document.name)"))
+        .accessibilityLabel("Attached file \(document.name)")
     }
 }
 
@@ -628,7 +629,7 @@ private struct ChatToolRun: View {
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel(uses.completedLabel)
-                    .accessibilityValue(isExpanded ? String(localized: "Expanded") : String(localized: "Collapsed"))
+                    .accessibilityValue(isExpanded ? "Expanded" : "Collapsed")
                     if isExpanded {
                         VStack(alignment: .leading, spacing: metrics.spacing.sm) {
                             ForEach(uses, id: \.callID) { use in
@@ -780,10 +781,10 @@ private struct ChatSearchRow: View {
             } else {
                 ProgressView().controlSize(.small)
             }
-            Text(search.isComplete ? String(localized: "Searched web") : String(localized: "Searching web"))
+            Text(search.isComplete ? "Searched web" : "Searching web")
                 .font(metrics.typography.rowTrailing)
             if let query = search.query, !query.isEmpty {
-                Text("· \(query)")
+                Text(verbatim: "· \(query)")
                     .font(metrics.typography.rowTrailing)
                     .foregroundStyle(Theme.Colors.textTertiary)
                     .lineLimit(1)

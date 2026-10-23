@@ -8,9 +8,6 @@ final class ClipboardManager {
     /// Marker we attach to the pasteboard when *we* write to it, so polling ignores our own pastes.
     static let internalType = NSPasteboard.PasteboardType("com.tinycast.internal")
 
-    /// Longest text captured in characters; bigger copies are skipped, truncation losing the tail.
-    nonisolated static let maxTextLength = 1_000_000
-
     /// Markers put on secret copies by password managers, browsers and the OS.
     static let sensitiveTypes: Set<NSPasteboard.PasteboardType> = [
         .init("org.nspasteboard.ConcealedType"),
@@ -210,7 +207,7 @@ final class ClipboardManager {
         if let text = pb.string(forType: .string),
             !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         {
-            guard Self.fitsTextLimit(text) else { return }
+            guard ClipboardStore.fitsTextLimit(text) else { return }
             store.addText(
                 text, richText: Self.richText(on: pb), sourceBundleID: sourceBundleID
             ) { [weak self] in
@@ -236,11 +233,5 @@ final class ClipboardManager {
             data.count <= ClipboardStore.maxRichTextBytes
         else { return nil }
         return data
-    }
-
-    /// `utf8.count` is O(1), so a giant copy is refused before any character walk begins.
-    nonisolated static func fitsTextLimit(_ text: String) -> Bool {
-        text.utf8.count <= maxTextLength || (text.utf8.count <= 4 * maxTextLength
-            && text.count <= maxTextLength)
     }
 }

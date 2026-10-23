@@ -18,13 +18,15 @@ enum AIModelMenu {
         }
         if loading {
             items.insert(
-                PopoverMenuItem(title: String(localized: "Loading models…"), icon: .blank, isLoading: true) {
-                }, at: 0)
+                PopoverMenuItem(
+                    title: String(localized: "Loading models…"), icon: .blank, isLoading: true
+                ) {}, at: 0)
         }
         guard !items.isEmpty else {
             return PopoverMenuContent(items: [
-                PopoverMenuItem(title: String(localized: "Configure AI"), systemImage: "slider.horizontal.3")
-                {
+                PopoverMenuItem(
+                    title: String(localized: "Configure AI"), systemImage: "slider.horizontal.3"
+                ) {
                     coordinator.showSettings()
                 }
             ])
@@ -38,7 +40,7 @@ enum AIModelMenu {
             items: coordinator.reasoningEfforts(for: chat).map { effort in
                 PopoverMenuItem(
                     title: effort.title, icon: .blank,
-                    detail: effort.id == selected ? String(localized: "✓") : nil
+                    detail: effort.id == selected ? "✓" : nil
                 ) {
                     coordinator.selectReasoningEffort(effort, in: chat)
                 }
@@ -49,7 +51,7 @@ enum AIModelMenu {
     static func attachments(coordinator: AIChatCoordinator, chat: AIChatState) -> PopoverMenuContent {
         var items = chat.pendingAttachments.map { attachment in
             PopoverMenuItem(
-                title: attachment.name, icon: attachment.menuIcon, detail: String(localized: "✕")
+                title: attachment.name, icon: attachment.menuIcon, detail: "✕"
             ) {
                 coordinator.removeAttachment(attachment.id, in: chat)
             }
@@ -57,7 +59,8 @@ enum AIModelMenu {
         if items.count > 1 {
             items.append(
                 PopoverMenuItem(
-                    title: String(localized: "Remove All"), systemImage: "xmark.circle", startsSection: true
+                    title: String(localized: "Remove All"), systemImage: "xmark.circle",
+                    startsSection: true
                 ) {
                     coordinator.clearAttachments(in: chat)
                 })

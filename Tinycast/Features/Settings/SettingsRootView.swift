@@ -16,7 +16,7 @@ struct SettingsRootView: View {
             SettingsDetailView()
                 .frame(minWidth: Theme.Size.settingsDetailMinimum)
         }
-        .navigationTitle(LocalizedStringKey(navigation.tab.title))
+        .navigationTitle(navigation.tab.title)
         .toolbar {
             ToolbarItem(placement: .navigation) {
                 ControlGroup {

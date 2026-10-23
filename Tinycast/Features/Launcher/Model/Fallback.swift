@@ -45,11 +45,11 @@ enum Fallback: Hashable, Sendable {
 
     var openVerb: String {
         switch self {
-        case .builtin(.quickAI): return "Ask Quick AI"
-        case .builtin(.searchFiles): return "Search Files"
-        case .builtin(.runShellCommand): return "Run Shell Command"
-        case .builtin(.define): return "Define Word"
-        case .quicklink: return "Open Quicklink"
+        case .builtin(.quickAI): return String(localized: "Ask Quick AI")
+        case .builtin(.searchFiles): return String(localized: "Search Files")
+        case .builtin(.runShellCommand): return String(localized: "Run Shell Command")
+        case .builtin(.define): return String(localized: "Define Word")
+        case .quicklink: return String(localized: "Open Quicklink")
         }
     }
 
@@ -58,5 +58,12 @@ enum Fallback: Hashable, Sendable {
         var remaining = Dictionary(available.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         let known = storedIDs.compactMap { remaining.removeValue(forKey: $0) }
         return known + available.filter { remaining[$0.id] != nil }
+    }
+
+    /// The section header. A long query is elided in the middle, so “with…” always survives.
+    static func sectionTitle(query: String, limit: Int = 72) -> String {
+        guard query.count > limit else { return String(localized: "Use “\(query)” with…") }
+        let elided = "\(query.prefix(limit / 2))…\(query.suffix(limit - limit / 2 - 1))"
+        return String(localized: "Use “\(elided)” with…")
     }
 }

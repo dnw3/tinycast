@@ -13,7 +13,7 @@ struct TranslationSettingsView: View {
                 Toggle(isOn: $settings.translationEnabled) {
                     SettingsFeatureToggleLabel(
                         anchor: .translationTranslation, title: "Enable Translation",
-                        subtitle: String(localized: "Translate selected text, or open an empty window and type."))
+                        subtitle: "Translate selected text, or open an empty window and type.")
                 }
                 TranslationAccessibilityRow()
                     .settingsEnabled(settings.translationEnabled)

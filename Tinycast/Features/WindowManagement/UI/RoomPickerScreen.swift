@@ -31,10 +31,11 @@ struct RoomPickerScreen: PaletteScreen {
 
     var primaryActionTitle: String {
         let rows = rows
-        let name = "“\(session.roomName)”"
-        guard rows.indices.contains(vm.selection) else { return String(localized: "Add to \(name)") }
+        let name = session.roomName
+        let add = String(localized: "Add to “\(name)”")
+        guard rows.indices.contains(vm.selection) else { return add }
         return session.picked.contains(rows[vm.selection].pick)
-            ? String(localized: "Remove from \(name)") : String(localized: "Add to \(name)")
+            ? String(localized: "Remove from “\(name)”") : add
     }
 
     func activate(at selection: Int) {

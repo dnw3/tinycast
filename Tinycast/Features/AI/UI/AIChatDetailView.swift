@@ -11,8 +11,8 @@ struct AIChatDetailView: View {
 
     /// The last reply's options, once it has finished; typing or sending moves past them.
     private var suggestions: [String] {
-        guard !chat.isStreaming, let last = chat.session.messages.last, last.role == .assistant,
-            last.state == .complete
+        guard coordinator.aiSettings.choicesEnabled, !chat.isStreaming,
+            let last = chat.session.messages.last, last.role == .assistant, last.state == .complete
         else { return [] }
         return ChatChoices.split(last.text).choices
     }
@@ -166,9 +166,7 @@ private struct AIChatComposer: View {
                 if chat.draft.isEmpty, !isComposing {
                     Text(
                         chat.pendingApproval == nil
-                            ? String(localized: "Ask anything…")
-                            : String(localized: "Or say what to do instead…")
-                    )
+                            ? "Ask anything…" : "Or say what to do instead…")
                     .foregroundStyle(.tertiary)
                     .allowsHitTesting(false)
                 }
@@ -199,8 +197,7 @@ private struct AIChatComposer: View {
             ScrollView(.horizontal) {
                 HStack(spacing: Theme.Spacing.sm) {
                     if let addressed {
-                        ComposerChip(
-                            symbol: "wrench.and.screwdriver", label: String(localized: "@\(addressed.slug)"))
+                        ComposerChip(symbol: "wrench.and.screwdriver", label: "@\(addressed.slug)")
                     }
                     ForEach(chat.pendingAttachments) { attachment in
                         AttachmentChip(attachment: attachment) {
@@ -273,8 +270,8 @@ private struct AIChatComposer: View {
         .buttonStyle(.plain)
         .disabled(!enabled)
         .animation(.easeOut(duration: Theme.Duration.hover), value: enabled)
-        .help(stops ? String(localized: "Stop Response") : String(localized: "Send  ↵"))
-        .accessibilityLabel(stops ? String(localized: "Stop Response") : String(localized: "Send"))
+        .help(stops ? "Stop Response" : "Send  ↵")
+        .accessibilityLabel(stops ? "Stop Response" : "Send")
     }
 
     private func submit() {
@@ -404,8 +401,8 @@ private struct AIAddMenu: View {
             ComposerControlLabel(showsChevron: false) { ComposerSymbol(name: "plus") }
         }
         .composerMenu()
-        .help(String(localized: "Attach files, search the web, choose tools"))
-        .accessibilityLabel(String(localized: "Add"))
+        .help("Attach files, search the web, choose tools")
+        .accessibilityLabel("Add")
     }
 
     /// One entry for every kind; what this chat's model can read is what the help says.
@@ -452,12 +449,13 @@ private struct DictationButton: View {
         .composerControl()
         .disabled(session?.isTranscribing == true)
         .help(help(session))
-        .accessibilityLabel(
-            session == nil ? String(localized: "Dictate") : String(localized: "Stop Dictating"))
+        .accessibilityLabel(session == nil ? "Dictate" : "Stop Dictating")
     }
 
     private func help(_ session: DictationField?) -> String {
-        guard dictation.hasModel else { return String(localized: "Download a dictation model in Settings") }
+        guard dictation.hasModel else {
+            return String(localized: "Download a dictation model in Settings")
+        }
         guard let session else { return String(localized: "Dictate") }
         return session.isTranscribing
             ? String(localized: "Transcribing…") : String(localized: "Stop and insert the text  ↵")
@@ -485,8 +483,8 @@ private struct WebSearchPill: View {
         }
         .buttonStyle(.plain)
         .composerControl()
-        .help(String(localized: "Web search is on; click to turn it off"))
-        .accessibilityLabel(String(localized: "Web search is on"))
+        .help("Web search is on; click to turn it off")
+        .accessibilityLabel("Web search is on")
     }
 }
 
@@ -532,7 +530,7 @@ private struct AIModelPicker: View {
             }
         }
         .composerMenu()
-        .help(String(localized: "Switch this chat's model"))
+        .help("Switch this chat's model")
     }
 }
 
@@ -560,10 +558,7 @@ private struct AIReasoningPicker: View {
         }
         .composerMenu()
         .disabled(efforts.isEmpty)
-        .help(
-            efforts.isEmpty
-                ? String(localized: "This model has no reasoning setting")
-                : String(localized: "Change reasoning effort"))
+        .help(efforts.isEmpty ? "This model has no reasoning setting" : "Change reasoning effort")
     }
 }
 
@@ -719,10 +714,9 @@ private struct AIToolsMenu: View {
         } label: {
             Label(
                 !takesTools
-                    ? String(localized: "Tools · Not with this model")
+                    ? "Tools · Not with this model"
                     : servers.isEmpty || !scope.isEnabled
-                        ? String(localized: "Tools · Off")
-                        : String(localized: "Tools · \(active) of \(servers.count)"),
+                        ? "Tools · Off" : "Tools · \(active) of \(servers.count)",
                 systemImage: "wrench.and.screwdriver")
         }
         .disabled(!takesTools)
@@ -736,7 +730,7 @@ private struct FindCounter: View {
 
     var body: some View {
         HStack(spacing: Theme.Spacing.sm) {
-            Text(count == 0 ? String(localized: "No matches") : String(localized: "\(position) of \(count)"))
+            Text(count == 0 ? "No matches" : "\(position) of \(count)")
                 .font(.callout)
                 .monospacedDigit()
                 .foregroundStyle(.secondary)
@@ -745,14 +739,14 @@ private struct FindCounter: View {
             } label: {
                 Image(systemName: "chevron.up")
             }
-            .help(String(localized: "Previous Match  ⇧⌘G"))
+            .help("Previous Match  ⇧⌘G")
             .disabled(count == 0)
             Button {
                 step(1)
             } label: {
                 Image(systemName: "chevron.down")
             }
-            .help(String(localized: "Next Match  ⌘G"))
+            .help("Next Match  ⌘G")
             .disabled(count == 0)
         }
         .buttonStyle(.borderless)
@@ -810,7 +804,7 @@ private struct ContextCard: View {
             ProgressView(value: min(report.fill, 1))
                 .tint(report.tint)
             if report.historyBytes > report.budget {
-                Text("The oldest messages no longer fit and are left out.")
+                Text("The oldest messages are no longer sent to the model.")
                     .font(.caption)
                     .foregroundStyle(Theme.Colors.destructive)
             }
@@ -818,41 +812,41 @@ private struct ContextCard: View {
                 alignment: .leading, horizontalSpacing: Theme.Spacing.xl,
                 verticalSpacing: Theme.Spacing.xs
             ) {
-                section(String(localized: "Tokens"))
+                section("Tokens")
                 if let usage = report.usage, let context = usage.contextTokens {
-                    row(String(localized: "In context"), tokens(context, of: usage.contextWindow))
-                    row(String(localized: "Input"), input(usage))
-                    row(String(localized: "Output"), output(usage))
+                    row("In context", tokens(context, of: usage.contextWindow))
+                    row("Input", input(usage))
+                    row("Output", output(usage))
                     if let cost = usage.costUSD {
                         row(
-                            String(localized: "Cost"),
+                            "Cost",
                             cost.formatted(
                                 .currency(code: "USD").precision(.significantDigits(2))))
                     }
                 } else {
-                    row(String(localized: "Last reply"), String(localized: "Not reported yet"))
+                    row("Last reply", String(localized: "Not reported yet"))
                 }
-                section(String(localized: "Next message"))
-                row(String(localized: "Model"), report.modelTitle)
+                section("Next message")
+                row("Model", report.modelTitle)
                 row(
-                    String(localized: "History"),
+                    "History",
                     String(localized: "\(bytes(report.historyBytes)) of \(bytes(report.budget))"))
-                row(
-                    String(localized: "Messages"),
-                    String(localized: "\(report.sentMessages) of \(report.totalMessages)"))
+                row("Messages", String(localized: "\(report.sentMessages) of \(report.totalMessages)"))
                 if report.stagedFiles > 0 {
-                    row(
-                        String(localized: "Attached"),
-                        String(localized: "\(report.stagedFiles) · \(bytes(report.stagedBytes))"))
+                    row("Attached", "\(report.stagedFiles) · \(bytes(report.stagedBytes))")
                 }
                 row(
-                    String(localized: "System prompt"),
-                    report.systemPrompt ? String(localized: "On") : String(localized: "Off"))
+                    "System prompt",
+                    report.systemPrompt
+                        ? String(localized: "ai-system-prompt-on", defaultValue: "On")
+                        : String(localized: "ai-system-prompt-off", defaultValue: "Off"))
                 row(
-                    String(localized: "Web search"),
-                    report.webSearch ? String(localized: "On") : String(localized: "Off"))
+                    "Web search",
+                    report.webSearch
+                        ? String(localized: "ai-web-search-on", defaultValue: "On")
+                        : String(localized: "ai-web-search-off", defaultValue: "Off"))
                 row(
-                    String(localized: "MCP servers"),
+                    "MCP servers",
                     report.toolServers == 0
                         ? String(localized: "None") : String(localized: "\(report.toolServers) in reach"))
             }
@@ -866,9 +860,9 @@ private struct ContextCard: View {
         .shadow(color: Theme.Colors.tooltipShadow, radius: Theme.Spacing.xl, y: Theme.Spacing.xs)
     }
 
-    private func section(_ title: String) -> some View {
+    private func section(_ title: LocalizedStringResource) -> some View {
         GridRow {
-            Text(title.uppercased())
+            Text(title.resolved().uppercased())
                 .font(.caption2.weight(.semibold))
                 .foregroundStyle(.tertiary)
                 .gridCellColumns(2)
@@ -876,7 +870,7 @@ private struct ContextCard: View {
         }
     }
 
-    private func row(_ label: String, _ value: String) -> some View {
+    private func row(_ label: LocalizedStringResource, _ value: String) -> some View {
         GridRow {
             Text(label).foregroundStyle(.secondary)
             Text(value).monospacedDigit().lineLimit(1).truncationMode(.middle)
@@ -889,7 +883,8 @@ private struct ContextCard: View {
 
     private func tokens(_ count: Int, of window: Int?) -> String {
         guard let window else { return count.formatted() }
-        return "\(count.formatted()) of \(window.formatted(.number.notation(.compactName)))"
+        return String(
+            localized: "\(count.formatted()) of \(window.formatted(.number.notation(.compactName)))")
     }
 
     private func input(_ usage: AIUsage) -> String {

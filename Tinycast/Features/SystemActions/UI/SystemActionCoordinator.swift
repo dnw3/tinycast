@@ -38,10 +38,8 @@ final class SystemActionCoordinator {
         case .required(let title, let message), .followsFinder(let title, let message):
             guard
                 await core.confirm(
-                    title: Bundle.main.localizedString(forKey: title, value: nil, table: nil),
-                    message: Bundle.main.localizedString(forKey: message, value: nil, table: nil),
-                    symbol: action.sfSymbol,
-                    confirmTitle: Bundle.main.localizedString(forKey: action.name, value: nil, table: nil))
+                    title: title, message: message, symbol: action.sfSymbol,
+                    confirmTitle: action.name)
             else { return }
         case .none:
             break
@@ -104,9 +102,7 @@ final class SystemActionCoordinator {
         let targets = AppLauncher.quitAllTargets()
         guard !targets.isEmpty,
             await core.confirm(
-                title: targets.count == 1
-                    ? String(localized: "Quit 1 application?")
-                    : String(localized: "Quit \(targets.count) applications?"),
+                title: String(localized: "Quit \(targets.count) applications?"),
                 message: String(localized: "Applications with unsaved changes will ask you to save."),
                 symbol: SystemActionCatalog.action(id: .quitAllApps).sfSymbol,
                 confirmTitle: String(localized: "Quit All"))

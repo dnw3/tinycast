@@ -12,7 +12,7 @@ struct SnippetsSettingsView: View {
             FeatureSwitchSection(
                 anchor: .snippetsSnippets,
                 enableTitle: "Enable snippets",
-                enableSubtitle: String(localized: "Expand templates from the launcher or by keyword."),
+                enableSubtitle: "Expand templates from the launcher or by keyword.",
                 // Enabling is also keyword-expansion consent, so it uses the confirming setter.
                 isEnabled: Binding(
                     get: { settings.snippetsEnabled },
@@ -55,11 +55,8 @@ struct SnippetsSettingsView: View {
     private var library: some View {
         Section {
             if sortedSnippets.isEmpty {
-                Text(
-                    snippetsStore.state == .loading
-                        ? String(localized: "Loading snippets…") : String(localized: "No snippets yet.")
-                )
-                .foregroundStyle(.secondary)
+                Text(snippetsStore.state == .loading ? "Loading snippets…" : "No snippets yet.")
+                    .foregroundStyle(.secondary)
             } else {
                 ForEach(sortedSnippets) { record in
                     SnippetSettingsRow(
@@ -77,11 +74,13 @@ struct SnippetsSettingsView: View {
 
             LabeledContent {
                 if settings.snippetsFolder != nil {
-                    Button("Use Default", action: coordinator.resetSnippetsFolder)
+                    Button(
+                        String(localized: "snippets-use-default-folder", defaultValue: "Use Default"),
+                        action: coordinator.resetSnippetsFolder)
                 }
                 Button("Choose…", action: coordinator.chooseSnippetsFolder)
                 Button("Open Folder", action: coordinator.revealSnippetsInFinder)
-                    .accessibilityHint(String(localized: "Reveals the snippets folder in Finder."))
+                    .accessibilityHint("Reveals the snippets folder in Finder.")
             } label: {
                 SettingsRowTitle(.snippetsLibrary, "Snippets Folder")
                 Text((snippetsStore.snippetsDirectory.path as NSString).abbreviatingWithTildeInPath)
@@ -107,7 +106,8 @@ struct SnippetsSettingsView: View {
 
         if let operationError = snippetsStore.operationError {
             noticeSection(
-                String(localized: "The snippet operation failed"), operationError, tint: .red, retryHint: nil)
+                String(localized: "The snippet operation failed"), operationError, tint: .red,
+                retryHint: nil)
         }
     }
 
@@ -136,10 +136,7 @@ struct SnippetsSettingsView: View {
     }
 
     private var snippetIssueTitle: String {
-        let count = snippetsStore.issues.count
-        return count == 1
-            ? String(localized: "1 snippet file couldn’t be loaded")
-            : String(localized: "\(count) snippet files couldn’t be loaded")
+        String(localized: "\(snippetsStore.issues.count) snippet files couldn’t be loaded")
     }
 
     private var snippetIssueMessage: String {
@@ -147,11 +144,9 @@ struct SnippetsSettingsView: View {
         if snippetsStore.issues.count == 1 {
             return "\(first.fileURL.lastPathComponent): \(first.message)"
         }
-        return
-            String(
-                localized:
-                    "\(first.fileURL.lastPathComponent): \(first.message) Plus \(snippetsStore.issues.count - 1) more."
-            )
+        let remaining = snippetsStore.issues.count - 1
+        return String(
+            localized: "\(first.fileURL.lastPathComponent): \(first.message) Plus \(remaining) more.")
     }
 }
 
@@ -174,16 +169,16 @@ private struct SnippetSettingsRow: View {
                 Image(systemName: "pencil")
             }
             .buttonStyle(.plain)
-            .help(String(localized: "Edit Snippet"))
-            .accessibilityLabel(String(localized: "Edit \(record.snippet.name)"))
+            .help("Edit Snippet")
+            .accessibilityLabel("Edit \(record.snippet.name)")
 
             Button(action: onDelete) {
                 Image(systemName: "trash")
                     .foregroundStyle(.red)
             }
             .buttonStyle(.plain)
-            .help(String(localized: "Delete Snippet"))
-            .accessibilityLabel(String(localized: "Delete \(record.snippet.name)"))
+            .help("Delete Snippet")
+            .accessibilityLabel("Delete \(record.snippet.name)")
         }
     }
 

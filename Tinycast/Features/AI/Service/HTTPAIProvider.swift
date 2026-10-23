@@ -15,6 +15,7 @@ struct HTTPAIProvider: AIProvider {
             let task = Task.detached {
                 let session = Self.makeSession()
                 defer { session.invalidateAndCancel() }
+                let secrets = [apiKey] + configuration.headers.values
                 do {
                     let urlRequest = try makeURLRequest(request)
                     let (bytes, response) = try await session.bytes(for: urlRequest)
@@ -26,13 +27,12 @@ struct HTTPAIProvider: AIProvider {
                         let body = await Self.body(of: bytes)
                         try Task.checkCancellation()
                         throw AIProviderError.responseFailed(
-                            AIProviderFailure.described(
-                                Self.statusMessage(
-                                    response.statusCode,
-                                    retryAfter: response.value(forHTTPHeaderField: "Retry-After")),
-                                said: AIProviderFailure.providerMessage(in: body), secrets: [apiKey]))
+                            AIProviderFailure.description(
+                                status: response.statusCode, body: body,
+                                retryAfter: response.value(forHTTPHeaderField: "Retry-After"),
+                                secrets: secrets))
                     }
-                    var decoder = AIStreamDecoder(shape: configuration.shape, secrets: [apiKey])
+                    var decoder = AIStreamDecoder(shape: configuration.shape, secrets: secrets)
                     var chunk = Data()
                     chunk.reserveCapacity(2_048)
                     // Per line, not per 2 KB: a short reply must show before the stream closes.
@@ -76,6 +76,7 @@ struct HTTPAIProvider: AIProvider {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("text/event-stream", forHTTPHeaderField: "Accept")
         applyAuthentication(to: &request)
+        for (name, value) in configuration.headers { request.setValue(value, forHTTPHeaderField: name) }
         request.httpBody = try JSONSerialization.data(
             withJSONObject: AIRequestBody.make(input, configuration: configuration))
         return request
@@ -85,14 +86,14 @@ struct HTTPAIProvider: AIProvider {
     private func applyAuthentication(to request: inout URLRequest) {
         switch configuration.shape {
         case .openAICompatible:
-            request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+            if !apiKey.isEmpty { request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization") }
             if configuration.provider == .gemini {
                 request.setValue(Self.googleClientHeader, forHTTPHeaderField: "x-goog-api-client")
             } else if configuration.provider == .openRouter {
                 request.setValue(Bundle.main.appDisplayName, forHTTPHeaderField: "X-OpenRouter-Title")
             }
         case .anthropic:
-            request.setValue(apiKey, forHTTPHeaderField: "x-api-key")
+            if !apiKey.isEmpty { request.setValue(apiKey, forHTTPHeaderField: "x-api-key") }
             request.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
         }
     }
@@ -107,23 +108,6 @@ struct HTTPAIProvider: AIProvider {
         configuration.urlCache = nil
         configuration.requestCachePolicy = .reloadIgnoringLocalAndRemoteCacheData
         return URLSession(configuration: configuration)
-    }
-
-    /// Tinycast's own line for a refused status; the model keeps only the provider's words.
-    private static func statusMessage(_ status: Int, retryAfter: String?) -> String {
-        switch status {
-        case 401, 403:
-            return String(localized: "API key rejected — check it in Settings.")
-        case 429:
-            guard let retryAfter, let seconds = Int(retryAfter), seconds >= 0 else {
-                return String(localized: "Rate limit reached — try again later.")
-            }
-            return String(localized: "Rate limit reached — retry after \(seconds) seconds.")
-        case 500...599:
-            return String(localized: "The provider is temporarily unavailable (HTTP \(status)).")
-        default:
-            return String(localized: "The provider rejected the model or request (HTTP \(status)).")
-        }
     }
 
     /// A refusal's body comes with its headers; the status is never held longer than this for one.

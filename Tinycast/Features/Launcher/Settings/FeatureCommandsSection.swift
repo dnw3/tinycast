@@ -26,13 +26,13 @@ struct FeatureCommandRow: View {
 
     var body: some View {
         SettingsRow(
-            title: Bundle.main.localizedString(forKey: entry.name, value: nil, table: nil),
+            title: entry.name,
             labelOpacity: visibility.isItemVisible(entry) ? 1 : 0.45
         ) {
             AppIconView(app: entry)
                 .frame(width: SettingsListMetrics.iconSize, height: SettingsListMetrics.iconSize)
         } trailing: {
-            AliasField(key: entry.preferenceKey, name: Bundle.main.localizedString(forKey: entry.name, value: nil, table: nil))
+            AliasField(entry: entry)
             if let action = entry.hotKeyAction {
                 ShortcutRecorder(action: action)
             }
@@ -40,7 +40,7 @@ struct FeatureCommandRow: View {
                 .labelsHidden()
                 .toggleStyle(.checkbox)
                 .launcherVisibilityHelp()
-                .accessibilityLabel(String(localized: "Show \(Bundle.main.localizedString(forKey: entry.name, value: nil, table: nil)) in launcher"))
+                .accessibilityLabel("Show \(entry.name) in launcher")
         }
     }
 

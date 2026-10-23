@@ -3,17 +3,20 @@ import SwiftUI
 struct AIConnectionEditorTarget: Identifiable {
     let connection: AIConnection
     let hasStoredKey: Bool
+    let headers: [String: String]
     let isNew: Bool
     var id: UUID { connection.id }
 }
 
 struct AIConnectionEditorPanel: View {
     let target: AIConnectionEditorTarget
-    let onSave: (AIConnection, String, Bool) -> String?
+    let onSave: (AIConnection, String, [String: String], Bool) -> String?
     let onCancel: () -> Void
 
     @State private var connection: AIConnection
     @State private var key = ""
+    @State private var headers: [HeaderDraft]
+    @FocusState private var focusedHeader: UUID?
     @State private var modelQuery = ""
     @State private var discovery: ModelDiscoveryState = .waitingForKey
     @State private var discoveryRevision = 0
@@ -21,22 +24,31 @@ struct AIConnectionEditorPanel: View {
 
     private let modelDiscovery = AIModelDiscoveryService()
 
+    private struct HeaderDraft: Identifiable, Equatable {
+        let id = UUID()
+        var name = ""
+        var value = ""
+    }
+
     init(
         target: AIConnectionEditorTarget,
-        onSave: @escaping (AIConnection, String, Bool) -> String?,
+        onSave: @escaping (AIConnection, String, [String: String], Bool) -> String?,
         onCancel: @escaping () -> Void
     ) {
         self.target = target
         self.onSave = onSave
         self.onCancel = onCancel
         _connection = State(initialValue: target.connection)
+        _headers = State(
+            initialValue: target.headers.sorted { $0.key < $1.key }.map {
+                HeaderDraft(name: $0.key, value: $0.value)
+            })
     }
 
     var body: some View {
         VStack(spacing: 0) {
             SettingsEditorHeader(
-                title: target.isNew
-                    ? String(localized: "Add API Connection") : String(localized: "Edit API Connection")
+                title: target.isNew ? "Add API Connection" : "Edit API Connection"
             )
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, Theme.Spacing.dialogInset)
@@ -68,7 +80,8 @@ struct AIConnectionEditorPanel: View {
                     }
                     editorField("API Key") {
                         RevealableSecureField(
-                            title: String(localized: "API Key"), text: $key, prompt: Text(apiKeyPlaceholder)
+                            title: String(localized: "API Key"), text: $key,
+                            prompt: Text(apiKeyPlaceholder)
                         )
                         .settingsEditorTextField()
                     }
@@ -78,10 +91,10 @@ struct AIConnectionEditorPanel: View {
                             .foregroundStyle(.secondary)
                     } else if target.hasStoredKey {
                         Label(
-                            String(
-                                localized:
-                                    "The saved key stays with the endpoint it was saved for. Enter a key for this one."
-                            ),
+                            """
+                            The saved key stays with the endpoint it was saved for. Enter a key for \
+                            this one.
+                            """,
                             systemImage: "exclamationmark.triangle"
                         )
                         .font(.caption)
@@ -91,6 +104,8 @@ struct AIConnectionEditorPanel: View {
                         Text(error).foregroundStyle(.orange)
                     }
                 }
+
+                headersSection
 
                 Section {
                     modelDiscoveryContent
@@ -107,10 +122,10 @@ struct AIConnectionEditorPanel: View {
                     }
                 } footer: {
                     Text(
-                        String(
-                            localized:
-                                "Search the models available to this key and add one or more. Exact model IDs remain available when discovery is unsupported."
-                        )
+                        """
+                        Search the models available to this key and add one or more. Exact model \
+                        IDs remain available when discovery is unsupported.
+                        """
                     )
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -138,13 +153,54 @@ struct AIConnectionEditorPanel: View {
             await discoverModels()
         }
         .onChange(of: key) { discoveryRevision += 1 }
-        .onChange(of: connection.baseURL) { discoveryRevision += 1 }
+        .onChange(of: headers) { discoveryRevision += 1 }
+        .onChange(of: connection.baseURL) {
+            connection.dropDeclaredLevels()
+            discoveryRevision += 1
+        }
         .onChange(of: connection.provider) { oldProvider, newProvider in
             if connection.baseURL.isEmpty || connection.baseURL == oldProvider.defaultBaseURL {
                 connection.baseURL = newProvider.defaultBaseURL
             }
             connection.reasoningOptions = nil
             discoveryRevision += 1
+        }
+    }
+
+    private var headersSection: some View {
+        Section {
+            LabeledContent {
+                Button("Add Header", action: addHeader)
+                    .fixedSize()
+            } label: {
+                Text("Request Headers")
+                Text("Sent with every request, replacing a default header of the same name.")
+            }
+            ForEach($headers) { $header in
+                HStack(spacing: Theme.Spacing.sm) {
+                    TextField("Name", text: $header.name, prompt: Text("Name"))
+                        .labelsHidden()
+                        .font(.callout.monospaced())
+                        .autocorrectionDisabled()
+                        .frame(width: Theme.Size.aiVariableName)
+                        .focused($focusedHeader, equals: header.id)
+                    RevealableSecureField(
+                        title: String(localized: "Value of \(header.name)"), text: $header.value,
+                        prompt: Text("Value")
+                    )
+                    .labelsHidden()
+                    .font(.callout.monospaced())
+                    Button {
+                        headers.removeAll { $0.id == header.id }
+                    } label: {
+                        Image(systemName: "minus.circle")
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                    .help("Remove")
+                    .accessibilityLabel("Remove \(header.name)")
+                }
+            }
         }
     }
 
@@ -239,7 +295,7 @@ struct AIConnectionEditorPanel: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel(String(localized: "Add \(model.name)"))
+            .accessibilityLabel("Add \(model.name)")
         }
         if offersTypedID {
             Button("Use “\(query)” anyway") { addModel(query) }
@@ -255,30 +311,64 @@ struct AIConnectionEditorPanel: View {
     }
 
     private func editorField<Content: View>(
-        _ title: String, @ViewBuilder content: () -> Content
+        _ title: LocalizedStringResource, @ViewBuilder content: () -> Content
     ) -> some View {
         SettingsEditorField(title, labelFont: .callout.weight(.medium), content: content)
     }
 
     private func selectedModelRow(_ model: String) -> some View {
         LabeledContent(model) {
-            Button {
-                removeModel(model)
-            } label: {
-                Image(systemName: "minus.circle").foregroundStyle(.red)
+            HStack(spacing: Theme.Spacing.md) {
+                if connection.takesDeclaredLevels { reasoningLevelsMenu(model) }
+                Button {
+                    removeModel(model)
+                } label: {
+                    Image(systemName: "minus.circle").foregroundStyle(.red)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Remove \(model)")
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel(String(localized: "Remove \(model)"))
+        }
+    }
+
+    private func reasoningLevelsMenu(_ model: String) -> some View {
+        let declared = connection.declaredLevels(for: model)
+        return Menu {
+            ForEach(AIConnection.ReasoningOptions.ladder, id: \.self) { level in
+                Toggle(
+                    ChatGPTSubscription.Effort(id: level, detail: nil).title,
+                    isOn: Binding(
+                        get: { declared.contains(level) },
+                        set: { isOn in
+                            var levels = declared
+                            if isOn { levels.insert(level) } else { levels.remove(level) }
+                            connection.declareLevels(levels, for: model)
+                        }))
+            }
+        } label: {
+            Text(declaredLevelsTitle(declared)).font(.caption)
+        }
+        .menuStyle(.borderlessButton)
+        .fixedSize()
+        .accessibilityLabel("Reasoning levels for \(model)")
+    }
+
+    private func declaredLevelsTitle(_ declared: Set<String>) -> String {
+        switch declared.count {
+        case 0: return String(localized: "Reasoning levels")
+        default: return String(localized: "\(declared.count) levels")
         }
     }
 
     private var modelPlaceholder: String {
+        let example: String
         switch connection.provider {
-        case .openAI, .openAICompatible: return String(localized: "Model ID (e.g. gpt-5.4-mini)")
-        case .anthropic: return String(localized: "Model ID (e.g. claude-sonnet-4-6)")
-        case .gemini: return String(localized: "Model ID (e.g. gemini-3.7-flash)")
-        case .openRouter: return String(localized: "Model ID (e.g. openai/gpt-5.4-mini)")
+        case .openAI, .openAICompatible: example = "gpt-5.4-mini"
+        case .anthropic: example = "claude-sonnet-4-6"
+        case .gemini: example = "gemini-3.7-flash"
+        case .openRouter: example = "openai/gpt-5.4-mini"
         }
+        return String(localized: "Model ID (e.g. \(example))")
     }
 
     /// Discovery honours the Save rule: a retarget asks for a key rather than reuse the old host's.
@@ -288,6 +378,7 @@ struct AIConnectionEditorPanel: View {
 
     private var apiKeyPlaceholder: String {
         if storedKeyMatchesTarget { return String(localized: "Leave blank to keep saved key") }
+        if !headers.isEmpty { return String(localized: "Optional with request headers") }
         if AIEndpointPolicy.isLoopback(connection.baseURL) {
             return String(localized: "Optional for local endpoint")
         }
@@ -318,6 +409,13 @@ struct AIConnectionEditorPanel: View {
     }
 
     private func discoverModels() async {
+        let requestHeaders: [String: String]
+        do {
+            requestHeaders = try validatedHeaders()
+        } catch {
+            discovery = .failed(error.localizedDescription, allowsManualEntry: false)
+            return
+        }
         let enteredKey = key.trimmingCharacters(in: .whitespacesAndNewlines)
         let apiKey: String
         if !enteredKey.isEmpty {
@@ -331,7 +429,7 @@ struct AIConnectionEditorPanel: View {
                     allowsManualEntry: false)
                 return
             }
-        } else if AIEndpointPolicy.isLoopback(connection.baseURL) {
+        } else if AIEndpointPolicy.isLoopback(connection.baseURL) || !requestHeaders.isEmpty {
             apiKey = ""
         } else {
             discovery = .waitingForKey
@@ -351,7 +449,8 @@ struct AIConnectionEditorPanel: View {
         discovery = .loading
         do {
             let models = try await modelDiscovery.models(
-                provider: connection.provider, baseURL: baseURL, apiKey: apiKey)
+                provider: connection.provider, baseURL: baseURL, apiKey: apiKey,
+                headers: requestHeaders)
             guard !Task.isCancelled else { return }
             discovery = .loaded(models)
         } catch is CancellationError {
@@ -364,6 +463,16 @@ struct AIConnectionEditorPanel: View {
                     ?? String(localized: "The provider could not load models. Enter one manually."),
                 allowsManualEntry: catalogError != .rejectedKey)
         }
+    }
+
+    private func validatedHeaders() throws -> [String: String] {
+        try AIRequestHeaders.validated(headers.map { ($0.name, $0.value) })
+    }
+
+    private func addHeader() {
+        let draft = HeaderDraft()
+        headers.append(draft)
+        focusedHeader = draft.id
     }
 
     private func addManualModel() {
@@ -396,6 +505,13 @@ struct AIConnectionEditorPanel: View {
     }
 
     private func save() {
+        let requestHeaders: [String: String]
+        do {
+            requestHeaders = try validatedHeaders()
+        } catch {
+            self.error = error.localizedDescription
+            return
+        }
         if case .failed(_, let allowsManualEntry) = discovery, !allowsManualEntry {
             error = String(localized: "Resolve the API key or endpoint error before saving.")
             return
@@ -412,7 +528,7 @@ struct AIConnectionEditorPanel: View {
                 ?? String(localized: "Enter a valid provider base URL.")
             return
         }
-        error = onSave(connection, key, target.isNew)
+        error = onSave(connection, key, requestHeaders, target.isNew)
     }
 }
 

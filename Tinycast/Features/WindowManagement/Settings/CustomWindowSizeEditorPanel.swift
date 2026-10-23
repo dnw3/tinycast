@@ -26,37 +26,35 @@ struct CustomWindowSizeEditorPanel: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.xl) {
             SettingsEditorHeader(
-                title: isNew ? String(localized: "New Custom Size") : String(localized: "Edit Custom Size"),
-                subtitle: String(
-                    localized: "Resizes the window you were last in, on the display it is already on."))
+                title: isNew ? "New Custom Size" : "Edit Custom Size",
+                subtitle: "Resizes the window you were last in, on the display it is already on.")
 
-            field(String(localized: "Name")) {
+            field("Name") {
                 TextField("Wide Center", text: $size.name)
                     .settingsEditorTextField()
             }
 
-            field(String(localized: "Size")) {
+            field("Size") {
                 HStack(spacing: Theme.Spacing.lg) {
                     dimensionField(
-                        label: String(localized: "W"), name: "Width", dimension: $size.width,
+                        label: String(localized: "W"), name: String(localized: "Width"),
+                        dimension: $size.width,
                         available: reference.width)
                     dimensionField(
-                        label: String(localized: "H"), name: "Height", dimension: $size.height,
+                        label: String(localized: "H"), name: String(localized: "Height"),
+                        dimension: $size.height,
                         available: reference.height)
                 }
             }
 
-            field(String(localized: "Offset")) {
+            field("Offset") {
                 HStack(spacing: Theme.Spacing.lg) {
-                    offsetField(
-                        label: String(localized: "X"), name: String(localized: "Horizontal offset"),
-                        value: \.x)
-                    offsetField(
-                        label: String(localized: "Y"), name: String(localized: "Vertical offset"), value: \.y)
+                    offsetField(label: "X", name: String(localized: "Horizontal offset"), value: \.x)
+                    offsetField(label: "Y", name: String(localized: "Vertical offset"), value: \.y)
                 }
             }
 
-            field(String(localized: "Position")) {
+            field("Position") {
                 WindowLayoutPositionGrid(selection: size.anchor) { size.anchor = $0 }
             }
 
@@ -81,7 +79,9 @@ struct CustomWindowSizeEditorPanel: View {
         .settingsEditorPanelSurface()
     }
 
-    private func field(_ title: String, @ViewBuilder content: () -> some View) -> some View {
+    private func field(
+        _ title: LocalizedStringResource, @ViewBuilder content: () -> some View
+    ) -> some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
             Text(title)
                 .font(.callout.weight(.medium))

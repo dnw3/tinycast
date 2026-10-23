@@ -60,7 +60,9 @@ struct MCPSettingsSection: View {
                 await core.confirm(
                     title: String(localized: "Remove \(server.title)?"),
                     message: String(
-                        localized: "Its tools stop being offered, and its stored credentials are deleted."),
+                        localized: """
+                            Its tools stop being offered, and its stored credentials are deleted.
+                            """),
                     symbol: "wrench.and.screwdriver", confirmTitle: String(localized: "Remove")),
                 store.servers.contains(where: { $0.id == server.id })
             else { return }
@@ -84,11 +86,11 @@ struct MCPSettingsSection: View {
             try coordinator.remove(server.id)
             removalError = nil
         } catch {
-            removalError =
-                String(
-                    localized:
-                        "\(server.title) was kept: its credentials could not be removed from your login Keychain."
-                )
+            removalError = String(
+                localized: """
+                    \(server.title) was kept: its credentials could not be removed from your login \
+                    Keychain.
+                    """)
         }
     }
 }
@@ -106,20 +108,20 @@ private struct MCPServerRow: View {
         } trailing: {
             Button(action: onEdit) { Image(systemName: "pencil") }
                 .buttonStyle(.plain)
-                .help(String(localized: "Edit \(server.title)"))
-                .accessibilityLabel(String(localized: "Edit \(server.title)"))
+                .help("Edit \(server.title)")
+                .accessibilityLabel("Edit \(server.title)")
             Button(action: onRemove) {
                 Image(systemName: "trash").foregroundStyle(.red)
             }
             .buttonStyle(.plain)
-            .help(String(localized: "Remove \(server.title)"))
-            .accessibilityLabel(String(localized: "Remove \(server.title)"))
+            .help("Remove \(server.title)")
+            .accessibilityLabel("Remove \(server.title)")
         }
     }
 
     /// The slug leads, because it is the half a reader has to type into the composer.
     private var subtitle: String {
         let state = server.isEnabled ? status.label : String(localized: "Disabled")
-        return String(localized: "@\(server.slug) · \(state) · \(server.transport.summary)")
+        return "@\(server.slug) · \(state) · \(server.transport.summary)"
     }
 }

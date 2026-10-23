@@ -45,8 +45,8 @@ final class CommandOutputPresenter {
     @ObservationIgnored private let openSettings: () -> Void
     @ObservationIgnored private lazy var window = AppWindowController(
         title: String(localized: "Command Output"), contentSize: CommandOutputView.initialSize,
-        resizable: true,
-        autosaveName: "CommandOutputWindow", activation: activation, closesOnEscape: true)
+        resizable: true, autosaveName: "CommandOutputWindow", activation: activation,
+        closesOnEscape: true)
 
     init(
         activation: ActivationPolicy, rerun: @escaping (UUID) -> Void,

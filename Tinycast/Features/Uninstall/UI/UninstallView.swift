@@ -89,7 +89,7 @@ private struct UninstallRow: View {
                 .contentShape(Rectangle())
                 // Only the checkbox toggles; the rest of the row selects.
                 .onTapGesture(perform: onToggle)
-                .tooltip(candidate.lockReason.map { Bundle.main.localizedString(forKey: $0, value: nil, table: nil) })
+                .tooltip(candidate.lockReason)
             Text(candidate.name)
                 .font(metrics.typography.rowTitle)
                 .lineLimit(1)

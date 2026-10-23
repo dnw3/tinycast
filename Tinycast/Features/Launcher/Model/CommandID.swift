@@ -30,6 +30,7 @@ enum CommandID: String, CaseIterable, Sendable {
     case restartDock = "command:restart-dock"
     case searchMenuItems = "command:search-menu-items"
     case switchWindows = "command:switch-windows"
+    case switchWindowsBackwards = "command:switch-windows-backwards"
     case openCamera = "command:open-camera"
     case openInBrowser = "command:open-in-browser"
     case runShellCommand = "command:run-shell-command"
@@ -63,7 +64,11 @@ enum CommandID: String, CaseIterable, Sendable {
     case support = "command:support"
     case quit = "command:quit"
 
-    var name: String {
+    var name: String { nameResource.resolved() }
+
+    var englishName: String { nameResource.key }
+
+    private var nameResource: LocalizedStringResource {
         switch self {
         case .quickAI: return "Quick AI"
         case .captureScreenshot: return "Capture Screenshot"
@@ -76,10 +81,10 @@ enum CommandID: String, CaseIterable, Sendable {
         case .pinClipboardImage: return "Pin Clipboard Image"
         case .captureHistory: return "Capture History"
         case .aiChat: return "AI Chat"
-        case .fixGrammar: return BuiltInQuickAction.fixGrammar.title
-        case .rewrite: return BuiltInQuickAction.rewrite.title
+        case .fixGrammar: return BuiltInQuickAction.fixGrammar.titleResource
+        case .rewrite: return BuiltInQuickAction.rewrite.titleResource
         case .translate: return "Translate"
-        case .summarize: return BuiltInQuickAction.summarize.title
+        case .summarize: return BuiltInQuickAction.summarize.titleResource
         case .calculatorHistory: return "Calculator History"
         case .clipboardHistory: return "Clipboard History"
         case .pasteSequentially: return "Paste Sequentially"
@@ -93,6 +98,7 @@ enum CommandID: String, CaseIterable, Sendable {
         case .restartDock: return "Restart Dock"
         case .searchMenuItems: return "Search Menu Bar Items"
         case .switchWindows: return "Switch Windows"
+        case .switchWindowsBackwards: return "Switch Windows Backwards"
         case .openCamera: return "Open Camera"
         case .openInBrowser: return "Open in Browser"
         case .runShellCommand: return "Run Shell Command"
@@ -178,7 +184,7 @@ enum CommandID: String, CaseIterable, Sendable {
         case .rebuildThumbnails: return "photo.stack"
         case .restartDock: return "dock.rectangle"
         case .searchMenuItems: return "menubar.rectangle"
-        case .switchWindows: return "macwindow.on.rectangle"
+        case .switchWindows, .switchWindowsBackwards: return "macwindow.on.rectangle"
         case .openCamera: return "camera"
         case .openInBrowser: return "globe"
         case .runShellCommand: return "terminal"

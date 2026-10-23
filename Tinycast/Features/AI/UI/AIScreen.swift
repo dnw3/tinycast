@@ -16,7 +16,9 @@ struct AIScreen: PaletteScreen {
 
     let rows = [Row()]
 
-    var primaryActionTitle: String { chat.isStreaming ? String(localized: "Stop") : String(localized: "Send") }
+    var primaryActionTitle: String {
+        chat.isStreaming ? String(localized: "Stop") : String(localized: "Send")
+    }
 
     func actions(at selection: Int) -> PopoverMenuContent? {
         var items: [PopoverMenuItem] = []
@@ -37,8 +39,9 @@ struct AIScreen: PaletteScreen {
                 coordinator.continueInChat()
             })
         items.append(
-            PopoverMenuItem(title: String(localized: "New Chat"), systemImage: "plus.bubble", shortcut: "⌘N")
-            {
+            PopoverMenuItem(
+                title: String(localized: "New Chat"), systemImage: "plus.bubble", shortcut: "⌘N"
+            ) {
                 coordinator.startNewChat()
             })
         if canRegenerate {
@@ -79,7 +82,8 @@ struct AIScreen: PaletteScreen {
             })
         items.append(
             PopoverMenuItem(
-                title: String(localized: "AI Settings"), systemImage: "slider.horizontal.3", shortcut: "⌥⌘,"
+                title: String(localized: "AI Settings"), systemImage: "slider.horizontal.3",
+                shortcut: "⌥⌘,"
             ) {
                 chatCoordinator.showSettings()
             })
@@ -131,8 +135,7 @@ struct AIScreen: PaletteScreen {
             view: AnyView(
                 HStack(spacing: metrics.spacing.sm) {
                     if let addressed {
-                        ComposerChip(
-                            symbol: "wrench.and.screwdriver", label: String(localized: "@\(addressed.slug)"))
+                        ComposerChip(symbol: "wrench.and.screwdriver", label: "@\(addressed.slug)")
                     }
                     // Absent, not empty: an empty stack would still take a gap after the `@` chip.
                     if !attachments.isEmpty {
@@ -147,6 +150,7 @@ struct AIScreen: PaletteScreen {
         AnyView(
             AIChatView(
                 chat: chat,
+                settings: chatCoordinator.aiSettings,
                 availability: { chatCoordinator.availability(for: chat) },
                 onConfigure: chatCoordinator.showSettings,
                 onAppear: chatCoordinator.prepareForChat,
@@ -156,6 +160,7 @@ struct AIScreen: PaletteScreen {
 
 private struct AIChatView: View {
     let chat: AIChatState
+    let settings: AISettingsStore
     let availability: () -> String?
     let onConfigure: () -> Void
     let onAppear: () -> Void
@@ -177,7 +182,7 @@ private struct AIChatView: View {
                     usage: chat.usage,
                     surface: .palette,
                     workingSince: chat.replyStartedAt,
-                    onChoose: chat.isStreaming ? nil : onChoose)
+                    onChoose: chat.isStreaming || !settings.choicesEnabled ? nil : onChoose)
             }
         }
         .onAppear(perform: onAppear)
@@ -225,8 +230,7 @@ private struct AttachmentsPill: View {
         .tooltip(attachments.map(\.name).joined(separator: "\n"), edge: .bottom)
         .accessibilityLabel(
             attachments.count == 1
-                ? String(localized: "Attached \(attachments[0].name)")
-                : String(localized: "\(attachments.count) files attached"))
+                ? "Attached \(attachments[0].name)" : "\(attachments.count) files attached")
     }
 }
 

@@ -44,7 +44,7 @@ struct Room: Codable, Hashable, Identifiable, Sendable {
         return room
     }
 
-    var summary: String { windows.count == 1 ? "1 window" : "\(windows.count) windows" }
+    var summary: String { String(localized: "\(windows.count) windows") }
 
     var entryID: String { Self.entryIDPrefix + id.uuidString.lowercased() }
 
@@ -86,10 +86,18 @@ struct Room: Codable, Hashable, Identifiable, Sendable {
     }
 }
 
-enum RoomValidationError: Error, Equatable {
+enum RoomValidationError: LocalizedError, Equatable {
     case emptyName
     case duplicateName
     case noWindows
     case invalidCharacter
 
+    var errorDescription: String? {
+        switch self {
+        case .emptyName: return String(localized: "Enter a name for the room.")
+        case .duplicateName: return String(localized: "A room with this name already exists.")
+        case .noWindows: return String(localized: "Choose at least one window for the room.")
+        case .invalidCharacter: return String(localized: "Names cannot contain null characters.")
+        }
+    }
 }

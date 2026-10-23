@@ -22,11 +22,12 @@ nonisolated enum TextRecognitionWorker {
     /// Blocking pipe reads stay off the cooperative pool.
     private static let queue = DispatchQueue(
         label: "com.tinycast.text-recognition", qos: .background, attributes: .concurrent)
+    static let executable = Bundle.main.bundleURL.appendingPathComponent(
+        "Contents/Helpers/TextRecognitionHelper")
 
     static func extract(
         at url: URL, isPDF: Bool,
-        executable: URL = Bundle.main.bundleURL.appendingPathComponent(
-            "Contents/Helpers/TextRecognitionHelper"),
+        executable: URL = Self.executable,
         timeout: Duration = .seconds(60)
     ) async throws -> String {
         try await run(at: url, mode: isPDF ? "pdf" : "image", executable: executable, timeout: timeout)
@@ -34,8 +35,7 @@ nonisolated enum TextRecognitionWorker {
 
     static func recognize(
         at url: URL,
-        executable: URL = Bundle.main.bundleURL.appendingPathComponent(
-            "Contents/Helpers/TextRecognitionHelper"),
+        executable: URL = Self.executable,
         timeout: Duration = .seconds(90)
     ) async throws -> TextRecognitionResult {
         let json = try await run(at: url, mode: "capture", executable: executable, timeout: timeout)
@@ -44,8 +44,7 @@ nonisolated enum TextRecognitionWorker {
 
     static func foreground(
         at url: URL,
-        executable: URL = Bundle.main.bundleURL.appendingPathComponent(
-            "Contents/Helpers/TextRecognitionHelper")
+        executable: URL = Self.executable
     ) async throws -> URL {
         do {
             guard
