@@ -42,6 +42,8 @@ final class ProxyWindowState {
     var nodesSource: UUID?
     /// Region groups opened or closed by hand, keyed by `ProxyRegionGroup.id`, for every strategy.
     var regionExpansion: [String: Bool] = [:]
+    /// The fold of region strategies among a strategy's options, if opened or closed by hand.
+    var regionStrategiesOpen: Bool?
     /// An editor a command asked for, opened by the window's root, which then clears it.
     var editRequest: ProxyEditRequest?
 

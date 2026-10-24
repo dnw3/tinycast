@@ -56,10 +56,11 @@ bar, the launcher and the window. See the [Spec](../plans/proxy-spec.md) and
 
 - **Proxy window** (`ProxyWindowController`): Overview (exit, traffic, flow map with a site test that
   lights the path a site or address takes, status tiles, or a three-step guide with no source), Nodes
-  (every strategy as a wrapping tag, the strategy's summary, the strategies it can pick and its nodes in
-  collapsible region groups; a manual strategy switches on click; New Strategy's menu makes one strategy
-  per chosen region at once, `addRegionStrategies`, optionally offered by the default strategy; the node
-  pool opens in a panel),
+  (each strategy as a wrapping tag, region ones folded into one tag's menu; the strategy's summary, the
+  strategies it can pick with region ones folded into one row, and its nodes in collapsible region
+  groups; a manual strategy switches on click; New Strategy's menu makes one strategy per chosen region
+  at once, `addRegionStrategies`, optionally offered by the default strategy; the node pool opens in a
+  panel),
   Routing (my rules, routes with drag order, switches, rule-set status, and target menus listing the
   strategies, region ones in their own section, each with the node it reaches in a badge), Subscriptions
   (cards per source and an add card), Activity (live connections with filters, search and a rule for

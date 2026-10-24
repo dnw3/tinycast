@@ -401,9 +401,12 @@ chip it picked and every target menu that names it. The flow map's blocks and pi
 one row's path and fades the rest, red when the test could not connect. Delays read green under 150 ms,
 `Colors.warning` above, red on a timeout and grey untested.
 
-The Nodes page names every strategy in a tag that wraps onto another row (`ProxyWrapLayout`) rather
-than a segmented control that falls back to a menu once region strategies multiply; the selected tag
-takes its strategy's tint. New Strategy is a pull-down whose primary action makes one strategy and
+The Nodes page names each strategy in a tag that wraps onto another row (`ProxyWrapLayout`); the
+selected tag takes its strategy's tint. Strategies made by region fold into one more tag, Region
+Strategies, whose menu lists them with the node each reaches; it names the one picked from it, so a
+score of regions never fills the page. Among a strategy's options they fold the same way, into one row
+(`ProxyFoldHeader`, the region list's own) that opens onto their chips and starts open only while they
+are few (`unfoldedRegions`). New Strategy is a pull-down whose primary action makes one strategy and
 whose menu opens the by-region panel, which lists the regions the nodes are in, the largest first.
 
 A target menu (`ProxyTargetMenu`) lists strategies only, under a Strategies header with the ones made

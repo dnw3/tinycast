@@ -239,12 +239,19 @@ struct ProxyTargetMenu: View {
         .accessibilityLabel(Text("Goes to \(target.title(in: profile))"))
     }
 
-    /// The node a strategy reaches now sits in a badge, set apart from the strategy's own name.
     private func option(_ strategy: ProxyStrategy) -> some View {
-        let node = snapshot?.node(reachedBy: strategy.id, in: profile)
-        return Text(strategy.name)
-            .badge(node.map { Text(ProxyNodeName($0.name).title) })
+        ProxyStrategyOption(strategy: strategy, node: snapshot?.node(reachedBy: strategy.id, in: profile))
             .tag(ProxyTarget.strategy(strategy.id))
+    }
+}
+
+/// A strategy in a menu, with the node it reaches now in a badge, set apart from its own name.
+struct ProxyStrategyOption: View {
+    let strategy: ProxyStrategy
+    let node: ProxySnapshot.Node?
+
+    var body: some View {
+        Text(strategy.name).badge(node.map { Text(ProxyNodeName($0.name).title) })
     }
 }
 

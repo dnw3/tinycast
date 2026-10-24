@@ -11,7 +11,7 @@ struct ProxyNodesPane: View {
     var body: some View {
         ProxyPage {
             HStack(alignment: .top, spacing: Theme.Spacing.md) {
-                ProxyStrategyTags(strategies: profile.strategies, selection: selection)
+                ProxyStrategyTags(profile: profile, snapshot: manager.snapshot, selection: selection)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 Menu {
                     Button("By Region…") { openEditor(.regionStrategies) }
@@ -39,17 +39,23 @@ struct ProxyNodesPane: View {
     }
 }
 
-/// Every strategy as a tag, wrapping onto another row as they grow, so none hides in a menu.
+/// Each strategy as a tag, those made by region folded into one, so a score of regions stays a tag.
 private struct ProxyStrategyTags: View {
-    let strategies: [ProxyStrategy]
+    let profile: ProxyProfile
+    let snapshot: ProxySnapshot?
     @Binding var selection: UUID
 
     var body: some View {
+        let regional = profile.strategies.filter { $0.soleRegion != nil }
         ProxyWrapLayout {
-            ForEach(strategies) { strategy in
+            ForEach(profile.strategies.filter { $0.soleRegion == nil }) { strategy in
                 ProxyStrategyTag(strategy: strategy, isSelected: strategy.id == selection) {
                     selection = strategy.id
                 }
+            }
+            if !regional.isEmpty {
+                ProxyRegionStrategiesTag(
+                    strategies: regional, profile: profile, snapshot: snapshot, selection: $selection)
             }
         }
         .accessibilityElement(children: .contain)
@@ -61,7 +67,6 @@ private struct ProxyStrategyTag: View {
     let strategy: ProxyStrategy
     let isSelected: Bool
     let select: () -> Void
-    @State private var isHovered = false
 
     var body: some View {
         Button(action: select) {
@@ -69,21 +74,75 @@ private struct ProxyStrategyTag: View {
                 ProxyTintDot(tint: strategy.tint, size: Theme.Size.colorDot)
                 Text(strategy.name).lineLimit(1)
             }
+            .modifier(ProxyTagFace(selectedTint: isSelected ? strategy.tint.color : nil))
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+}
+
+/// The strategies made by region in one tag's menu; the tag names the one picked from it.
+private struct ProxyRegionStrategiesTag: View {
+    let strategies: [ProxyStrategy]
+    let profile: ProxyProfile
+    let snapshot: ProxySnapshot?
+    @Binding var selection: UUID
+
+    var body: some View {
+        let selected = strategies.first { $0.id == selection }
+        Menu {
+            Picker(selection: $selection) {
+                ForEach(strategies) { strategy in
+                    let node = snapshot?.node(reachedBy: strategy.id, in: profile)
+                    ProxyStrategyOption(strategy: strategy, node: node).tag(strategy.id)
+                }
+            } label: {
+                EmptyView()
+            }
+            .pickerStyle(.inline)
+            .labelsHidden()
+        } label: {
+            HStack(spacing: Theme.Spacing.sm) {
+                if let selected {
+                    ProxyTintDot(tint: selected.tint, size: Theme.Size.colorDot)
+                    Text(selected.name).lineLimit(1)
+                } else {
+                    SymbolImage(name: "globe", size: Theme.Size.colorDot * 1.4).foregroundStyle(.secondary)
+                    Text("Region Strategies").lineLimit(1)
+                    Text(strategies.count, format: .number).foregroundStyle(.secondary)
+                }
+                SymbolImage(name: "chevron.down", size: Theme.Size.colorDot).foregroundStyle(.secondary)
+            }
+            .modifier(ProxyTagFace(selectedTint: selected?.tint.color))
+        }
+        .menuStyle(.button)
+        .buttonStyle(.plain)
+        .menuIndicator(.hidden)
+        .fixedSize()
+        .accessibilityLabel(Text("Region Strategies"))
+        .accessibilityValue(Text(selected?.name ?? ""))
+    }
+}
+
+/// A tag's capsule: tinted with its strategy's colour while it shows the strategy selected.
+private struct ProxyTagFace: ViewModifier {
+    let selectedTint: Color?
+    @State private var isHovered = false
+
+    func body(content: Content) -> some View {
+        content
             .font(.callout)
             .padding(.horizontal, Theme.Spacing.lg)
             .frame(height: 28)
             .frame(maxWidth: 240)
             .background(Capsule().fill(fill))
-            .overlay(Capsule().strokeBorder(isSelected ? strategy.tint.color.opacity(0.7) : .clear))
+            .overlay(Capsule().strokeBorder(selectedTint?.opacity(0.7) ?? .clear))
             .contentShape(Capsule())
-        }
-        .buttonStyle(.plain)
-        .onHover { isHovered = $0 }
-        .accessibilityAddTraits(isSelected ? .isSelected : [])
+            .onHover { isHovered = $0 }
     }
 
     private var fill: Color {
-        if isSelected { return strategy.tint.color.opacity(0.18) }
+        if let selectedTint { return selectedTint.opacity(0.18) }
         return isHovered ? Theme.Colors.controlHover : Theme.Colors.controlSurface
     }
 }
@@ -208,12 +267,19 @@ private struct ProxyStrategyDetail: View {
         let shown = sources.contains { $0.id == state.nodesSource } ? state.nodesSource : nil
         let pool = all.filter { shown == nil || $0.source == shown }
         if !members.isEmpty {
+            let regional = members.filter { option in
+                profile.strategies.first { $0.name == option }?.soleRegion != nil
+            }
+            let others = members.filter { !regional.contains($0) }
             ProxySectionHeader(title: String(localized: "Strategies"))
-            ProxyChipGrid {
-                ForEach(members, id: \.self) { option in
-                    memberChip(option, isCurrent: group.current == option)
+            if !others.isEmpty {
+                ProxyChipGrid {
+                    ForEach(others, id: \.self) { option in
+                        memberChip(option, isCurrent: group.current == option)
+                    }
                 }
             }
+            if !regional.isEmpty { regionFold(regional, current: group.current) }
         }
         if pool.isEmpty {
             ProxyNote(
@@ -240,6 +306,37 @@ private struct ProxyStrategyDetail: View {
                 nodeChip(node, isCurrent: group.current == node.name, isInUse: inUse == node.name, showsFlag: false)
             } accessory: {
                 sourceFilter(sources)
+            }
+        }
+    }
+
+    /// Few enough region strategies to show unfolded; more fold into one row.
+    static let unfoldedRegions = 6
+
+    /// The strategies made by region in one row that opens onto them.
+    private func regionFold(_ options: [String], current: String?) -> some View {
+        let isOpen = state.regionStrategiesOpen ?? (options.count <= Self.unfoldedRegions)
+        let holdsPick = current.map(options.contains) == true
+        return ProxyCard(padding: 0) {
+            VStack(spacing: 0) {
+                ProxyFoldHeader(
+                    title: String(localized: "Region Strategies"), count: options.count, isOpen: isOpen,
+                    inUse: holdsPick ? Text("The strategy in use is here") : nil
+                ) {
+                    state.regionStrategiesOpen = !isOpen
+                } icon: {
+                    SymbolImage(name: "globe", size: Theme.Size.settingsSidebarGlyph)
+                        .foregroundStyle(.secondary)
+                }
+                if isOpen {
+                    ProxyChipGrid {
+                        ForEach(options, id: \.self) { option in
+                            memberChip(option, isCurrent: current == option)
+                        }
+                    }
+                    .padding(.horizontal, Theme.Spacing.xl)
+                    .padding(.bottom, Theme.Spacing.xl)
+                }
             }
         }
     }
@@ -357,8 +454,19 @@ struct ProxyRegionList<Chip: View, Accessory: View>: View {
             VStack(spacing: 0) {
                 ForEach(groups) { group in
                     let isOpen = isExpanded(group)
-                    ProxyRegionHeader(group: group, isOpen: isOpen, holdsInUse: holdsInUse(group), testURL: testURL) {
+                    ProxyFoldHeader(
+                        title: group.title, count: group.nodes.count, isOpen: isOpen,
+                        inUse: holdsInUse(group) ? Text("The node in use is here") : nil,
+                        fastest: group.fastest(for: testURL)
+                    ) {
                         expansion[group.id] = !isOpen
+                    } icon: {
+                        if let flag = group.region?.flagEmoji {
+                            ProxyFlag(emoji: flag)
+                        } else {
+                            SymbolImage(name: "globe", size: Theme.Size.settingsSidebarGlyph)
+                                .foregroundStyle(.secondary)
+                        }
                     }
                     if isOpen {
                         ProxyChipGrid {
@@ -383,13 +491,16 @@ struct ProxyRegionList<Chip: View, Accessory: View>: View {
     }
 }
 
-/// A region's row: its flag and name, how many nodes it holds, and the fastest of them.
-private struct ProxyRegionHeader: View {
-    let group: ProxyRegionGroup
+/// A row that opens onto what it holds: what it is, how many, a dot when the one in use is inside.
+private struct ProxyFoldHeader<Icon: View>: View {
+    let title: String
+    let count: Int
     let isOpen: Bool
-    let holdsInUse: Bool
-    let testURL: String?
+    /// What the dot marks, given only while the one in use is inside.
+    let inUse: Text?
+    var fastest: Int?
     let toggle: () -> Void
+    @ViewBuilder let icon: Icon
     @State private var isHovered = false
 
     var body: some View {
@@ -399,22 +510,18 @@ private struct ProxyRegionHeader: View {
                     .foregroundStyle(.tertiary)
                     .rotationEffect(.degrees(isOpen ? 90 : 0))
                     .frame(width: Theme.Size.settingsSidebarGlyph)
-                if let flag = group.region?.flagEmoji {
-                    ProxyFlag(emoji: flag)
-                } else {
-                    SymbolImage(name: "globe", size: Theme.Size.settingsSidebarGlyph).foregroundStyle(.secondary)
-                }
-                Text(group.title)
-                Text(group.nodes.count, format: .number).foregroundStyle(.secondary)
-                if holdsInUse {
+                icon
+                Text(title)
+                Text(count, format: .number).foregroundStyle(.secondary)
+                if let inUse {
                     Circle()
                         .fill(Color.accentColor)
                         .frame(width: Theme.Size.colorDot * 0.75, height: Theme.Size.colorDot * 0.75)
-                        .help(Text("The node in use is here"))
-                        .accessibilityLabel(Text("The node in use is here"))
+                        .help(inUse)
+                        .accessibilityLabel(inUse)
                 }
                 Spacer(minLength: Theme.Spacing.md)
-                if let fastest = group.fastest(for: testURL) {
+                if let fastest {
                     ProxyDelayText(delay: .milliseconds(fastest)).font(.callout)
                 }
             }
@@ -425,7 +532,7 @@ private struct ProxyRegionHeader: View {
         }
         .buttonStyle(.plain)
         .onHover { isHovered = $0 }
-        .accessibilityLabel(Text(group.title))
+        .accessibilityLabel(Text(title))
         .accessibilityValue(Text(isOpen ? "Expanded" : "Collapsed"))
     }
 }
