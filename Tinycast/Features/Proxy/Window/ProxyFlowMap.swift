@@ -11,8 +11,11 @@ struct ProxyFlowMap: View {
     let mode: ProxyMode
     let snapshot: ProxySnapshot?
     let isConnected: Bool
+    var highlight: ProxyFlow.Highlight?
     let open: (Destination) -> Void
     @State private var hovered: Hover?
+    /// Each strategy block's width, so its trunk leaves from the block's edge rather than under it.
+    @State private var blockWidths: [ProxyTarget: Double] = [:]
 
     private enum Hover: Equatable {
         case source(ProxyFlow.Source)
@@ -48,9 +51,10 @@ struct ProxyFlowMap: View {
                 ForEach(flow.targets, id: \.self) { target in
                     let y = layout.targets[target] ?? 0
                     if target.strategyID != nil {
-                        strategyPill(target)
+                        strategyBlock(target)
                             .fixedSize()
                             .frame(height: Self.pillHeight)
+                            .onGeometryChange(for: Double.self) { $0.size.width } action: { blockWidths[target] = $0 }
                             .offset(x: columns.strategy, y: y - Self.pillHeight / 2)
                     }
                     exitPill(target)
@@ -61,6 +65,7 @@ struct ProxyFlowMap: View {
         }
         .frame(height: layout.height)
         .opacity(isConnected ? 1 : 0.6)
+        .animation(.easeOut(duration: 0.2), value: highlight)
         .accessibilityElement(children: .contain)
     }
 
@@ -96,29 +101,46 @@ struct ProxyFlowMap: View {
         for target in flow.targets where target.strategyID != nil {
             guard let y = layout.targets[target] else { continue }
             var trunk = Path()
-            trunk.move(to: CGPoint(x: columns.strategy, y: y))
+            trunk.move(to: CGPoint(x: columns.strategy + (blockWidths[target] ?? 0), y: y))
             trunk.addLine(to: CGPoint(x: columns.exit, y: y))
             stroke(trunk, target: target, lit: isLit(nil, target), in: &context)
         }
     }
 
     private func stroke(_ path: Path, target: ProxyTarget, lit: Bool, in context: inout GraphicsContext) {
-        let color = target.color(in: profile).opacity(lit ? 0.85 : 0.18)
-        context.stroke(path, with: .color(color), lineWidth: lit && hovered != nil ? 2 : 1.5)
+        let focused = hovered != nil || highlight != nil
+        let color = highlight?.failed == true && lit ? Theme.Colors.destructive : target.color(in: profile)
+        context.stroke(
+            path, with: .color(color.opacity(lit ? 0.85 : focused ? 0.12 : 0.18)),
+            lineWidth: lit && focused ? 2.5 : 1.5)
     }
 
-    /// Everything is lit until something is hovered; then only what that row or target touches.
+    /// Everything is lit until something is hovered or tested; then only the path that touches.
     private func isLit(_ source: ProxyFlow.Source?, _ target: ProxyTarget) -> Bool {
         switch hovered {
-        case nil: true
-        case .source(let hoveredSource): source == hoveredSource
-        case .target(let hoveredTarget): hoveredTarget == target
+        case .source(let hoveredSource):
+            // A block or exit, given no source, lights when the hovered row leads to it.
+            guard let source else { return targets(of: hoveredSource).contains(target) }
+            return source == hoveredSource
+        case .target(let hoveredTarget): return hoveredTarget == target
+        case nil: break
         }
+        guard let highlight else { return true }
+        guard highlight.target == target else { return false }
+        return source == nil || highlight.source == nil || highlight.source == source
     }
 
-    private func dims(_ hover: Hover, related: Bool) -> Double {
-        guard let hovered else { return 1 }
-        return hovered == hover || related ? 1 : 0.45
+    private func targets(of source: ProxyFlow.Source) -> [ProxyTarget] {
+        ProxyFlow(profile: profile, mode: mode).rows.first { $0.source == source }?.targets ?? []
+    }
+
+    private func opacity(source: ProxyFlow.Source) -> Double {
+        let lit = targets(of: source).contains { isLit(source, $0) }
+        return lit || (hovered == nil && highlight == nil) ? 1 : 0.4
+    }
+
+    private func opacity(target: ProxyTarget) -> Double {
+        isLit(nil, target) ? 1 : 0.4
     }
 
     // MARK: - Pills
@@ -136,10 +158,7 @@ struct ProxyFlowMap: View {
     }
 
     private func sourcePill(_ row: ProxyFlow.Row) -> some View {
-        let related: Bool = {
-            if case .target(let target) = hovered { return row.targets.contains(target) }
-            return false
-        }()
+        let matched = highlight != nil && highlight?.source == row.source
         return Button {
             open(.routes)
         } label: {
@@ -156,81 +175,100 @@ struct ProxyFlowMap: View {
             .padding(.horizontal, Theme.Spacing.md)
             .frame(maxHeight: .infinity)
             .background(pillShape.fill(Theme.Colors.cardFill))
-            .overlay(pillShape.strokeBorder(Theme.Colors.cardStroke))
+            .background(pillShape.fill(Theme.Colors.windowSurface))
+            .overlay(pillShape.strokeBorder(matched ? Color.accentColor : Theme.Colors.cardStroke,
+                                            lineWidth: matched ? 1.5 : 1))
             .contentShape(pillShape)
         }
         .buttonStyle(.plain)
-        .opacity(dims(.source(row.source), related: related))
+        .opacity(opacity(source: row.source))
         .onHover { hovered = $0 ? .source(row.source) : nil }
         .help(Text("Edit Routing"))
     }
 
-    private func strategyPill(_ target: ProxyTarget) -> some View {
+    /// Opaque, so the lines meet its edges instead of running under it.
+    private func strategyBlock(_ target: ProxyTarget) -> some View {
         let id = target.strategyID
-        let reach = id.flatMap { snapshot?.reach(from: $0, in: profile) }
+        let color = target.color(in: profile)
         return Button {
             if let id { open(.strategy(id)) }
         } label: {
             HStack(spacing: Theme.Spacing.sm) {
-                ProxyTargetDot(target: target, profile: profile)
+                Circle()
+                    .fill(color)
+                    .frame(width: Theme.Size.colorDot, height: Theme.Size.colorDot)
+                    .accessibilityHidden(true)
                 Text(target.title(in: profile)).lineLimit(1)
-                if let via = reach?.via.first.flatMap(profile.strategy) {
-                    Text("via \(via.name)").font(.caption).foregroundStyle(.secondary).lineLimit(1)
-                }
             }
-            .padding(.horizontal, Theme.Spacing.md)
+            .padding(.horizontal, Theme.Spacing.lg)
             .frame(maxHeight: .infinity)
-            .background(pillShape.fill(Theme.Colors.cardFill))
-            .overlay(pillShape.strokeBorder(target.color(in: profile).opacity(0.6)))
+            .background(pillShape.fill(color.opacity(0.14)))
+            .background(pillShape.fill(Theme.Colors.windowSurface))
+            .overlay(pillShape.strokeBorder(color.opacity(0.55)))
             .contentShape(pillShape)
         }
         .buttonStyle(.plain)
-        .opacity(dims(.target(target), related: relates(target)))
+        .opacity(opacity(target: target))
+        .onHover { hovered = $0 ? .target(target) : nil }
+        .help(Text(blockHelp(id)))
+    }
+
+    private func blockHelp(_ id: UUID?) -> String {
+        guard let id, let strategy = profile.strategy(id) else { return "" }
+        let reach = snapshot?.reach(from: id, in: profile)
+        guard let via = reach?.via.first.flatMap(profile.strategy) else { return strategy.kind.title }
+        return String(localized: "via \(via.name)")
+    }
+
+    private func exitPill(_ target: ProxyTarget) -> some View {
+        HStack(spacing: Theme.Spacing.sm) {
+            exitContent(target)
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, Theme.Spacing.md)
+        .frame(maxHeight: .infinity)
+        .background(pillShape.fill(Theme.Colors.cardFill))
+        .background(pillShape.fill(Theme.Colors.windowSurface))
+        .overlay(pillShape.strokeBorder(Theme.Colors.cardStroke))
+        .opacity(opacity(target: target))
         .onHover { hovered = $0 ? .target(target) : nil }
     }
 
     @ViewBuilder
-    private func exitPill(_ target: ProxyTarget) -> some View {
-        Group {
-            switch target {
-            case .direct:
-                exitLine(symbol: "arrow.right", title: ProxyTarget.direct.title(in: profile),
-                         detail: ProxyTarget.directSubtitle)
-            case .reject:
-                exitLine(symbol: "nosign", title: ProxyTarget.reject.title(in: profile),
-                         detail: ProxyTarget.rejectSubtitle)
-            case .strategy(let id):
-                let reach = snapshot?.reach(from: id, in: profile)
-                if let node = reach?.node {
-                    HStack(spacing: Theme.Spacing.sm) {
-                        Text(node.label).lineLimit(1).truncationMode(.middle)
-                        ProxyDelayText(delay: node.delay(for: profile.strategy(id)?.testURL)).font(.caption)
-                    }
-                } else if let outcome = reach?.outcome {
-                    exitLine(symbol: outcome == .direct ? "arrow.right" : "nosign",
-                             title: outcome.title(in: profile), detail: nil)
-                } else {
-                    Text(isConnected ? "No node picked" : "Connect to see the exit")
-                        .foregroundStyle(.secondary)
-                }
+    private func exitContent(_ target: ProxyTarget) -> some View {
+        switch target {
+        case .direct:
+            exitLine(symbol: "arrow.right", title: ProxyTarget.direct.title(in: profile),
+                     detail: ProxyTarget.directSubtitle)
+        case .reject:
+            exitLine(symbol: "nosign", title: ProxyTarget.reject.title(in: profile),
+                     detail: ProxyTarget.rejectSubtitle)
+        case .strategy(let id):
+            let tested = highlight?.target == target ? highlight?.exit.flatMap { snapshot?.nodes[$0] } : nil
+            let reach = snapshot?.reach(from: id, in: profile)
+            if highlight?.target == target, highlight?.failed == true {
+                exitLine(symbol: "exclamationmark.triangle", title: String(localized: "Could not connect"),
+                         detail: nil)
+            } else if let node = tested ?? reach?.node {
+                ProxyNodeLabel(node: node, showsNote: false, size: NSFont.systemFontSize)
+                ProxyDelayText(delay: node.delay(for: profile.strategy(id)?.testURL)).font(.caption)
+            } else if let outcome = reach?.outcome {
+                exitLine(symbol: outcome == .direct ? "arrow.right" : "nosign",
+                         title: outcome.title(in: profile), detail: nil)
+            } else {
+                Text(isConnected ? "No node picked" : "Connect to see the exit")
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
             }
         }
-        .opacity(dims(.target(target), related: relates(target)))
-        .onHover { hovered = $0 ? .target(target) : nil }
     }
 
     private func exitLine(symbol: String, title: String, detail: String?) -> some View {
         HStack(spacing: Theme.Spacing.sm) {
             SymbolImage(name: symbol, size: Theme.Size.settingsSidebarGlyph).foregroundStyle(.secondary)
-            Text(title)
+            Text(title).lineLimit(1)
             if let detail { Text(detail).font(.caption).foregroundStyle(.tertiary).lineLimit(1) }
         }
-    }
-
-    private func relates(_ target: ProxyTarget) -> Bool {
-        guard case .source(let source) = hovered else { return false }
-        return ProxyFlow(profile: profile, mode: mode).rows.first { $0.source == source }?.targets.contains(target)
-            ?? false
     }
 
     private var pillShape: RoundedRectangle {

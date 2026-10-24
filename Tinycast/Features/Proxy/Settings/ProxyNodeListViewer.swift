@@ -20,7 +20,7 @@ struct ProxyNodeListViewer: View {
 
     private struct Region: Identifiable {
         let id: String
-        let title: String
+        let region: ProxyRegion?
         let nodes: [ProxySnapshot.Node]
     }
 
@@ -85,9 +85,15 @@ struct ProxyNodeListViewer: View {
         } else {
             List {
                 ForEach(regions) { region in
-                    Section(region.title) {
+                    Section {
                         ForEach(region.nodes) { node in
                             row(node)
+                        }
+                    } header: {
+                        HStack(spacing: Theme.Spacing.sm) {
+                            if let flag = region.region?.flagEmoji { ProxyFlag(emoji: flag) }
+                            Text(region.region?.title ?? ProxyRegion.otherTitle)
+                            Text(region.nodes.count, format: .number).foregroundStyle(.secondary)
                         }
                     }
                 }
@@ -125,17 +131,15 @@ struct ProxyNodeListViewer: View {
         let order: [ProxyRegion?] = ProxyRegion.allCases.map(Optional.some) + [nil]
         return order.compactMap { region in
             guard let nodes = byRegion[region] else { return nil }
-            let title = region?.label ?? ProxyRegion.otherTitle
-            return Region(id: region?.rawValue ?? "other", title: "\(title) · \(nodes.count)", nodes: nodes)
+            return Region(id: region?.rawValue ?? "other", region: region, nodes: nodes)
         }
     }
 
     private func row(_ node: ProxySnapshot.Node) -> some View {
         HStack(spacing: Theme.Spacing.lg) {
-            Text(node.label)
-                .lineLimit(1)
-                .truncationMode(.middle)
+            ProxyNodeLabel(node: node, showsFlag: false, size: NSFont.systemFontSize)
                 .layoutPriority(1)
+                .help(Text(node.name))
             Spacer(minLength: Theme.Spacing.md)
             Text(details(of: node))
                 .font(.caption)

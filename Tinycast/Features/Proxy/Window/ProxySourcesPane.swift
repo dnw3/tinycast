@@ -161,7 +161,7 @@ private struct ProxySourceCard: View {
             if case .file(let path) = source.kind {
                 Button("Edit File…") { openEditor(.nodeFile(URL(filePath: (path as NSString).expandingTildeInPath))) }
             }
-            Button("Edit…") { openEditor(.source(.existing(source, in: manager.store))) }
+            Button("Settings…") { openEditor(.source(.existing(source, in: manager.store))) }
             Button("Show Nodes") { openEditor(.nodes(source.id)) }
                 .disabled(loaded == nil)
         }

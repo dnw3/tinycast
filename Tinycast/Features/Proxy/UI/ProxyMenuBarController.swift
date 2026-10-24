@@ -101,7 +101,7 @@ final class ProxyMenuBarController: NSObject, NSMenuDelegate {
     private func strategyItem(_ strategy: ProxyStrategy, in profile: ProxyProfile) -> NSMenuItem {
         let item = NSMenuItem(title: strategy.name, action: nil, keyEquivalent: "")
         let reach = manager.snapshot?.reach(from: strategy.id, in: profile)
-        item.image = ProxyMenuBarController.dot(strategy.tint)
+        Self.show(Self.dot(strategy.tint), on: item)
         if let node = reach?.node {
             item.subtitle = node.label
             if let label = node.delay(for: strategy.testURL).label { item.badge = NSMenuItemBadge(string: label) }
@@ -121,13 +121,14 @@ final class ProxyMenuBarController: NSObject, NSMenuDelegate {
         if !pool.isEmpty, submenu.numberOfItems > 0 { submenu.addItem(.separator()) }
         for region in regions {
             guard let members = grouped[region] else { continue }
-            let regionItem = NSMenuItem(title: region?.label ?? ProxyRegion.otherTitle, action: nil, keyEquivalent: "")
+            let regionItem = NSMenuItem(title: region?.title ?? ProxyRegion.otherTitle, action: nil, keyEquivalent: "")
+            if let region { Self.show(ProxyFlagArtwork.menuImage(emoji: region.flagEmoji), on: regionItem) }
             regionItem.badge = NSMenuItemBadge(count: members.count)
             if members.contains(where: { $0.name == group.current }) { regionItem.state = .mixed }
             let regionMenu = NSMenu()
             regionMenu.autoenablesItems = false
             for node in members {
-                let nodeItem = optionItem(node.name, title: node.label, strategy: strategy, current: group.current,
+                let nodeItem = optionItem(node.name, title: node.bareName, strategy: strategy, current: group.current,
                                           picks: picks)
                 if let label = node.delay(for: strategy.testURL).label { nodeItem.badge = NSMenuItemBadge(string: label) }
                 regionMenu.addItem(nodeItem)
@@ -152,6 +153,12 @@ final class ProxyMenuBarController: NSObject, NSMenuDelegate {
         item.state = option == current ? .on : .off
         item.isEnabled = picks
         return item
+    }
+
+    /// macOS 27 hides menu images unless asked; a strategy's colour and a flag both say something.
+    private static func show(_ image: NSImage, on item: NSMenuItem) {
+        item.image = image
+        if #available(macOS 27, *) { item.preferredImageVisibility = .visible }
     }
 
     private static func dot(_ tint: ProxyStrategy.Tint) -> NSImage {

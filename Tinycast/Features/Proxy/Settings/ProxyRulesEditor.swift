@@ -82,7 +82,7 @@ struct ProxyRulesEditor: View {
                 } header: {
                     Text("Test")
                 } footer: {
-                    Text("Checks only the rules above, saved or not; the site test on the Routing page asks the core.")
+                    Text("Checks only the rules above, saved or not; the site test on the Overview asks the core.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)

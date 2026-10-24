@@ -5,6 +5,7 @@ struct ProxyOverviewPane: View {
     @Environment(AppCore.self) private var core
     @Environment(ProxyWindowState.self) private var state
     let manager: ProxyManager
+    @State private var siteTest: ProxySiteTest?
 
     private var profile: ProxyProfile { manager.store.profile }
     private var coordinator: ProxyCoordinator { core.proxyCoordinator }
@@ -26,14 +27,15 @@ struct ProxyOverviewPane: View {
                             Spacer()
                             Button("Edit Routing") { state.page = .routes }
                         }
+                        ProxyFlowTest(manager: manager, test: $siteTest)
                         ProxyFlowMap(
                             profile: profile, mode: manager.mode, snapshot: manager.snapshot,
-                            isConnected: manager.isRunning
+                            isConnected: manager.isRunning, highlight: highlight
                         ) { destination in
                             switch destination {
                             case .routes: state.page = .routes
                             case .strategy(let id):
-                                state.nodesTab = .strategy(id)
+                                state.nodesStrategy = id
                                 state.page = .nodes
                             }
                         }
@@ -42,6 +44,11 @@ struct ProxyOverviewPane: View {
                 ProxyStatusTiles(manager: manager)
             }
         }
+    }
+
+    private var highlight: ProxyFlow.Highlight? {
+        guard case .found(let probe) = siteTest else { return nil }
+        return probe.highlight(in: profile, mode: manager.mode)
     }
 
     private var flowCaption: String {
@@ -79,15 +86,17 @@ private struct ProxyExitCard: View {
         let strategy = profile.strategy(profile.defaultStrategy)
         let target = ProxyTarget.strategy(profile.defaultStrategy)
         let reach = manager.snapshot?.reach(from: profile.defaultStrategy, in: profile)
-        let exit: String =
-            switch manager.mode {
-            case .direct: String(localized: "Direct")
-            default: reach?.node?.label ?? reach?.outcome?.title(in: profile) ?? String(localized: "No node picked")
+        Group {
+            if manager.mode != .direct, let node = reach?.node {
+                ProxyNodeLabel(node: node, size: NSFont.preferredFont(forTextStyle: .title2).pointSize)
+            } else if manager.mode == .direct {
+                Text("Direct")
+            } else {
+                Text(reach?.outcome?.title(in: profile) ?? String(localized: "No node picked"))
             }
-        Text(exit)
-            .font(.title2.weight(.semibold))
-            .lineLimit(1)
-            .truncationMode(.middle)
+        }
+        .font(.title2.weight(.semibold))
+        .lineLimit(1)
         HStack(spacing: Theme.Spacing.sm) {
             if manager.mode != .direct {
                 ProxyTargetDot(target: target, profile: profile)
@@ -103,7 +112,7 @@ private struct ProxyExitCard: View {
         .lineLimit(1)
         HStack {
             Button("Choose Node") {
-                state.nodesTab = nil
+                state.nodesStrategy = nil
                 state.page = .nodes
             }
             Button("Test Delays") { core.proxyCoordinator.testDelays(of: profile.defaultStrategy) }

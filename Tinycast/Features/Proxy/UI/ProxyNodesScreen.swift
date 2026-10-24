@@ -45,12 +45,14 @@ struct ProxyNodesScreen: PaletteScreen {
                 let source = namesSources ? node.source.flatMap { sources[$0] } : nil
                 guard ProxyPaletteRows.matches(query, node.name, node.region?.title, source) else { continue }
                 let delay = node.delay(for: strategy.testURL)
+                let name = ProxyNodeName(node.name)
+                let subtitle = [name.note, source].compactMap(\.self).joined(separator: " · ")
                 byRegion[node.region, default: []].append(
                     (
                         .option(option),
                         ProxyPaletteRow(
-                            id: option, leading: .flag(node.flag), title: node.bareName,
-                            subtitle: source,
+                            id: option, leading: .flag(node.flagEmoji), title: name.title,
+                            subtitle: subtitle.isEmpty ? nil : subtitle,
                             trailing: delay.label, trailingTone: ProxyPaletteRow.Tone(delay),
                             isCurrent: group.current == option)
                     ))

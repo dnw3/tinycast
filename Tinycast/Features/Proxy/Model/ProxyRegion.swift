@@ -88,12 +88,13 @@ enum ProxyRegion: String, CaseIterable, Codable, Sendable {
         self == .unitedKingdom ? "GB" : rawValue.uppercased()
     }
 
-    /// Shown beside the name; nil where a China-region Mac draws the flag as a missing glyph.
+    /// For plain text; nil where a China-region Mac draws the flag as a missing glyph.
     var flag: String? {
-        self == .taiwan ? nil : emoji
+        self == .taiwan ? nil : flagEmoji
     }
 
-    private var emoji: String {
+    /// The regional indicators, which a view draws itself where the font will not.
+    var flagEmoji: String {
         let indicators = regionCode.unicodeScalars.compactMap { Unicode.Scalar(0x1F1A5 + $0.value) }
         return String(String.UnicodeScalarView(indicators))
     }
@@ -312,7 +313,7 @@ enum ProxyRegion: String, CaseIterable, Codable, Sendable {
 
     /// One pattern both ICU and Go's regexp2 accept, so the node list and mihomo's `filter` agree.
     var filter: String {
-        let names = (namedByFlag ? [emoji] : []) + words
+        let names = (namedByFlag ? [flagEmoji] : []) + words
         let name = "(?i:" + names.joined(separator: "|") + ")"
         guard !codes.isEmpty else { return name }
         return name + "|(?<![A-Za-z])(?:" + codes.joined(separator: "|") + ")(?![A-Za-z])"

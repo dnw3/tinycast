@@ -23751,6 +23751,58 @@
         }
       }
     },
+    "A site or IP address, to see the path it takes" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eine Website oder IP-Adresse, um ihren Weg zu sehen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un sitio o una dirección IP, para ver su recorrido"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un site ou une adresse IP, pour voir son trajet"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Webサイトまたは IP アドレスを入力して、経路を確認"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "웹사이트나 IP 주소를 입력해 경로 확인"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Um site ou endereço IP, para ver o caminho que ele segue"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сайт или IP-адрес, чтобы увидеть его путь"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "输入网站或 IP 地址，查看它的走向"
+          }
+        }
+      }
+    },
     "A switch needs a node faster by more than the tolerance, so it does not flap." : {
       "localizations" : {
         "de" : {
@@ -27974,6 +28026,58 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Добавить текст на видео"
+          }
+        }
+      }
+    },
+    "Add a Region" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Region hinzufügen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir una región"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter une région"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "地域を追加"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "지역 추가"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionar uma região"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавить регион"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添加地区"
           }
         }
       }
@@ -41657,6 +41761,58 @@
         }
       }
     },
+    "By Region or Name" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nach Region oder Name"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Por región o nombre"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Par région ou nom"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "地域または名前で"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "지역 또는 이름으로"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Por região ou nome"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "По региону или имени"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "按地区或名称"
+          }
+        }
+      }
+    },
     "By name, or by what it does — “colour”, “github”, “window”." : {
       "localizations" : {
         "de" : {
@@ -48116,54 +48272,54 @@
         }
       }
     },
-    "Checks only the rules above, saved or not; the site test on the Routing page asks the core." : {
+    "Checks only the rules above, saved or not; the site test on the Overview asks the core." : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Prüft nur die Regeln oben, ob gesichert oder nicht; der Websitetest auf der Seite „Routing“ befragt den Kern."
+            "value" : "Prüft nur die Regeln oben, ob gesichert oder nicht; der Websitetest in der „Übersicht“ befragt den Kern."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Solo comprueba las reglas de arriba, estén guardadas o no; la prueba de sitios de la página “Enrutamiento” consulta al núcleo."
+            "value" : "Solo comprueba las reglas de arriba, estén guardadas o no; la prueba de sitios del “Resumen” consulta al núcleo."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ne vérifie que les règles ci-dessus, enregistrées ou non ; le test de site de la page Routage interroge le cœur."
+            "value" : "Ne vérifie que les règles ci-dessus, enregistrées ou non ; le test de site de l’Aperçu interroge le cœur."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "上のルールのみを、保存済みかどうかにかかわらず確認します。「ルーティング」ページのサイトテストはコアに問い合わせます。"
+            "value" : "上のルールのみを、保存済みかどうかにかかわらず確認します。「概要」のサイトテストはコアに問い合わせます。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "위의 규칙만 저장 여부와 관계없이 확인합니다. 라우팅 페이지의 사이트 테스트는 코어에 직접 확인합니다."
+            "value" : "위의 규칙만 저장 여부와 관계없이 확인합니다. 개요의 사이트 테스트는 코어에 직접 확인합니다."
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Verifica apenas as regras acima, salvas ou não; o teste de site na página Roteamento consulta o núcleo."
+            "value" : "Verifica apenas as regras acima, salvas ou não; o teste de site na Visão geral consulta o núcleo."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Проверяет только правила выше, сохранены они или нет; проверка сайта на странице «Маршрутизация» обращается к ядру."
+            "value" : "Проверяет только правила выше, сохранены они или нет; проверка сайта в «Обзоре» обращается к ядру."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "只检查上方的规则，无论是否已保存；「分流」页面的网站测试则会询问内核。"
+            "value" : "只检查上方的规则，无论是否已保存；「概览」中的网站测试则会询问内核。"
           }
         }
       }
@@ -51561,6 +51717,58 @@
         }
       }
     },
+    "Clear" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Löschen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Borrar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Effacer"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "消去"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "지우기"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Limpar"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Очистить"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "清除"
+          }
+        }
+      }
+    },
     "Clear History" : {
       "localizations" : {
         "de" : {
@@ -54947,6 +55155,58 @@
         }
       }
     },
+    "Collapse All" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle einklappen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contraer todo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tout réduire"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "すべて折りたたむ"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "모두 접기"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recolher tudo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Свернуть все"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全部收起"
+          }
+        }
+      }
+    },
     "Collapsed" : {
       "localizations" : {
         "de" : {
@@ -57190,58 +57450,6 @@
         }
       }
     },
-    "Connect to load the nodes of the enabled sources." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Verbinde, um die Knoten der aktivierten Quellen zu laden."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Conecta para cargar los nodos de las fuentes activadas."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Connectez-vous pour charger les nœuds des sources activées."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "接続すると、有効なソースのノードが読み込まれます。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "연결하면 활성화된 소스의 노드를 불러옵니다."
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Conecte para carregar os nós das fontes ativadas."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Подключитесь, чтобы загрузить узлы включённых источников."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "连接后才会载入已启用来源的节点。"
-          }
-        }
-      }
-    },
     "Connect to see the exit" : {
       "localizations" : {
         "de" : {
@@ -57450,54 +57658,54 @@
         }
       }
     },
-    "Connect to test where a site goes." : {
+    "Connect to test the path a site takes" : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Verbinde, um zu testen, wohin eine Website geleitet wird."
+            "value" : "Verbinde, um den Weg einer Website zu testen"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Conecta para probar adónde se dirige un sitio."
+            "value" : "Conecta para probar el recorrido de un sitio"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Connectez-vous pour tester la destination d’un site."
+            "value" : "Connectez-vous pour tester le trajet d’un site"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "接続すると、サイトの接続先をテストできます。"
+            "value" : "接続すると、サイトの経路をテストできます"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "연결하면 사이트가 어디로 향하는지 테스트할 수 있습니다."
+            "value" : "연결하면 사이트의 경로를 테스트할 수 있습니다"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Conecte para testar para onde vai um site."
+            "value" : "Conecte para testar o caminho de um site"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Подключитесь, чтобы проверить, куда направляется сайт."
+            "value" : "Подключитесь, чтобы проверить путь сайта"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "连接后可测试某个网站的去向。"
+            "value" : "连接后可测试网站的走向"
           }
         }
       }
@@ -61111,6 +61319,58 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "无法访问 %@：%@"
+          }
+        }
+      }
+    },
+    "Could not connect" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verbindung fehlgeschlagen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se pudo conectar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connexion impossible"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "接続できませんでした"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "연결할 수 없음"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não foi possível conectar"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось подключиться"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法连接"
           }
         }
       }
@@ -81735,54 +81995,54 @@
         }
       }
     },
-    "Every node the sources bring. To use one, pick it in a strategy." : {
+    "Every node the sources bring, whichever strategy uses it" : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Alle Knoten, die die Quellen liefern. Um einen zu verwenden, wähle ihn in einer Strategie aus."
+            "value" : "Alle Knoten der Quellen, egal welche Strategie sie nutzt"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Todos los nodos que aportan las fuentes. Para usar uno, elígelo en una estrategia."
+            "value" : "Todos los nodos de las fuentes, sea cual sea la estrategia que los use"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tous les nœuds fournis par les sources. Pour en utiliser un, choisissez-le dans une stratégie."
+            "value" : "Tous les nœuds des sources, quelle que soit la stratégie qui les utilise"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ソースが提供するすべてのノードです。使用するには、ストラテジーで選択します。"
+            "value" : "ソースが提供するすべてのノード（どのストラテジーが使うかを問わず）"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "소스가 제공하는 모든 노드입니다. 사용하려면 전략에서 선택하십시오."
+            "value" : "소스가 제공하는 모든 노드(어느 전략이 사용하든)"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Todos os nós fornecidos pelas fontes. Para usar um, escolha-o em uma estratégia."
+            "value" : "Todos os nós das fontes, seja qual for a estratégia que os usa"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Все узлы, которые предоставляют источники. Чтобы использовать узел, выберите его в стратегии."
+            "value" : "Все узлы из источников, какая бы стратегия их ни использовала"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "来源提供的所有节点。要使用某个节点，请在策略中选择它。"
+            "value" : "来源提供的全部节点，无论哪个策略在用"
           }
         }
       }
@@ -82721,6 +82981,58 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "展开"
+          }
+        }
+      }
+    },
+    "Expand All" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle ausklappen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expandir todo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tout développer"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "すべて展開"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "모두 펼치기"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expandir tudo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Развернуть все"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全部展开"
           }
         }
       }
@@ -99428,54 +99740,54 @@
         }
       }
     },
-    "Include nodes from the pool" : {
+    "Includes" : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Knoten aus dem Pool einbeziehen"
+            "value" : "Enthält"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Incluir nodos del pool"
+            "value" : "Incluye"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Inclure les nœuds du pool"
+            "value" : "Inclut"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "プールのノードを含める"
+            "value" : "含めるノード"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "풀의 노드 포함"
+            "value" : "포함"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Incluir nós do pool"
+            "value" : "Inclui"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Включать узлы из пула"
+            "value" : "Включает"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "包含节点池中的节点"
+            "value" : "包含"
           }
         }
       }
@@ -111168,58 +111480,6 @@
         }
       }
     },
-    "Matched" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Treffer:"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Coincide con"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Correspond à"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "一致:"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "일치:"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Corresponde a"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Совпадение:"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "命中"
-          }
-        }
-      }
-    },
     "Matched top to bottom, before every route." : {
       "localizations" : {
         "de" : {
@@ -119916,6 +120176,58 @@
         }
       }
     },
+    "No Nodes" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keine Knoten"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ningún nodo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucun nœud"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ノードなし"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "노드 없음"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nenhum nó"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Без узлов"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不含节点"
+          }
+        }
+      }
+    },
     "No Nodes Yet" : {
       "localizations" : {
         "de" : {
@@ -125432,6 +125744,58 @@
         }
       }
     },
+    "Node Pool…" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Knotenpool …"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pool de nodos…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pool de nœuds…"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ノードプール…"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "노드 풀…"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pool de nós…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пул узлов…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "节点池…"
+          }
+        }
+      }
+    },
     "Node delays updated" : {
       "localizations" : {
         "de" : {
@@ -125689,58 +126053,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "无"
-          }
-        }
-      }
-    },
-    "None chosen takes every region." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ohne Auswahl werden alle Regionen berücksichtigt."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Si no eliges ninguna, se incluyen todas las regiones."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Si aucune n’est choisie, toutes les régions sont retenues."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "何も選ばない場合は、すべての地域が対象になります。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "아무것도 선택하지 않으면 모든 지역이 포함됩니다."
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Se nenhuma for escolhida, todas as regiões são incluídas."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Если ничего не выбрано, учитываются все регионы."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "一个都不选表示全部地区。"
           }
         }
       }
@@ -131529,54 +131841,54 @@
         }
       }
     },
-    "Only the options above are offered." : {
+    "Only the other options are offered." : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Es werden nur die Optionen oben angeboten."
+            "value" : "Es werden nur die weiteren Optionen angeboten."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Solo se ofrecen las opciones de arriba."
+            "value" : "Solo se ofrecen las otras opciones."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Seules les options ci-dessus sont proposées."
+            "value" : "Seules les autres options sont proposées."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "上のオプションのみが提示されます。"
+            "value" : "その他の選択肢のみが提示されます。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "위의 옵션만 제공됩니다."
+            "value" : "기타 옵션만 제공됩니다."
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Apenas as opções acima são oferecidas."
+            "value" : "Apenas as outras opções são oferecidas."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Предлагаются только варианты выше."
+            "value" : "Предлагаются только другие варианты."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "只提供上面的选项。"
+            "value" : "只提供其他选项。"
           }
         }
       }
@@ -135394,6 +135706,58 @@
         }
       }
     },
+    "Other Options" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Weitere Optionen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otras opciones"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autres options"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "その他の選択肢"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "기타 옵션"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Outras opções"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Другие варианты"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "其他选项"
+          }
+        }
+      }
+    },
     "Other Project Builds" : {
       "localizations" : {
         "zh-Hans" : {
@@ -135498,54 +135862,54 @@
         }
       }
     },
-    "Other strategies offered ahead of the nodes, in this order." : {
+    "Other strategies, Direct or Reject, offered ahead of the nodes in this order." : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Weitere Strategien, die vor den Knoten angeboten werden, in dieser Reihenfolge."
+            "value" : "Weitere Strategien, Direkt oder Ablehnen, die in dieser Reihenfolge vor den Knoten angeboten werden."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Otras estrategias que se ofrecen antes que los nodos, en este orden."
+            "value" : "Otras estrategias, Directo o Rechazar, que se ofrecen antes que los nodos en este orden."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Autres stratégies proposées avant les nœuds, dans cet ordre."
+            "value" : "Autres stratégies, Direct ou Rejeter, proposées avant les nœuds dans cet ordre."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ノードより前に、この順序で提示される他のストラテジーです。"
+            "value" : "ノードより前に、この順序で提示される他のストラテジー、「直接」または「拒否」です。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "노드보다 앞에 이 순서대로 제공되는 다른 전략입니다."
+            "value" : "노드보다 앞에 이 순서대로 제공되는 다른 전략, 직접 또는 차단입니다."
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Outras estratégias oferecidas antes dos nós, nesta ordem."
+            "value" : "Outras estratégias, Direto ou Rejeitar, oferecidas antes dos nós nesta ordem."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Другие стратегии, предлагаемые перед узлами, в таком порядке."
+            "value" : "Другие стратегии, «Напрямую» или «Блокировать», предлагаемые перед узлами в таком порядке."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "排在节点前面、按此顺序提供的其他策略。"
+            "value" : "排在节点前面、按此顺序提供的其他策略、直连或拒绝。"
           }
         }
       }
@@ -138736,6 +139100,58 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "选中后影响"
+          }
+        }
+      }
+    },
+    "Picks a node for the routes sent to it." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wählt einen Knoten für die Routen, die hierher geschickt werden."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elige un nodo para las rutas que se le envían."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choisit un nœud pour les routes qui lui sont envoyées."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "送られてきたルートのためにノードを選びます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이곳으로 보내진 경로에 사용할 노드를 고릅니다."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escolhe um nó para as rotas enviadas a ela."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выбирает узел для направленных сюда маршрутов."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "为发往这里的分流选择节点。"
           }
         }
       }
@@ -165129,58 +165545,6 @@
         }
       }
     },
-    "See which rule a site matches and where it exits, as the core decides." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sieh nach, welche Regel auf eine Website zutrifft und über welchen Ausgang sie läuft – so, wie der Kern entscheidet."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mira qué regla coincide con un sitio y por dónde sale, según decide el núcleo."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Voyez quelle règle correspond à un site et par où il sort, selon la décision du cœur."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "サイトに一致するルールと出口を、コアの判断どおりに確認できます。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "코어가 판단하는 대로 사이트에 일치하는 규칙과 출구를 확인합니다."
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Veja qual regra corresponde a um site e por onde ele sai, conforme o núcleo decide."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Узнайте, какое правило подходит сайту и через какой выход он идёт, — так, как решает ядро."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "查看某个网站匹配哪条规则、从哪里出口，以内核的判断为准。"
-          }
-        }
-      }
-    },
     "Select" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -181586,6 +181950,58 @@
         }
       }
     },
+    "Test a Site" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Website testen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Probar un sitio"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tester un site"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サイトをテスト"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "사이트 테스트"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Testar um site"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Проверить сайт"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "测试网站"
+          }
+        }
+      }
+    },
     "Test every" : {
       "localizations" : {
         "de" : {
@@ -187914,6 +188330,58 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "无法创建节点文件：%@"
+          }
+        }
+      }
+    },
+    "The node in use is here" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der genutzte Knoten ist hier"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El nodo en uso está aquí"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le nœud utilisé est ici"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用中のノードはここにあります"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "사용 중인 노드가 여기에 있습니다"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O nó em uso está aqui"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Используемый узел здесь"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在使用的节点在这里"
           }
         }
       }
@@ -210590,58 +211058,6 @@
         }
       }
     },
-    "Website or Address" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Website oder Adresse"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sitio web o dirección"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Site web ou adresse"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Webサイトまたはアドレス"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "웹사이트 또는 주소"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Site ou endereço"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Веб-сайт или адрес"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "网站或地址"
-          }
-        }
-      }
-    },
     "Website, address or app…" : {
       "localizations" : {
         "de" : {
@@ -212568,6 +212984,58 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "使用逗号作为小数分隔符时，以 ; 分隔参数。"
+          }
+        }
+      }
+    },
+    "Without TUN, only apps set to use port %@ show here." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ohne TUN erscheinen hier nur Apps, die auf Port %@ eingestellt sind."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sin TUN, aquí solo aparecen las apps configuradas para usar el puerto %@."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sans TUN, seules les apps réglées pour utiliser le port %@ apparaissent ici."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TUN がオフのときは、ポート %@ を使うよう設定したアプリだけがここに表示されます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TUN이 꺼져 있으면 포트 %@을(를) 사용하도록 설정한 앱만 여기에 표시됩니다."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sem TUN, só aparecem aqui os apps configurados para usar a porta %@."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Без TUN здесь видны только приложения, настроенные на порт %@."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未开启 TUN 时，只有设置为使用端口 %@ 的应用会显示在这里。"
           }
         }
       }
@@ -215338,58 +215806,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "авто"
-          }
-        }
-      }
-    },
-    "but could not connect: %@" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "aber Verbindung fehlgeschlagen: %@"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "pero no se pudo conectar: %@"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "mais connexion impossible : %@"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ただし接続できませんでした: %@"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "하지만 연결하지 못했습니다: %@"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "mas não foi possível conectar: %@"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "но подключиться не удалось: %@"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "但无法连接：%@"
           }
         }
       }

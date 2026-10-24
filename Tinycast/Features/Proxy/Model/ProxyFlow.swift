@@ -24,6 +24,15 @@ struct ProxyFlow: Equatable, Sendable {
         var height: Double
     }
 
+    /// A site test's path: the row it matched, or every row in a forced mode, and its target.
+    struct Highlight: Equatable, Sendable {
+        var source: Source?
+        var target: ProxyTarget
+        /// The node the test went out through, which a strategy spreading its load may not show.
+        var exit: String?
+        var failed = false
+    }
+
     /// Rules first, then the routes grouped by target in the order the targets are listed.
     var rows: [Row]
     /// Strategies in the profile's order, then Direct and Reject, as far as any row uses them.
@@ -88,5 +97,36 @@ extension ProxyFlow.Source {
     var isRules: Bool {
         if case .rules = self { return true }
         return false
+    }
+}
+
+extension ProxyProbe {
+    /// The map's path for this test: the row it matched and that row's target, or a forced mode's.
+    func highlight(in profile: ProxyProfile, mode: ProxyMode) -> ProxyFlow.Highlight? {
+        var exit: String?
+        let match: ProxyActivity.Match
+        switch outcome {
+        case .mode:
+            let target: ProxyTarget = mode == .direct ? .direct : .strategy(profile.defaultStrategy)
+            return ProxyFlow.Highlight(source: nil, target: target)
+        case .matched(let rule, let payload, let node):
+            exit = node
+            match = ProxyActivity.matching(rule: rule, payload: payload, in: profile)
+        case .failed(let rule, let payload, _):
+            match = ProxyActivity.matching(rule: rule, payload: payload, in: profile)
+        }
+        let failed = exit == nil
+        switch match {
+        case .rule(let id):
+            let rules = ProxyFlow(profile: profile, mode: mode).rows.first { $0.source.isRules }
+            guard let target = profile.rules.first(where: { $0.id == id })?.target, let rules else { return nil }
+            return ProxyFlow.Highlight(source: rules.source, target: target, exit: exit, failed: failed)
+        case .route(let id):
+            let target = id == ProxyRoute.finalID ? profile.finalTarget : profile.routes.first { $0.id == id }?.target
+            guard let target else { return nil }
+            return ProxyFlow.Highlight(source: .route(id), target: target, exit: exit, failed: failed)
+        case .mode, .core, .unknown:
+            return nil
+        }
     }
 }

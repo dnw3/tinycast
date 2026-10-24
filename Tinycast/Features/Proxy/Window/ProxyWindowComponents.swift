@@ -188,9 +188,35 @@ extension ProxySnapshot.Node {
         ProxyRegion.leadingFlag(of: name)?.rest ?? name
     }
 
-    /// The flag and the name, as a card or a menu shows the node.
+    /// The flag and the short name, as a status line, a menu or a message says where traffic goes.
     var label: String {
-        flag.map { "\($0) \(bareName)" } ?? bareName
+        let title = ProxyNodeName(name).title
+        return flag.map { "\($0) \(title)" } ?? title
+    }
+
+    /// The flag a view draws, Taiwan's included: the region's, else the one the name opens with.
+    var flagEmoji: String? {
+        region?.flagEmoji ?? ProxyRegion.leadingFlag(of: name)?.flag
+    }
+}
+
+/// A node as people read it: its flag, its short name, and the provider's note fading after it.
+struct ProxyNodeLabel: View {
+    let node: ProxySnapshot.Node
+    var showsFlag = true
+    var showsNote = true
+    /// The surrounding text's point size, which a drawn flag cannot take from the font.
+    var size = NSFont.preferredFont(forTextStyle: .callout).pointSize
+
+    var body: some View {
+        let name = ProxyNodeName(node.name)
+        HStack(spacing: Theme.Spacing.xs) {
+            if showsFlag, let flag = node.flagEmoji { ProxyFlag(emoji: flag, size: size) }
+            Text(name.title).lineLimit(1).layoutPriority(1)
+            if showsNote, let note = name.note {
+                Text(note).fontWeight(.regular).foregroundStyle(.secondary).lineLimit(1)
+            }
+        }
     }
 }
 

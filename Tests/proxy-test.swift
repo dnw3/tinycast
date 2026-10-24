@@ -137,6 +137,7 @@ struct ProxyTests {
         expect(compiled, "every region filter compiles")
         expect(ProxyRegion.classify("🇹🇼 01") == .taiwan, "a flag alone still names Taiwan")
         expect(ProxyRegion.taiwan.flag == nil, "Taiwan shows no flag, which China-region Macs cannot draw")
+        expect(ProxyRegion.taiwan.flagEmoji == "🇹🇼", "though it still spells one for a view to draw")
         expect(
             ProxyRegion.allCases.filter { $0.flag == nil } == [.taiwan], "every other region keeps its flag")
         expect(ProxyRegion.hongKong.flag == "🇭🇰" && ProxyRegion.unitedKingdom.flag == "🇬🇧", "flags spell the code")
@@ -1020,6 +1021,59 @@ struct ProxyTests {
             "a node that did not connect")
     }
 
+    // MARK: - Node names
+
+    static func testNodeNames() {
+        let noted = ProxyNodeName("香港01：通用客户端暂时保持兼容")
+        expect(noted.title == "香港01" && noted.note == "通用客户端暂时保持兼容", "a full-width colon starts a note")
+        let barred = ProxyNodeName("🇭🇰 HK 01 | 0.5x")
+        expect(barred.title == "HK 01" && barred.note == "0.5x", "a bar starts one too, after the flag")
+        expect(ProxyNodeName("US: Los Angeles 01").note == nil, "a head without a number is not a name")
+        let long = ProxyNodeName("Hong Kong Premium IPLC 01 - 0.5x")
+        expect(long.note == nil && long.title == "Hong Kong Premium IPLC 01 - 0.5x", "nor is a long head")
+        expect(ProxyNodeName("台湾动态ip").note == nil, "no separator, no note")
+        expect(ProxyNodeName("香港01：").note == nil, "an empty note is none")
+    }
+
+    // MARK: - Site test paths
+
+    static func testProbeHighlight() {
+        var profile = starter()
+        let primary = ProxyTarget.strategy(profile.defaultStrategy)
+        guard let destination = ProxyProbe.Destination("chat.openai.com"),
+            let ai = profile.routes.first(where: { $0.id == "ai" }), let set = ai.ruleSets.first?.name
+        else {
+            expect(false, "the starter routes AI")
+            return
+        }
+        let routed = ProxyProbe(
+            destination: destination, outcome: .matched(rule: "RuleSet", payload: set, exit: "香港 01"))
+        expect(
+            routed.highlight(in: profile, mode: .rule)
+                == ProxyFlow.Highlight(source: .route("ai"), target: ai.target, exit: "香港 01"),
+            "a route's row, its target and the node the test left through")
+        let rest = ProxyProbe(destination: destination, outcome: .matched(rule: "Match", payload: "", exit: "DIRECT"))
+        expect(rest.highlight(in: profile, mode: .rule)?.source == .route(ProxyRoute.finalID), "the remaining traffic")
+        profile.rules = [rule(1, .domain, "chat.openai.com", .direct)]
+        let ruled = ProxyProbe(
+            destination: destination, outcome: .matched(rule: "Domain", payload: "chat.openai.com", exit: "DIRECT"))
+        expect(
+            ruled.highlight(in: profile, mode: .rule)
+                == ProxyFlow.Highlight(source: .rules(count: 1), target: .direct, exit: "DIRECT"),
+            "a rule of the user's lights the rules row, toward that rule's target")
+        let forced = ProxyProbe(destination: destination, outcome: .mode(exit: "GLOBAL"))
+        expect(
+            forced.highlight(in: profile, mode: .global) == ProxyFlow.Highlight(source: nil, target: primary),
+            "global mode lights every row into the default strategy")
+        expect(forced.highlight(in: profile, mode: .direct)?.target == .direct, "direct mode, into Direct")
+        let failed = ProxyProbe(
+            destination: destination, outcome: .failed(rule: "RuleSet", payload: set, reason: "timeout"))
+        expect(failed.highlight(in: profile, mode: .rule)?.failed == true, "a failure marks the path")
+        let unknown = ProxyProbe(
+            destination: destination, outcome: .matched(rule: "RuleSet", payload: "gone", exit: "DIRECT"))
+        expect(unknown.highlight(in: profile, mode: .rule) == nil, "a rule set no route holds lights nothing")
+    }
+
     static func main() {
         testRegionClassification()
         testNodeFileOutline()
@@ -1045,6 +1099,8 @@ struct ProxyTests {
         testFlow()
         testActivity()
         testProbe()
+        testNodeNames()
+        testProbeHighlight()
         print("\(passes) passed, \(failures) failed")
         if failures > 0 { exit(1) }
     }

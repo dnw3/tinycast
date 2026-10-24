@@ -109,7 +109,7 @@ struct ProxyActivityPane: View {
             }
             .width(min: Width.route.min, ideal: Width.route.ideal)
             TableColumn("Exit") { activity in
-                // The node alone fits the column; the dot's colour and the tooltip name the strategy.
+                // The node alone fits; the dot's colour and the tooltip name the strategy.
                 HStack(spacing: Theme.Spacing.sm) {
                     if let target = activity.target { ProxyTargetDot(target: target, profile: profile) }
                     Text(exitNode(activity) ?? exitTitle(activity)).lineLimit(1).truncationMode(.middle)
@@ -141,8 +141,17 @@ struct ProxyActivityPane: View {
         }
         .overlay {
             if monitor.hasLoaded, rows.isEmpty {
-                Text(search.isEmpty ? "No connections right now" : "No matching connections")
-                    .foregroundStyle(.secondary)
+                VStack(spacing: Theme.Spacing.sm) {
+                    Text(search.isEmpty ? "No connections right now" : "No matching connections")
+                    // Without TUN nothing reaches the core unless an app was pointed at the port.
+                    if search.isEmpty, manager.isRunning, !manager.isTUN {
+                        Text("Without TUN, only apps set to use port \(String(profile.general.mixedPort)) show here.")
+                            .font(.callout)
+                            .foregroundStyle(.tertiary)
+                    }
+                }
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
             }
         }
     }

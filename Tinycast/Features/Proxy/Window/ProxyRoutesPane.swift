@@ -16,7 +16,6 @@ struct ProxyRoutesPane: View {
                     Button("Use Rule Mode") { coordinator.setMode(.rule) }
                 }
             }
-            ProxyProbeCard(manager: manager)
             rules
             routes
             footer
@@ -37,7 +36,10 @@ struct ProxyRoutesPane: View {
             title: String(localized: "My Rules"),
             caption: String(localized: "\(enabled) rules · matched before every route")
         ) {
-            Button("Edit…") { openEditor(.rules) }
+            // An empty list offers its own Add button below, so one button says it once.
+            if !profile.rules.isEmpty {
+                Button("Edit…") { openEditor(.rules) }
+            }
         }
         if profile.rules.isEmpty {
             ProxyNote(text: String(localized: "Send one site, address or app somewhere else, ahead of every route.")) {
@@ -255,139 +257,6 @@ private struct ProxyFinalRouteRow: View {
             guard let id = ids.first else { return false }
             core.proxyCoordinator.moveRoute(id, before: nil)
             return true
-        }
-    }
-}
-
-/// Types a site and asks the running core which rule it matches and where it exits.
-private struct ProxyProbeCard: View {
-    @Environment(AppCore.self) private var core
-    let manager: ProxyManager
-    @State private var input = ""
-    @State private var result: Result?
-    @State private var isRunning = false
-
-    private enum Result {
-        case outcome(ProxyProbe)
-        case failure(String)
-    }
-
-    private var profile: ProxyProfile { manager.store.profile }
-
-    var body: some View {
-        ProxyCard {
-            VStack(alignment: .leading, spacing: Theme.Spacing.md) {
-                HStack(spacing: Theme.Spacing.md) {
-                    SymbolImage(name: "magnifyingglass", size: Theme.Size.settingsSidebarGlyph).foregroundStyle(.secondary)
-                    TextField(
-                        "Website or Address", text: $input, prompt: Text(ProxyPrompt.example("chat.openai.com"))
-                    )
-                    .textFieldStyle(.plain)
-                    .onSubmit(run)
-                    if isRunning {
-                        ProgressView().controlSize(.small)
-                    } else {
-                        Button("Test", action: run)
-                            .disabled(!manager.isRunning || ProxyProbe.Destination(input) == nil)
-                    }
-                }
-                Group {
-                    switch result {
-                    case .outcome(let probe):
-                        ProxyProbeResult(probe: probe, profile: profile, mode: manager.mode, snapshot: manager.snapshot)
-                    case .failure(let message): Text(message).foregroundStyle(.secondary)
-                    case nil:
-                        Text(
-                            manager.isRunning
-                                ? String(localized: "See which rule a site matches and where it exits, as the core decides.")
-                                : String(localized: "Connect to test where a site goes.")
-                        )
-                        .foregroundStyle(.secondary)
-                    }
-                }
-                .font(.callout)
-            }
-        }
-    }
-
-    private func run() {
-        guard let destination = ProxyProbe.Destination(input), !isRunning else { return }
-        isRunning = true
-        Task {
-            defer { isRunning = false }
-            switch await core.proxyCoordinator.probe(destination) {
-            case .success(let outcome): result = .outcome(ProxyProbe(destination: destination, outcome: outcome))
-            case .failure(.unreachable): result = .failure(String(localized: "The core could not be reached."))
-            case .failure(.noRecord):
-                result = .failure(String(localized: "The core reported nothing for this site in time."))
-            }
-        }
-    }
-}
-
-/// What a test found: the rule or route that matched, the strategy, and the exit.
-private struct ProxyProbeResult: View {
-    let probe: ProxyProbe
-    let profile: ProxyProfile
-    let mode: ProxyMode
-    let snapshot: ProxySnapshot?
-
-    var body: some View {
-        HStack(spacing: Theme.Spacing.sm) {
-            switch probe.outcome {
-            case .matched(let rule, let payload, let exit):
-                Text("Matched").foregroundStyle(.secondary)
-                Text(matchTitle(rule: rule, payload: payload)).fontWeight(.semibold)
-                arrow
-                if let target { ProxyTargetDot(target: target, profile: profile) }
-                Text(target?.title(in: profile) ?? ProxyPaletteRows.optionTitle(exit, in: snapshot))
-                if target?.strategyID != nil {
-                    arrow
-                    Text(ProxyPaletteRows.optionTitle(exit, in: snapshot))
-                }
-            case .mode(let exit):
-                Text(mode == .global ? String(localized: "Global mode") : String(localized: "Direct mode"))
-                    .fontWeight(.semibold)
-                arrow
-                Text(ProxyPaletteRows.optionTitle(exit, in: snapshot))
-            case .failed(let rule, let payload, let reason):
-                Text("Matched").foregroundStyle(.secondary)
-                Text(matchTitle(rule: rule, payload: payload)).fontWeight(.semibold)
-                Text("but could not connect: \(reason)").foregroundStyle(.secondary).lineLimit(2)
-            }
-        }
-        .lineLimit(1)
-    }
-
-    private var arrow: some View {
-        SymbolImage(name: "arrow.right", size: Theme.Size.settingsSidebarGlyph)
-            .foregroundStyle(.tertiary)
-            .accessibilityHidden(true)
-    }
-
-    private var match: ProxyActivity.Match {
-        switch probe.outcome {
-        case .matched(let rule, let payload, _), .failed(let rule, let payload, _):
-            ProxyActivity.matching(rule: rule, payload: payload, in: profile)
-        case .mode: .mode
-        }
-    }
-
-    private var target: ProxyTarget? {
-        switch match {
-        case .rule(let id): profile.rules.first { $0.id == id }?.target
-        case .route(let id) where id == ProxyRoute.finalID: profile.finalTarget
-        case .route(let id): profile.routes.first { $0.id == id }?.target
-        case .mode, .core, .unknown: nil
-        }
-    }
-
-    private func matchTitle(rule: String, payload: String) -> String {
-        switch match {
-        case .rule(let id): profile.rules.first { $0.id == id }.map { $0.kind.description(of: $0.value) } ?? payload
-        case .route(let id) where id == ProxyRoute.finalID: ProxyRoute.finalTitle
-        case .route(let id): profile.routes.first { $0.id == id }?.title ?? id
-        case .mode, .core, .unknown: payload.isEmpty ? rule : "\(rule) \(payload)"
         }
     }
 }

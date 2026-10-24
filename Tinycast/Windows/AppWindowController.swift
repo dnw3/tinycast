@@ -128,6 +128,8 @@ final class AppWindowController: NSObject, NSWindowDelegate {
         window.isReleasedWhenClosed = false
         // AppKit would otherwise resurrect the window at launch, before anything is wired up.
         window.isRestorable = false
+        // Made key from any space, a full-screen one too, it comes into view rather than unseen.
+        window.collectionBehavior.insert(.moveToActiveSpace)
         window.contentMinSize = minimumSize
         window.delegate = self
         // Before the content: a bridged SwiftUI toolbar restores the title flags it mounted over.

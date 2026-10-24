@@ -391,12 +391,23 @@ Source: `Features/Proxy/Window/`.
 
 The proxy window is built the way Settings is: `AppWindowController` with `SettingsWindowChrome`, a
 `NavigationSplitView` whose sidebar ends in the connection status, and a bridged toolbar holding the
-page title, the mode's segmented control and the connect switch. Content is cards — `Colors.cardFill`
-under a `cardStroke` hairline at `Radius.card` — on the window background, and its editors are the
-Settings editor panels, presented over this window. Colour is kept for strategies: a strategy's tint
-marks its tab, its lines in the flow map, a picked node card and every target menu that names it. Delays
-read green under 150 ms, `Colors.warning` above, red on a timeout and grey untested. A node shows its
-region's flag and its name without the flag it may already open with; Taiwan's region has no flag.
+page title, the mode's segmented control and a power toggle in the button style, so both read as glass
+toolbar controls. Content is cards — `Colors.cardFill` under a `cardStroke` hairline at `Radius.card`
+— on the window background, and its editors are the Settings editor panels, presented over this window.
+
+Colour is kept for strategies: a strategy's tint marks its dot, its lines and block in the flow map, the
+chip it picked and every target menu that names it. The flow map's blocks and pills sit on
+`Colors.windowSurface`, so a line meets a block's edge instead of running under it; a site test lights
+one row's path and fades the rest, red when the test could not connect. Delays read green under 150 ms,
+`Colors.warning` above, red on a timeout and grey untested.
+
+Nodes are one-line chips (`ProxyChip`) in collapsible region groups (`ProxyRegionList`): a long list
+opens only the region holding the node in use, a short one opens whole. A chip shows the name's short
+title and the provider's note after it in grey (`ProxyNodeName`), its pick as a tinted fill, and the
+node traffic actually uses through another strategy as a tinted outline. A node shows its region's
+flag; Taiwan's is drawn by `ProxyFlagArtwork` in the emoji's manner, since a China-region Mac blanks the
+emoji, and plain text (`ProxyRegion.flag`, `Node.label`) leaves it out. Menu bar images set
+`preferredImageVisibility = .visible` on macOS 27, which otherwise hides them.
 
 ---
 

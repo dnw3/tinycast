@@ -155,7 +155,6 @@ private struct ProxyPaletteRowView: View {
                     .font(metrics.typography.rowTrailing)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
-                    .truncationMode(.middle)
             }
             Spacer(minLength: metrics.spacing.md)
             if let trailing = row.trailing {
@@ -189,7 +188,8 @@ private struct ProxyPaletteRowView: View {
             SymbolImage(name: name, size: metrics.size.resultRowIcon * 0.7)
                 .foregroundStyle(.secondary)
         case .flag(let flag?):
-            Text(flag).font(.system(size: metrics.size.resultRowIcon * 0.8))
+            ProxyFlag(emoji: flag, size: metrics.size.resultRowIcon * 0.8)
+                .font(.system(size: metrics.size.resultRowIcon * 0.8))
         case .flag(nil):
             SymbolImage(name: "globe", size: metrics.size.resultRowIcon * 0.7)
                 .foregroundStyle(.secondary)
@@ -222,7 +222,8 @@ private struct ProxyContextChipView: View {
             case .tint(let tint): ProxyTintDot(tint: tint, size: metrics.size.menuIcon * 0.6)
             case .symbol(let name):
                 SymbolImage(name: name, size: metrics.size.menuIcon * 0.7).foregroundStyle(.secondary)
-            case .flag(let flag): Text(flag ?? "🌐")
+            case .flag(let flag?): ProxyFlag(emoji: flag, size: metrics.typography.chipNSFont.pointSize)
+            case .flag(nil): Text(verbatim: "🌐")
             }
             Text(title).lineLimit(1)
         }

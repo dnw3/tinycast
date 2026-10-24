@@ -309,6 +309,7 @@
 		359FBB7F7BE95911B07AE9E2 /* DictationModelDownloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B324E12A254BAD39A13EDD9 /* DictationModelDownloader.swift */; };
 		35B8FDB3AEF34BE06E896079 /* CaptureCensorTools.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26CCDAD53E2D1EC5678B47B4 /* CaptureCensorTools.swift */; };
 		35C2804CAE6C3B3DC0B23D12 /* CaptureVideoEncoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FB41A644761AB5F23CD7769 /* CaptureVideoEncoder.swift */; };
+		35D1FE0B458CB9D47C5314A7 /* ProxyFlag.swift in Sources */ = {isa = PBXBuildFile; fileRef = 809F475E2FE473CD3E2EAE70 /* ProxyFlag.swift */; };
 		35D8AA4E6FE6FD020A56BD8A /* HIDEventSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBBE9EB084808581126AAB6B /* HIDEventSystem.swift */; };
 		35FA2FD79DC8D8E93ED934F2 /* endian_inl_utils.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = A63D38FCD5CA3B0D3BE5B10E /* endian_inl_utils.h */; };
 		362651FE29DD01EC4D846F5F /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F64F4362989516482853CDB /* AppSettings.swift */; };
@@ -526,6 +527,7 @@
 		5941BA722DA138FEFB902D85 /* ProxyHelperPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 383772993AFA94A02C1A459A /* ProxyHelperPolicy.swift */; };
 		5970306ABC24B03028E66D45 /* FileSearchIgnoreList.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBFF39C46E98D0808B188E2E /* FileSearchIgnoreList.swift */; };
 		5988C5F5629CE78FB6692BB3 /* SettingsEditorPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 607E7B669817BFC39B12C12D /* SettingsEditorPresenter.swift */; };
+		599A5D29FEB9E343341F3B80 /* ProxyFlowTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A75CB462181E413B27F0A09 /* ProxyFlowTest.swift */; };
 		599C38694275A49A31A187FB /* ProxyNodeFileEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A9EEBA53E5FEE063ACC3BD2 /* ProxyNodeFileEditor.swift */; };
 		59C5304752BB9245F76AADDC /* CodexMCPLaunch.swift in Sources */ = {isa = PBXBuildFile; fileRef = F31FB61E6F6969851D3874FA /* CodexMCPLaunch.swift */; };
 		59EF05197F3E443D6FA742E9 /* CaptureVideoTimeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1228FA9FC5E7CE0857EC4F8A /* CaptureVideoTimeline.swift */; };
@@ -899,6 +901,7 @@
 		9AA3CF9A3494776DC8E772A8 /* ColorDot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A068600862BC729F0565D67 /* ColorDot.swift */; };
 		9AB58511EEDCD01E6139D194 /* NoteEditPlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83BB8F2CE628925F41B330B5 /* NoteEditPlan.swift */; };
 		9AE8C1D2471152BD0D44C074 /* dsp.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = DD991196A4BDB9121568FF79 /* dsp.h */; };
+		9B05201FC12E55E1D8D0977B /* ProxyNodeName.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC3499C766552CC9B037F068 /* ProxyNodeName.swift */; };
 		9B05C47A7414D04E20237B09 /* RenderNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08A1D354C1785923E612848C /* RenderNode.swift */; };
 		9B26603D8675A190DC1C9A8A /* CaptureToolbarItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 455519C41577D18E4E9E4C6C /* CaptureToolbarItem.swift */; };
 		9B3BC1DCC478DA7517F04182 /* CalculatorHistoryScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86545F54669A075FBDA5D1F1 /* CalculatorHistoryScreen.swift */; };
@@ -1437,6 +1440,7 @@
 		F7F68D433FE45866BC431DF9 /* AppLanguage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FCC696D68E13748889B6E3C /* AppLanguage.swift */; };
 		F801641E8E8864C48441C1BE /* CaptureExportOptions-Failure+Localization.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA6C9AF5119EC3172C50F017 /* CaptureExportOptions-Failure+Localization.swift */; };
 		F801D00F877421DC7045C5F3 /* RedactedPlaceholder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 131B15F5EF86A067FA6C36D7 /* RedactedPlaceholder.swift */; };
+		F841E9E02FD97DFCBCD1AD5C /* ProxyNodeName.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC3499C766552CC9B037F068 /* ProxyNodeName.swift */; };
 		F8444D0EC10F6EF3170F5443 /* lossless.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = CDDCC1E5B42180B84CB5ADCB /* lossless.h */; };
 		F85CE4CDCF7589ACAEF2CA20 /* AppIconView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90E23F92F4B4DEEE55077C7C /* AppIconView.swift */; };
 		F88C1B7A8E2C46404792C826 /* ExtensionNameResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = C40D65C644389618DF5F5E26 /* ExtensionNameResolver.swift */; };
@@ -2248,6 +2252,7 @@
 		69B04999195AE0974D30690F /* CaptureScreenService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureScreenService.swift; sourceTree = "<group>"; };
 		69E8766332C3B23BEFF4DE48 /* palette.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = palette.c; sourceTree = "<group>"; };
 		6A565F39E67CB75B3B20470C /* CaptureRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureRequest.swift; sourceTree = "<group>"; };
+		6A75CB462181E413B27F0A09 /* ProxyFlowTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProxyFlowTest.swift; sourceTree = "<group>"; };
 		6AAC331AC273848CF53402A8 /* picture_enc.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = picture_enc.c; sourceTree = "<group>"; };
 		6AC579F5475FB954F4C9045B /* CaptureRecordingSegment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureRecordingSegment.swift; sourceTree = "<group>"; };
 		6AF26598BE61F114D5999541 /* NotesSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesSettingsView.swift; sourceTree = "<group>"; };
@@ -2367,6 +2372,7 @@
 		8065D957C39EBE2156ADAFE1 /* idec_dec.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = idec_dec.c; sourceTree = "<group>"; };
 		806CE61EC06E7E10B5BA1E02 /* CleanupLeftoverScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupLeftoverScanner.swift; sourceTree = "<group>"; };
 		8088CD8FD5F95E1A2CA4AC42 /* QuickActionPanelController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickActionPanelController.swift; sourceTree = "<group>"; };
+		809F475E2FE473CD3E2EAE70 /* ProxyFlag.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProxyFlag.swift; sourceTree = "<group>"; };
 		80CFDF742F01C5445F450385 /* io_dec.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = io_dec.c; sourceTree = "<group>"; };
 		80D28DFBA01C09F076685C9F /* cost_mips32.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = cost_mips32.c; sourceTree = "<group>"; };
 		81368C6F4054CBF88D43B4FF /* Makefile.in */ = {isa = PBXFileReference; path = Makefile.in; sourceTree = "<group>"; };
@@ -2611,6 +2617,7 @@
 		AB7A2FCD397D882D8ABB56D5 /* palette.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = palette.h; sourceTree = "<group>"; };
 		ABB9DB77DCE25C41D86BB955 /* SearchRelevance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchRelevance.swift; sourceTree = "<group>"; };
 		ABEA89E08994378FB044B4BB /* AccessibilityText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityText.swift; sourceTree = "<group>"; };
+		AC3499C766552CC9B037F068 /* ProxyNodeName.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProxyNodeName.swift; sourceTree = "<group>"; };
 		AC533E9C3B933D4384C66DD2 /* upsampling_msa.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = upsampling_msa.c; sourceTree = "<group>"; };
 		AC7849BC3BB88855E0B94C74 /* CleanupCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupCatalog.swift; sourceTree = "<group>"; };
 		ACC56DF5D3B82C81597649D6 /* RoomPlan.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoomPlan.swift; sourceTree = "<group>"; };
@@ -3472,6 +3479,7 @@
 				974EAD58190BD87B0D093387 /* ProxyLauncherHint.swift */,
 				1187543EDB3578A8DFD55BC7 /* ProxyMode.swift */,
 				437E59C4AEE17EF11BD58E59 /* ProxyNodeFileOutline.swift */,
+				AC3499C766552CC9B037F068 /* ProxyNodeName.swift */,
 				620C2C784C736F31FE3E7B4D /* ProxyProbe.swift */,
 				44171959F10AFF216D093A22 /* ProxyProblem.swift */,
 				2D665ADD16FE0D54B3C08DB3 /* ProxyProfile.swift */,
@@ -4937,7 +4945,9 @@
 			children = (
 				A93010A6ACE125544C5BEC7D /* ProxyActivityPane.swift */,
 				38DFA419A0088502B31ED191 /* ProxyEditor.swift */,
+				809F475E2FE473CD3E2EAE70 /* ProxyFlag.swift */,
 				34DAD68E15D8AA1D82C2776A /* ProxyFlowMap.swift */,
+				6A75CB462181E413B27F0A09 /* ProxyFlowTest.swift */,
 				F55E81374328560E0F245078 /* ProxyNodesPane.swift */,
 				E4AA3F2C6F7233271C40E85E /* ProxyOnboarding.swift */,
 				0C0C9F092D59F31CC4ACA399 /* ProxyOverviewPane.swift */,
@@ -6487,6 +6497,7 @@
 				8802D81E548E35D184E57A46 /* ProxyLauncherHint.swift in Sources */,
 				A2CBBF72FF7B94D13B9A8974 /* ProxyMode.swift in Sources */,
 				60680EA0CF4D24B11AFB453D /* ProxyNodeFileOutline.swift in Sources */,
+				9B05201FC12E55E1D8D0977B /* ProxyNodeName.swift in Sources */,
 				77794BA9AB09511235A02206 /* ProxyProbe.swift in Sources */,
 				62EBC62BF3F007FE7A2C2A8A /* ProxyProblem.swift in Sources */,
 				D1E274DEB812CAF7521E1AB3 /* ProxyProfile.swift in Sources */,
@@ -7393,8 +7404,10 @@
 				C5F59B8D05FE68E0FD6D91C0 /* ProxyEditor.swift in Sources */,
 				2E0D9C2544FD70D81DD73BC9 /* ProxyFailure+Localization.swift in Sources */,
 				FBBF6644198A67DC65517A44 /* ProxyFailure.swift in Sources */,
+				35D1FE0B458CB9D47C5314A7 /* ProxyFlag.swift in Sources */,
 				D081B801257DFC468E9BF271 /* ProxyFlow.swift in Sources */,
 				D885FB535A5C8F6371829524 /* ProxyFlowMap.swift in Sources */,
+				599A5D29FEB9E343341F3B80 /* ProxyFlowTest.swift in Sources */,
 				EA6BC073215985032F57C2A8 /* ProxyGeneral.swift in Sources */,
 				F1C205DD7601B47F502E11DE /* ProxyGeneralPage.swift in Sources */,
 				E6917ED30CFEFB2D0F5849EA /* ProxyHTTP.swift in Sources */,
@@ -7420,6 +7433,7 @@
 				47054B679F2C692B9D629AC0 /* ProxyNodeFileOutline+Localization.swift in Sources */,
 				3FA8AF39D6CA31416A384AB0 /* ProxyNodeFileOutline.swift in Sources */,
 				B965B484477F8F22EC8B8BC9 /* ProxyNodeListViewer.swift in Sources */,
+				F841E9E02FD97DFCBCD1AD5C /* ProxyNodeName.swift in Sources */,
 				1CE01F422FC3D0F90F054732 /* ProxyNodesPane.swift in Sources */,
 				11797B57B467D547EDC21413 /* ProxyNodesScreen.swift in Sources */,
 				8F0EED3D4750A3125969E41F /* ProxyOnboarding.swift in Sources */,

@@ -35,14 +35,11 @@ enum ProxyWindowPage: String, CaseIterable, Identifiable, Sendable {
 @MainActor
 @Observable
 final class ProxyWindowState {
-    enum NodesTab: Hashable {
-        case strategy(UUID)
-        case allNodes
-    }
-
     var page: ProxyWindowPage
-    /// Nil opens the default strategy.
-    var nodesTab: NodesTab?
+    /// The strategy the Nodes page shows; nil shows the default one.
+    var nodesStrategy: UUID?
+    /// Region groups opened or closed by hand, keyed by `ProxyRegionGroup.id`, for every strategy.
+    var regionExpansion: [String: Bool] = [:]
     /// An editor a command asked for, opened by the window's root, which then clears it.
     var editRequest: ProxyEditRequest?
 

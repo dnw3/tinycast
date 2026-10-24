@@ -37,10 +37,11 @@ struct ProxyWindowRootView: View {
                 ProxyModePicker(manager: manager, coordinator: coordinator)
             }
             ToolbarItem(placement: .primaryAction) {
+                // A glass button by the glass picker; a switch reads as a stray form control.
                 Toggle(isOn: connection) {
-                    Text("Connected")
+                    Label(manager.store.wantsConnection ? "Disconnect" : "Connect", systemImage: "power")
                 }
-                .toggleStyle(.switch)
+                .toggleStyle(.button)
                 .disabled(!manager.store.profile.isEnabled)
                 .help(Text(manager.store.wantsConnection ? "Disconnect" : "Connect"))
             }
@@ -99,7 +100,7 @@ struct ProxyWindowRootView: View {
             editor = .strategy(ProxyStrategyDraft.new(in: profile, forRoute: route))
         case .editStrategy(let id):
             state.page = .nodes
-            state.nodesTab = .strategy(id)
+            state.nodesStrategy = id
             if let strategy = profile.strategy(id) { editor = .strategy(ProxyStrategyDraft(strategy: strategy)) }
         case .editRules:
             state.page = .routes
