@@ -408,9 +408,7 @@ struct RootPaletteView: View {
     private func stateObservers(_ content: some View) -> some View {
         emojiObservers(content)
             // Every show bumps focusToken so the search field refocuses.
-            .onChange(of: vm.focusToken) {
-                searchFocused = !screen.hidesSearchField
-            }
+            .onChange(of: vm.focusToken) { focusSearchField() }
             // A preserved screen re-summons as it was left, so a menu must end with the palette.
             .modifier(PaletteHideObserver { if menuOpen { closeMenus() } })
             .onChange(of: vm.query) {
@@ -446,7 +444,7 @@ struct RootPaletteView: View {
                 vm.emojiGridColumnsOverride = nil
                 if menuOpen { closeMenus() }
                 land(restoringSelection: true)
-                searchFocused = !screen.hidesSearchField
+                focusSearchField()
                 if vm.mode != .uninstall { uninstall.cancel() }
                 if !vm.mode.isCleanup { core.cleanup.leave() }
                 if vm.mode != .diskUsage { core.diskUsage.leave() }
@@ -685,9 +683,14 @@ struct RootPaletteView: View {
     private func beginDrag() { core.paletteCoordinator.beginPaletteDrag() }
     private func endDrag() { core.paletteCoordinator.endPaletteDrag() }
 
+    /// Shown only, since SwiftUI pulls focus out of every other window's field to give it here.
+    private func focusSearchField() {
+        if vm.isVisible { searchFocused = !screen.hidesSearchField }
+    }
+
     /// A command can push a Form over its own list, which takes the keyboard mid-session.
     private func applySearchFieldHiding(_ hidden: Bool) {
-        searchFocused = !hidden
+        if vm.isVisible { searchFocused = !hidden }
         if hidden { vm.query = "" }
     }
 
@@ -1122,7 +1125,7 @@ struct RootPaletteView: View {
 
     private func closeMenus() {
         menuPanel.hide()
-        if menuOpen { searchFocused = !screen.hidesSearchField }
+        if menuOpen { focusSearchField() }
         openMenu = nil
         argumentOptionsField = nil
         inputOptions = nil

@@ -46,6 +46,8 @@ struct ProxyInvalidProfile: Error, Equatable {
 enum ProxyConfigBuilder {
     static let fakeIPRange = "198.18.0.1/16"
     static let ruleUpdateInterval = 86_400
+    /// Named outright: the core merges a source's test filters, where an empty one adds nothing.
+    static let everyNode = ".*"
 
     static let fakeIPFilter: [String] = [
         "*.lan", "*.local", "*.localdomain", "+.home.arpa", "localhost.ptlogin2.qq.com",
@@ -79,7 +81,9 @@ enum ProxyConfigBuilder {
         var skipped: [UUID] = []
         for source in profile.sources where source.isEnabled {
             let path = source.providerPath
-            var provider: [String: ProxyJSON] = ["path": .string(path)]
+            var provider: [String: ProxyJSON] = [
+                "path": .string(path), "health-check": healthCheck(of: source, in: profile)
+            ]
             switch source.kind {
             case .subscription:
                 guard let url = environment.subscriptionURLs[source.id] else {
@@ -123,7 +127,7 @@ enum ProxyConfigBuilder {
                 let use = included.filter { pool.sources?.contains($0.id) ?? true }.map(\.providerName)
                 if !use.isEmpty {
                     group["use"] = .array(use.map(ProxyJSON.string))
-                    if let filter = pool.filter { group["filter"] = .string(filter) }
+                    group["filter"] = .string(pool.filter ?? everyNode)
                 }
             }
             if proxies.isEmpty && group["use"] == nil { proxies = ["REJECT"] }
@@ -205,6 +209,20 @@ enum ProxyConfigBuilder {
         return ProxyConfig(
             document: .object(document), reloadKey: .object(reloadKey), selections: selections, files: files,
             skippedSources: skipped)
+    }
+
+    /// Every node at the default URL, as often as the most eager automatic strategy on it asks.
+    private static func healthCheck(of source: ProxySource, in profile: ProxyProfile) -> ProxyJSON {
+        let intervals = profile.strategies.compactMap { strategy -> Int? in
+            guard strategy.kind != .select, let pool = strategy.pool,
+                pool.sources?.contains(source.id) ?? true
+            else { return nil }
+            return strategy.testInterval
+        }
+        return [
+            "enable": true, "url": .string(ProxyStrategy.defaultTestURL), "lazy": true,
+            "interval": .int(intervals.min() ?? ProxyStrategy.defaultTestInterval)
+        ]
     }
 
     private static func dns(_ general: ProxyGeneral, foreignThrough strategy: String?) -> ProxyJSON {

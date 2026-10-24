@@ -101,6 +101,11 @@ struct ProxyAPIService: Sendable {
         _ = try await send(.put("/proxies/" + ProxyHTTP.segment(group), json: body))
     }
 
+    /// Drops an automatic group's pinned or cached pick, so the next read picks by current delays.
+    func unfix(_ group: String) async throws {
+        _ = try await send(.delete("/proxies/" + ProxyHTTP.segment(group)))
+    }
+
     /// Applies a whole config in place; `force` is what lets port and LAN changes take effect.
     func reload(_ document: Data) async throws {
         guard let payload = String(bytes: document, encoding: .utf8) else { throw Failure.malformed }

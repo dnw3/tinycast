@@ -100,7 +100,7 @@ private struct ProxySourceCard: View {
             VStack(alignment: .leading, spacing: Theme.Spacing.md) {
                 HStack(spacing: Theme.Spacing.sm) {
                     Text(source.name).font(.headline).lineLimit(1)
-                    Text(source.kind == .subscription ? String(localized: "Subscription") : String(localized: "Local File"))
+                    Text(source.kindTitle)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .padding(.horizontal, Theme.Spacing.sm)

@@ -37,13 +37,14 @@ struct ProxyStrategy: Codable, Equatable, Identifiable, Sendable {
     var members: [ProxyTarget]
     var pool: Pool?
     var testURL: String
-    /// Seconds between delay tests; the core skips them while nothing routes through the strategy.
+    /// The most seconds between delay tests; the core skips them while nothing routes through.
     var testInterval: Int
     var tolerance: Int
     /// The option last picked in a select strategy, picked again whenever the core reloads.
     var selected: String?
 
     static let defaultTestURL = "https://www.gstatic.com/generate_204"
+    static let defaultTestInterval = 300
 
     init(
         id: UUID, name: String, kind: Kind, tint: Tint = .blue, members: [ProxyTarget] = [],
@@ -56,7 +57,7 @@ struct ProxyStrategy: Codable, Equatable, Identifiable, Sendable {
         self.members = members
         self.pool = pool
         self.testURL = Self.defaultTestURL
-        self.testInterval = 300
+        self.testInterval = Self.defaultTestInterval
         self.tolerance = 50
         self.selected = nil
     }

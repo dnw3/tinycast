@@ -91,7 +91,7 @@ private struct ProxyStrategyDetail: View {
                     Text(strategy.name).font(.title3.weight(.semibold)).lineLimit(1)
                     Text(facts).foregroundStyle(.secondary).lineLimit(1)
                     Spacer(minLength: Theme.Spacing.md)
-                    if manager.testingStrategies.contains(strategy.id) {
+                    if isTesting {
                         ProgressView().controlSize(.small)
                     } else {
                         Button("Test Delays") { coordinator.testDelays(of: strategy.id) }
@@ -104,6 +104,7 @@ private struct ProxyStrategyDetail: View {
                 if strategy.kind != .select {
                     Text(strategy.kind.explanation).foregroundStyle(.secondary)
                 }
+                origin
                 Text(usage).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             }
             .font(.callout)
@@ -111,6 +112,32 @@ private struct ProxyStrategyDetail: View {
         .contextMenu {
             if strategy.id != profile.defaultStrategy {
                 Button("Delete…", role: .destructive) { coordinator.deleteStrategy(strategy.id) }
+            }
+        }
+    }
+
+    /// Its own test, or the one every source's nodes go through after a connect or a reload.
+    private var isTesting: Bool {
+        manager.testingStrategies.contains(strategy.id) || (manager.isTestingSources && strategy.pool != nil)
+    }
+
+    /// The sources the nodes come from, each a way to its card.
+    @ViewBuilder private var origin: some View {
+        let sources = strategy.pool.map { pool in
+            profile.sources.filter { $0.isEnabled && (pool.sources?.contains($0.id) ?? true) }
+        } ?? []
+        if !sources.isEmpty {
+            HStack(spacing: Theme.Spacing.sm) {
+                Text("Nodes from").foregroundStyle(.secondary)
+                ForEach(sources) { source in
+                    Button {
+                        state.page = .sources
+                    } label: {
+                        ProxySourceTag(source: source)
+                    }
+                    .buttonStyle(.plain)
+                    .help(Text("Show in Subscriptions"))
+                }
             }
         }
     }
@@ -149,7 +176,10 @@ private struct ProxyStrategyDetail: View {
         let nodes = manager.snapshot?.nodes ?? [:]
         let inUse = manager.snapshot?.node(reachedBy: strategy.id, in: profile)?.name
         let members = group.options.filter { nodes[$0] == nil }
-        let pool = group.options.compactMap { nodes[$0] }
+        let all = group.options.compactMap { nodes[$0] }
+        let sources = profile.sources.filter { source in all.contains { $0.source == source.id } }
+        let shown = sources.contains { $0.id == state.nodesSource } ? state.nodesSource : nil
+        let pool = all.filter { shown == nil || $0.source == shown }
         if !members.isEmpty {
             ProxySectionHeader(title: String(localized: "Strategies"))
             ProxyChipGrid {
@@ -163,10 +193,14 @@ private struct ProxyStrategyDetail: View {
                 text: String(
                     localized: "No node falls within this strategy's range. Check the sources, or widen its regions."))
         } else if strategy.kind == .fallback {
-            ProxySectionHeader(title: String(localized: "In Order"), caption: "\(pool.count)")
+            // Numbered among all of them, so a list narrowed to one source keeps the true order.
+            let ordered = Array(all.enumerated()).filter { pool.contains($0.element) }
+            ProxySectionHeader(title: String(localized: "In Order"), caption: "\(pool.count)") {
+                sourceFilter(sources)
+            }
             ProxyCard {
                 ProxyChipGrid {
-                    ForEach(Array(pool.enumerated()), id: \.element.id) { index, node in
+                    ForEach(ordered, id: \.element.id) { index, node in
                         nodeChip(node, isCurrent: group.current == node.name, isInUse: inUse == node.name, order: index + 1)
                     }
                 }
@@ -177,7 +211,26 @@ private struct ProxyStrategyDetail: View {
                 expansion: $state.regionExpansion
             ) { node in
                 nodeChip(node, isCurrent: group.current == node.name, isInUse: inUse == node.name, showsFlag: false)
+            } accessory: {
+                sourceFilter(sources)
             }
+        }
+    }
+
+    /// Several sources feeding one strategy can be looked at one at a time.
+    @ViewBuilder
+    private func sourceFilter(_ sources: [ProxySource]) -> some View {
+        if sources.count > 1 {
+            Picker("Source", selection: $state.nodesSource) {
+                Text("All Sources").tag(UUID?.none)
+                Divider()
+                ForEach(sources) { source in
+                    Text(source.name).tag(UUID?.some(source.id))
+                }
+            }
+            .labelsHidden()
+            .fixedSize()
+            .controlSize(.small)
         }
     }
 
@@ -213,17 +266,11 @@ private struct ProxyStrategyDetail: View {
             }
             ProxyNodeLabel(node: node, showsFlag: showsFlag)
         }
-        .help(Text(node.tooltip(source: source(of: node))))
+        .help(Text(node.tooltip(source: profile.sources.first { $0.id == node.source }?.origin)))
         .contextMenu {
             Button("Test Delay") { coordinator.testNode(node.name) }
             Button("Copy Name") { coordinator.copyNodeName(node.name) }
         }
-    }
-
-    /// Named only when there is more than one, since a lone source says nothing.
-    private func source(of node: ProxySnapshot.Node) -> String? {
-        guard profile.sources.count > 1 else { return nil }
-        return profile.sources.first { $0.id == node.source }?.name
     }
 }
 
@@ -255,17 +302,19 @@ struct ProxyRegionGroup: Identifiable, Equatable {
 }
 
 /// A row per region that opens onto its nodes; a short list opens whole, a long one at the pick.
-struct ProxyRegionList<Chip: View>: View {
+struct ProxyRegionList<Chip: View, Accessory: View>: View {
     let groups: [ProxyRegionGroup]
     /// The node traffic goes out through, whether picked here or by a strategy picked here.
     let inUse: String?
     var testURL: String?
     @Binding var expansion: [String: Bool]
     @ViewBuilder let chip: (ProxySnapshot.Node) -> Chip
+    @ViewBuilder var accessory: Accessory
 
     var body: some View {
         let count = groups.reduce(0) { $0 + $1.nodes.count }
         ProxySectionHeader(title: String(localized: "Nodes"), caption: "\(count)") {
+            accessory
             if groups.count > 1 {
                 let opensAll = groups.contains { !isExpanded($0) }
                 Button(opensAll ? "Expand All" : "Collapse All") {
@@ -391,7 +440,7 @@ struct ProxyChip<Content: View>: View {
         HStack(spacing: Theme.Spacing.sm) {
             label
             Spacer(minLength: Theme.Spacing.xs)
-            if let delay { ProxyDelayText(delay: delay).font(.caption) }
+            if let delay { ProxyDelayText(delay: delay, marksUntested: true).font(.caption) }
         }
         .font(.callout)
         .lineLimit(1)
@@ -415,7 +464,7 @@ struct ProxyChip<Content: View>: View {
 }
 
 extension ProxySnapshot.Node {
-    /// The whole name, the protocol, and the source when that tells nodes apart.
+    /// The whole name, the protocol, and where it came from.
     func tooltip(source: String?) -> String {
         ([name, detail] + [source].compactMap(\.self)).joined(separator: "\n")
     }

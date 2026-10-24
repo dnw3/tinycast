@@ -9,6 +9,9 @@ final class PaletteWindowController: NSObject, NSWindowDelegate {
     private(set) var previousApp: NSRunningApplication?
     /// Our key window at summon time, so hiding hands focus back to Settings, not a stale app.
     private(set) weak var previousOwnWindow: NSWindow?
+    /// The control it was editing: a SwiftUI field gives up its editor while the palette is key.
+    private weak var previousOwnResponder: NSResponder?
+    private var previousOwnSelection: NSRange?
     private var popToRootTimer: Timer?
     // Reopen beat the timeout, so select the preserved query.
     private var queryWasPreserved = false
@@ -67,7 +70,10 @@ final class PaletteWindowController: NSObject, NSWindowDelegate {
             // Recorded even when another app is frontmost: our panels take key without activating.
             let key = NSApp.keyWindow
             // A mode switch re-shows the palette while it holds key; keep what it recorded then.
-            if key !== panel { previousOwnWindow = key }
+            if key !== panel {
+                previousOwnWindow = key
+                rememberResponder(in: key)
+            }
             // Once per summon, and from `previousApp`, so the label names the paste target.
             core.palette.pasteTarget = PasteTarget(app: previousApp)
             let panel = ensurePanel()
@@ -147,6 +153,7 @@ final class PaletteWindowController: NSObject, NSWindowDelegate {
     }
 
     func hide(restoreFocus: Bool) {
+        let heldKey = panel?.isKeyWindow == true
         NotesPanel.refusesInheritedKey = previousOwnWindow?.isVisible != true
         panel?.orderOut(nil)
         NotesPanel.refusesInheritedKey = false
@@ -166,13 +173,45 @@ final class PaletteWindowController: NSObject, NSWindowDelegate {
         FilePreviewThumbnail.purgePreviews()
         IconCache.purgeFitted()
         schedulePopToRoot()
-        guard restoreFocus else { return }
+        guard restoreFocus else {
+            // AppKit hands a key it took back to the main window, skipping an editor panel on it.
+            if heldKey, previousApp == nil, let own = previousOwnWindow, own.isVisible {
+                own.makeKey()
+                restoreResponder(in: own)
+            }
+            return
+        }
         // Our own window first: it is still open, and activating another app would bury it.
         if let own = previousOwnWindow, own.isVisible {
             own.makeKeyAndOrderFront(nil)
+            restoreResponder(in: own)
         } else {
             previousApp?.activate()
         }
+    }
+
+    /// A field edits through the window's field editor; the field is what can take focus back.
+    private func rememberResponder(in window: NSWindow?) {
+        let responder = window?.firstResponder
+        if let editor = responder as? NSTextView, editor.isFieldEditor {
+            previousOwnResponder = editor.delegate as? NSResponder
+            previousOwnSelection = editor.selectedRange()
+        } else {
+            previousOwnResponder = responder
+            previousOwnSelection = nil
+        }
+    }
+
+    /// Only while no text or control holds focus there, so a focus an action chose stands.
+    private func restoreResponder(in window: NSWindow) {
+        guard let responder = previousOwnResponder as? NSView, responder.window === window,
+            !(window.firstResponder is NSTextView), !(window.firstResponder is NSControl),
+            window.makeFirstResponder(responder),
+            let editor = window.firstResponder as? NSTextView, let selection = previousOwnSelection
+        else { return }
+        let length = (editor.string as NSString).length
+        let location = min(selection.location, length)
+        editor.setSelectedRange(NSRange(location: location, length: min(selection.length, length - location)))
     }
 
     private func schedulePopToRoot() {

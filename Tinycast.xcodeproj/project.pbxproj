@@ -641,6 +641,7 @@
 		6B8351E3D100E81F169BCFED /* UninstallPlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAD838940E655559E32BE8EA /* UninstallPlan.swift */; };
 		6B8B567E85ACF4A895CAEBC7 /* quant_dec.c in Sources */ = {isa = PBXBuildFile; fileRef = F6261BA2733103A955138E44 /* quant_dec.c */; };
 		6BAE3112ED110F1363617A79 /* NoteTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F088EC0B4D97B3C9D0D0569 /* NoteTextView.swift */; };
+		6BD6FCF4380963924F90254A /* ProxySource+Localization.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA8B40D6F3D98A97771755D4 /* ProxySource+Localization.swift */; };
 		6C052B83FAE453D1011E3FB4 /* PopoverMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FAE24CC14F7DFECD1BD7FB1 /* PopoverMenu.swift */; };
 		6C38707B90B4D235C8935916 /* NoteTitle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 264B68DBB21C3752E39ECC29 /* NoteTitle.swift */; };
 		6C83F2A2096107C488DE3D59 /* DictationDestination.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE0EFB95551AD217589092E4 /* DictationDestination.swift */; };
@@ -2792,6 +2793,7 @@
 		C9B4D98444BE6E6D30A9801C /* libCaptureWebP.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libCaptureWebP.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		C9EB67BCF61C1FAA9B335740 /* CaptureKeystrokePolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureKeystrokePolicy.swift; sourceTree = "<group>"; };
 		CA6A158B37AA1336D7FE9C32 /* AIChatSplitViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatSplitViewController.swift; sourceTree = "<group>"; };
+		CA8B40D6F3D98A97771755D4 /* ProxySource+Localization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ProxySource+Localization.swift"; sourceTree = "<group>"; };
 		CA9287418DC6C04437FB4BAF /* ColorValue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorValue.swift; sourceTree = "<group>"; };
 		CA97F3257C2FA99BF185ED8A /* CalcOperator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalcOperator.swift; sourceTree = "<group>"; };
 		CAF5747ACE84CB7EC6A7617D /* CaptureCoordinator+Foreground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CaptureCoordinator+Foreground.swift"; sourceTree = "<group>"; };
@@ -3204,6 +3206,7 @@
 				009F3316B84CED4EF60B21E5 /* ProxyRoute+Localization.swift */,
 				EC1D660BCB98F6E981EE79B5 /* ProxyRuleSetFetcher.swift */,
 				01B648B79C4D31C1A0616CB3 /* ProxySocket.swift */,
+				CA8B40D6F3D98A97771755D4 /* ProxySource+Localization.swift */,
 				15E1E3FBB0AB59C2FFC1709E /* ProxyStore.swift */,
 				49B6A70A38A16E85AF21D35A /* ProxyStrategy+Localization.swift */,
 				C0EE454172FFE7C8B5B68E51 /* ProxyTrafficMonitor.swift */,
@@ -7463,6 +7466,7 @@
 				31EE64DE8A2E542579D59A2E /* ProxySettingsView.swift in Sources */,
 				A7D166A436B33903F63ADCA4 /* ProxySnapshot.swift in Sources */,
 				2C2C831A813C98D701C71716 /* ProxySocket.swift in Sources */,
+				6BD6FCF4380963924F90254A /* ProxySource+Localization.swift in Sources */,
 				AF3812B8EFC9341B3A57EFCB /* ProxySource.swift in Sources */,
 				12F68F498A2816495C185F66 /* ProxySourceEditor.swift in Sources */,
 				7706674A33481ED2DCCF55DC /* ProxySourcesPane.swift in Sources */,

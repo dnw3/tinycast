@@ -15,6 +15,11 @@ bar, the launcher and the window. See the [Spec](../plans/proxy-spec.md) and
   It never writes a TCP controller, a secret, an external UI or a script.
 - **The core never routes on a guess.** Every strategy group carries `empty-fallback: REJECT`, so a
   group with no nodes rejects rather than going direct through mihomo's `COMPATIBLE` default.
+- **Every source tests all its nodes.** Each provider carries a lazy `health-check` at the default URL,
+  as often as the most eager automatic strategy on it asks, and a pool taking every node still names
+  `ProxyConfigBuilder.everyNode`: mihomo merges the test filters of the groups on one source, so an
+  empty one would leave the others' narrower filters in charge. After a connect or reload
+  `ProxyManager` joins that first test and drops each fastest-node strategy's cached pick.
 - **Picks live in the profile and are applied again on every refresh.** A node pick or route target is
   saved first, then sent to the running core; `ProxyManager.applied` always reflects the last config so a
   later refresh cannot put an older pick back.

@@ -82,15 +82,37 @@ extension ProxyNote where Accessory == EmptyView {
     }
 }
 
+/// A source by name and kind, as small as the tag the Subscriptions page gives each source.
+struct ProxySourceTag: View {
+    let source: ProxySource
+
+    var body: some View {
+        HStack(spacing: Theme.Spacing.xs) {
+            Text(source.name).lineLimit(1)
+            Text(source.kindTitle).foregroundStyle(.secondary)
+        }
+        .font(.caption)
+        .padding(.horizontal, Theme.Spacing.sm)
+        .padding(.vertical, Theme.Spacing.xxs)
+        .background(Capsule().fill(Theme.Colors.controlSurface))
+    }
+}
+
 /// A delay in the colour every list uses: green, orange once slow, red when it timed out.
 struct ProxyDelayText: View {
     let delay: ProxyDelay
+    /// A dash for a node not tested yet, where delays line up and a gap would read as missing.
+    var marksUntested = false
 
     var body: some View {
         if let label = delay.label {
             Text(label)
                 .monospacedDigit()
                 .foregroundStyle(delay.color)
+        } else if marksUntested {
+            Text(verbatim: "—")
+                .foregroundStyle(delay.color)
+                .accessibilityLabel(Text("Not tested yet"))
         }
     }
 }

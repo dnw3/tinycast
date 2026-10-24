@@ -45,6 +45,8 @@ struct ProxyNodeListViewer: View {
                     }
                     .labelsHidden()
                     .fixedSize()
+                } else if let only = pooled.first {
+                    ProxySourceTag(source: only)
                 }
             }
             .padding(.horizontal, Theme.Spacing.dialogInset)
@@ -139,13 +141,13 @@ struct ProxyNodeListViewer: View {
         HStack(spacing: Theme.Spacing.lg) {
             ProxyNodeLabel(node: node, showsFlag: false, size: NSFont.systemFontSize)
                 .layoutPriority(1)
-                .help(Text(node.name))
+                .help(Text(node.tooltip(source: pooled.first { $0.id == node.source }?.origin)))
             Spacer(minLength: Theme.Spacing.md)
             Text(details(of: node))
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
-            Text(node.latest.label ?? "–")
+            Text(node.latest.label ?? "—")
                 .font(.callout.monospacedDigit())
                 .foregroundStyle(ProxyPaletteRow.Tone(node.latest).color)
                 .frame(minWidth: 64, alignment: .trailing)

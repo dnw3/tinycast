@@ -38,6 +38,8 @@ final class ProxyWindowState {
     var page: ProxyWindowPage
     /// The strategy the Nodes page shows; nil shows the default one.
     var nodesStrategy: UUID?
+    /// The one source the Nodes page narrows a strategy's nodes to; nil shows every source's.
+    var nodesSource: UUID?
     /// Region groups opened or closed by hand, keyed by `ProxyRegionGroup.id`, for every strategy.
     var regionExpansion: [String: Bool] = [:]
     /// An editor a command asked for, opened by the window's root, which then clears it.

@@ -133,6 +133,7 @@ final class ProxyCoordinator {
     func showNodes() {
         session.strategyID = profile.defaultStrategy
         paletteCoordinator.togglePalette(mode: .proxyNodes)
+        Task { await manager.refresh() }
     }
 
     func pickStrategy(forRule kind: ProxyUserRule.Kind, value: String) {
@@ -173,6 +174,7 @@ final class ProxyCoordinator {
     func openNodes(of strategy: UUID) {
         session.strategyID = strategy
         palette.push(mode: .proxyNodes)
+        Task { await manager.refresh() }
     }
 
     func back() {

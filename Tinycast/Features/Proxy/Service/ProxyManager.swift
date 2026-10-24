@@ -56,6 +56,7 @@ final class ProxyManager {
     @ObservationIgnored private var restartTask: Task<Void, Never>?
     /// Copies a TUN core's warnings to a file the user can read, as the helper's log is root's.
     @ObservationIgnored private var logRecorder: Task<Void, Never>?
+    @ObservationIgnored private var firstTests: Task<Void, Never>?
     @ObservationIgnored private var generation = 0
 
     static let testTimeout = Duration.seconds(5)
@@ -290,7 +291,21 @@ final class ProxyManager {
                 group.addTask { _ = try? await api.testProvider(provider) }
             }
         }
+        // A fastest-node strategy keeps its last pick a few seconds, through any new delays.
+        for strategy in store.profile.strategies where strategy.kind == .urlTest {
+            try? await api.unfix(strategy.name)
+        }
         await refresh()
+    }
+
+    /// Joins the test the core runs as it loads the nodes, so their delays and picks show at once.
+    private func awaitFirstTests() {
+        let previous = firstTests
+        previous?.cancel()
+        firstTests = Task { [weak self] in
+            await previous?.value
+            await self?.testSources()
+        }
     }
 
     /// Every enabled subscription fetched again; one that fails keeps its last nodes.
@@ -643,6 +658,7 @@ final class ProxyManager {
         await ProxyCoreInstaller.remove(retired)
         await applySelections(config.selections, on: running)
         await refresh()
+        awaitFirstTests()
     }
 
     /// A TUN core that outlived the last quit is taken back, or stopped when nothing wants it now.
@@ -703,6 +719,8 @@ final class ProxyManager {
         guard core === running else { return }
         logRecorder?.cancel()
         logRecorder = nil
+        firstTests?.cancel()
+        firstTests = nil
         core = nil
         applied = nil
         appliedOptions = nil
@@ -793,7 +811,8 @@ final class ProxyManager {
             return
         }
         let options = HelperOptions(store.profile.general)
-        if config.reloadKey != applied.reloadKey || (running.helper != nil && options != appliedOptions) {
+        let reloads = config.reloadKey != applied.reloadKey || (running.helper != nil && options != appliedOptions)
+        if reloads {
             do {
                 let document = try config.document.encoded()
                 try await ProxyCoreRunner.check(document, core: running.executable)
@@ -823,6 +842,7 @@ final class ProxyManager {
         self.applied = config
         await applySelections(config.selections, on: running)
         await refresh()
+        if reloads { awaitFirstTests() }
     }
 
     /// A pick that fails, such as a node still loading, is tried again on the next refresh.

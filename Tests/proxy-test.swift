@@ -528,6 +528,25 @@ struct ProxyTests {
             rename?["pattern"]?.string == "香港" && rename?["target"]?.string == "HK", "renames are overrides")
 
         expect(providers[c]?["type"]?.string == "file" && providers[c]?["url"] == nil, "a file source")
+
+        let check = providers[a]?["health-check"]
+        expect(
+            check?["enable"]?.bool == true && check?["lazy"]?.bool == true
+                && check?["url"]?.string == ProxyStrategy.defaultTestURL,
+            "every source tests all its nodes at the default URL, while traffic goes through them")
+        expect(check?["interval"]?.int == ProxyStrategy.defaultTestInterval, "every five minutes by default")
+        var eager = mixed()
+        eager.strategies[2].testInterval = 60
+        eager.strategies[1].pool?.sources = [uuid(1)]
+        eager.strategies[2].pool?.sources = [uuid(1)]
+        eager.strategies[6].pool?.sources = [uuid(1)]
+        let eagerProviders = build(eager)?.document["proxy-providers"]?.object ?? [:]
+        expect(
+            eagerProviders[a]?["health-check"]?["interval"]?.int == 60,
+            "the most eager automatic strategy on a source sets its pace")
+        expect(
+            eagerProviders[c]?["health-check"]?["interval"]?.int == ProxyStrategy.defaultTestInterval,
+            "a source only picked from by hand keeps the default")
         expect(
             config?.files == [ProxyConfig.File(source: uuid(3), path: "providers/\(c).yaml")], "files to copy"
         )
@@ -552,7 +571,9 @@ struct ProxyTests {
         let primary = group(config, "默认代理")
         expect(primary?["type"]?.string == "select", "默认代理 is a select group")
         expect(strings(primary?["proxies"]) == ["自动最快"], "its member comes first")
-        expect(primary?["use"]?.array?.count == 4 && primary?["filter"] == nil, "it takes every node")
+        expect(
+            primary?["use"]?.array?.count == 4 && primary?["filter"]?.string == ProxyConfigBuilder.everyNode,
+            "it takes every node, saying so, since the core merges the test filters of a source")
         expect(primary?["url"] == nil && primary?["interval"] == nil, "a select group is never tested")
 
         let fastest = group(config, "自动最快")

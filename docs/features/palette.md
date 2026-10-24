@@ -648,6 +648,15 @@ non-activating panel holds the keyboard even while another app is active. So `hi
 over another app the keyboard returns to that app, and a paste or the next keystroke cannot land in an
 open note. Summoned from a note, the note takes key back, so a paste lands there.
 
+Summoned over one of our own windows, there is no app to activate, and AppKit would hand key to the
+main window, skipping an editor panel on it; a SwiftUI field there also gives up its field editor while
+the palette holds key. So `hide`, even without `restoreFocus`, gives key back to `previousOwnWindow`
+when the palette held it, and puts the field it was editing back, caret and selection included, as long
+as nothing else has taken focus in that window — a clipboard paste then lands in the field it left.
+SwiftUI moves focus out of every other window's field whenever the palette's search field takes it,
+so a hidden palette never claims it: `focusSearchField` does nothing while hidden, as when popping to
+root opens the launcher again, and the next show's `focusToken` sets it.
+
 The same show also mirrors that app into `PaletteState.pasteTarget` (a `PasteTarget`: localized
 name + bundle path), so Clipboard and Emoji can name it — the footer pill reads "Paste to Notes" and
 the ⌘K paste rows carry the app's icon. Resolved once per summon, never per render, and deliberately
