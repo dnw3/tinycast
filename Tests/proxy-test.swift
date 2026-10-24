@@ -1112,6 +1112,8 @@ struct ProxyTests {
             created.allSatisfy { $0.kind == .urlTest && $0.pool?.sources == nil && $0.pool?.pattern == "" },
             "each tests its region from every source")
         expect(created.map { $0.pool?.regions ?? [] } == [[.hongKong], [.taiwan], [.japan]], "one region apiece")
+        expect(created.map(\.soleRegion) == [.hongKong, .taiwan, .japan], "each reads as made by region")
+        expect(profile.strategies[0].soleRegion == nil, "the default strategy is not a region's")
         expect(
             profile.strategies[0].members == [.strategy(profile.strategies[1].id)] + added.map(ProxyTarget.strategy),
             "the default strategy offers them after its own options")

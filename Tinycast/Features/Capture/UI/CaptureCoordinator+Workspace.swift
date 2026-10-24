@@ -1,6 +1,12 @@
 import AppKit
 import ScreenCaptureKit
 
+/// The screen as it stood under one of Tinycast's open menus, which closes once it is taken.
+struct CaptureMenuSnapshot: Sendable {
+    let displayID: CGDirectDisplayID
+    let image: Task<CGImage, any Error>
+}
+
 extension CaptureCoordinator {
     /// All Tinycast shows is desktop, its system-drawn windows too; toasts and dialogs never are.
     func screenshotWindowIDs(keepingPalette: Bool) -> Set<CGWindowID> {
@@ -24,7 +30,10 @@ extension CaptureCoordinator {
         screenshotWindowIDs(keepingPalette: false).subtracting(pins.compactMap(\.windowID))
     }
 
-    func prepare(screen: NSScreen, command: CommandID, keepingPalette: Bool = false) async throws {
+    func prepare(
+        screen: NSScreen, command: CommandID, keepingPalette: Bool = false,
+        overMenu: CaptureMenuSnapshot? = nil
+    ) async throws {
         try await prepare(
             screen: screen,
             request: CaptureRequest(
@@ -32,10 +41,38 @@ extension CaptureCoordinator {
                     ? .scrolling : command == .captureRecording ? .recording : .screenshot,
                 scope: command == .captureFullscreen ? .screen : .region,
                 action: command == .captureText ? .text : command == .captureAndTranslate ? .translate : .edit
-            ), keepingPalette: keepingPalette)
+            ), keepingPalette: keepingPalette, overMenu: overMenu)
     }
 
-    func prepare(screen: NSScreen, request: CaptureRequest, keepingPalette: Bool = false) async throws {
+    /// A shortcut pressed over Tinycast's open menu: the screen is taken first, off the main actor.
+    func snapshotOverMenu(for command: CommandID) -> CaptureMenuSnapshot? {
+        let screenshots: Set<CommandID> = [
+            .captureScreenshot, .captureFullscreen, .captureText, .captureAndTranslate
+        ]
+        guard screenshots.contains(command), let closeMenu = core.hotKeys.holdTrackingMenus() else {
+            return nil
+        }
+        guard
+            let displayID = NSScreen.underCursor?.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")]
+                as? CGDirectDisplayID
+        else {
+            closeMenu()
+            return nil
+        }
+        let windowIDs = screenshotWindowIDs(keepingPalette: false)
+        let cursor = settings.preferences.includesCursor
+        let image = Task.detached {
+            defer { closeMenu() }
+            return try await CaptureScreenService.imageOverMenu(
+                displayID: displayID, includedWindowIDs: windowIDs, cursor: cursor)
+        }
+        return CaptureMenuSnapshot(displayID: displayID, image: image)
+    }
+
+    func prepare(
+        screen: NSScreen, request: CaptureRequest, keepingPalette: Bool = false,
+        overMenu: CaptureMenuSnapshot? = nil
+    ) async throws {
         let keepsPalette = keepingPalette && request.mode == .screenshot && core.paletteCoordinator.isVisible
         clearSelection()
         let session = CaptureSessionState(id: UUID())
@@ -65,8 +102,13 @@ extension CaptureCoordinator {
         let target = try await pendingTarget
         CapturePerformance.completed("selection-target", since: targetStarted)
         let imageStarted = ContinuousClock.now
-        let image = try await CaptureScreenService.image(
-            target: target, cursor: settings.preferences.includesCursor, presentation: true)
+        let image =
+            if let overMenu, overMenu.displayID == target.display.displayID {
+                try await overMenu.image.value
+            } else {
+                try await CaptureScreenService.image(
+                    target: target, cursor: settings.preferences.includesCursor, presentation: true)
+            }
         CapturePerformance.completed("selection-snapshot", since: imageStarted)
         let id = UUID(), raster = UUID().uuidString, repository = repository
         let source = try await CaptureWork.run { try CaptureSource(directory: repository.create(id: id)) }

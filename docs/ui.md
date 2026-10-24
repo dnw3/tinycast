@@ -406,6 +406,12 @@ than a segmented control that falls back to a menu once region strategies multip
 takes its strategy's tint. New Strategy is a pull-down whose primary action makes one strategy and
 whose menu opens the by-region panel, which lists the regions the nodes are in, the largest first.
 
+A target menu (`ProxyTargetMenu`) lists strategies only, under a Strategies header with the ones made
+by region (`ProxyStrategy.soleRegion`) under their own, and puts the node each one reaches now in a
+trailing badge. A region strategy is named after its region, flag and all, so with its node written
+beside it in the title the menu read as a list of nodes; the header and the badge keep the two apart.
+For the same reason a strategy card's chip for a region strategy leaves its node's flag off.
+
 Nodes are one-line chips (`ProxyChip`) in collapsible region groups (`ProxyRegionList`): a long list
 opens only the region holding the node in use, a short one opens whole. A chip shows the name's short
 title and the provider's note after it in grey (`ProxyNodeName`), its pick as a tinted fill, and the

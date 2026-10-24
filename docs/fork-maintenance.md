@@ -47,7 +47,7 @@ Model import 纯度及严格签名检查通过。未重新执行截图、翻译�
 
 | 范围 | 内容与维护入口 |
 | --- | --- |
-| Capture | 截图、长截图、编辑、贴图、OCR、录制、导出与历史；源码在 `Tinycast/Features/Capture/`，约束见 [Capture](features/capture.md) |
+| Capture | 截图、长截图、编辑、贴图、OCR、录制、导出与历史；源码在 `Tinycast/Features/Capture/`，约束见 [Capture](features/capture.md)。动过的上游文件：`HotKeyCenter`（Tinycast 自己的菜单打开时，AppKit 会把热键和主队列都压到菜单关闭后；现在跟踪期间照常分发热键并随即收起菜单，截图经 `holdTrackingMenus` 先在主 actor 之外拍下带菜单的画面再收起）与 `HotKeyManager`（转出 `holdTrackingMenus`） |
 | Translation | 独立翻译窗口、Apple / AI 引擎、划词及截图文本、受校验的回填；源码在 `Tinycast/Features/Translation/`，约束见 [Translation](features/translation.md) |
 | 共享接入 | `AppCore` 所有权、命令与热键、设置、剪贴板、`Platform/TextRecognition/` 和 `TextInjector`；同步时适配上游的新 API，保留双方行为 |
 | Disk Cleanup | 磁盘清理（部分改编自 Purge，MIT，见 `NOTICE.md`）；源码在 `Tinycast/Features/Cleanup/`，约束见 [Disk Cleanup](features/cleanup.md)。动过的上游文件：`AppCore`、`PaletteMode`、`PaletteScreen`、`RootPaletteView`、`UninstallScreen`、`UpdateReadiness`、`CommandID`、`CommandCatalog`、`LauncherCoordinator`、`SettingsTab`、`SettingsAnchor`、`SettingsSearchCatalog`、`SettingsDetailView`、`SettingsFileKey`、`SettingsFileSchema`、`AppSettingsKey`、`SettingsBackupCoverage`、`MenuBarItem`（低空间时的「释放空间」行）、`ToolRunner`（新增环境变量、工作目录、关闭 stdin 与取消终止）、`DialogController`（确认框的「取消」默认值改为本地化，由 `AppCore.confirm` 提供）。设置页的完全磁盘访问权限行是有意从 File Search 复制的 |

@@ -421,6 +421,11 @@ final class HotKeyManager {
             holdKey: dictationBinding.flatMap { modifierTaps[$0] == .dictation ? holdKey : nil })
     }
 
+    /// Keeps the menu a shortcut was pressed over open until the returned call, as a capture needs.
+    func holdTrackingMenus() -> (@Sendable () -> Void)? {
+        center.holdTrackingMenus()
+    }
+
     private func perform(_ action: HotKeyAction) {
         // The category switch, the way each feature switch already guards its own funnel.
         guard allowsAction?(action) ?? true else { return }

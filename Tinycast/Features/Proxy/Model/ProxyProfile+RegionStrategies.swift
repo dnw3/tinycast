@@ -1,9 +1,17 @@
 import Foundation
 
+extension ProxyStrategy {
+    /// The one region this strategy takes its nodes from, as one made by region does.
+    var soleRegion: ProxyRegion? {
+        guard let pool, pool.regions.count == 1, pool.pattern.isEmpty else { return nil }
+        return pool.regions.first
+    }
+}
+
 extension ProxyProfile {
     /// A strategy taking exactly this region's nodes already, which another would only repeat.
     func strategy(forRegion region: ProxyRegion) -> ProxyStrategy? {
-        strategies.first { $0.pool.map { $0.regions == [region] && $0.pattern.isEmpty } == true }
+        strategies.first { $0.soleRegion == region }
     }
 
     /// One strategy per region, in the region table's order, taking it from every source.

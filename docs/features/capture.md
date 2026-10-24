@@ -10,7 +10,9 @@
   and what the system draws there for it, such as input-method candidates, tooltips and the menu bar icon —
   which window selection picks like any app's (`screenshotWindowIDs`). The launcher, clipboard history included, is captured
   when a global shortcut starts the capture: it hides only under the overlay, whose frozen desktop shows it; a
-  capture run from a launcher row hides it first. HUD toasts and dialogs never are — a toast is often the last
+  capture run from a launcher row hides it first. A screenshot shortcut pressed over one of Tinycast's open
+  menus, which stop the main actor until they close, takes the display off the main actor first
+  (`snapshotOverMenu`) and only then closes the menu, so the frozen desktop shows it too. HUD toasts and dialogs never are — a toast is often the last
   capture's own, a dialog may be its question still fading out. Scrolling and recording take the same windows
   except pins and the launcher (`contentWindowIDs`), so AI Chat scrolls through or records like any app's
   window; the capture's own controls and region border, made after the filter, never enter a frame.

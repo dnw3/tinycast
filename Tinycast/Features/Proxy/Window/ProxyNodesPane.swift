@@ -275,7 +275,10 @@ private struct ProxyStrategyDetail: View {
             }
             Text(ProxyPaletteRows.optionTitle(option)).lineLimit(1).layoutPriority(1)
             if let node {
-                ProxyNodeLabel(node: node, showsNote: false).foregroundStyle(.secondary)
+                // A region strategy's name has the flag, which its node's would only repeat.
+                let repeatsFlag = member?.soleRegion != nil && member?.soleRegion == node.region
+                ProxyNodeLabel(node: node, showsFlag: !repeatsFlag, showsNote: false)
+                    .foregroundStyle(.secondary)
             }
         }
         .help(Text(node?.name ?? ProxyPaletteRows.optionTitle(option)))

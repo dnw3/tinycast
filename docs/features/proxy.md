@@ -60,7 +60,8 @@ bar, the launcher and the window. See the [Spec](../plans/proxy-spec.md) and
   collapsible region groups; a manual strategy switches on click; New Strategy's menu makes one strategy
   per chosen region at once, `addRegionStrategies`, optionally offered by the default strategy; the node
   pool opens in a panel),
-  Routing (my rules, routes with drag order, target menus and switches, rule-set status), Subscriptions
+  Routing (my rules, routes with drag order, switches, rule-set status, and target menus listing the
+  strategies, region ones in their own section, each with the node it reaches in a badge), Subscriptions
   (cards per source and an add card), Activity (live connections with filters, search and a rule for
   any row). Traffic and connections are read only while their page shows.
 - **Menu bar** (`ProxyMenuBarController`, off by default): connect, the three modes, one submenu per

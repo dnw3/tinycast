@@ -18,6 +18,13 @@ the keycap rendering — only the _engine_ differs.
 Carbon's dispatcher enters through an explicit `@MainActor` callback. Press and release handlers
 return `OSStatus` synchronously, preserving event order and hold-to-talk release handling.
 
+While one of Tinycast's own menus tracks, AppKit leaves hot keys queued until it closes and runs no
+main-queue work either, so a shortcut pressed over an open menu used to wait for it. `HotKeyCenter`
+watches menus begin and end tracking and, meanwhile, delivers queued hot keys from a common-mode
+timer, then closes the menu so whatever the key opened receives events. An action that still needs
+the menu takes `holdTrackingMenus()` and closes it itself: a screenshot does, after taking the
+display with the menu on it.
+
 ## Invariants
 
 - **Hotkeys persist as JSON strings under `hotkey.<action>` UserDefaults keys**, and

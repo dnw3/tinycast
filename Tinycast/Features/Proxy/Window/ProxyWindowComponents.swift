@@ -204,14 +204,22 @@ struct ProxyTargetMenu: View {
     var newStrategy: (() -> Void)?
 
     var body: some View {
+        let regional = profile.strategies.filter { $0.soleRegion != nil }
         Menu {
+            // Headed, so a strategy named after a region never reads as one of that region's nodes.
             Picker(selection: Binding(get: { target }, set: { choose($0) })) {
-                ForEach(profile.strategies) { strategy in
-                    Text(optionTitle(strategy)).tag(ProxyTarget.strategy(strategy.id))
+                Section("Strategies") {
+                    ForEach(profile.strategies.filter { $0.soleRegion == nil }, content: option)
                 }
-                Divider()
-                Text("Direct").tag(ProxyTarget.direct)
-                Text("Reject").tag(ProxyTarget.reject)
+                if !regional.isEmpty {
+                    Section("Region Strategies") {
+                        ForEach(regional, content: option)
+                    }
+                }
+                Section {
+                    Text("Direct").tag(ProxyTarget.direct)
+                    Text("Reject").tag(ProxyTarget.reject)
+                }
             } label: {
                 EmptyView()
             }
@@ -231,9 +239,12 @@ struct ProxyTargetMenu: View {
         .accessibilityLabel(Text("Goes to \(target.title(in: profile))"))
     }
 
-    private func optionTitle(_ strategy: ProxyStrategy) -> String {
-        guard let node = snapshot?.node(reachedBy: strategy.id, in: profile) else { return strategy.name }
-        return "\(strategy.name)  ·  \(node.label)"
+    /// The node a strategy reaches now sits in a badge, set apart from the strategy's own name.
+    private func option(_ strategy: ProxyStrategy) -> some View {
+        let node = snapshot?.node(reachedBy: strategy.id, in: profile)
+        return Text(strategy.name)
+            .badge(node.map { Text(ProxyNodeName($0.name).title) })
+            .tag(ProxyTarget.strategy(strategy.id))
     }
 }
 
