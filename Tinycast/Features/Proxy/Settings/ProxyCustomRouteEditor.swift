@@ -76,7 +76,8 @@ struct ProxyCustomRouteEditor: View {
                         if format != .mrs { Text("Mixed Rules").tag(ProxyRuleSet.Behavior.classical) }
                     }
                     ProxyTargetPicker(
-                        title: String(localized: "Goes to"), target: $target, profile: manager.store.profile)
+                        title: String(localized: "Goes to"), target: $target, profile: manager.store.profile,
+                        snapshot: manager.snapshot)
                 } footer: {
                     detectionNote
                         .font(.caption)

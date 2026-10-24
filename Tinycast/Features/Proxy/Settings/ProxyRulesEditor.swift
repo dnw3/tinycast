@@ -42,7 +42,9 @@ struct ProxyRulesEditor: View {
                             .settingsEditorTextField()
                             .onSubmit(add)
                     }
-                    ProxyTargetPicker(title: String(localized: "Goes to"), target: $target, profile: profile)
+                    ProxyTargetPicker(
+                        title: String(localized: "Goes to"), target: $target, profile: profile,
+                        snapshot: manager.snapshot)
                     HStack {
                         if let error {
                             Label(error, systemImage: "exclamationmark.triangle").foregroundStyle(.orange)
@@ -120,7 +122,8 @@ struct ProxyRulesEditor: View {
                 .lineLimit(1)
                 .truncationMode(.middle)
             Spacer()
-            ProxyTargetPicker(title: rule.value, target: $rules[index].target, profile: profile)
+            ProxyTargetPicker(
+                title: rule.value, target: $rules[index].target, profile: profile, snapshot: manager.snapshot)
                 .labelsHidden()
                 .fixedSize()
             Menu {
@@ -166,20 +169,16 @@ struct ProxyRulesEditor: View {
     }
 }
 
-/// Any strategy, Direct or Reject, as a pop-up menu.
+/// Any strategy, Direct or Reject, as a pop-up menu, laid out as a route's target menu is.
 struct ProxyTargetPicker: View {
     let title: String
     @Binding var target: ProxyTarget
     let profile: ProxyProfile
+    let snapshot: ProxySnapshot?
 
     var body: some View {
         Picker(selection: $target) {
-            ForEach(profile.strategies) { strategy in
-                Text(strategy.name).tag(ProxyTarget.strategy(strategy.id))
-            }
-            Divider()
-            Text("Direct").tag(ProxyTarget.direct)
-            Text("Reject").tag(ProxyTarget.reject)
+            ProxyTargetOptions(profile: profile, snapshot: snapshot)
         } label: {
             Text(title)
         }

@@ -100,7 +100,7 @@ private struct ProxyExitCard: View {
         HStack(spacing: Theme.Spacing.sm) {
             if manager.mode != .direct {
                 ProxyTargetDot(target: target, profile: profile)
-                Text(strategy?.name ?? "")
+                if let strategy { ProxyStrategyName(strategy: strategy) }
                 if let node = reach?.node { ProxyDelayText(delay: node.delay(for: strategy?.testURL)) }
             }
             // Refreshed on a timer, since nothing else changes while the connection just runs on.

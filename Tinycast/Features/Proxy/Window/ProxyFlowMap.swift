@@ -198,7 +198,7 @@ struct ProxyFlowMap: View {
                     .fill(color)
                     .frame(width: Theme.Size.colorDot, height: Theme.Size.colorDot)
                     .accessibilityHidden(true)
-                Text(target.title(in: profile)).lineLimit(1)
+                ProxyTargetName(target: target, profile: profile, size: NSFont.systemFontSize)
             }
             .padding(.horizontal, Theme.Spacing.lg)
             .frame(maxHeight: .infinity)
@@ -217,7 +217,7 @@ struct ProxyFlowMap: View {
         guard let id, let strategy = profile.strategy(id) else { return "" }
         let reach = snapshot?.reach(from: id, in: profile)
         guard let via = reach?.via.first.flatMap(profile.strategy) else { return strategy.kind.title }
-        return String(localized: "via \(via.name)")
+        return String(localized: "via \(via.bareName)")
     }
 
     private func exitPill(_ target: ProxyTarget) -> some View {

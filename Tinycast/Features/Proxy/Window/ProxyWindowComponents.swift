@@ -204,22 +204,9 @@ struct ProxyTargetMenu: View {
     var newStrategy: (() -> Void)?
 
     var body: some View {
-        let regional = profile.strategies.filter { $0.soleRegion != nil }
         Menu {
-            // Headed, so a strategy named after a region never reads as one of that region's nodes.
             Picker(selection: Binding(get: { target }, set: { choose($0) })) {
-                Section("Strategies") {
-                    ForEach(profile.strategies.filter { $0.soleRegion == nil }, content: option)
-                }
-                if !regional.isEmpty {
-                    Section("Region Strategies") {
-                        ForEach(regional, content: option)
-                    }
-                }
-                Section {
-                    Text("Direct").tag(ProxyTarget.direct)
-                    Text("Reject").tag(ProxyTarget.reject)
-                }
+                ProxyTargetOptions(profile: profile, snapshot: snapshot)
             } label: {
                 EmptyView()
             }
@@ -232,11 +219,34 @@ struct ProxyTargetMenu: View {
         } label: {
             HStack(spacing: Theme.Spacing.sm) {
                 ProxyTargetDot(target: target, profile: profile)
-                Text(target.title(in: profile)).lineLimit(1)
+                ProxyTargetName(target: target, profile: profile)
             }
         }
         .fixedSize()
         .accessibilityLabel(Text("Goes to \(target.title(in: profile))"))
+    }
+}
+
+/// Every target a picker offers: strategies, region ones apart, then Direct and Reject.
+struct ProxyTargetOptions: View {
+    let profile: ProxyProfile
+    let snapshot: ProxySnapshot?
+
+    var body: some View {
+        let regional = profile.strategies.filter { $0.soleRegion != nil }
+        // Headed, so a strategy named after a region never reads as one of that region's nodes.
+        Section("Strategies") {
+            ForEach(profile.strategies.filter { $0.soleRegion == nil }, content: option)
+        }
+        if !regional.isEmpty {
+            Section("Region Strategies") {
+                ForEach(regional, content: option)
+            }
+        }
+        Section {
+            Text("Direct").tag(ProxyTarget.direct)
+            Text("Reject").tag(ProxyTarget.reject)
+        }
     }
 
     private func option(_ strategy: ProxyStrategy) -> some View {
@@ -245,13 +255,60 @@ struct ProxyTargetMenu: View {
     }
 }
 
-/// A strategy in a menu, with the node it reaches now in a badge, set apart from its own name.
+/// A strategy in a menu: a region's flag first, and its node with that node's delay in a badge.
 struct ProxyStrategyOption: View {
     let strategy: ProxyStrategy
     let node: ProxySnapshot.Node?
 
     var body: some View {
-        Text(strategy.name).badge(node.map { Text(ProxyNodeName($0.name).title) })
+        if let region = strategy.soleRegion {
+            Label {
+                Text(strategy.bareName)
+            } icon: {
+                Image(nsImage: ProxyFlagArtwork.menuImage(emoji: region.flagEmoji))
+            }
+            // A menu's button hides its icon unless asked; a picker's option shows it anyway.
+            .labelStyle(.titleAndIcon)
+            .badge(badge)
+        } else {
+            Text(strategy.name).badge(badge)
+        }
+    }
+
+    private var badge: Text? {
+        guard let node else { return nil }
+        var parts = [ProxyNodeName(node.name).title]
+        if let delay = node.delay(for: strategy.testURL).label { parts.append(delay) }
+        return Text(verbatim: parts.joined(separator: " · "))
+    }
+}
+
+/// A strategy's name; one made by region leads with its region's flag, drawn so Taiwan's shows too.
+struct ProxyStrategyName: View {
+    let strategy: ProxyStrategy
+    /// The surrounding text's point size, which a drawn flag cannot take from the font.
+    var size = NSFont.preferredFont(forTextStyle: .callout).pointSize
+
+    var body: some View {
+        HStack(spacing: Theme.Spacing.xs) {
+            if let region = strategy.soleRegion { ProxyFlag(emoji: region.flagEmoji, size: size) }
+            Text(strategy.bareName).lineLimit(1)
+        }
+    }
+}
+
+/// A target's name, a strategy's as `ProxyStrategyName` shows it.
+struct ProxyTargetName: View {
+    let target: ProxyTarget
+    let profile: ProxyProfile
+    var size = NSFont.preferredFont(forTextStyle: .callout).pointSize
+
+    var body: some View {
+        if let strategy = target.strategyID.flatMap(profile.strategy) {
+            ProxyStrategyName(strategy: strategy, size: size)
+        } else {
+            Text(target.title(in: profile)).lineLimit(1)
+        }
     }
 }
 

@@ -35,7 +35,9 @@ struct ProxyRouteLibrary: View {
             HStack(spacing: Theme.Spacing.md) {
                 TextField("Search", text: $query, prompt: Text("Netflix, Games, geosite:openai or a link"))
                     .textFieldStyle(.roundedBorder)
-                ProxyTargetPicker(title: String(localized: "Goes to"), target: $target, profile: profile)
+                ProxyTargetPicker(
+                    title: String(localized: "Goes to"), target: $target, profile: profile,
+                    snapshot: manager.snapshot)
                     .fixedSize()
             }
             .padding(.horizontal, Theme.Spacing.dialogInset)

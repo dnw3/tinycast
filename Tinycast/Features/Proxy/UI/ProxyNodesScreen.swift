@@ -39,6 +39,7 @@ struct ProxyNodesScreen: PaletteScreen {
         let sources = Dictionary(uniqueKeysWithValues: profile.sources.map { ($0.id, $0.name) })
         let namesSources = profile.sources.filter(\.isEnabled).count > 1
         var members: [(Item, ProxyPaletteRow)] = []
+        var regional: [(Item, ProxyPaletteRow)] = []
         var byRegion: [ProxyRegion?: [(Item, ProxyPaletteRow)]] = [:]
         for option in group.options {
             if let node = snapshot.nodes[option] {
@@ -58,24 +59,26 @@ struct ProxyNodesScreen: PaletteScreen {
                     ))
             } else {
                 let title = ProxyPaletteRows.optionTitle(option)
-                guard ProxyPaletteRows.matches(query, title) else { continue }
                 let member = profile.strategies.first { $0.name == option }
-                let reached = member.flatMap { snapshot.node(reachedBy: $0.id, in: profile) }
-                let delay = reached.map { $0.delay(for: member?.testURL) }
-                let leading: ProxyPaletteRow.Leading =
-                    member.map { .tint($0.tint) } ?? .symbol(option == "DIRECT" ? "arrow.right" : "nosign")
-                members.append(
-                    (
-                        .option(option),
-                        ProxyPaletteRow(
-                            id: option, section: String(localized: "Options"), leading: leading, title: title,
-                            subtitle: reached?.label, trailing: delay?.label,
-                            trailingTone: delay.map(ProxyPaletteRow.Tone.init) ?? .secondary,
+                guard ProxyPaletteRows.matches(query, title, member?.soleRegion?.title) else { continue }
+                var row =
+                    member.map { member in
+                        ProxyPaletteRows.strategyRow(
+                            member, id: option, reaching: snapshot.node(reachedBy: member.id, in: profile),
                             isCurrent: group.current == option)
-                    ))
+                    }
+                    ?? ProxyPaletteRow(
+                        id: option, leading: .symbol(option == "DIRECT" ? "arrow.right" : "nosign"),
+                        title: title, isCurrent: group.current == option)
+                if member?.soleRegion != nil {
+                    regional.append((.option(option), row))
+                } else {
+                    row.section = String(localized: "Options")
+                    members.append((.option(option), row))
+                }
             }
         }
-        var pairs = members
+        var pairs = members + regional
         let regions: [ProxyRegion?] = ProxyRegion.allCases.map(Optional.some) + [nil]
         for region in regions {
             guard var nodes = byRegion[region] else { continue }
@@ -195,15 +198,21 @@ struct ProxyNodesScreen: PaletteScreen {
                 coordinator.showWindow(edit: .editStrategy(strategy.id))
             })
         let others = profile.strategies.filter { $0.id != strategy.id }
-        for (index, other) in others.enumerated() {
-            items.append(
-                PopoverMenuItem(
-                    title: other.name, icon: .symbol("circle.fill"),
-                    sectionTitle: index == 0 ? String(localized: "Switch Strategy") : nil,
-                    startsSection: index == 0
-                ) {
-                    coordinator.switchNodes(to: other.id)
-                })
+        let sections = [
+            (String(localized: "Switch Strategy"), others.filter { $0.soleRegion == nil }),
+            (String(localized: "Region Strategies"), others.filter { $0.soleRegion != nil }),
+        ]
+        for (title, strategies) in sections {
+            for (index, other) in strategies.enumerated() {
+                items.append(
+                    PopoverMenuItem(
+                        title: other.bareName,
+                        icon: .symbol(other.soleRegion == nil ? "circle.fill" : "globe"),
+                        sectionTitle: index == 0 ? title : nil, startsSection: index == 0
+                    ) {
+                        coordinator.switchNodes(to: other.id)
+                    })
+            }
         }
         items.append(ProxyPaletteActions.connectionItem(coordinator: coordinator, manager: manager))
         return PopoverMenuContent(
@@ -213,7 +222,7 @@ struct ProxyNodesScreen: PaletteScreen {
     func headerAccessory(at selection: Int, focus: FocusState<String?>.Binding) -> PaletteHeaderAccessory? {
         guard let strategy else { return nil }
         return ProxyContextChip.accessory(
-            title: strategy.name, leading: .tint(strategy.tint), metrics: metrics)
+            title: strategy.bareName, leading: .strategy(strategy), metrics: metrics)
     }
 
     func body(selection: Int, scroll: ScrollIntent) -> AnyView {

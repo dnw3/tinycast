@@ -62,8 +62,12 @@ final class ProxyMenuBarController: NSObject, NSMenuDelegate {
         }
         menu.addItem(.separator())
         menu.addItem(.sectionHeader(title: String(localized: "Strategies")))
-        for strategy in profile.strategies {
+        for strategy in profile.strategies where strategy.soleRegion == nil {
             menu.addItem(strategyItem(strategy, in: profile))
+        }
+        let regional = profile.strategies.filter { $0.soleRegion != nil }
+        if !regional.isEmpty {
+            menu.addItem(Self.regionStrategiesItem(regional.map { strategyItem($0, in: profile) }))
         }
         menu.addItem(.separator())
         menu.addItem(ProxyMenuItem(title: String(localized: "Open Proxy Window…")) { [coordinator] in
@@ -100,39 +104,48 @@ final class ProxyMenuBarController: NSObject, NSMenuDelegate {
     /// A strategy shows where it exits now; a manual one opens onto its options, by region.
     private func strategyItem(_ strategy: ProxyStrategy, in profile: ProxyProfile) -> NSMenuItem {
         let item = NSMenuItem(title: strategy.name, action: nil, keyEquivalent: "")
-        let reach = manager.snapshot?.reach(from: strategy.id, in: profile)
-        Self.show(Self.dot(strategy.tint), on: item)
-        if let node = reach?.node {
-            item.subtitle = node.label
-            if let label = node.delay(for: strategy.testURL).label { item.badge = NSMenuItemBadge(string: label) }
-        }
+        dress(item, as: strategy, in: profile)
         guard let group = manager.snapshot?.strategies[strategy.id] else { return item }
         let submenu = NSMenu()
         submenu.autoenablesItems = false
         let picks = strategy.kind == .select
         let nodes = manager.snapshot?.nodes ?? [:]
+        var regional: [NSMenuItem] = []
         for option in group.options where nodes[option] == nil {
-            submenu.addItem(optionItem(option, title: ProxyPaletteRows.optionTitle(option), strategy: strategy,
-                                       current: group.current, picks: picks))
+            let member = profile.strategies.first { $0.name == option }
+            let memberItem = optionItem(
+                option, title: ProxyPaletteRows.optionTitle(option), strategy: strategy,
+                current: group.current, picks: picks)
+            if let member { dress(memberItem, as: member, in: profile) }
+            if member?.soleRegion != nil { regional.append(memberItem) } else { submenu.addItem(memberItem) }
         }
+        if !regional.isEmpty { submenu.addItem(Self.regionStrategiesItem(regional)) }
         let pool = group.options.compactMap { nodes[$0] }
         let grouped = Dictionary(grouping: pool, by: \.region)
         let regions: [ProxyRegion?] = ProxyRegion.allCases.map(Optional.some) + [nil]
         if !pool.isEmpty, submenu.numberOfItems > 0 { submenu.addItem(.separator()) }
         for region in regions {
             guard let members = grouped[region] else { continue }
+            let nodeItems = members.map { node in
+                let nodeItem = optionItem(
+                    node.name, title: node.bareName, strategy: strategy, current: group.current, picks: picks)
+                if let label = node.delay(for: strategy.testURL).label {
+                    nodeItem.badge = NSMenuItemBadge(string: label)
+                }
+                return nodeItem
+            }
+            // One region's nodes need no row naming their region; they sit in the strategy's menu.
+            guard grouped.count > 1 else {
+                for nodeItem in nodeItems { submenu.addItem(nodeItem) }
+                continue
+            }
             let regionItem = NSMenuItem(title: region?.title ?? ProxyRegion.otherTitle, action: nil, keyEquivalent: "")
             if let region { Self.show(ProxyFlagArtwork.menuImage(emoji: region.flagEmoji), on: regionItem) }
             regionItem.badge = NSMenuItemBadge(count: members.count)
             if members.contains(where: { $0.name == group.current }) { regionItem.state = .mixed }
             let regionMenu = NSMenu()
             regionMenu.autoenablesItems = false
-            for node in members {
-                let nodeItem = optionItem(node.name, title: node.bareName, strategy: strategy, current: group.current,
-                                          picks: picks)
-                if let label = node.delay(for: strategy.testURL).label { nodeItem.badge = NSMenuItemBadge(string: label) }
-                regionMenu.addItem(nodeItem)
-            }
+            for nodeItem in nodeItems { regionMenu.addItem(nodeItem) }
             regionItem.submenu = regionMenu
             submenu.addItem(regionItem)
         }
@@ -142,6 +155,32 @@ final class ProxyMenuBarController: NSObject, NSMenuDelegate {
         }
         test.isEnabled = manager.isRunning
         submenu.addItem(test)
+        item.submenu = submenu
+        return item
+    }
+
+    /// A strategy's face in a menu: its region's flag or its colour, and the node it reaches now.
+    private func dress(_ item: NSMenuItem, as strategy: ProxyStrategy, in profile: ProxyProfile) {
+        let region = strategy.soleRegion
+        item.title = strategy.bareName
+        let image = region.map { ProxyFlagArtwork.menuImage(emoji: $0.flagEmoji) } ?? Self.dot(strategy.tint)
+        Self.show(image, on: item)
+        guard let node = manager.snapshot?.node(reachedBy: strategy.id, in: profile) else { return }
+        item.subtitle = region == nil ? node.label : ProxyNodeName(node.name).title
+        if let label = node.delay(for: strategy.testURL).label { item.badge = NSMenuItemBadge(string: label) }
+    }
+
+    /// The strategies made by region under one row, as the Nodes page folds them.
+    private static func regionStrategiesItem(_ items: [NSMenuItem]) -> NSMenuItem {
+        let item = NSMenuItem(title: String(localized: "Region Strategies"), action: nil, keyEquivalent: "")
+        if let globe = NSImage(systemSymbolName: "globe", accessibilityDescription: nil) {
+            show(globe, on: item)
+        }
+        item.badge = NSMenuItemBadge(count: items.count)
+        if items.contains(where: { $0.state == .on }) { item.state = .mixed }
+        let submenu = NSMenu()
+        submenu.autoenablesItems = false
+        for member in items { submenu.addItem(member) }
         item.submenu = submenu
         return item
     }

@@ -238,15 +238,22 @@ struct ProxyStrategyEditor: View {
                 }
             }
             Menu {
-                ForEach(profile.strategies.filter { $0.id != strategy.id }) { other in
-                    Button(other.name) { strategy.members.append(.strategy(other.id)) }
-                        .disabled(strategy.members.contains(.strategy(other.id)))
+                let others = profile.strategies.filter { $0.id != strategy.id }
+                let regional = others.filter { $0.soleRegion != nil }
+                Section("Strategies") {
+                    ForEach(others.filter { $0.soleRegion == nil }, content: addOption)
                 }
-                Divider()
-                Button("Direct") { strategy.members.append(.direct) }
-                    .disabled(strategy.members.contains(.direct))
-                Button("Reject") { strategy.members.append(.reject) }
-                    .disabled(strategy.members.contains(.reject))
+                if !regional.isEmpty {
+                    Section("Region Strategies") {
+                        ForEach(regional, content: addOption)
+                    }
+                }
+                Section {
+                    Button("Direct") { strategy.members.append(.direct) }
+                        .disabled(strategy.members.contains(.direct))
+                    Button("Reject") { strategy.members.append(.reject) }
+                        .disabled(strategy.members.contains(.reject))
+                }
             } label: {
                 Label("Add Option", systemImage: "plus")
             }
@@ -262,10 +269,20 @@ struct ProxyStrategyEditor: View {
         }
     }
 
+    private func addOption(_ other: ProxyStrategy) -> some View {
+        let node = manager.snapshot?.node(reachedBy: other.id, in: profile)
+        return Button {
+            strategy.members.append(.strategy(other.id))
+        } label: {
+            ProxyStrategyOption(strategy: other, node: node)
+        }
+        .disabled(strategy.members.contains(.strategy(other.id)))
+    }
+
     private func memberChip(_ member: ProxyTarget, at index: Int) -> some View {
         HStack(spacing: Theme.Spacing.sm) {
             ProxyTargetDot(target: member, profile: profile)
-            Text(member.title(in: profile)).lineLimit(1)
+            ProxyTargetName(target: member, profile: profile)
             Spacer(minLength: Theme.Spacing.xs)
             Button {
                 strategy.members.remove(at: index)

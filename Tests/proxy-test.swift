@@ -1114,6 +1114,8 @@ struct ProxyTests {
         expect(created.map { $0.pool?.regions ?? [] } == [[.hongKong], [.taiwan], [.japan]], "one region apiece")
         expect(created.map(\.soleRegion) == [.hongKong, .taiwan, .japan], "each reads as made by region")
         expect(profile.strategies[0].soleRegion == nil, "the default strategy is not a region's")
+        expect(created.map(\.bareName) == ["香港", "台湾", "日本"], "a region strategy's flag comes off its name")
+        expect(profile.strategies[0].bareName == profile.strategies[0].name, "any other keeps its name whole")
         expect(
             profile.strategies[0].members == [.strategy(profile.strategies[1].id)] + added.map(ProxyTarget.strategy),
             "the default strategy offers them after its own options")

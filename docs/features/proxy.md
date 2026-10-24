@@ -62,14 +62,17 @@ bar, the launcher and the window. See the [Spec](../plans/proxy-spec.md) and
   at once, `addRegionStrategies`, optionally offered by the default strategy; the node pool opens in a
   panel),
   Routing (my rules, routes with drag order, switches, rule-set status, and target menus listing the
-  strategies, region ones in their own section, each with the node it reaches in a badge), Subscriptions
+  strategies, region ones in their own section under their flags, each with the node it reaches and its
+  delay in a badge; every target picker in the editors lists them alike), Subscriptions
   (cards per source and an add card), Activity (live connections with filters, search and a rule for
   any row). Traffic and connections are read only while their page shows.
 - **Menu bar** (`ProxyMenuBarController`, off by default): connect, the three modes, one submenu per
-  strategy with options grouped by region under each region's flag, open the window, test, update
+  strategy, each showing its node and delay, region ones folded into one Region Strategies submenu; a
+  strategy's options group by region under each region's flag, open the window, test, update
   subscriptions when there are any, settings. Rebuilt each time it opens.
 - **Launcher**: the status card (exit, mode, connection) and commands owned by Settings › Proxy, each
-  listed only when it applies.
+  listed only when it applies. Its target and node screens list region strategies in a section of
+  their own, under their flags.
 - **Settings › Proxy**: preferences only — the feature switch, the window, connection, menu bar, TUN,
   DNS, core, subscription updates, advanced and commands.
 

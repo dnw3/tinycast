@@ -41,7 +41,8 @@ struct ProxyQuickRuleEditor: View {
                     }
                     .pickerStyle(.radioGroup)
                     ProxyTargetPicker(
-                        title: String(localized: "Goes to"), target: $target, profile: manager.store.profile)
+                        title: String(localized: "Goes to"), target: $target, profile: manager.store.profile,
+                        snapshot: manager.snapshot)
                 }
             }
             .formStyle(.grouped)

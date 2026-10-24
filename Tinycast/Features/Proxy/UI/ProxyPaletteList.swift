@@ -49,11 +49,16 @@ extension ProxyPaletteRow.Tone {
 }
 
 extension ProxyPaletteRow.Leading {
+    /// A region's flag for a strategy made by region, drawn so Taiwan's shows; else its colour.
+    static func strategy(_ strategy: ProxyStrategy) -> Self {
+        strategy.soleRegion.map { .flag($0.flagEmoji) } ?? .tint(strategy.tint)
+    }
+
     static func target(_ target: ProxyTarget, in profile: ProxyProfile) -> Self {
         switch target {
         case .direct: .symbol("arrow.right")
         case .reject: .symbol("nosign")
-        case .strategy(let id): profile.strategy(id).map { .tint($0.tint) } ?? .symbol("questionmark")
+        case .strategy(let id): profile.strategy(id).map(Self.strategy) ?? .symbol("questionmark")
         }
     }
 }

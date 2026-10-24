@@ -28,6 +28,21 @@ enum ProxyPaletteRows {
         return (title, delay.label, ProxyPaletteRow.Tone(delay))
     }
 
+    /// A strategy, those made by region apart and under their flags, with its node and that delay.
+    static func strategyRow(
+        _ strategy: ProxyStrategy, id: String? = nil, reaching node: ProxySnapshot.Node?, isCurrent: Bool
+    ) -> ProxyPaletteRow {
+        let region = strategy.soleRegion
+        let delay = node?.delay(for: strategy.testURL)
+        return ProxyPaletteRow(
+            id: id ?? strategy.id.uuidString,
+            section: region == nil ? String(localized: "Strategies") : String(localized: "Region Strategies"),
+            leading: .strategy(strategy), title: strategy.bareName,
+            subtitle: node.map { region == nil ? $0.label : ProxyNodeName($0.name).title },
+            trailing: delay?.label, trailingTone: delay.map(ProxyPaletteRow.Tone.init) ?? .secondary,
+            isCurrent: isCurrent)
+    }
+
     /// Asks the user to connect when there is nothing live to show, and connects on ↵.
     static func connectRow(section: String? = nil) -> ProxyPaletteRow {
         ProxyPaletteRow(

@@ -150,7 +150,7 @@ private struct ProxyTestPath: View {
     private func targetStep(_ target: ProxyTarget) -> some View {
         HStack(spacing: Theme.Spacing.xs) {
             ProxyTargetDot(target: target, profile: profile)
-            Text(target.title(in: profile)).lineLimit(1)
+            ProxyTargetName(target: target, profile: profile)
         }
     }
 

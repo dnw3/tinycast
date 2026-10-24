@@ -72,7 +72,7 @@ private struct ProxyStrategyTag: View {
         Button(action: select) {
             HStack(spacing: Theme.Spacing.sm) {
                 ProxyTintDot(tint: strategy.tint, size: Theme.Size.colorDot)
-                Text(strategy.name).lineLimit(1)
+                ProxyStrategyName(strategy: strategy)
             }
             .modifier(ProxyTagFace(selectedTint: isSelected ? strategy.tint.color : nil))
         }
@@ -105,7 +105,7 @@ private struct ProxyRegionStrategiesTag: View {
             HStack(spacing: Theme.Spacing.sm) {
                 if let selected {
                     ProxyTintDot(tint: selected.tint, size: Theme.Size.colorDot)
-                    Text(selected.name).lineLimit(1)
+                    ProxyStrategyName(strategy: selected)
                 } else {
                     SymbolImage(name: "globe", size: Theme.Size.colorDot * 1.4).foregroundStyle(.secondary)
                     Text("Region Strategies").lineLimit(1)
@@ -174,7 +174,10 @@ private struct ProxyStrategyDetail: View {
             VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
                 HStack(spacing: Theme.Spacing.sm) {
                     ProxyTintDot(tint: strategy.tint, size: Theme.Size.colorDot)
-                    Text(strategy.name).font(.title3.weight(.semibold)).lineLimit(1)
+                    ProxyStrategyName(
+                        strategy: strategy, size: NSFont.preferredFont(forTextStyle: .title3).pointSize
+                    )
+                    .font(.title3.weight(.semibold))
                     Text(facts).foregroundStyle(.secondary).lineLimit(1)
                     Spacer(minLength: Theme.Spacing.md)
                     if isTesting {
@@ -245,7 +248,7 @@ private struct ProxyStrategyDetail: View {
                 Text(reach?.outcome?.title(in: profile) ?? String(localized: "No node picked"))
             }
             if let via = reach?.via.first.flatMap(profile.strategy) {
-                Text("via \(via.name)").foregroundStyle(.tertiary).lineLimit(1)
+                Text("via \(via.bareName)").foregroundStyle(.tertiary).lineLimit(1)
             }
         }
     }
@@ -321,7 +324,8 @@ private struct ProxyStrategyDetail: View {
             VStack(spacing: 0) {
                 ProxyFoldHeader(
                     title: String(localized: "Region Strategies"), count: options.count, isOpen: isOpen,
-                    inUse: holdsPick ? Text("The strategy in use is here") : nil
+                    inUse: holdsPick ? Text("The strategy in use is here") : nil,
+                    fastest: fastest(of: options)
                 ) {
                     state.regionStrategiesOpen = !isOpen
                 } icon: {
@@ -339,6 +343,17 @@ private struct ProxyStrategyDetail: View {
                 }
             }
         }
+    }
+
+    /// The quickest of these strategies' nodes, each tested against its own strategy's URL.
+    private func fastest(of options: [String]) -> Int? {
+        options.compactMap { option -> Int? in
+            guard let member = profile.strategies.first(where: { $0.name == option }),
+                let node = manager.snapshot?.node(reachedBy: member.id, in: profile),
+                case .milliseconds(let value) = node.delay(for: member.testURL)
+            else { return nil }
+            return value
+        }.min()
     }
 
     /// Several sources feeding one strategy can be looked at one at a time.
@@ -369,8 +384,10 @@ private struct ProxyStrategyDetail: View {
         ) {
             if let member {
                 ProxyTintDot(tint: member.tint, size: Theme.Size.colorDot).frame(width: Theme.Size.colorDot)
+                ProxyStrategyName(strategy: member).layoutPriority(1)
+            } else {
+                Text(ProxyPaletteRows.optionTitle(option)).lineLimit(1).layoutPriority(1)
             }
-            Text(ProxyPaletteRows.optionTitle(option)).lineLimit(1).layoutPriority(1)
             if let node {
                 // A region strategy's name has the flag, which its node's would only repeat.
                 let repeatsFlag = member?.soleRegion != nil && member?.soleRegion == node.region

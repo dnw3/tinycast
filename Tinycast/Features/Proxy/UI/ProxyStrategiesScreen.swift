@@ -31,26 +31,15 @@ struct ProxyStrategiesScreen: PaletteScreen {
         let query = FuzzyMatch.Query(vm.query)
         let current = rule.flatMap { Self.target(of: $0, in: profile) }
         var pairs: [(Item, ProxyPaletteRow)] = []
-        let strategies = String(localized: "Strategies")
-        for strategy in profile.strategies where ProxyPaletteRows.matches(query, strategy.name) {
+        let regional = profile.strategies.filter { $0.soleRegion != nil }
+        let ordered = profile.strategies.filter { $0.soleRegion == nil } + regional
+        let matching = ordered.filter { ProxyPaletteRows.matches(query, $0.name, $0.soleRegion?.title) }
+        for strategy in matching {
             let target = ProxyTarget.strategy(strategy.id)
-            var subtitle = strategy.kind.title
-            var trailing: String?
-            var tone = ProxyPaletteRow.Tone.secondary
-            if let node = snapshot?.node(reachedBy: strategy.id, in: profile) {
-                let delay = node.delay(for: strategy.testURL)
-                subtitle += " · \(node.label)"
-                trailing = delay.label
-                tone = ProxyPaletteRow.Tone(delay)
-            }
-            pairs.append(
-                (
-                    .target(target),
-                    ProxyPaletteRow(
-                        id: strategy.id.uuidString, section: strategies, leading: .tint(strategy.tint),
-                        title: strategy.name, subtitle: subtitle, trailing: trailing, trailingTone: tone,
-                        isCurrent: current == target)
-                ))
+            let node = snapshot?.node(reachedBy: strategy.id, in: profile)
+            var row = ProxyPaletteRows.strategyRow(strategy, reaching: node, isCurrent: current == target)
+            row.subtitle = [strategy.kind.title, row.subtitle].compactMap(\.self).joined(separator: " · ")
+            pairs.append((.target(target), row))
         }
         let builtIn = String(localized: "Built-in")
         let options: [(ProxyTarget, String)] = [

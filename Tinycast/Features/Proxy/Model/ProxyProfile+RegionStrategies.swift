@@ -6,6 +6,12 @@ extension ProxyStrategy {
         guard let pool, pool.regions.count == 1, pool.pattern.isEmpty else { return nil }
         return pool.regions.first
     }
+
+    /// A region strategy's name without its flag, which views draw from the region instead.
+    var bareName: String {
+        guard soleRegion != nil else { return name }
+        return ProxyRegion.leadingFlag(of: name)?.rest ?? name
+    }
 }
 
 extension ProxyProfile {

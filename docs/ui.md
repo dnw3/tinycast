@@ -405,15 +405,25 @@ The Nodes page names each strategy in a tag that wraps onto another row (`ProxyW
 selected tag takes its strategy's tint. Strategies made by region fold into one more tag, Region
 Strategies, whose menu lists them with the node each reaches; it names the one picked from it, so a
 score of regions never fills the page. Among a strategy's options they fold the same way, into one row
-(`ProxyFoldHeader`, the region list's own) that opens onto their chips and starts open only while they
-are few (`unfoldedRegions`). New Strategy is a pull-down whose primary action makes one strategy and
-whose menu opens the by-region panel, which lists the regions the nodes are in, the largest first.
+(`ProxyFoldHeader`, the region list's own) that shows the quickest of their delays, opens onto their
+chips and starts open only while they are few (`unfoldedRegions`). New Strategy is a pull-down whose
+primary action makes one strategy and whose menu opens the by-region panel, which lists the regions the
+nodes are in, the largest first.
 
-A target menu (`ProxyTargetMenu`) lists strategies only, under a Strategies header with the ones made
-by region (`ProxyStrategy.soleRegion`) under their own, and puts the node each one reaches now in a
-trailing badge. A region strategy is named after its region, flag and all, so with its node written
-beside it in the title the menu read as a list of nodes; the header and the badge keep the two apart.
-For the same reason a strategy card's chip for a region strategy leaves its node's flag off.
+A target menu (`ProxyTargetMenu`), every target picker in the editors (`ProxyTargetPicker`) and the
+strategy editor's Add Option menu list strategies under a Strategies header with the ones made by region
+(`ProxyStrategy.soleRegion`) under their own, and put the node each one reaches now and its delay in a
+trailing badge (`ProxyStrategyOption`). A region strategy is named after its region, so with its node
+written beside it in the title the menu read as a list of nodes; the header and the badge keep the two
+apart. For the same reason a strategy card's chip for a region strategy leaves its node's flag off. A
+`Button` in a menu hides its label's icon unless it asks for `.labelStyle(.titleAndIcon)`; a picker's
+option shows it either way.
+
+A region strategy's name carries its region's emoji flag, and none for Taiwan, whose emoji a
+China-region Mac blanks. Every view therefore draws the region's flag and shows the name without the
+emoji (`ProxyStrategy.bareName`): `ProxyStrategyName` in the window, a `.flag` leading in the launcher's
+rows, the flag image in menus. The launcher's screens and the menu bar group region strategies the way
+the menus do, the menu bar under one Region Strategies submenu.
 
 Nodes are one-line chips (`ProxyChip`) in collapsible region groups (`ProxyRegionList`): a long list
 opens only the region holding the node in use, a short one opens whole. A chip shows the name's short
