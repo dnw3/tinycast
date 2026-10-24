@@ -197,7 +197,10 @@ final class ProxyMenuBarController: NSObject, NSMenuDelegate {
     /// macOS 27 hides menu images unless asked; a strategy's colour and a flag both say something.
     private static func show(_ image: NSImage, on item: NSMenuItem) {
         item.image = image
-        if #available(macOS 27, *) { item.preferredImageVisibility = .visible }
+        // CI builds with Xcode 26, whose SDK does not have the property yet.
+        #if compiler(>=6.4)
+            if #available(macOS 27, *) { item.preferredImageVisibility = .visible }
+        #endif
     }
 
     private static func dot(_ tint: ProxyStrategy.Tint) -> NSImage {
