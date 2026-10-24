@@ -1095,8 +1095,43 @@ struct ProxyTests {
         expect(unknown.highlight(in: profile, mode: .rule) == nil, "a rule set no route holds lights nothing")
     }
 
+    static func testRegionStrategies() {
+        var profile = mixed()
+        let before = profile.strategies.count
+        let names: [ProxyRegion: String] = [.hongKong: "🇭🇰 香港", .japan: "🇯🇵 日本", .taiwan: "台湾"]
+        expect(profile.strategy(forRegion: .hongKong)?.name == "香港优选", "a lone-region pool covers its region")
+        expect(profile.strategy(forRegion: .japan) == nil, "a two-region pool covers neither alone")
+        var next = 200
+        let added = profile.addRegionStrategies(
+            [.taiwan, .japan, .hongKong], kind: .urlTest, offeredByDefault: true,
+            named: { names[$0] ?? $0.rawValue }, newID: { next += 1; return uuid(next) })
+        let created = profile.strategies.suffix(3)
+        expect(added == [uuid(201), uuid(202), uuid(203)] && profile.strategies.count == before + 3, "three added")
+        expect(created.map(\.name) == ["🇭🇰 香港", "台湾", "🇯🇵 日本"], "in the region table's order, by name")
+        expect(
+            created.allSatisfy { $0.kind == .urlTest && $0.pool?.sources == nil && $0.pool?.pattern == "" },
+            "each tests its region from every source")
+        expect(created.map { $0.pool?.regions ?? [] } == [[.hongKong], [.taiwan], [.japan]], "one region apiece")
+        expect(
+            profile.strategies[0].members == [.strategy(profile.strategies[1].id)] + added.map(ProxyTarget.strategy),
+            "the default strategy offers them after its own options")
+        let fresh = Set(created.map(\.tint))
+        expect(fresh.count == 3, "fresh tints while any are left")
+        expect(profile.problems.isEmpty, "the result is a valid profile")
+
+        var again = profile
+        let more = again.addRegionStrategies(
+            [.hongKong], kind: .fallback, offeredByDefault: false, named: { names[$0] ?? $0.rawValue },
+            newID: { next += 1; return uuid(next) })
+        expect(again.strategy(forRegion: .hongKong)?.name == "香港优选", "the first such strategy is the one found")
+        expect(again.strategies.last?.name == "🇭🇰 香港 2", "a name in use takes a number")
+        expect(again.strategies[0].members == profile.strategies[0].members, "left out of the default when asked")
+        expect(more.count == 1 && again.problems.isEmpty, "and still valid")
+    }
+
     static func main() {
         testRegionClassification()
+        testRegionStrategies()
         testNodeFileOutline()
         testCodingRoundTrip()
         testStarterAndRecommendedRoutes()

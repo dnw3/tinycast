@@ -7,6 +7,8 @@ enum ProxyEditor: Identifiable {
     /// Every source's nodes when nil, else that source's.
     case nodes(UUID?)
     case strategy(ProxyStrategyDraft)
+    /// A strategy for each of several regions at once.
+    case regionStrategies
     case rules
     /// The route library, with names from the catalog and a link field.
     case addRoute
@@ -22,6 +24,7 @@ enum ProxyEditor: Identifiable {
         case .nodeFile(let url): "file-" + url.path
         case .nodes(let source): "nodes-" + (source?.uuidString ?? "all")
         case .strategy(let draft): "strategy-" + draft.strategy.id.uuidString
+        case .regionStrategies: "region-strategies"
         case .rules: "rules"
         case .addRoute: "add-route"
         case .linkRoute(let id, let link): "route-" + (id ?? link)
@@ -44,6 +47,7 @@ struct ProxyEditorPanel: View {
         case .nodeFile(let url): ProxyNodeFileEditor(file: url, manager: manager, close: close)
         case .nodes(let source): ProxyNodeListViewer(manager: manager, source: source, close: close)
         case .strategy(let draft): ProxyStrategyEditor(draft: draft, manager: manager, close: close)
+        case .regionStrategies: ProxyRegionStrategiesEditor(manager: manager, close: close)
         case .rules: ProxyRulesEditor(manager: manager, close: close)
         case .addRoute: ProxyRouteLibrary(manager: manager, openLink: { replace(.linkRoute(id: nil, link: $0)) }, close: close)
         case .linkRoute(let id, let link):

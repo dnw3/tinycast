@@ -82,6 +82,51 @@ extension ProxyNote where Accessory == EmptyView {
     }
 }
 
+/// Its subviews in a row at their ideal size, starting another row when the next would not fit.
+struct ProxyWrapLayout: Layout {
+    var spacing = Theme.Spacing.sm
+
+    private struct Row {
+        var indices: [Int] = []
+        var width = 0.0
+        var height = 0.0
+    }
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let rows = rows(of: subviews, width: proposal.width ?? .infinity)
+        let height = rows.reduce(0) { $0 + $1.height } + spacing * Double(max(rows.count - 1, 0))
+        return CGSize(width: rows.map(\.width).max() ?? 0, height: height)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        var y = bounds.minY
+        for row in rows(of: subviews, width: bounds.width) {
+            var x = bounds.minX
+            for index in row.indices {
+                let size = subviews[index].sizeThatFits(.unspecified)
+                subviews[index].place(
+                    at: CGPoint(x: x, y: y + (row.height - size.height) / 2), proposal: ProposedViewSize(size))
+                x += size.width + spacing
+            }
+            y += row.height + spacing
+        }
+    }
+
+    private func rows(of subviews: Subviews, width: Double) -> [Row] {
+        var rows = [Row()]
+        for index in subviews.indices {
+            let size = subviews[index].sizeThatFits(.unspecified)
+            if let last = rows.last, !last.indices.isEmpty, last.width + spacing + size.width > width {
+                rows.append(Row())
+            }
+            rows[rows.count - 1].width += (rows[rows.count - 1].indices.isEmpty ? 0 : spacing) + size.width
+            rows[rows.count - 1].height = max(rows[rows.count - 1].height, size.height)
+            rows[rows.count - 1].indices.append(index)
+        }
+        return rows
+    }
+}
+
 /// A source by name and kind, as small as the tag the Subscriptions page gives each source.
 struct ProxySourceTag: View {
     let source: ProxySource

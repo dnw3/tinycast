@@ -401,6 +401,11 @@ chip it picked and every target menu that names it. The flow map's blocks and pi
 one row's path and fades the rest, red when the test could not connect. Delays read green under 150 ms,
 `Colors.warning` above, red on a timeout and grey untested.
 
+The Nodes page names every strategy in a tag that wraps onto another row (`ProxyWrapLayout`) rather
+than a segmented control that falls back to a menu once region strategies multiply; the selected tag
+takes its strategy's tint. New Strategy is a pull-down whose primary action makes one strategy and
+whose menu opens the by-region panel, which lists the regions the nodes are in, the largest first.
+
 Nodes are one-line chips (`ProxyChip`) in collapsible region groups (`ProxyRegionList`): a long list
 opens only the region holding the node in use, a short one opens whole. A chip shows the name's short
 title and the provider's note after it in grey (`ProxyNodeName`), its pick as a tinted fill, and the

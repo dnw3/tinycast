@@ -600,6 +600,7 @@
 		6527B404C220924885C070B3 /* AppWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9979DED5579535D1F0A32DBF /* AppWindowController.swift */; };
 		653801EA8DE8384ACF27CF66 /* rescaler_utils.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = 870911227FF4D493C084F5D4 /* rescaler_utils.h */; };
 		6555A0AF9118C5558AF57F54 /* CustomCommandListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C85F2A621F5474766E80BFB /* CustomCommandListView.swift */; };
+		6563EC53F7D4A70AB99E8745 /* ProxyProfile+RegionStrategies.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2F2560507AF9776168C7F0A /* ProxyProfile+RegionStrategies.swift */; };
 		6564BC090026A6EBC5C24000 /* AIChatDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 433D5E44E58C6759981FE7E1 /* AIChatDetailView.swift */; };
 		6587E5036F5C29CA35C68324 /* ProxyFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 763D9B029493CB60D7C701F8 /* ProxyFlow.swift */; };
 		65A9AE3F320E56D5376A6BAA /* alpha_enc.c in Sources */ = {isa = PBXBuildFile; fileRef = 8B11543A9C8665B2F421F5C6 /* alpha_enc.c */; };
@@ -839,6 +840,7 @@
 		8DCF330D30E59FFEE8C8E8CF /* PaletteDropGuideController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A8B82DCB1B7D131BF0908A /* PaletteDropGuideController.swift */; };
 		8E30C461429C894907FAD94D /* PaletteEscapeAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53D7E98E448F05816493DB37 /* PaletteEscapeAction.swift */; };
 		8E9089B78AB1803ABA821A0F /* ToolbarItemIndicator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 358C414C573B1E3EF3B08511 /* ToolbarItemIndicator.swift */; };
+		8E92D8FE8BABBB864D81B322 /* ProxyProfile+RegionStrategies.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2F2560507AF9776168C7F0A /* ProxyProfile+RegionStrategies.swift */; };
 		8EA32CF7813518E7B8C40AEA /* CaptureSelectionGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = E31BC47116F2365BA8E9E0AF /* CaptureSelectionGeometry.swift */; };
 		8F001DE9D2EF3429B351EFF5 /* HIDKeyMapping.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAB5B3B85E8B34DB3CF9EA70 /* HIDKeyMapping.swift */; };
 		8F0EED3D4750A3125969E41F /* ProxyOnboarding.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4AA3F2C6F7233271C40E85E /* ProxyOnboarding.swift */; };
@@ -1103,6 +1105,7 @@
 		BD0C138940A1B20828610D05 /* DictionarySession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53E2A503ABA6A28E229C6FD6 /* DictionarySession.swift */; };
 		BD0D91ADFEC096476788939C /* WindowManagementSettingsFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 487E7A6C4F2366E135B9A5E7 /* WindowManagementSettingsFile.swift */; };
 		BD1F4396E2AB67118C654154 /* TextRecognitionWorker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79D5C2EF0C5636DD3709316A /* TextRecognitionWorker.swift */; };
+		BD233120A1F285DFBD36F912 /* ProxyRegionStrategiesEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22737FE8501987E29DF63C8F /* ProxyRegionStrategiesEditor.swift */; };
 		BD45A99F26C015BF00AC77D5 /* ApplicationsSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 289FC415E1D1776DD1C4EB9E /* ApplicationsSettingsView.swift */; };
 		BD8941A1CEBD9FCB1A873EC6 /* picture_psnr_enc.c in Sources */ = {isa = PBXBuildFile; fileRef = 355C0BD4FD19915E9B587191 /* picture_psnr_enc.c */; };
 		BD91F8597B33BC0D552FFFCC /* sharpyuv_gamma.c in Sources */ = {isa = PBXBuildFile; fileRef = DC338B9BE7AC8903AA4DA91A /* sharpyuv_gamma.c */; };
@@ -1834,6 +1837,7 @@
 		220CECFE780E8BE18FAE0A1C /* ExtensionGridLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExtensionGridLayout.swift; sourceTree = "<group>"; };
 		222F9EE432F608B5C907E7C2 /* MCPOAuth.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPOAuth.swift; sourceTree = "<group>"; };
 		22701685D1187235DA195F3B /* LauncherOrder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LauncherOrder.swift; sourceTree = "<group>"; };
+		22737FE8501987E29DF63C8F /* ProxyRegionStrategiesEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProxyRegionStrategiesEditor.swift; sourceTree = "<group>"; };
 		229A9AAC90FCC5B336F576D3 /* ProxyWindowComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProxyWindowComponents.swift; sourceTree = "<group>"; };
 		22B7E4308EC677F78A3E09BB /* utils.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = utils.h; sourceTree = "<group>"; };
 		22DDC8C8FAE2D5025B1FBCBA /* rescaler_mips_dsp_r2.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = rescaler_mips_dsp_r2.c; sourceTree = "<group>"; };
@@ -2573,6 +2577,7 @@
 		A1F0713096B6136219881FE9 /* CaptureExportControls.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureExportControls.swift; sourceTree = "<group>"; };
 		A29132FF02488E6630262A38 /* AgentGrants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentGrants.swift; sourceTree = "<group>"; };
 		A2BB93BC8E1694F14B0194AA /* HyperKeySettingsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HyperKeySettingsSection.swift; sourceTree = "<group>"; };
+		A2F2560507AF9776168C7F0A /* ProxyProfile+RegionStrategies.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ProxyProfile+RegionStrategies.swift"; sourceTree = "<group>"; };
 		A2F98C5342126D9DD57F8F2B /* AgentWaitingHUDView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentWaitingHUDView.swift; sourceTree = "<group>"; };
 		A349919943528492FEF68EFA /* CaptureTextRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureTextRenderer.swift; sourceTree = "<group>"; };
 		A379CB384B76FF70AC72E235 /* AppleShortcut.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleShortcut.swift; sourceTree = "<group>"; };
@@ -3486,6 +3491,7 @@
 				620C2C784C736F31FE3E7B4D /* ProxyProbe.swift */,
 				44171959F10AFF216D093A22 /* ProxyProblem.swift */,
 				2D665ADD16FE0D54B3C08DB3 /* ProxyProfile.swift */,
+				A2F2560507AF9776168C7F0A /* ProxyProfile+RegionStrategies.swift */,
 				C3DD3DA97BF277B73507FD01 /* ProxyRegion.swift */,
 				8608DF0851D8CD91F80960C2 /* ProxyRestartPolicy.swift */,
 				8E66C5D1AC26EB9F4755AA61 /* ProxyRoute.swift */,
@@ -3864,6 +3870,7 @@
 				5A9EEBA53E5FEE063ACC3BD2 /* ProxyNodeFileEditor.swift */,
 				9B6CC9924C996B448A6BF3C2 /* ProxyNodeListViewer.swift */,
 				956CE1FA809EF79D7EB6D056 /* ProxyPrompt.swift */,
+				22737FE8501987E29DF63C8F /* ProxyRegionStrategiesEditor.swift */,
 				1695EA19374C4BE972E88ECF /* ProxyRulesEditor.swift */,
 				F2CBC98080A7C5B5684DF96E /* ProxySettingsView.swift */,
 				4F7D16E874246F7DAE8CE849 /* ProxySourceEditor.swift */,
@@ -6503,6 +6510,7 @@
 				9B05201FC12E55E1D8D0977B /* ProxyNodeName.swift in Sources */,
 				77794BA9AB09511235A02206 /* ProxyProbe.swift in Sources */,
 				62EBC62BF3F007FE7A2C2A8A /* ProxyProblem.swift in Sources */,
+				8E92D8FE8BABBB864D81B322 /* ProxyProfile+RegionStrategies.swift in Sources */,
 				D1E274DEB812CAF7521E1AB3 /* ProxyProfile.swift in Sources */,
 				A2AABF336F291FCAF8D6E944 /* ProxyRegion.swift in Sources */,
 				5724C129B8222A1E169CBE78 /* ProxyRestartPolicy.swift in Sources */,
@@ -7447,11 +7455,13 @@
 				381B67E04BE7B9757CDB6064 /* ProxyProbe.swift in Sources */,
 				9D7A753131FAB0B2D5C677C1 /* ProxyProbeRunner.swift in Sources */,
 				7B3BAFC324AD73E309F8212F /* ProxyProblem.swift in Sources */,
+				6563EC53F7D4A70AB99E8745 /* ProxyProfile+RegionStrategies.swift in Sources */,
 				EB2D2546BB3DE1919BCE156D /* ProxyProfile.swift in Sources */,
 				97268C2BDDC67E0EEBAB85F7 /* ProxyPrompt.swift in Sources */,
 				E33D40BDAF36C7506F15D9C1 /* ProxyQuickRuleEditor.swift in Sources */,
 				9675EA3EF8F7B4BB85B2E823 /* ProxyRegion+Localization.swift in Sources */,
 				B4290E7C6DDC20897FB26266 /* ProxyRegion.swift in Sources */,
+				BD233120A1F285DFBD36F912 /* ProxyRegionStrategiesEditor.swift in Sources */,
 				EBA1A738FEF61019ABCD5ACB /* ProxyRestartPolicy.swift in Sources */,
 				FA27FEF1D406083FC0E0F56C /* ProxyRoute+Localization.swift in Sources */,
 				9E86D69BAA9C3BCA259A14E8 /* ProxyRoute.swift in Sources */,

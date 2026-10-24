@@ -19,7 +19,9 @@ bar, the launcher and the window. See the [Spec](../plans/proxy-spec.md) and
   as often as the most eager automatic strategy on it asks, and a pool taking every node still names
   `ProxyConfigBuilder.everyNode`: mihomo merges the test filters of the groups on one source, so an
   empty one would leave the others' narrower filters in charge. After a connect or reload
-  `ProxyManager` joins that first test and drops each fastest-node strategy's cached pick.
+  `ProxyManager` joins that first test, tests each node it failed once more (mihomo resets its DNS
+  connections as the load ends, failing the lookups that first test has in flight), and drops each
+  fastest-node strategy's cached pick.
 - **Picks live in the profile and are applied again on every refresh.** A node pick or route target is
   saved first, then sent to the running core; `ProxyManager.applied` always reflects the last config so a
   later refresh cannot put an older pick back.
@@ -54,8 +56,10 @@ bar, the launcher and the window. See the [Spec](../plans/proxy-spec.md) and
 
 - **Proxy window** (`ProxyWindowController`): Overview (exit, traffic, flow map with a site test that
   lights the path a site or address takes, status tiles, or a three-step guide with no source), Nodes
-  (a segmented strategy picker, the strategy's summary, the strategies it can pick and its nodes in
-  collapsible region groups; a manual strategy switches on click; the node pool opens in a panel),
+  (every strategy as a wrapping tag, the strategy's summary, the strategies it can pick and its nodes in
+  collapsible region groups; a manual strategy switches on click; New Strategy's menu makes one strategy
+  per chosen region at once, `addRegionStrategies`, optionally offered by the default strategy; the node
+  pool opens in a panel),
   Routing (my rules, routes with drag order, target menus and switches, rule-set status), Subscriptions
   (cards per source and an add card), Activity (live connections with filters, search and a rule for
   any row). Traffic and connections are read only while their page shows.

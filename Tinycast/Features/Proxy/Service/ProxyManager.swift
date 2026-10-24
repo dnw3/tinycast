@@ -60,6 +60,8 @@ final class ProxyManager {
     @ObservationIgnored private var generation = 0
 
     static let testTimeout = Duration.seconds(5)
+    /// As many at once as the core's own health check runs.
+    private static let parallelTests = 10
     static let tunLogName = "tun-core.log"
     private static let logger = Logger(subsystem: "com.tinycast", category: "Proxy")
 
@@ -279,8 +281,8 @@ final class ProxyManager {
         await refresh()
     }
 
-    /// Every enabled source's nodes, tested at once.
-    func testSources() async {
+    /// Every enabled source's nodes, tested at once; after a load, each that fails is tried again.
+    func testSources(afterLoad: Bool = false) async {
         guard let running = core, !isTestingSources else { return }
         isTestingSources = true
         defer { isTestingSources = false }
@@ -291,6 +293,7 @@ final class ProxyManager {
                 group.addTask { _ = try? await api.testProvider(provider) }
             }
         }
+        if afterLoad { await retestFailures(in: providers, on: api) }
         // A fastest-node strategy keeps its last pick a few seconds, through any new delays.
         for strategy in store.profile.strategies where strategy.kind == .urlTest {
             try? await api.unfix(strategy.name)
@@ -304,7 +307,28 @@ final class ProxyManager {
         previous?.cancel()
         firstTests = Task { [weak self] in
             await previous?.value
-            await self?.testSources()
+            await self?.testSources(afterLoad: true)
+        }
+    }
+
+    /// The core resets its DNS as a load ends, failing whatever lookups its first test has begun.
+    private func retestFailures(in providers: [String], on api: ProxyAPIService) async {
+        guard let reported = try? await api.providers() else { return }
+        let url = ProxyStrategy.defaultTestURL
+        let timeout = Self.testTimeout
+        let failures = providers.flatMap { provider in
+            (reported[provider]?.proxies ?? [])
+                .filter { ProxyDelay($0.tests[url] ?? $0.latest) == .failed }
+                .map { (node: $0.name, provider: provider) }
+        }
+        await withTaskGroup(of: Void.self) { group in
+            for (index, failure) in failures.enumerated() {
+                if index >= Self.parallelTests { _ = await group.next() }
+                group.addTask {
+                    _ = try? await api.testNode(
+                        failure.node, provider: failure.provider, url: url, timeout: timeout)
+                }
+            }
         }
     }
 

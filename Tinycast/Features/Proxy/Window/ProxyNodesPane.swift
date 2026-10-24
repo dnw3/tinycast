@@ -10,14 +10,17 @@ struct ProxyNodesPane: View {
 
     var body: some View {
         ProxyPage {
-            HStack(spacing: Theme.Spacing.md) {
-                ProxyStrategyPicker(strategies: profile.strategies, selection: selection)
-                Spacer(minLength: Theme.Spacing.md)
-                Button {
-                    openEditor(.strategy(ProxyStrategyDraft.new(in: profile, forRoute: nil)))
+            HStack(alignment: .top, spacing: Theme.Spacing.md) {
+                ProxyStrategyTags(strategies: profile.strategies, selection: selection)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                Menu {
+                    Button("By Region…") { openEditor(.regionStrategies) }
                 } label: {
                     Label("New Strategy", systemImage: "plus")
+                } primaryAction: {
+                    openEditor(.strategy(ProxyStrategyDraft.new(in: profile, forRoute: nil)))
                 }
+                .fixedSize()
                 Button("Node Pool…") { openEditor(.nodes(nil)) }
                     .help(Text("Every node the sources bring, whichever strategy uses it"))
             }
@@ -36,28 +39,52 @@ struct ProxyNodesPane: View {
     }
 }
 
-/// The strategies side by side while they fit, else in a pop-up menu.
-private struct ProxyStrategyPicker: View {
+/// Every strategy as a tag, wrapping onto another row as they grow, so none hides in a menu.
+private struct ProxyStrategyTags: View {
     let strategies: [ProxyStrategy]
     @Binding var selection: UUID
 
     var body: some View {
-        ViewThatFits(in: .horizontal) {
-            picker.pickerStyle(.segmented)
-            picker.pickerStyle(.menu)
+        ProxyWrapLayout {
+            ForEach(strategies) { strategy in
+                ProxyStrategyTag(strategy: strategy, isSelected: strategy.id == selection) {
+                    selection = strategy.id
+                }
+            }
         }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(Text("Strategy"))
+    }
+}
+
+private struct ProxyStrategyTag: View {
+    let strategy: ProxyStrategy
+    let isSelected: Bool
+    let select: () -> Void
+    @State private var isHovered = false
+
+    var body: some View {
+        Button(action: select) {
+            HStack(spacing: Theme.Spacing.sm) {
+                ProxyTintDot(tint: strategy.tint, size: Theme.Size.colorDot)
+                Text(strategy.name).lineLimit(1)
+            }
+            .font(.callout)
+            .padding(.horizontal, Theme.Spacing.lg)
+            .frame(height: 28)
+            .frame(maxWidth: 240)
+            .background(Capsule().fill(fill))
+            .overlay(Capsule().strokeBorder(isSelected ? strategy.tint.color.opacity(0.7) : .clear))
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .onHover { isHovered = $0 }
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
-    private var picker: some View {
-        Picker(selection: $selection) {
-            ForEach(strategies) { strategy in
-                Text(strategy.name).tag(strategy.id)
-            }
-        } label: {
-            Text("Strategy")
-        }
-        .labelsHidden()
-        .fixedSize()
+    private var fill: Color {
+        if isSelected { return strategy.tint.color.opacity(0.18) }
+        return isHovered ? Theme.Colors.controlHover : Theme.Colors.controlSurface
     }
 }
 
@@ -422,6 +449,8 @@ struct ProxyChip<Content: View>: View {
     var isInUse = false
     let tint: Color
     let delay: ProxyDelay?
+    /// A word where the delay goes, for a chip that has no delay to show.
+    var note: Text?
     var pick: (() -> Void)?
     @ViewBuilder let label: Content
     @State private var isHovered = false
@@ -440,7 +469,11 @@ struct ProxyChip<Content: View>: View {
         HStack(spacing: Theme.Spacing.sm) {
             label
             Spacer(minLength: Theme.Spacing.xs)
-            if let delay { ProxyDelayText(delay: delay, marksUntested: true).font(.caption) }
+            if let delay {
+                ProxyDelayText(delay: delay, marksUntested: true).font(.caption)
+            } else if let note {
+                note.font(.caption).foregroundStyle(.tertiary).fixedSize()
+            }
         }
         .font(.callout)
         .lineLimit(1)
