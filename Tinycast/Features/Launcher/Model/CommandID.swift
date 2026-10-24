@@ -28,6 +28,18 @@ enum CommandID: String, CaseIterable, Sendable {
     case analyzeDiskUsage = "command:analyze-disk-usage"
     case rebuildThumbnails = "command:rebuild-thumbnail-cache"
     case restartDock = "command:restart-dock"
+    case openProxy = "command:open-proxy"
+    case proxyNodes = "command:proxy-nodes"
+    case proxyRoutes = "command:proxy-routes"
+    case proxyStrategies = "command:proxy-strategies"
+    case addProxyRule = "command:add-proxy-rule"
+    case connectProxy = "command:connect-proxy"
+    case disconnectProxy = "command:disconnect-proxy"
+    case testProxyNodes = "command:test-proxy-nodes"
+    case updateProxySubscriptions = "command:update-proxy-subscriptions"
+    case proxyRuleMode = "command:proxy-rule-mode"
+    case proxyGlobalMode = "command:proxy-global-mode"
+    case proxyDirectMode = "command:proxy-direct-mode"
     case searchMenuItems = "command:search-menu-items"
     case switchWindows = "command:switch-windows"
     case switchWindowsBackwards = "command:switch-windows-backwards"
@@ -96,6 +108,18 @@ enum CommandID: String, CaseIterable, Sendable {
         case .analyzeDiskUsage: return "Disk Usage"
         case .rebuildThumbnails: return "Rebuild Thumbnail Cache"
         case .restartDock: return "Restart Dock"
+        case .openProxy: return "Open Proxy Window"
+        case .proxyNodes: return "Choose Proxy Node"
+        case .proxyRoutes: return "Proxy Routes"
+        case .proxyStrategies: return "Proxy Strategies"
+        case .addProxyRule: return "Add Proxy Rule"
+        case .connectProxy: return "Connect Proxy"
+        case .disconnectProxy: return "Disconnect Proxy"
+        case .testProxyNodes: return "Test Proxy Nodes"
+        case .updateProxySubscriptions: return "Update Proxy Subscriptions"
+        case .proxyRuleMode: return "Proxy Rule Mode"
+        case .proxyGlobalMode: return "Proxy Global Mode"
+        case .proxyDirectMode: return "Proxy Direct Mode"
         case .searchMenuItems: return "Search Menu Bar Items"
         case .switchWindows: return "Switch Windows"
         case .switchWindowsBackwards: return "Switch Windows Backwards"
@@ -151,6 +175,18 @@ enum CommandID: String, CaseIterable, Sendable {
         case .rebuildThumbnails: ["重建缩略图缓存", "Quick Look"]
         case .restartDock: ["重启程序坞", "Dock"]
         case .toggleClipboardRecording: ["暂停剪贴板记录", "恢复剪贴板记录"]
+        case .openProxy: ["代理窗口", "代理面板", "Proxy Window", "Proxy Dashboard"]
+        case .proxyNodes: ["选择节点", "切换节点", "节点", "Switch Node"]
+        case .proxyRoutes: ["分流", "分流规则", "Routing"]
+        case .proxyStrategies: ["策略", "策略组", "Proxy Groups"]
+        case .addProxyRule: ["添加分流规则", "添加规则", "Add Rule"]
+        case .connectProxy: ["开启代理", "打开代理", "连接 VPN", "VPN", "Proxy On"]
+        case .disconnectProxy: ["关闭代理", "断开 VPN", "VPN", "Proxy Off"]
+        case .testProxyNodes: ["节点测速", "测速", "延迟测试", "Speed Test"]
+        case .updateProxySubscriptions: ["更新订阅", "刷新订阅", "Refresh Subscriptions"]
+        case .proxyRuleMode: ["规则模式", "分流模式", "Rule Mode"]
+        case .proxyGlobalMode: ["全局模式", "全局代理", "Global Mode"]
+        case .proxyDirectMode: ["直连模式", "暂停代理", "Direct Mode"]
         default: []
         }
     }
@@ -183,6 +219,18 @@ enum CommandID: String, CaseIterable, Sendable {
         case .analyzeDiskUsage: return "chart.bar.doc.horizontal"
         case .rebuildThumbnails: return "photo.stack"
         case .restartDock: return "dock.rectangle"
+        case .openProxy: return "macwindow"
+        case .proxyNodes: return "network"
+        case .proxyRoutes: return "arrow.triangle.branch"
+        case .proxyStrategies: return "square.stack.3d.up"
+        case .addProxyRule: return "text.badge.plus"
+        case .connectProxy: return "network"
+        case .disconnectProxy: return "network.slash"
+        case .testProxyNodes: return "speedometer"
+        case .updateProxySubscriptions: return "arrow.triangle.2.circlepath"
+        case .proxyRuleMode: return "arrow.triangle.branch"
+        case .proxyGlobalMode: return "globe"
+        case .proxyDirectMode: return "arrow.right"
         case .searchMenuItems: return "menubar.rectangle"
         case .switchWindows, .switchWindowsBackwards: return "macwindow.on.rectangle"
         case .openCamera: return "camera"

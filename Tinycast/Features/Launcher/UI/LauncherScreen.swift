@@ -21,6 +21,7 @@ struct LauncherScreen: PaletteScreen {
     private let results: [AppEntry]
     private let calc: CalcResult?
     private let color: ColorValue?
+    private let proxyCard: ProxyLauncherCard?
     /// Only the empty query pins favorites — a category shows its sections without one of its own.
     private let pinsFavorites: Bool
     /// How many of `results` are pinned favorites; zero unless the section shows.
@@ -77,6 +78,8 @@ struct LauncherScreen: PaletteScreen {
         // After the calculator: `#FF5733` is never arithmetic, so the two can't both answer.
         let color = calc == nil && pinned == nil ? ColorValue.parse(vm.query) : nil
         let files = pinned == nil ? core.fileSearchCoordinator.launcherFiles(for: vm.query) : []
+        let proxyCard =
+            calc == nil && color == nil && pinned == nil ? core.proxyCoordinator.launcherCard(for: vm.query) : nil
         let fallbacks = core.fallbackCoordinator.entries(for: vm.query)
         let entries =
             results.map(Row.entry) + files.map(Row.file)
@@ -90,6 +93,7 @@ struct LauncherScreen: PaletteScreen {
         self.files = files
         self.fallbacks = fallbacks
         self.color = color
+        self.proxyCard = proxyCard
         self.pinsFavorites = pinsFavorites
         self.favoriteCount = pinsFavorites ? ordered.favoriteCount : 0
         self.meetingCount = pinsFavorites ? ordered.meetingCount : 0
@@ -99,6 +103,8 @@ struct LauncherScreen: PaletteScreen {
             self.rows = [.calc(calc)] + entries
         } else if let color {
             self.rows = [.color(color)] + entries
+        } else if let proxyCard {
+            self.rows = [.proxy(proxyCard)] + entries
         } else if let meeting {
             self.rows = [.meeting(meeting)] + entries
         } else {
@@ -111,6 +117,7 @@ struct LauncherScreen: PaletteScreen {
         case calc(CalcResult)
         case meeting(MeetingEvent)
         case color(ColorValue)
+        case proxy(ProxyLauncherCard)
         case entry(AppEntry)
         /// Prefixed, because an application's entry id is the same bundle path a file hit carries.
         case file(FileSearchResult)
@@ -122,6 +129,7 @@ struct LauncherScreen: PaletteScreen {
             case .calc: return "calc-card"
             case .meeting: return "meeting-card"
             case .color: return "color-card"
+            case .proxy: return "proxy-card"
             case .entry(let app): return app.id
             case .file(let result): return "file-" + result.id
             case .fallback(let fallback, _): return "fallback-" + fallback.id
@@ -139,6 +147,7 @@ struct LauncherScreen: PaletteScreen {
         switch row(at: clampedSelection) {
         case .calc: return String(localized: "Copy Answer")
         case .color: return String(localized: "Copy Color")
+        case .proxy(let card): return card.primaryActionTitle
         case .meeting(let meeting):
             return meeting.link == nil
                 ? String(localized: "Open in Calendar") : String(localized: "Join Meeting")
@@ -219,7 +228,7 @@ struct LauncherScreen: PaletteScreen {
 
     private func isCardSelected(_ selection: Int) -> Bool {
         switch row(at: selection) {
-        case .calc, .meeting, .color: return true
+        case .calc, .meeting, .color, .proxy: return true
         case .entry, .file, .fallback, nil: return false
         }
     }
@@ -227,6 +236,7 @@ struct LauncherScreen: PaletteScreen {
     private var leadCard: LauncherList.LeadCard? {
         if let calc { return .calc(calc) }
         if let color { return .color(color) }
+        if let proxyCard { return .proxy(proxyCard) }
         return meeting.map { .meeting($0, now: now) }
     }
 
@@ -242,6 +252,8 @@ struct LauncherScreen: PaletteScreen {
             return result.isActionable ? CalcActionsMenu.content(result: result, core: core) : nil
         case .color(let color):
             return ColorActionsMenu.content(color: color, core: core)
+        case .proxy(let card):
+            return ProxyLauncherCardActions.content(card: card, coordinator: core.proxyCoordinator)
         case .meeting(let meeting):
             return MeetingActionsMenu.content(meeting: meeting, core: core)
         case .entry(let app):
@@ -270,6 +282,7 @@ struct LauncherScreen: PaletteScreen {
         case .calc(let result): core.calculatorCoordinator.copyCalculatorResult(result)
         case .color(let color):
             core.clipboardCoordinator.copyColor(color, as: ColorFormat.primary(for: color))
+        case .proxy(let card): core.proxyCoordinator.activate(card)
         case .meeting(let meeting): core.calendarCoordinator.activateMeeting(id: meeting.id)
         case .entry(let app):
             core.launcherCoordinator.launch(

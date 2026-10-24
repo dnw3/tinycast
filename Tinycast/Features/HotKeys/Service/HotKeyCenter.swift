@@ -1,3 +1,4 @@
+import AppKit
 import Carbon.HIToolbox
 
 @MainActor
@@ -38,6 +39,16 @@ final class HotKeyCenter {
     private var nextCarbonID: UInt32 = 0
     private var eventHandler: EventHandlerRef?
     private let signature: OSType = 0x5459_4354  // FourCC "TYCT"
+    private static let eventTypes = [
+        EventTypeSpec(eventClass: OSType(kEventClassKeyboard), eventKind: UInt32(kEventHotKeyPressed)),
+        EventTypeSpec(eventClass: OSType(kEventClassKeyboard), eventKind: UInt32(kEventHotKeyReleased))
+    ]
+    /// The app's open menus: while one tracks, AppKit holds hot keys and the main queue back.
+    private var trackingMenus: [NSMenu] = []
+    private var menuObserver: MenuTrackingObserver?
+    private var menuPump: Timer?
+    /// Set by a delivered hot key whose action still needs the open menu, as a capture does.
+    private var holdsMenus = false
 
     /// While true every hotkey is soft-unregistered, so a recorder can capture combos.
     var isPaused = false {
@@ -99,12 +110,9 @@ final class HotKeyCenter {
 
     private func installEventHandlerIfNeeded() {
         guard eventHandler == nil, let dispatcher = GetEventDispatcherTarget() else { return }
-        var eventTypes = [
-            EventTypeSpec(
-                eventClass: OSType(kEventClassKeyboard), eventKind: UInt32(kEventHotKeyPressed)),
-            EventTypeSpec(
-                eventClass: OSType(kEventClassKeyboard), eventKind: UInt32(kEventHotKeyReleased))
-        ]
+        var eventTypes = Self.eventTypes
+        menuObserver = MenuTrackingObserver(
+            began: { [weak self] in self?.menuBegan($0) }, ended: { [weak self] in self?.menuEnded($0) })
         InstallEventHandler(
             dispatcher,
             { @MainActor call, event, userData in
@@ -115,6 +123,58 @@ final class HotKeyCenter {
             Unmanaged.passUnretained(self).toOpaque(),
             &eventHandler
         )
+    }
+
+    /// Keeps the menu a hot key was pressed over open until the returned call, from any thread.
+    func holdTrackingMenus() -> (@Sendable () -> Void)? {
+        guard !trackingMenus.isEmpty else { return nil }
+        holdsMenus = true
+        return { [weak self] in
+            // A tracking menu runs the main run loop's common modes but never the main queue.
+            CFRunLoopPerformBlock(CFRunLoopGetMain(), CFRunLoopMode.commonModes.rawValue) {
+                MainActor.assumeIsolated { self?.endMenuTracking() }
+            }
+            CFRunLoopWakeUp(CFRunLoopGetMain())
+        }
+    }
+
+    private func menuBegan(_ menu: NSMenu) {
+        trackingMenus.append(menu)
+        guard menuPump == nil else { return }
+        let pump = Timer(timeInterval: 0.05, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated { self?.deliverQueuedHotKeys() }
+        }
+        RunLoop.main.add(pump, forMode: .common)
+        menuPump = pump
+    }
+
+    private func menuEnded(_ menu: NSMenu) {
+        trackingMenus.removeAll { $0 === menu }
+        guard trackingMenus.isEmpty else { return }
+        menuPump?.invalidate()
+        menuPump = nil
+        holdsMenus = false
+    }
+
+    /// Hot keys pressed over an open menu, which AppKit queues until it closes, delivered at once.
+    private func deliverQueuedHotKeys() {
+        var types = Self.eventTypes
+        let queue = GetMainEventQueue()
+        var delivered = false
+        while let event = AcquireFirstMatchingEventInQueue(
+            queue, types.count, &types, OptionBits(kEventQueueOptionsNone))
+        {
+            RemoveEventFromQueue(queue, event)
+            SendEventToEventTarget(event, GetEventDispatcherTarget())
+            ReleaseEvent(event)
+            delivered = true
+        }
+        // Whatever the hot key opened needs the events the menu holds, unless its action kept it.
+        if delivered, !holdsMenus { endMenuTracking() }
+    }
+
+    private func endMenuTracking() {
+        for menu in trackingMenus { menu.cancelTrackingWithoutAnimation() }
     }
 
     fileprivate func handle(_ hotKeyID: EventHotKeyID, kind: UInt32, flagsRaw: UInt64) -> OSStatus {
@@ -132,5 +192,31 @@ final class HotKeyCenter {
             return OSStatus(eventNotHandledErr)
         }
         return noErr
+    }
+}
+
+/// Hears menus begin and end tracking as AppKit posts it, which a queued block would only after.
+@MainActor
+private final class MenuTrackingObserver: NSObject {
+    private let began: (NSMenu) -> Void
+    private let ended: (NSMenu) -> Void
+
+    init(began: @escaping (NSMenu) -> Void, ended: @escaping (NSMenu) -> Void) {
+        self.began = began
+        self.ended = ended
+        super.init()
+        let center = NotificationCenter.default
+        center.addObserver(
+            self, selector: #selector(menuBegan(_:)), name: NSMenu.didBeginTrackingNotification, object: nil)
+        center.addObserver(
+            self, selector: #selector(menuEnded(_:)), name: NSMenu.didEndTrackingNotification, object: nil)
+    }
+
+    @objc private func menuBegan(_ notification: Notification) {
+        if let menu = notification.object as? NSMenu { began(menu) }
+    }
+
+    @objc private func menuEnded(_ notification: Notification) {
+        if let menu = notification.object as? NSMenu { ended(menu) }
     }
 }

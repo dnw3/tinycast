@@ -57,4 +57,5 @@ final class HotKeyCenter {
         entries[id] = Entry(shortcut: shortcut, onKeyDown: onKeyDown, onKeyUp: onKeyUp)
     }
     func unregister(id: String) { entries[id] = nil }
+    func holdTrackingMenus() -> (@Sendable () -> Void)? { nil }
 }

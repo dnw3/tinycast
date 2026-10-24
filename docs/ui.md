@@ -385,6 +385,56 @@ with its header's chevron.
 
 ---
 
+## Proxy window
+
+Source: `Features/Proxy/Window/`.
+
+The proxy window is built the way Settings is: `AppWindowController` with `SettingsWindowChrome`, a
+`NavigationSplitView` whose sidebar ends in the connection status, and a bridged toolbar holding the
+page title, the mode's segmented control and a power toggle in the button style, so both read as glass
+toolbar controls. Content is cards — `Colors.cardFill` under a `cardStroke` hairline at `Radius.card`
+— on the window background, and its editors are the Settings editor panels, presented over this window.
+
+Colour is kept for strategies: a strategy's tint marks its dot, its lines and block in the flow map, the
+chip it picked and every target menu that names it. The flow map's blocks and pills sit on
+`Colors.windowSurface`, so a line meets a block's edge instead of running under it; a site test lights
+one row's path and fades the rest, red when the test could not connect. Delays read green under 150 ms,
+`Colors.warning` above, red on a timeout and grey untested.
+
+The Nodes page names each strategy in a tag that wraps onto another row (`ProxyWrapLayout`); the
+selected tag takes its strategy's tint. Strategies made by region fold into one more tag, Region
+Strategies, whose menu lists them with the node each reaches; it names the one picked from it, so a
+score of regions never fills the page. Among a strategy's options they fold the same way, into one row
+(`ProxyFoldHeader`, the region list's own) that shows the quickest of their delays, opens onto their
+chips and starts open only while they are few (`unfoldedRegions`). New Strategy is a pull-down whose
+primary action makes one strategy and whose menu opens the by-region panel, which lists the regions the
+nodes are in, the largest first.
+
+A target menu (`ProxyTargetMenu`), every target picker in the editors (`ProxyTargetPicker`) and the
+strategy editor's Add Option menu list strategies under a Strategies header with the ones made by region
+(`ProxyStrategy.soleRegion`) under their own, and put the node each one reaches now and its delay in a
+trailing badge (`ProxyStrategyOption`). A region strategy is named after its region, so with its node
+written beside it in the title the menu read as a list of nodes; the header and the badge keep the two
+apart. For the same reason a strategy card's chip for a region strategy leaves its node's flag off. A
+`Button` in a menu hides its label's icon unless it asks for `.labelStyle(.titleAndIcon)`; a picker's
+option shows it either way.
+
+A region strategy's name carries its region's emoji flag, and none for Taiwan, whose emoji a
+China-region Mac blanks. Every view therefore draws the region's flag and shows the name without the
+emoji (`ProxyStrategy.bareName`): `ProxyStrategyName` in the window, a `.flag` leading in the launcher's
+rows, the flag image in menus. The launcher's screens and the menu bar group region strategies the way
+the menus do, the menu bar under one Region Strategies submenu.
+
+Nodes are one-line chips (`ProxyChip`) in collapsible region groups (`ProxyRegionList`): a long list
+opens only the region holding the node in use, a short one opens whole. A chip shows the name's short
+title and the provider's note after it in grey (`ProxyNodeName`), its pick as a tinted fill, and the
+node traffic actually uses through another strategy as a tinted outline. A node shows its region's
+flag; Taiwan's is drawn by `ProxyFlagArtwork` in the emoji's manner, since a China-region Mac blanks the
+emoji, and plain text (`ProxyRegion.flag`, `Node.label`) leaves it out. Menu bar images set
+`preferredImageVisibility = .visible` on macOS 27, which otherwise hides them.
+
+---
+
 ## Translation panel
 
 Source: `Features/Translation/UI/`.

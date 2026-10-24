@@ -206,6 +206,30 @@ final class LauncherCoordinator {
         case .restartDock:
             dismissPalette()
             core.cleanupCoordinator.runMaintenance(.restartDock)
+        case .openProxy:
+            core.proxyCoordinator.showWindow()
+        case .proxyNodes:
+            core.proxyCoordinator.showNodes()
+        case .proxyRoutes:
+            core.proxyCoordinator.showWindow(page: .routes)
+        case .proxyStrategies:
+            core.proxyCoordinator.showWindow(page: .nodes)
+        case .addProxyRule:
+            core.proxyCoordinator.showRuleEditor()
+        case .connectProxy:
+            core.proxyCoordinator.connect()
+        case .disconnectProxy:
+            core.proxyCoordinator.disconnect()
+        case .testProxyNodes:
+            core.proxyCoordinator.testAllNodes()
+        case .updateProxySubscriptions:
+            core.proxyCoordinator.updateSubscriptions()
+        case .proxyRuleMode:
+            core.proxyCoordinator.setMode(.rule)
+        case .proxyGlobalMode:
+            core.proxyCoordinator.setMode(.global)
+        case .proxyDirectMode:
+            core.proxyCoordinator.setMode(.direct)
         case .searchMenuItems:
             menuSearchCoordinator.show()
         case .switchWindows:

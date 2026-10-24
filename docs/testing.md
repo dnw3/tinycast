@@ -175,6 +175,10 @@ If a change touches anything in the right column, the harness on the left is man
 | `cleanup-test` | everything in `Cleanup/Model/`, and `Uninstall/Model/UninstallProtection.swift` |
 | `cleanup-walk-test` | `Cleanup/Model/`, every scanner and `CleanupRunner` in `Cleanup/Service/`, `CleanupSettingsStore`, `ToolRunner` and `ExecutableLocator` — against a scratch home |
 | `uninstall-coordinator-test` | Confirmation and the post-confirmation quit gate; recorded quit and Trash effects only |
+| `proxy-test` | all of `Proxy/Model/` — region names, profile coding, modes and recommended routes, validation, my rules, their matcher and the rules a typed site offers, launcher hints, pool previews, the rule catalog, rule-set link detection, flow and activity projections, probe log parsing, the generated mihomo config |
+| `proxy-api-test` | `Proxy/Model/` and `ProxyCoreRunner` — controller HTTP framing and streams, payload decoding, the snapshot and the node a strategy reaches, the restart policy, `-t` output, release feeds, digests and which core runs |
+| `proxy-service-test` | `ProxySocket`, `ProxyAPIService`, `ProxyCoreRunner`, `ProxyCoreInstaller` and `ProxyStore` — against an in-process fake controller, scratch directories, a throwaway keychain scope and fake core scripts |
+| `proxy-helper-test` | the TUN helper without installing it — its layout, grant and config policy, the install and uninstall scripts (AppleScript evaluates the literal, `sh -n` parses the shell), and the supervisor behind an anonymous XPC listener: core handover by digest, node files, start and reload, a crash and its restart, DNS placeholder and restore on a fake system DNS, Tinycast leaving, a relaunch in the same or a new boot, and refused peers. The core it runs is the harness binary itself |
 | `quicklink-test` | all of `Quicklinks/Model/`, plus editor drafts and placeholder selection |
 | `quicklink-coordinator-test` | Opening and requested arguments, launcher editing, current enabled-state preservation, deletion during editing and feature gates; no platform effects or on-screen focus checks |
 | `apple-shortcut-test` | all of `AppleShortcuts/Model/` — the `shortcuts list` parser and entry ids |
@@ -224,6 +228,14 @@ A harness that passed before a change passes after it. There is no "I'll fix it 
 commenting out a case. If a change genuinely invalidates an assertion, the assertion is rewritten in the
 same commit with the reason in the message.
 
+`Scripts/proxy-smoke.sh` stays out of the suite: it runs the real pinned core on six loopback ports
+and takes about 15 s. Run it after changing what the core is handed or how it is run —
+`ProxyConfigBuilder`, `Proxy/Service/`, `Vendor/mihomo/` — and before committing a core upgrade, which
+`Scripts/upgrade-mihomo.sh` does for you. Besides routing, reloads and core updates it covers the three
+modes, a site probe, connections and traffic, picks and route targets surviving a later refresh, a node
+file reread in place, and every route's rule set downloading and updating on request. Its `run index proxy-smoke` entry only feeds the
+editor.
+
 ### Purity checks
 
 The layering rule reduces to one grep, and it must return nothing:
@@ -243,6 +255,7 @@ when touching a pure file:
 - `Features/PaletteRowIndex.swift` still imports Foundation alone, despite living under `Features/`
 - `Quicklinks/Model/` is still handed the home directory rather than reading it
 - `FileSearch/Model/` is still handed the home directory rather than reading it
+- `Proxy/Model/` is still handed new ids and subscription URLs, and reads neither the keychain nor the disk
 
 ## Build and size checks
 

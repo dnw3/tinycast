@@ -33,10 +33,8 @@ enum CaptureScreenService {
             $0.processID == ownPID || scrolling && $0.bundleIdentifier == "com.apple.dock"
         }
         let excludedPIDs = Set(excluded.map(\.processID))
-        let filter = SCContentFilter(
-            display: display, excludingApplications: excluded,
-            exceptingWindows: content.windows.filter { includedWindowIDs.contains($0.windowID) })
-        filter.includeMenuBar = true
+        let filter = Self.filter(
+            on: display, of: content, excluding: excluded, includedWindowIDs: includedWindowIDs)
         return Target(
             display: display, filter: filter,
             windows: content.windows.filter {
@@ -53,6 +51,49 @@ enum CaptureScreenService {
     ) async throws -> CGImage {
         try Task.checkCancellation()
         let filter = window.map { SCContentFilter(desktopIndependentWindow: $0) } ?? target.filter
+        let configuration = try Self.configuration(
+            for: filter, rect: rect, cursor: cursor, presentation: presentation)
+        let output = try await SCScreenshotManager.captureScreenshot(
+            contentFilter: filter, configuration: configuration)
+        try Task.checkCancellation()
+        guard let image = output.sdrImage else { throw Failure.unavailable }
+        return image
+    }
+
+    /// The display as it stands, Tinycast's open menu too, taken while the main actor waits it out.
+    @concurrent
+    static func imageOverMenu(
+        displayID: CGDirectDisplayID, includedWindowIDs: Set<CGWindowID>, cursor: Bool
+    ) async throws -> CGImage {
+        let content = try await SCShareableContent.excludingDesktopWindows(true, onScreenWindowsOnly: false)
+        guard let display = content.displays.first(where: { $0.displayID == displayID }) else {
+            throw Failure.displayChanged
+        }
+        let ownPID = ProcessInfo.processInfo.processIdentifier
+        let filter = Self.filter(
+            on: display, of: content, excluding: content.applications.filter { $0.processID == ownPID },
+            includedWindowIDs: includedWindowIDs)
+        let configuration = try Self.configuration(for: filter, rect: nil, cursor: cursor, presentation: true)
+        let output = try await SCScreenshotManager.captureScreenshot(
+            contentFilter: filter, configuration: configuration)
+        guard let image = output.sdrImage else { throw Failure.unavailable }
+        return image
+    }
+
+    nonisolated private static func filter(
+        on display: SCDisplay, of content: SCShareableContent, excluding excluded: [SCRunningApplication],
+        includedWindowIDs: Set<CGWindowID>
+    ) -> SCContentFilter {
+        let filter = SCContentFilter(
+            display: display, excludingApplications: excluded,
+            exceptingWindows: content.windows.filter { includedWindowIDs.contains($0.windowID) })
+        filter.includeMenuBar = true
+        return filter
+    }
+
+    nonisolated private static func configuration(
+        for filter: SCContentFilter, rect: CGRect?, cursor: Bool, presentation: Bool
+    ) throws -> SCScreenshotConfiguration {
         let configuration = SCScreenshotConfiguration()
         configuration.showsCursor = cursor
         configuration.ignoreShadows = !presentation
@@ -63,11 +104,7 @@ enum CaptureScreenService {
         configuration.width = Int((bounds.width * CGFloat(filter.pointPixelScale)).rounded())
         configuration.height = Int((bounds.height * CGFloat(filter.pointPixelScale)).rounded())
         _ = try CapturePixelSize(width: configuration.width, height: configuration.height)
-        let output = try await SCScreenshotManager.captureScreenshot(
-            contentFilter: filter, configuration: configuration)
-        try Task.checkCancellation()
-        guard let image = output.sdrImage else { throw Failure.unavailable }
-        return image
+        return configuration
     }
 
     static func window(at point: CGPoint, target: Target) -> SCWindow? {

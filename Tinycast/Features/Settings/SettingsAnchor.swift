@@ -127,6 +127,17 @@ extension SettingsAnchor {
     static let calendarMenuBar = Self(tab: .calendar, title: "Menu Bar")
     static let calendarCalendars = Self(tab: .calendar, title: "Calendars")
 
+    static let proxyProxy = Self(tab: .proxy, title: "Proxy")
+    static let proxyWindow = Self(tab: .proxy, title: "Proxy Window")
+    static let proxyConnection = Self(tab: .proxy, title: "Connection")
+    static let proxyMenuBar = Self(tab: .proxy, title: "Menu Bar")
+    static let proxyTUN = Self(tab: .proxy, title: "TUN")
+    static let proxyDNS = Self(tab: .proxy, title: "DNS")
+    static let proxyCore = Self(tab: .proxy, title: "Core")
+    static let proxyUpdates = Self(tab: .proxy, title: "Subscription Updates")
+    static let proxyAdvanced = Self(tab: .proxy, title: "Advanced")
+    static let proxyCommands = Self(tab: .proxy, title: "Commands")
+
     static let extensionsExtensions = Self(tab: .extensions, title: "Extensions")
     static let extensionsCompatibility = Self(tab: .extensions, title: "Compatibility")
     static let extensionsInstalled = Self(

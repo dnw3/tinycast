@@ -85,6 +85,7 @@ final class CaptureCoordinator {
         if recording != nil { finishRecording(); return }
         if scroll != nil { finishScroll(); return }
         if workspace != nil { return }
+        let overMenu = snapshotOverMenu(for: command)
         run { [weak self] in
             guard let self else { return }
             if command == .captureHistory { try await self.loadHistory(); return }
@@ -116,7 +117,8 @@ final class CaptureCoordinator {
             }
             guard let screen = NSScreen.underCursor else { return }
             try await Signposts.interval("Capture Prepare") {
-                try await self.prepare(screen: screen, command: command, keepingPalette: fromShortcut)
+                try await self.prepare(
+                    screen: screen, command: command, keepingPalette: fromShortcut, overMenu: overMenu)
             }
             CapturePerformance.completed("selection-ready", since: started)
         }

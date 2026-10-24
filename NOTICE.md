@@ -10,6 +10,14 @@ Google Inc. and the WebP project contributors, under the BSD-style license in `V
 The unmodified license and additional patent grant are included in the app resources as `COPYING`
 and `PATENTS`. Source, version, checksum and integration details are recorded in `Vendor/README.md`.
 
+## mihomo v1.19.33
+
+The proxy feature runs the official mihomo release build, copyright the MetaCubeX contributors, as a
+separate program in `Contents/Helpers/mihomo`. It is licensed under the GNU General Public License v3,
+whose text is included in the app resources as `mihomo-LICENSE`. The complete source of this version
+is at https://github.com/MetaCubeX/mihomo/tree/v1.19.33; version and checksums are pinned in
+`Vendor/mihomo/core.env`.
+
 ## Dictation model resources
 
 Tinycast's dictation code uses Apple's frameworks only. No speech model is bundled with the app.

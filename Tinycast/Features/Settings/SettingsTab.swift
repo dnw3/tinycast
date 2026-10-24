@@ -1,7 +1,7 @@
 enum SettingsTab: CaseIterable, Identifiable {
     case general, applications, systemSettings, systemActions, commands, quicklinks, appleShortcuts,
         fallbacks, clipboard, snippets, fileSearch, cleanup, windowManagement, navigation, notes, calendar, emoji,
-        dictation, capture, translation, ai, quickActions, extensions, permissions, backup, about
+        dictation, capture, translation, ai, quickActions, proxy, extensions, permissions, backup, about
     /// The case, never an index: a selectable `List` flattens section and row IDs together.
     var id: Self { self }
 
@@ -17,6 +17,7 @@ enum SettingsTab: CaseIterable, Identifiable {
         case .fallbacks: return String(localized: "Fallbacks")
         case .ai: return String(localized: "AI")
         case .quickActions: return String(localized: "Quick Actions")
+        case .proxy: return String(localized: "Proxy")
         case .dictation: return String(localized: "Dictation")
         case .capture: return String(localized: "Capture")
         case .translation: return String(localized: "Translation")
@@ -48,6 +49,7 @@ enum SettingsTab: CaseIterable, Identifiable {
         case .fallbacks: return "arrow.turn.down.right"
         case .ai: return "sparkles"
         case .quickActions: return "wand.and.sparkles"
+        case .proxy: return "network"
         case .dictation: return "waveform"
         case .capture: return "viewfinder"
         case .translation: return "translate"
@@ -95,7 +97,7 @@ enum SettingsSection: CaseIterable, Identifiable {
             // Everyday tools first; AI and extensions are opt-in extras.
             return [
                 .clipboard, .snippets, .fileSearch, .cleanup, .windowManagement, .navigation, .notes,
-                .calendar, .emoji, .dictation, .capture, .translation, .ai, .quickActions, .extensions
+                .calendar, .emoji, .dictation, .capture, .translation, .ai, .quickActions, .proxy, .extensions
             ]
         case .advanced: return [.backup, .about]
         }
