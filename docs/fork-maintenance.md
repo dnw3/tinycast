@@ -310,7 +310,7 @@ Dev 不通过应用内更新器更新，继续使用本分支的新代码需要�
 | 自动检查 | 137 个 harness 中 135 个通过，`form-input-test`、`cleanup-walk-test` 为本机已知失败；Debug 构建通过，Swift 警告 0；lint 通过 |
 | 原生验收 | 未在本机界面上验证听写提示音 |
 | 证据 | 合并提交说明 |
-| 发布 | 同日发布 [v1.4.1](https://github.com/dnw3/tinycast/releases/tag/v1.4.1)（`aeaf3b55`，arm64 zip 12 MB，CI 通过）；本机已换装同一提交的签名 Release，签名叶证书不变 |
+| 发布 | 本轮未发版；上一轮 2026-10-23 发布 [v1.4.1](https://github.com/dnw3/tinycast/releases/tag/v1.4.1)（`aeaf3b55`，arm64 zip 12 MB，CI 通过）；本机已换装同一提交的签名 Release，签名叶证书不变 |
 | 后续 | 同日发布 [v1.1.0](https://github.com/dnw3/tinycast/releases/tag/v1.1.0)（`68813796`，arm64 zip 11 MB，CI 通过）：主程序与 4 个 helper（含 `FileIndexHelper`）均由 `Tinycast Self-Signed` 签名并启用 hardened runtime；本机经应用内更新升级到 1.1.0，签名叶证书不变、无隔离标记。2026-10-18 发布 [v1.2.0](https://github.com/dnw3/tinycast/releases/tag/v1.2.0)（`2e519584`，arm64 zip 11 MB）：新增 Disk Cleanup，统一截图与翻译界面；仓库 Actions 被停用，此版未经 CI，以本机全量 harness、lint 与 Debug / Release 构建为准；发版前 `Tinycast Self-Signed` 的代码签名信任曾丢失，已重新设为受信任。同日发布 [v1.2.1](https://github.com/dnw3/tinycast/releases/tag/v1.2.1)（`f268b752`，arm64 zip 11 MB，CI 通过）：清理 / 截图 / 翻译的体验打磨、参照 Maccy 的剪贴板改进与富文本、「语言」设置行；Actions 已重新启用。2026-10-20 发布 [v1.3.0](https://github.com/dnw3/tinycast/releases/tag/v1.3.0)（`655f90a3`，arm64 zip 11 MB，未同步上游）：AI Chat 的 Agent 模式（Claude Code / Codex，内联审批、等待提醒、步骤详情），长截图重写滚动拼接并支持 Tinycast 自身窗口，截图结果编辑器改版；本机全量 harness 122/124（`form-input-test`、`cleanup-walk-test` 为已知失败）、lint 与 Release 构建通过 |
 
 下次同步时更新本节的日期、上游 SHA、改动摘要、验证范围与证据链接；旧证据文件保留，便于回溯。
