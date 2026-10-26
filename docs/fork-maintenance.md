@@ -301,15 +301,15 @@ Dev 不通过应用内更新器更新，继续使用本分支的新代码需要�
 
 ## 最近一次源码同步
 
-| 项目 | 2026-10-23 记录 |
+| 项目 | 2026-10-26 记录 |
 | --- | --- |
-| 上游基线 | `6029038f`（上一轮 2026-10-14 `57e29b49`） |
-| 同步方式 | 同步 PR #4（47 个上游提交）有 184 个冲突文件，本地 merge `origin/upstream-main` 后推送 `main` |
-| 吸收的上游改动 | 8 种语言的原生本地化与应用内语言选择（#1620）、启动器 Files 分区、剪贴板文本原地编辑与图片小副本、Switch Windows 的 ⌘K 与反向命令、网关模型推理等级、AI 连接自定义请求头、听写提示音、「显示动画」开关、原生窗口弹出动画、卸载使用完全磁盘访问，以及多项修复 |
-| 主要适配 | 本地化改用上游机制：共有文案取上游译文，只做过本地化的 172 个文件取上游版本，删除我们的 `+Localization` 扩展、`check-localization.js`、`sync-localization.sh`、`localization-test`、`CalcFailure` 和跳转系统设置的「语言」行；fork 独有文案的中文统一为上游的「拷贝」「点按」，并机翻补齐另外 7 种语言（未经人工校对）。Agent 模式、Maccy 式剪贴板（与上游原地编辑合并：编辑会清掉 RTF、重算 `content_hash`）、Capture / Translation / Cleanup 接入保留；上游剪贴板缩略图模式并入 `TextRecognitionHelper`，#1665 的翻译语言地区匹配移植到 `AppleTranslationService` |
-| 自动检查 | 132 个 harness 中 130 个通过，`form-input-test`、`cleanup-walk-test` 为本机已知失败；Debug / Release 通过，Swift 警告 0；lint 通过（110 项既有警告，合并前 165） |
-| 原生验收 | 未在本机界面上验证；语言切换、Agent 模式、剪贴板编辑与缩略图、截图翻译待复验 |
-| 证据 | 合并提交与补译提交说明 |
+| 上游基线 | `21f4b901`（上一轮 2026-10-23 `6029038f`） |
+| 同步方式 | 同步 PR #5（2 个上游提交）在 `project.pbxproj` 与 `docs/development.md` 冲突，本地 merge `origin/upstream-main` 后推送 `main` |
+| 吸收的上游改动 | 听写提示音改用系统 `AssistantServices.framework` 的 `dt-begin.caf` / `dt-confirm.caf`，删除自带 WAV 与 `gen-dictation-sounds.js`，新增 `dictation-cue-test`（#1698）；README 与官网内容更新 |
+| 主要适配 | `project.pbxproj` 取上游后 `xcodegen generate`；`development.md` 保留 `gen-proxy-rules.js` 说明，删去听写音生成段 |
+| 自动检查 | 137 个 harness 中 135 个通过，`form-input-test`、`cleanup-walk-test` 为本机已知失败；Debug 构建通过，Swift 警告 0；lint 通过 |
+| 原生验收 | 未在本机界面上验证听写提示音 |
+| 证据 | 合并提交说明 |
 | 发布 | 同日发布 [v1.4.1](https://github.com/dnw3/tinycast/releases/tag/v1.4.1)（`aeaf3b55`，arm64 zip 12 MB，CI 通过）；本机已换装同一提交的签名 Release，签名叶证书不变 |
 | 后续 | 同日发布 [v1.1.0](https://github.com/dnw3/tinycast/releases/tag/v1.1.0)（`68813796`，arm64 zip 11 MB，CI 通过）：主程序与 4 个 helper（含 `FileIndexHelper`）均由 `Tinycast Self-Signed` 签名并启用 hardened runtime；本机经应用内更新升级到 1.1.0，签名叶证书不变、无隔离标记。2026-10-18 发布 [v1.2.0](https://github.com/dnw3/tinycast/releases/tag/v1.2.0)（`2e519584`，arm64 zip 11 MB）：新增 Disk Cleanup，统一截图与翻译界面；仓库 Actions 被停用，此版未经 CI，以本机全量 harness、lint 与 Debug / Release 构建为准；发版前 `Tinycast Self-Signed` 的代码签名信任曾丢失，已重新设为受信任。同日发布 [v1.2.1](https://github.com/dnw3/tinycast/releases/tag/v1.2.1)（`f268b752`，arm64 zip 11 MB，CI 通过）：清理 / 截图 / 翻译的体验打磨、参照 Maccy 的剪贴板改进与富文本、「语言」设置行；Actions 已重新启用。2026-10-20 发布 [v1.3.0](https://github.com/dnw3/tinycast/releases/tag/v1.3.0)（`655f90a3`，arm64 zip 11 MB，未同步上游）：AI Chat 的 Agent 模式（Claude Code / Codex，内联审批、等待提醒、步骤详情），长截图重写滚动拼接并支持 Tinycast 自身窗口，截图结果编辑器改版；本机全量 harness 122/124（`form-input-test`、`cleanup-walk-test` 为已知失败）、lint 与 Release 构建通过 |
 

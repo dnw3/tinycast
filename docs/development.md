@@ -229,10 +229,6 @@ node Scripts/gen-proxy-rules.js      # -> Tinycast/Features/Proxy/Model/ProxyRul
 `gen-proxy-rules.js` lists every geosite and geoip set MetaCubeX/meta-rules-dat ships as `.mrs`. It only
 powers the route library's search and its offline check of a typed name; run it occasionally.
 
-`node Scripts/gen-dictation-sounds.js` synthesizes Dictation's start and stop chimes into
-`Tinycast/Resources/DictationStart.wav` and `DictationStop.wav`. It needs no network and writes the same
-bytes every run; change the notes or levels in the script, never the WAV files.
-
 `gen-emoji.js` also writes one CLDR keyword pack per language in its `KEYWORD_LOCALES`; adding a
 language is one line there. Pass a directory to keep the downloads between runs:
 `node Scripts/gen-emoji.js /tmp/emoji-sources`.
