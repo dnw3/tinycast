@@ -420,32 +420,29 @@ struct ProxyStrategyEditor: View {
     private func save() {
         strategy.name = strategy.name.trimmingCharacters(in: .whitespaces)
         var candidate = profile
-        if let index = candidate.strategies.firstIndex(where: { $0.id == strategy.id }) {
-            candidate.strategies[index] = strategy
-        } else {
-            candidate.strategies.append(strategy)
-        }
+        Self.apply(strategy, route: nil, to: &candidate)
         if let problem = candidate.problems.first(where: { $0.subject == .strategy(strategy.id) }) {
             error = problem.message(in: candidate)
             return
         }
-        let strategy = strategy
+        let saved = strategy
         let route = route
-        guard
-            coordinator.update({ profile in
-                if let index = profile.strategies.firstIndex(where: { $0.id == strategy.id }) {
-                    profile.strategies[index] = strategy
-                } else {
-                    profile.strategies.append(strategy)
-                }
-                guard let route else { return }
-                if route == ProxyRoute.finalID {
-                    profile.finalTarget = .strategy(strategy.id)
-                } else if let index = profile.routes.firstIndex(where: { $0.id == route }) {
-                    profile.routes[index].target = .strategy(strategy.id)
-                }
-            })
-        else { return }
+        guard coordinator.update({ Self.apply(saved, route: route, to: &$0) }) else { return }
         close()
+    }
+
+    /// Kept out of `save`'s closure: Swift 6.3 crashes on the closures nested inside it.
+    private static func apply(_ strategy: ProxyStrategy, route: String?, to profile: inout ProxyProfile) {
+        if let index = profile.strategies.firstIndex(where: { $0.id == strategy.id }) {
+            profile.strategies[index] = strategy
+        } else {
+            profile.strategies.append(strategy)
+        }
+        guard let route else { return }
+        if route == ProxyRoute.finalID {
+            profile.finalTarget = .strategy(strategy.id)
+        } else if let index = profile.routes.firstIndex(where: { $0.id == route }) {
+            profile.routes[index].target = .strategy(strategy.id)
+        }
     }
 }
