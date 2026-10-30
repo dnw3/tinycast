@@ -16,8 +16,9 @@ concurrency is required. Prefer the latest Swift patterns and modern Apple APIs,
 
 Verify API and language-feature availability against the SDK and compiler used by the build and CI.
 Use direct availability checks where macOS 27+ APIs require them to preserve macOS 26 support. Do not
-introduce compatibility layers, legacy workarounds, support below macOS 26, migration scaffolding or
-speculative fallbacks.
+introduce compatibility layers, legacy workarounds, support below macOS 26 or speculative fallbacks.
+Migration code lives only in `Migrations/` and is deleted after one stable release; see
+[migrations.md](migrations.md).
 
 In practice that means Observation and never `ObservableObject` or `@Published`; `SMAppService` and
 never an `LSSharedFileList` shim. Adopt successors directly and delete obsolete call sites rather
@@ -89,6 +90,8 @@ fit the table.
 | `Remapper`    | Keeps one HID key mapping on every matching device, including later arrivals  |
 | `Tracker`     | A value that follows a moving input sample by sample and says what each adds  |
 | `Recorder`    | Writes an input's samples to disk as they arrive, for replay after the fact   |
+| `Migration`   | Repairs state an older release left behind; deleted after one stable release  |
+| `Lock`        | Holds a cross-process exclusive claim that the kernel frees on exit           |
 
 `Manager` is the one worth thinking twice about. It means _lifecycle plus policy_, which is a lot for one
 type, so there are only four: `ClipboardManager` (polls, and owns the capture policy and the

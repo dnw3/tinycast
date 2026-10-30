@@ -167,8 +167,8 @@ enum SettingsSearchCatalog {
             .generalAppearance, "Window mode",
             keywords: ["compact", "expanded", "slim", "search bar", "small"]),
         .init(
-            .generalAppearance, "Show favorites in compact mode",
-            keywords: ["pinned", "apps", "compact"]),
+            group: .generalCompactShortcuts, "Compact Shortcuts",
+            keywords: ["slots", "buttons", "reorder", "clipboard", "emoji", "notes", "schedule", "quick ai"]),
         .init(
             .generalAppearance, "Follow the cursor across displays",
             keywords: ["monitor", "screen", "pointer", "multi display"]),
@@ -502,6 +502,9 @@ enum SettingsSearchCatalog {
         .init(
             .notesOptions, "Show Formatting Bar",
             keywords: ["toolbar", "format bar", "buttons", "bold", "heading", "markdown"]),
+        .init(
+            .notesOptions, "Show in Menu Bar",
+            keywords: ["status bar", "menu bar icon", "status item", "toolbar icon"]),
         .init(
             .notesOptions, "Notes Folder",
             keywords: ["location", "path", "dotfiles", "files", "markdown"]),
