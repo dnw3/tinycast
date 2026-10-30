@@ -19,7 +19,12 @@ struct CompactBarTests {
         check(
             defaults == [.clipboardHistory, .searchEmoji, .searchFiles, .searchQuicklinks],
             "the always-on commands lead the default")
-        check(CommandID.compactBarOptions.count == 8, "eight supported destinations")
+        check(
+            CommandID.compactBarOptions.count == 8 + CommandID.forkCompactBarOptions.count,
+            "eight supported destinations, plus the fork's")
+        check(
+            Set(CommandID.compactBarOptions).count == CommandID.compactBarOptions.count,
+            "each destination is offered once")
         for count in 0...CommandID.compactBarLimit {
             let commands = Array(defaults.prefix(count))
             var selection = CompactBarSelection()

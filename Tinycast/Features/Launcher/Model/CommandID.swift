@@ -83,7 +83,12 @@ enum CommandID: String, CaseIterable, Sendable {
     static let compactBarOptions: [CommandID] =
         defaultCompactBarCommands + [
             .searchSnippets, .showNotes, .mySchedule, .quickAI
-        ]
+        ] + forkCompactBarOptions
+
+    /// Kept apart from upstream's list so a sync touches only the line that appends it.
+    static let forkCompactBarOptions: [CommandID] = [
+        .captureScreenshot, .translate, .proxyNodes, .cleanUpDisk, .aiChat
+    ]
 
     static let compactBarLimit = 4
 
