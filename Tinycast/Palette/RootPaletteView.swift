@@ -408,19 +408,24 @@ struct RootPaletteView: View {
 
     /// Split from `body` for the same reason `keyHandlers` is: one chain cannot carry them all.
     @ViewBuilder
-    private func stateObservers(_ content: some View) -> some View {
-        emojiObservers(content)
-            // Every show bumps focusToken so the search field refocuses.
-            .onChange(of: vm.focusToken) {
-                resetCompactSelection()
-                focusSearchField()
-            }
+    /// The compact bar's observers, split out so `stateObservers` stays within type-checker reach.
+    private func compactObservers(_ content: some View) -> some View {
+        content
             .onChange(of: vm.isVisible) { resetCompactSelection() }
             .onChange(of: vm.isComposing) {
                 if vm.isComposing { resetCompactSelection() }
             }
             .onChange(of: compactCommands) {
                 compactSelection.reconcile(commands: compactCommands)
+            }
+    }
+
+    private func stateObservers(_ content: some View) -> some View {
+        compactObservers(emojiObservers(content))
+            // Every show bumps focusToken so the search field refocuses.
+            .onChange(of: vm.focusToken) {
+                resetCompactSelection()
+                focusSearchField()
             }
             // A preserved screen re-summons as it was left, so a menu must end with the palette.
             .modifier(PaletteHideObserver { if menuOpen { closeMenus() } })
