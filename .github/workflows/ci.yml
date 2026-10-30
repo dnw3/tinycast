@@ -23,6 +23,9 @@ jobs:
     timeout-minutes: 75
     steps:
       - uses: actions/checkout@v7
+        with:
+          # check-migrations compares each migration against the release tags.
+          fetch-depth: 0
 
       - name: Select the newest Xcode
         run: |
