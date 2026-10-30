@@ -94,8 +94,11 @@ Capture 仍有原生验收未关闭。以[交付状态](plans/capture-delivery-s
 
 CI 只覆盖自动检查。合并后按需从 `main` 重新构建安装，原生验收仍手动进行。
 
-CI runner 使用它上面最新的 Xcode（2026-10 为 Xcode 26.6 / Swift 6.3），比本机的 Xcode 27 旧，
-也与上游 release 构建一致；本机能编过、CI 编不过时，按旧编译器的限制改写代码，不要在 CI 里换版本绕过。
+CI runner 使用它上面最新的 Xcode（2026-10 为 Xcode 26.6 / Swift 6.3），比本机的 Xcode 27 旧；
+上游 release 自 `37e6043f` 起在自有的 `xcode-27` runner 上构建，fork 用不了。本机能编过、CI 编不过时，
+按旧编译器的限制改写代码，不要在 CI 里换版本绕过。已有一处：`HyperKeyEngine` 补了显式 `init`，
+因为 Swift 6.3 遇到带默认值的 `private` 存储属性会把逐成员初始化器变成 private；上游删掉这些属性或
+GitHub runner 换上 Xcode 27 后可去掉。
 `ci.yml` 的 `HOST_DEPENDENT` 列出结果取决于主机的 harness：`capture-ocr-test` 逐字比对小字 OCR，
 Vision 识别器随 macOS 版本变化；`form-input-test` 检查离屏渲染的字形像素，runner 上画不出来；
 `capture-video-test` 依赖视频编码，runner 虚拟机的虚拟化编码器偶尔挂住直到 300 秒超时。

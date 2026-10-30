@@ -25,6 +25,12 @@ struct HyperKeyEngine: Sendable {
     private var downAt: TimeInterval?
     private var used = false
 
+    // Swift 6.3 makes the memberwise init private because of the private stored properties.
+    init(route: HyperKeyRoute?, includesShift: Bool = true) {
+        self.route = route
+        self.includesShift = includesShift
+    }
+
     private enum DeviceFlags {
         static let leftControlOptionCommand: UInt64 = 0x29
         static let leftShift: UInt64 = 0x2
