@@ -144,17 +144,21 @@ struct CaptureEditorView: View {
         if let other = coordinator.otherResult {
             let screenshot = state.document.axis == nil ? state.document : other.document
             let scrolling = state.document.axis == nil ? other.document : state.document
-            Picker(
-                String(localized: "Capture Result"),
-                selection: Binding(
-                    get: { state.document.axis != nil },
-                    set: { if $0 != (state.document.axis != nil) { coordinator.swapCaptureResult() } })
-            ) {
-                Text(Self.name(of: screenshot)).tag(false)
-                Text(Self.name(of: scrolling)).tag(true)
+            HStack(spacing: metrics.spacing.xxs) {
+                CaptureIconButton(
+                    title: Self.name(of: screenshot), symbol: "camera", selected: state.document.axis == nil
+                ) {
+                    if state.document.axis != nil { coordinator.swapCaptureResult() }
+                }
+                CaptureIconButton(
+                    title: Self.name(of: scrolling), symbol: "scroll", selected: state.document.axis != nil
+                ) {
+                    if state.document.axis == nil { coordinator.swapCaptureResult() }
+                }
             }
-            .pickerStyle(.segmented).labelsHidden().fixedSize()
             .disabled(state.busy)
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel(String(localized: "Capture Result"))
         } else {
             Text(Self.name(of: state.document)).font(metrics.typography.panelTitle)
         }

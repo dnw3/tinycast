@@ -200,8 +200,8 @@ A drawn region that strays past the window under its center is trimmed to that w
 (`CaptureGeometry.innerPixels`), rather than reading as outside it at once. Starting refreshes the ScreenCaptureKit filter to exclude
 the Dock. The original desktop workspace is retained until a result is accepted or cancellation restores it;
 annotations are not baked into scrolling frames.
-The result window switches between Screenshot and Scrolling Screenshot with one segmented control in its
-title bar, preserving each image and undo stack.
+The result window switches between Screenshot and Scrolling Screenshot with two icon buttons in its title
+bar, the workspace's camera and scroll, preserving each image and undo stack.
 Closing checks both unsaved results. Canceling without keeping a result restores the retained screenshot in its original desktop workspace.
 
 Frames come from a ScreenCaptureKit stream on the region (`ScrollFrameStream`), as often as the display

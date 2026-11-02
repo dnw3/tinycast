@@ -484,8 +484,8 @@ The editor draws that title in the bar itself rather than in a row under it.
 header starts at `captureEditorTitleInset` 80, just past the lights, sized to the band as measured from
 a view that still respects the safe area. `WindowDragBackground` behind the header lets its empty space
 drag the window, as a title bar's would. With a screenshot and its scrolling result both open, the
-title is one segmented switch, the screenshot first whichever is shown, instead of a label and a push
-button. The image sits in a well (`captureCanvas`, `radius.card`) with `captureCanvasMargin` 20 of it
+title is two `CaptureIconButton`s, camera then scroll as in the workspace's modes, the shown one
+selected, instead of a label and a push button. The image sits in a well (`captureCanvas`, `radius.card`) with `captureCanvasMargin` 20 of it
 on every side — `NSScrollView.contentInsets`, so a fit leaves the margin and a long capture opens at
 its top-left with it — and carries a hairline (`captureImageEdge`) and a soft shadow
 (`captureImageShadow`) on its own layer, its path set so a canvas many screens tall costs no offscreen
