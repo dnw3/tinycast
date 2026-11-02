@@ -106,13 +106,13 @@ extension View {
 
     /// Scrim under the glass keeps contrast steady over whatever the screen shows.
     func captureGlass(_ metrics: InterfaceMetrics) -> some View {
-        background(Theme.Colors.panelScrim).background(GlassEffectView())
+        background(Theme.Colors.captureScrim).background(GlassEffectView())
             .clipShape(CaptureChrome.barShape(metrics))
     }
 
     /// A capture window's glass runs up under its transparent title bar.
     func captureWindowSurface() -> some View {
-        background(Theme.Colors.panelScrim).background { GlassEffectView().ignoresSafeArea() }
+        background(Theme.Colors.captureScrim).background { GlassEffectView().ignoresSafeArea() }
     }
 
     /// A compact field sized for the tool bars, in the form field's fill and border.
@@ -123,11 +123,11 @@ extension View {
             .overlay { CaptureChrome.toolShape(metrics).strokeBorder(Theme.Colors.border, lineWidth: Theme.Size.hairline) }
     }
 
-    /// Notes sit over arbitrary screenshots, so they take the HUD's scrim and glass for contrast.
+    /// Notes sit over arbitrary screenshots, so they take the scrim under the glass for contrast.
     func captureNotice(_ metrics: InterfaceMetrics) -> some View {
         font(metrics.typography.bar)
             .padding(.horizontal, metrics.spacing.md).padding(.vertical, metrics.spacing.sm)
-            .background(Theme.Colors.panelScrim).background(GlassEffectView())
+            .background(Theme.Colors.captureScrim).background(GlassEffectView())
             .clipShape(Capsule())
     }
 }

@@ -14,8 +14,7 @@ struct HUDCapsule: ViewModifier {
     func body(content: Content) -> some View {
         content
             .background { glow }
-            // Not glass: with nothing to lens it falls back to an opaque backing and shows.
-            .background(isLit ? Theme.Colors.controlHover : Theme.Colors.panelScrim)
+            .background(isLit ? Theme.Colors.controlHover : .clear)
             .background(GlassEffectView())
             .clipShape(Capsule())
             .overlay { rim }

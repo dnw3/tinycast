@@ -474,7 +474,7 @@ again when it is already key, the way Escape does. Unlike Settings it never make
 over that app's Space, and a regular app's input-method candidates — drawn in Tinycast's own process —
 cannot reach another app's full-screen Space, so typing Chinese there showed marked text with no candidates. It is built the way Settings is — an
 `AIChatSplitViewController` with a native sidebar item, here collapsible, and a unified toolbar whose title is the open chat's — so it takes the system's own sidebar, toolbar and
-menus rather than the palette's scrim. `AIChatWindowChrome` owns the toolbar — the sidebar toggle
+menus rather than the palette's glass surface. `AIChatWindowChrome` owns the toolbar — the sidebar toggle
 and New Chat as two round buttons at the sidebar's trailing edge, then Find in Chat and Actions
 alone at the window's — the title, and one key monitor for ⌘V, ⌘B, ⌃⇥ / ⌃⇧⇥, ⌘F, ⌘G / ⇧⌘G, ⌘K
 and the Actions menu's own chords, and dies with the window.

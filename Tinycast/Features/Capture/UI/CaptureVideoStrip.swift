@@ -25,8 +25,8 @@ struct CaptureVideoStrip: View {
                                 Path(CGRect(x: x(start), y: 0, width: x(end - start), height: size.height)),
                                 with: .color(color))
                         }
-                        fill(0, state.edit.start, Theme.Colors.panelScrim)
-                        fill(state.edit.end, state.info.duration, Theme.Colors.panelScrim)
+                        fill(0, state.edit.start, Theme.Colors.captureScrim)
+                        fill(state.edit.end, state.info.duration, Theme.Colors.captureScrim)
                         for cut in state.edit.cuts { fill(cut.start, cut.end, .red.opacity(0.65)) }
                         for hold in state.edit.holds {
                             context.fill(

@@ -47,7 +47,7 @@ struct CaptureVideoEffectCanvas: View {
                             .accessibilityLabel(String(localized: "Resize Video Effect Corner \(corner + 1)"))
                     }
                     Text("Position on original frame").font(metrics.typography.bar)
-                        .padding(metrics.spacing.sm).background(Theme.Colors.panelScrim)
+                        .padding(metrics.spacing.sm).background(Theme.Colors.captureScrim)
                         .padding(metrics.spacing.sm).allowsHitTesting(false)
                 }.frame(maxWidth: .infinity, maxHeight: .infinity)
             }
