@@ -49,6 +49,28 @@ struct CaptureRasterTests {
         precondition(CaptureViewportPolicy.preferredFit(image: CGSize(width: 1200, height: 800)) == .window)
         precondition(CaptureViewportPolicy.preferredFit(image: .zero) == .window)
         precondition(CaptureViewportPolicy.preferredFit(image: CGSize(width: CGFloat.infinity, height: 800)) == .window)
+
+        let long = CGRect(x: 0, y: 0, width: 2308, height: 9467)
+        let shown = CGRect(x: 0, y: 2000, width: 900 / 0.4, height: 620 / 0.4)
+        let cells = CaptureViewportPolicy.tiles(covering: shown, in: long, side: 1024)
+        precondition(cells.count == 9, "every tile in view is requested, not only the first four")
+        precondition(cells.last == CGRect(x: 2048, y: 3072, width: 260, height: 1024))
+        precondition(CaptureViewportPolicy.tiles(covering: shown, in: long, side: 2048).count == 4)
+        let invalid = CGRect(x: 0, y: CGFloat.nan, width: 10, height: 10)
+        precondition(CaptureViewportPolicy.tiles(covering: invalid, in: long, side: 1024).isEmpty)
+        let below = CGRect(x: 0, y: 9467, width: 10, height: 10)
+        precondition(CaptureViewportPolicy.tiles(covering: below, in: long, side: 1024).isEmpty)
+        precondition(CaptureViewportPolicy.previewSide(image: long.size, pixels: 4_000_000) == 4050)
+        precondition(CaptureViewportPolicy.previewSide(image: CGSize(width: 800, height: 600), pixels: 4_000_000) == 800)
+        precondition(CaptureViewportPolicy.detailLevel(displayScale: 0.8) == 1)
+        precondition(CaptureViewportPolicy.detailLevel(displayScale: 2) == 1)
+        precondition(CaptureViewportPolicy.detailLevel(displayScale: 0.4) == 0.5)
+        precondition(CaptureViewportPolicy.detailLevel(displayScale: 0.25) == 0.25)
+        precondition(CaptureViewportPolicy.detailLevel(displayScale: .leastNonzeroMagnitude) == 1.0 / 64)
+        precondition(CaptureViewportPolicy.detailLevel(displayScale: 0) == 1)
+        precondition(CaptureViewportPolicy.needsTiles(previewScale: 0.428, displayScale: 0.8))
+        precondition(!CaptureViewportPolicy.needsTiles(previewScale: 1, displayScale: 2))
+        precondition(!CaptureViewportPolicy.needsTiles(previewScale: 0.72, displayScale: 0.52))
     }
 
     static func pngFilters() throws {

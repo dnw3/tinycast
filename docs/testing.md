@@ -118,7 +118,7 @@ If a change touches anything in the right column, the harness on the left is man
 | `capture-ocr-test` | Real Vision OCR on composited overlapping tiles, redaction, coordinate deduplication, bounded output, immediate process exits and helper cancellation/deadline reaping |
 | `capture-video-test` | Actual MP4/GIF encoding and decoded frames, pause segment joins, trim/cut/freeze/speed time mapping, audio volume and hold silence, variable-rate trailing frames, cancellation and media history leases |
 | `capture-webp-test` | Official libwebp lossless/lossy output, independently decoded RGBA and alpha, sRGB/P3 ICC, size limits, full 4 MP pixels, repeated encodes, bounded helper inputs, cancellation/deadline reaping and existing-file preservation |
-| `capture-raster-test` | Capture size limits, tile seams and backward reads, full PNG pixel round trips, alpha, cancellation, atomic output and corrupt-file rejection |
+| `capture-raster-test` | Capture size limits, tile seams and backward reads, full PNG pixel round trips, alpha, cancellation, atomic output, corrupt-file rejection and the tiles a canvas viewport loads |
 | `capture-transform-test` | Display composition, image layers, translation overlays, presentation, foreground masks, reframing and magnifier pixels |
 | `capture-upload-test` | AWS signing, private upload requests, response limits, PKCE, loopback callbacks and 100 consecutive authorization cancellations |
 | `fuzz-test` | `Launcher/Model/LauncherMatch.swift`, `LauncherOrder.swift`, `LauncherSuggestions.swift`, `EntryNaming.swift`, `ScriptRomanization.swift`, `SearchRelevance.swift`, `LauncherRankingStore.swift` — **a new ranking complaint is a new case in its `denseIndex`** |

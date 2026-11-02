@@ -25,7 +25,9 @@
 - Published source rasters are immutable; a workspace may add new window rasters. `CaptureSource` keeps the directory alive while an editor,
   pin, renderer or screenshot text session uses it. Closing the last owner removes the temporary source.
 - Long screenshots append disk-backed strips. Registration and output never build a full growing bitmap.
-  The canvas retains at most four viewport tiles plus a bounded preview; undo retains source references and edits, not pixels.
+  The canvas retains only the tiles in view, drawn at the screen's level of detail so their count follows the
+  window rather than the document, plus a preview bounded to four megapixels; undo retains source references and
+  edits, not pixels.
 - Copy, Save, Pin and OCR use a fixed document revision. Late OCR and selection events cannot overwrite
   a newer session. Cover is rendered as opaque black, and OCR reads the composited image, never hidden source pixels.
 - PNG is streamed through system zlib, into a temporary sibling file, then atomically replaced. A failed

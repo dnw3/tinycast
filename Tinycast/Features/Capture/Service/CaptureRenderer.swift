@@ -241,7 +241,17 @@ enum CaptureRenderer {
         document: CaptureDocument, directory: URL, maximum: Int = 900, includingVectorAnnotations: Bool = true
     ) throws -> CGImage {
         let bounds = document.outputBounds
-        let scale = min(1, CGFloat(maximum) / max(bounds.width, bounds.height))
+        return try image(
+            document: document, directory: directory, rect: bounds,
+            scale: min(1, CGFloat(maximum) / max(bounds.width, bounds.height)),
+            includingVectorAnnotations: includingVectorAnnotations)
+    }
+
+    /// Assembled from full-resolution parts, since a single read is capped at four megapixels.
+    nonisolated static func image(
+        document: CaptureDocument, directory: URL, rect bounds: CGRect, scale: CGFloat,
+        includingVectorAnnotations: Bool = true
+    ) throws -> CGImage {
         let width = max(1, Int(bounds.width * scale)), height = max(1, Int(bounds.height * scale))
         guard
             let context = CGContext(

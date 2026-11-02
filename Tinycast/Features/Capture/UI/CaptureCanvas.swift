@@ -130,6 +130,10 @@ struct CaptureCanvas: NSViewRepresentable {
         private var movingEndpoint: Int?
         private var alignment: CaptureAnnotationPlacement.Result?
 
+        private static let tileSide: CGFloat = 1024
+        /// Enough that a fitted full-screen Retina capture needs no tiles at all.
+        private static let previewPixels: CGFloat = 4_000_000
+
         init(state: CaptureEditorState) {
             self.state = state
             super.init(frame: .zero)
@@ -150,11 +154,13 @@ struct CaptureCanvas: NSViewRepresentable {
             preview = nil
             loadingPreview?.cancel()
             let snapshot = state.document, source = state.source
+            let maximum = CaptureViewportPolicy.previewSide(
+                image: snapshot.outputBounds.size, pixels: Self.previewPixels)
             loadingPreview = Task { [weak self] in
                 do {
                     let image = try await CaptureWork.run {
                         try CaptureRenderer.preview(
-                            document: snapshot, directory: source.directory, maximum: 1000,
+                            document: snapshot, directory: source.directory, maximum: maximum,
                             includingVectorAnnotations: false)
                     }
                     try Task.checkCancellation()
@@ -345,30 +351,21 @@ struct CaptureCanvas: NSViewRepresentable {
                 x: visibleRect.minX / zoom + origin.x,
                 y: visibleRect.minY / zoom + origin.y,
                 width: visibleRect.width / zoom, height: visibleRect.height / zoom)
-            var requested: [(String, CGRect)] = []
-            let output = state.document.outputBounds
-            for y in stride(
-                from: Int(output.minY) + max(0, Int(visible.minY - output.minY) / 1024 * 1024),
-                to: Int(min(visible.maxY, output.maxY)), by: 1024)
-            {
-                for x in stride(
-                    from: Int(output.minX) + max(0, Int(visible.minX - output.minX) / 1024 * 1024),
-                    to: Int(min(visible.maxX, output.maxX)), by: 1024)
-                {
-                    let rect = CGRect(
-                        x: x, y: y, width: min(1024, Int(output.maxX) - x),
-                        height: min(1024, Int(output.maxY) - y))
-                    requested.append(("\(x)-\(y)", rect))
-                }
-            }
+            let display = zoom * (window?.backingScaleFactor ?? 2)
+            let level = CaptureViewportPolicy.detailLevel(displayScale: display)
+            let requested: [(String, CGRect)] =
+                needsTiles(display: display)
+                ? CaptureViewportPolicy.tiles(
+                    covering: visible, in: state.document.outputBounds, side: Int(Self.tileSide / level)
+                ).map { ("\(level)-\(Int($0.minX))-\(Int($0.minY))", $0) }
+                : []
             if preview == nil {
                 CaptureAnnotationRenderer.draw(
                     state.document.edit.annotations.filter {
                         [.pixelate, .blur, .magnifier].contains($0.tool)
                     }, in: context)
             }
-            let selected = Array(requested.prefix(4))
-            for (key, rect) in selected {
+            for (key, rect) in requested {
                 if let tile = tiles[key] {
                     context.saveGState()
                     context.setShouldAntialias(false)
@@ -378,7 +375,7 @@ struct CaptureCanvas: NSViewRepresentable {
                     context.restoreGState()
                 }
             }
-            load(selected)
+            load(requested, level: level)
             var annotations = state.document.edit.annotations.filter {
                 ![.pixelate, .blur, .magnifier].contains($0.tool) && $0.id != editingAnnotation?.id
             }
@@ -502,7 +499,13 @@ struct CaptureCanvas: NSViewRepresentable {
             context.restoreGState()
         }
 
-        private func load(_ requested: [(String, CGRect)]) {
+        private func needsTiles(display: CGFloat) -> Bool {
+            guard let preview, previewBounds.width > 0 else { return true }
+            return CaptureViewportPolicy.needsTiles(
+                previewScale: CGFloat(preview.width) / previewBounds.width, displayScale: display)
+        }
+
+        private func load(_ requested: [(String, CGRect)], level: CGFloat) {
             guard loading == nil else { return }
             tiles = tiles.filter { key, _ in requested.contains { $0.0 == key } }
             let missing = requested.filter { tiles[$0.0] == nil }
@@ -513,20 +516,25 @@ struct CaptureCanvas: NSViewRepresentable {
                 for (key, rect) in missing {
                     do {
                         let image = try await CaptureWork.run {
-                            try CaptureRenderer.image(
+                            if level < 1 {
+                                return try CaptureRenderer.image(
+                                    document: snapshot, directory: source.directory, rect: rect, scale: level,
+                                    includingVectorAnnotations: false)
+                            }
+                            return try CaptureRenderer.image(
                                 document: snapshot, directory: source.directory, rect: rect,
                                 includingVectorAnnotations: false)
                         }
                         try Task.checkCancellation()
                         guard self?.generation == generation else { return }
                         self?.tiles[key] = image
+                        self?.needsDisplay = true
                     } catch is CancellationError { return } catch {
                         self?.state.notice = Bundle.main.localizedString(
                             forKey: error.localizedDescription, value: nil, table: nil)
                         return
                     }
                 }
-                self?.needsDisplay = true
             }
         }
 
