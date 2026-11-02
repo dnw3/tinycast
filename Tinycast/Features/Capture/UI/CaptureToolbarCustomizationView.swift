@@ -62,7 +62,6 @@ struct CaptureToolbarCustomizationView: View {
         .onChange(of: query) { selection.removeAll() }
         .padding(metrics.spacing.xl)
         .foregroundStyle(Theme.Colors.textPrimary)
-        .captureWindowSurface()
     }
 
     private func preview(actions: Bool) -> some View {

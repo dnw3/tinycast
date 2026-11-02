@@ -61,7 +61,7 @@ These are the things that quietly break the look if changed. Preserve them unles
 - **In the palette, a hover label is Tinycast's `tooltip`, never `.help()`**: an AppKit tooltip never appears while the app sits inactive behind the non-activating panel. A Settings window activates the app, so `.help()` shows there and stays the label to use. The tooltip hangs above its control by default; a control in the palette header passes `edge: .bottom`, since above it is off the window, and a label may run to several lines — the chat's attachment pill lists every staged name.
   Native form controls opt into `dismissOnPress` to hide the label until the next hover.
 - **A transient readout is a HUD, not a dialog.** `VolumeHUDController`'s box is volume and mute only, since that one needs an actual level and number; every other success or info confirmation goes through `MessageHUDController`'s pill, whose leading glyph _is_ its `DialogTone`. A pill has no subject to name, so the icon rule above does not apply to it — and that mapping stays file-scoped so nothing can reach for it when building a `DialogRequest`. A new HUD means a new presenter, not a second shape bolted onto an existing controller.
-- **Native glass supplies borderless surfaces and floating controls.** The action capsule, menu circle and `PopoverMenu` use it inside the palette; dialogs apply one system `.glassEffect(.regular)` to their root surface. Dialog buttons stay matte so their roles remain legible. Every HUD uses `GlassEffectView()` followed by their shape clip.
+- **Native glass supplies borderless surfaces and floating controls.** The action capsule, menu circle and `PopoverMenu` use it inside the palette; dialogs apply one system `.glassEffect(.regular)` to their root surface. Dialog buttons stay matte so their roles remain legible. Every HUD uses `GlassEffectView()` followed by its shape clip.
 
 ---
 
@@ -466,15 +466,17 @@ the bar's width never jumps. Hints are `.tooltip`, never `.help`.
 
 `CaptureChrome` keeps the shapes concentric: the bar is `radius.row` with an `xs` inset, and a tool
 inside it is `radius.row - spacing.xs`, derived rather than tokenised so the two cannot drift. Four
-finishes cover every surface: `captureBar` (frosted), `captureCard` (scrim + glass, for cards over a
-screenshot), `captureNotice` (scrim + glass capsule) and `captureField` (`cardFill` + hairline
-`border`). The selection's size label and the colour loupe share `CaptureSelectionLoupe`'s dark fill,
-since both sit over arbitrary pixels in either appearance.
+finishes cover every surface: `captureBar` (frosted), `captureCard` (glass, for cards over a
+screenshot), `captureNotice` (a glass capsule) and `captureField` (`cardFill` + hairline
+`border`). None of that glass carries a backing, the same as a HUD over arbitrary content. The
+selection's size label and the colour loupe share `CaptureSelectionLoupe`'s dark fill, since both
+sit over arbitrary pixels in either appearance.
 
 The capture windows — editor, recording, history preview and toolbar customization — take
 `AppWindowController`'s app-window recipe through `CaptureChrome.adopt`: full-size content under a
-transparent bar with the system title hidden, so the view draws its own title once. Their glass is
-`captureWindowSurface()`, which runs up under the bar; every other capture glass is `captureGlass`.
+transparent bar with the system title hidden, so the view draws its own title once. They keep the
+system window background, as Settings does: the windows are opaque, so glass could only lens their
+own fill. Floating panels and cards take `captureGlass`.
 
 The editor draws that title in the bar itself rather than in a row under it.
 `CaptureChrome.reserveTitleBand` gives the window an empty `unifiedCompact` toolbar only for its band
@@ -717,8 +719,8 @@ three axes below ([AI](features/ai.md#agent-mode)).
   at `edgeInset(hudWaitingEdgeOffset 96)`, a presenter of its own above the message pill's slot, so
   a confirmation arriving meanwhile never covers it. Hovering turns the hand into an ✕ that waves it
   off, as the progress pill's spinner turns into one. Every pill's surface is `HUDCapsule`
-  (`.hudCapsule(tint:isLit:)`): the glow from behind the leading mark, the scrim, the glass, the
-  capsule clip and the rim that fades across the message.
+  (`.hudCapsule(tint:isLit:)`): the glow from behind the leading mark, the glass, the capsule clip
+  and the rim that fades across the message.
 - **`HUDPresenter`** is what keeps those controllers from duplicating each other: one panel at a
   time, replace rather than stack, fade in, sit out its dwell, fade away, centred horizontally on
   a screen. The HUDs differ only in their content, their anchor (`edgeInset(hudEdgeOffset 48)` for

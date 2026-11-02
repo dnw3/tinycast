@@ -21,7 +21,6 @@ struct CaptureEditorView: View {
             }
             .font(metrics.typography.rowTitle)
             .foregroundStyle(Theme.Colors.textPrimary)
-            .captureWindowSurface()
             .environment(\.metrics, metrics)
         }
     }

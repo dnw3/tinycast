@@ -85,7 +85,6 @@ struct CaptureVideoView: View {
                 if let notice = state.notice { Text(notice).foregroundStyle(Theme.Colors.textSecondary) }
             }
             .font(metrics.typography.bar).padding(metrics.spacing.lg)
-            .captureWindowSurface()
             .task(id: state.previewRequest) { await state.updatePreview() }
             .onDisappear {
                 state.player.pause()

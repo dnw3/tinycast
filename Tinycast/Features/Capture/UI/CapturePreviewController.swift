@@ -132,8 +132,7 @@ final class CapturePreviewController: NSObject, NSWindowDelegate {
         let hosting = NSHostingView(
             rootView: Hosted(view: content)
                 .clipShape(RoundedRectangle(cornerRadius: metrics.radius.row, style: .continuous))
-                .padding(metrics.spacing.md)
-                .captureWindowSurface())
+                .padding(metrics.spacing.md))
         hosting.sizingOptions = []
         return hosting
     }
