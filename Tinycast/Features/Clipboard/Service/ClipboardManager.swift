@@ -156,9 +156,9 @@ final class ClipboardManager {
         return !roots.contains { path.hasPrefix($0) }
     }
 
-    func recordCapture(_ png: Data, sourceBundleID: String?) {
+    func recordCapture(_ png: Data, sourceBundleID: String?, capture: Int? = nil) {
         guard isCapturing, accepts(sourceBundleID) else { return }
-        store.addImage(png, sourceBundleID: sourceBundleID) { [weak self] in
+        store.addImage(png, sourceBundleID: sourceBundleID, capture: capture) { [weak self] in
             self?.accepts(sourceBundleID) == true
         }
     }
@@ -218,12 +218,35 @@ final class ClipboardManager {
 
         if let type = pb.availableType(from: Self.imageTypes), let data = pb.data(forType: type) {
             let isPNG = type == .png
+            let capture = store.captureGeneration
             // A big re-encode can take 100ms+, so keep the poll off that path.
             Task.detached(priority: .utility) { [weak self] in
                 guard let png = isPNG ? data : Self.pngData(from: data) else { return }
-                await self?.recordCapture(png, sourceBundleID: sourceBundleID)
+                await self?.recordCapture(png, sourceBundleID: sourceBundleID, capture: capture)
             }
+            return
         }
+
+        guard let text = Self.plainText(fromRichTextOn: pb),
+            !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+            ClipboardStore.fitsTextLimit(text)
+        else { return }
+        store.addText(
+            text, richText: Self.richText(on: pb), sourceBundleID: sourceBundleID
+        ) { [weak self] in
+            self?.accepts(sourceBundleID) == true
+        }
+    }
+
+    private static let maxImportedHTMLBytes = 256 * 1024
+
+    static func plainText(fromRichTextOn pasteboard: NSPasteboard) -> String? {
+        if let rtf = pasteboard.data(forType: .rtf) {
+            return NSAttributedString(rtf: rtf, documentAttributes: nil)?.string
+        }
+        guard let html = pasteboard.data(forType: .html), html.count <= maxImportedHTMLBytes
+        else { return nil }
+        return NSAttributedString(html: html, documentAttributes: nil)?.string
     }
 
     /// RTF only: HTML can pull remote resources, and RTFD or web archives carry whole attachments.

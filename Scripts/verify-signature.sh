@@ -34,12 +34,19 @@ PROXY_HELPER="$APP/Contents/Helpers/TinycastProxyHelper"
 CORE="$APP/Contents/Helpers/mihomo"
 OPTIONAL=()
 [ -e "$CORE" ] && OPTIONAL+=("$CORE")
-for BIN in "$APP/Contents/MacOS/$NAME" "$APP/Contents/Helpers/TextRecognitionHelper" \
+for BIN in "$APP/Contents/MacOS/$NAME" "$APP/Contents/Helpers/TextRecognitionHelper" "$APP/Contents/Helpers/FileIndexHelper" \
     "$APP/Contents/Helpers/CaptureWebPHelper" "$HELPER/Contents/MacOS/Tinycast Dictation" \
     "$PROXY_HELPER" ${OPTIONAL[@]+"${OPTIONAL[@]}"}; do
     INFO="$(codesign -dv --verbose=2 "$BIN" 2>&1)"
     [[ "$INFO" =~ flags=0x[0-9a-f]+\([^\)]*runtime ]] ||
         fail "${BIN##*/}: hardened runtime not enabled"
+    # The fork's releases are self-signed, never notarized: release-fork.sh names that identity.
+    if [ -n "${SELF_SIGNED:-}" ]; then
+        [[ "$INFO" == *$'\nAuthority='"$SELF_SIGNED"$'\n'* ]] || fail "${BIN##*/}: not signed by $SELF_SIGNED"
+    else
+        [[ "$INFO" == *$'\nAuthority=Developer ID Application: '* && "$INFO" == *$'\nTimestamp='* ]] ||
+            fail "${BIN##*/}: not signed with a timestamped Developer ID"
+    fi
 done
 
 APP_ID="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP/Contents/Info.plist")"

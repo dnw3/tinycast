@@ -102,6 +102,7 @@ struct AIChatDetailView: View {
                         current: find.currentOccurrence(in: occurrences))
                     : nil
             )
+            .environment(\.chatExpandsReasoning, coordinator.aiSettings.expandsReasoning)
             // A switched chat is a new scroll: its own tail-following, opening at its latest line.
             .id(chat.session.id)
             .environment(\.chatAwaitedCall, chat.pendingApproval?.id)

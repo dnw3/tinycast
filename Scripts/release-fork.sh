@@ -64,7 +64,7 @@ done < <(find "$APP/Contents" -type f -perm -u+x)
 codesign --verify --deep --strict "$APP"
 codesign -d -r- "$APP" 2>&1 | grep -q "certificate leaf = H\"$leaf\"" ||
     fail "The app is not signed by \"$IDENTITY\" ($leaf)."
-./Scripts/verify-signature.sh "$APP" > /dev/null || fail "The proxy's helper or core is signed wrongly."
+SELF_SIGNED="$IDENTITY" ./Scripts/verify-signature.sh "$APP" > /dev/null || fail "The app or a helper is signed wrongly."
 
 echo "→ Packaging"
 mkdir -p build/dist

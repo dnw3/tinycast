@@ -189,7 +189,7 @@ Scheduled cleaning itself grants unattended deletion, so it has no key at all.
 
 ## Window management
 
-- **`shortcuts`** lists all 35 commands by ID, `null` when unbound; one left out is unbound too.
+- **`shortcuts`** lists all 39 commands by ID, `null` when unbound; one left out is unbound too.
 - **`aliases`** lists only the commands that have one.
 - **`customSizes`, `layouts` and `rooms`** each carry their record's `shortcut` and `alias`. A record
   keeps its `id`, because favorites, aliases, ranking and visibility key on it; one written without an

@@ -14,7 +14,7 @@ contradicts the code is a defect, so fix it in the commit that made it wrong.
 | [development.md](development.md) | The local loop: setup, build, dev channel, editor, format/lint, generated data | the local toolchain changes |
 | [fork-maintenance.md](fork-maintenance.md) | Fork remotes and branch, retained features, upstream sync, verification and source versus app updates | the fork branch, upstream baseline or sync results change |
 | [release.md](release.md) | How a build reaches a user: packaging, PR review, releases, the Homebrew tap | the pipeline changes |
-| [signing.md](signing.md) | The self-signed identity and the two CI secrets | the signing setup changes |
+| [signing.md](signing.md) | The local self-signed identity, the release Developer ID and notary secrets | the signing setup changes |
 | [ui.md](ui.md) | The design system: tokens, panel chrome, row grammar, glass, dialogs and HUDs | a token or a presentation rule changes |
 
 ## Features
@@ -42,6 +42,7 @@ open with an `## Invariants` section; read it before changing anything in that a
 [quicklinks](features/quicklinks.md) ·
 [Apple Shortcuts](features/apple-shortcuts.md) ·
 [hotkeys](features/hotkeys.md) ·
+[deeplinks](features/deeplinks.md) ·
 [navigation](features/navigation.md) ·
 [window management](features/window-management.md) ·
 [window layouts](features/window-layouts.md) ·

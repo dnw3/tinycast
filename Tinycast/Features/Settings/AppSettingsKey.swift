@@ -55,6 +55,8 @@ enum AppSettingsKey: String, CaseIterable {
     case windowManagementShowInLauncher = "windowManagementShowInLauncher"
     case windowGap = "windowManagementGap"
     case windowCycle = "windowManagementCycleMode"
+    case windowWrapsDisplays = "windowManagementWrapDisplays"
+    case windowKeepsProportions = "windowManagementKeepProportions"
     case windowLayoutsShowInLauncher = "windowLayoutsShowInLauncher"
     case windowRoomsShowInLauncher = "windowRoomsShowInLauncher"
     case quicklinksEnabled = "quicklinksEnabled"
@@ -88,6 +90,7 @@ enum AppSettingsKey: String, CaseIterable {
     case aiDefaultModel = "aiDefaultModel"
     case aiWebSearch = "aiWebSearch"
     case aiChoices = "aiChoices"
+    case aiExpandsReasoning = "aiExpandsReasoning"
     case aiSystemPrompt = "aiSystemPrompt"
     case aiSystemPromptEnabled = "aiSystemPromptEnabled"
     case aiRetention = "aiRetentionDays"
@@ -136,4 +139,5 @@ enum AppSettingsKey: String, CaseIterable {
     case cleanupLowSpaceThreshold = "cleanupLowSpaceThresholdGB"
     case supportReminders = "supportReminders"
     case settingsFileEnabled = "settingsFileEnabled"
+    case allowedDeepLinks = "allowedDeepLinks"
 }

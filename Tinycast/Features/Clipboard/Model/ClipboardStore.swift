@@ -199,8 +199,8 @@ final class ClipboardStore {
     @ObservationIgnored var onSearchResultsChanged: ((String, [ClipboardItem], [ClipboardItem]) -> Void)?
     /// Rotated whenever the history is replaced, so a helper's late answer lands on nothing.
     @ObservationIgnored private(set) var extractionGeneration = UUID()
-    /// Bumped by a clear or a close, so an image written across one is discarded, not inserted.
-    @ObservationIgnored private var historyGeneration = 0
+    /// Bumped by a clear or a close; a copy read before one is discarded, not inserted.
+    @ObservationIgnored private(set) var captureGeneration = 0
     /// The latest sidecar write per entry, so an earlier copy landing late cannot win.
     @ObservationIgnored private var richTextWrites: [UUID: UUID] = [:]
     /// The only thing a view observes for search freshness; `items` cannot speak for OCR.
@@ -363,7 +363,7 @@ final class ClipboardStore {
     func close() {
         setTextSearchEnabled(false)
         extractionGeneration = UUID()
-        historyGeneration += 1
+        captureGeneration += 1
         richTextWrites = [:]
         closeDatabase()
         items = []
@@ -448,7 +448,7 @@ final class ClipboardStore {
         richTextWrites[item.id] = token
         let url = imagesDir.appendingPathComponent(UUID().uuidString + ".rtf")
         let previous = item.richTextPath
-        let generation = historyGeneration
+        let generation = captureGeneration
         Task.detached(priority: .utility) { [weak self] in
             if let previous, (try? Data(contentsOf: URL(fileURLWithPath: previous))) == data {
                 await self?.finishRichTextWrite(token, for: item.id)
@@ -475,7 +475,7 @@ final class ClipboardStore {
         let current = richTextWrites[id] == token
         finishRichTextWrite(token, for: id)
         let landed =
-            current && isWanted() && generation == historyGeneration && insertStmt != nil
+            current && isWanted() && generation == captureGeneration && insertStmt != nil
             && attachRichText(url.path, to: id)
         if !landed { try? FileManager.default.removeItem(at: url) }
     }
@@ -522,14 +522,15 @@ final class ClipboardStore {
         prune()
     }
 
-    /// `isWanted` is asked again after the off-main hash and write: capture can stop meanwhile.
+    /// `capture` is read before an off-main encode; `isWanted` is asked again after the write.
     func addImage(
-        _ data: Data, sourceBundleID: String?,
+        _ data: Data, sourceBundleID: String?, capture: Int? = nil,
         isWanted: @escaping @MainActor @Sendable () -> Bool = { true }
     ) {
+        let generation = capture ?? captureGeneration
+        guard generation == captureGeneration else { return }
         let url = imagesDir.appendingPathComponent(UUID().uuidString + ".png")
         let item = ClipboardItem(imagePath: url.path, sourceBundleID: sourceBundleID)
-        let generation = historyGeneration
         // Hashing and the blob write are multi-MB work; only the row insert returns to main.
         Task.detached(priority: .utility) { [weak self] in
             let hash = Self.contentHash(.image, data)
@@ -551,7 +552,7 @@ final class ClipboardStore {
     private func settlesWithoutBlob(
         _ hash: String, generation: Int, isWanted: @MainActor () -> Bool
     ) -> Bool {
-        guard isWanted(), generation == historyGeneration, insertStmt != nil else { return true }
+        guard isWanted(), generation == captureGeneration, insertStmt != nil else { return true }
         return surfaceDuplicate(hash) != nil
     }
 
@@ -660,7 +661,7 @@ final class ClipboardStore {
     func clearAll() {
         invalidateSearch()
         extractionGeneration = UUID()
-        historyGeneration += 1
+        captureGeneration += 1
         richTextWrites = [:]
         // RETURNING hands back the deleted blobs in the same pass, so no separate SELECT is needed.
         if db != nil,

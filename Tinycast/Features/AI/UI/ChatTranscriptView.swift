@@ -447,14 +447,15 @@ private struct RegenerateButton: View {
     }
 }
 
-/// One stretch of thinking: folded by default, one click from being read, and opened by find.
 private struct ChatReasoningBlock: View {
     @Environment(\.metrics) private var metrics
     @Environment(\.chatTextHighlight) private var highlight
     @Environment(\.chatFindPath) private var path
+    @Environment(\.chatExpandsReasoning) private var expandsByDefault
     let block: ChatReasoning
     let isThinking: Bool
-    @State private var expanded = false
+    /// Nil until the reader clicks, so a flipped setting reaches every fold they left alone.
+    @State private var expanded: Bool?
 
     private var title: String {
         if isThinking { return block.heading ?? String(localized: "Thinking…") }
@@ -466,7 +467,7 @@ private struct ChatReasoningBlock: View {
 
     /// A match inside a folded block would be found and then invisible, so find unfolds it.
     private var isOpen: Bool {
-        expanded
+        (expanded ?? expandsByDefault)
             || highlight.map {
                 block.text.range(of: $0.query, options: [.caseInsensitive, .diacriticInsensitive])
                     != nil
@@ -476,7 +477,7 @@ private struct ChatReasoningBlock: View {
     var body: some View {
         VStack(alignment: .leading, spacing: metrics.spacing.sm) {
             Button {
-                withAnimation(.easeOut(duration: Theme.Duration.chatFooter)) { expanded.toggle() }
+                withAnimation(.easeOut(duration: Theme.Duration.chatFooter)) { expanded = !isOpen }
             } label: {
                 HStack(spacing: metrics.spacing.xs) {
                     if isThinking {

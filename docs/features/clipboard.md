@@ -37,6 +37,8 @@ Improvements adopted from a Maccy comparison, and the rich-text batch: [Plan](..
   moves. Rows written before the column existed carry no hash and are never matched. Rich text
   hashes its plain text, and the surfaced row's RTF sidecar follows the newest copy: replaced by
   new RTF, deleted when the repeat had none.
+- **An image capture keeps the generation from its pasteboard poll.** Clear History and store close
+  retire it across conversion and file writing; a stale capture inserts nothing and leaves no blob.
 - A database that cannot be opened is deleted and recreated. That is sound because a history is
   captured rather than authored, and there is no UI for an unavailable clipboard — `QuicklinkStore`
   deliberately does the opposite. It is **not** a licence to treat the file as disposable: it lives in
@@ -80,14 +82,21 @@ tools put on their own writes. The image branch takes PNG as it is and re-encode
 HEIC to PNG through ImageIO off the main actor, so the history keeps one image format.
 
 **Rich text is RTF and only RTF, read beside a text copy.** `ClipboardManager.richText(on:)` takes
-`public.rtf` when the text branch records, and nothing else: HTML can name remote resources, and RTFD
-or a web archive carries whole attachments. RTF over `ClipboardStore.maxRichTextBytes` (2 MB) is
+`public.rtf` whenever a text entry is recorded, the last-resort branch below included, and nothing
+else: HTML can name remote resources, and RTFD or a web archive carries whole attachments. RTF over `ClipboardStore.maxRichTextBytes` (2 MB) is
 dropped and the text recorded alone. Files, images and colours never look at it.
 
 **Text up to `ClipboardStore.maxTextLength` (1,000,000 characters) is kept whole**; a bigger copy
 is skipped rather than truncated, since a tail-less copy pastes wrong. `ClipboardStore.fitsTextLimit`
 refuses on the O(1) UTF-8 count before it would walk characters, so a giant copy costs nothing on
 the poll.
+
+**Rich text is the last resort.** A copy with no file URL, plain text or image, such as a web page's
+HTML-only Clipboard API write, is converted through `NSAttributedString`, RTF before HTML, and
+recorded as a text entry, which keeps an RTF copy's RTF as its sidecar; HTML only lends its text.
+It sits after the image branch because a browser's image copy carries an `<img>` fragment beside the
+pixels. The HTML importer runs WebKit on the main actor, so fragments over 256 KB are skipped to
+bound the stall.
 
 `ClipboardManager.fileURLs(on:volatileRoots:)` takes both the pasteboard and the roots as
 parameters, so `pasteboard-test` can drive an `NSPasteboard.withUniqueName()` and its own scratch
@@ -504,7 +513,7 @@ returns false, the coordinator raises a HUD, and the row survives — history is
 happened, and the recorded path is still the answer to "where was it?". The preview says so in
 place, and the Path row keeps showing where the file used to be.
 
-`FilePreviewThumbnailer` is the row tile and the preview still. `QLThumbnailGenerator` is the only
+`FilePreviewThumbnail` is the row tile and the preview still. `QLThumbnailGenerator` is the only
 thing that renders a *content* thumbnail for any type — a video's poster frame, a PDF's first page
 — and with `representationTypes: .all` it falls back to the type icon itself, so every file paints
 something through one path. It copies `ImageThumbnail`'s shape exactly: two byte-bounded caches

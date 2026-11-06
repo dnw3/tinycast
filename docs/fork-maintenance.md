@@ -49,7 +49,8 @@ Model import 纯度及严格签名检查通过。未重新执行截图、翻译�
 | --- | --- |
 | Capture | 截图、长截图、编辑、贴图、OCR、录制、导出与历史；源码在 `Tinycast/Features/Capture/`，约束见 [Capture](features/capture.md)。动过的上游文件：`HotKeyCenter`（Tinycast 自己的菜单打开时，AppKit 会把热键和主队列都压到菜单关闭后；现在跟踪期间照常分发热键并随即收起菜单，截图经 `holdTrackingMenus` 先在主 actor 之外拍下带菜单的画面再收起）与 `HotKeyManager`（转出 `holdTrackingMenus`） |
 | Translation | 独立翻译窗口、Apple / AI 引擎、划词及截图文本、受校验的回填；源码在 `Tinycast/Features/Translation/`，约束见 [Translation](features/translation.md) |
-| 共享接入 | `AppCore` 所有权、命令与热键、设置、剪贴板、`Platform/TextRecognition/` 和 `TextInjector`；同步时适配上游的新 API，保留双方行为。紧凑栏可选的截图、翻译、选择代理节点、磁盘清理与 AI 对话窗口在 `CommandID.forkCompactBarOptions`，上游的 `compactBarOptions` 只在末尾接上它；`compact-bar-test` 的数量断言随之加上 fork 的个数 |
+| 共享接入 | `AppCore` 所有权、命令与热键、设置、剪贴板、`Platform/TextRecognition/` 和 `TextInjector`；同步时适配上游的新 API，保留双方行为。紧凑栏可选的截图、翻译、选择代理节点、磁盘清理与 AI 对话窗口在 `CommandID.forkCompactBarOptions`，上游的 `compactBarOptions` 只在末尾接上它；`compact-bar-test` 的数量断言随之加上 fork 的个数。上游的链接（deeplinks）要求每个设置页有 slug、每个命令声明外部触发是否先问：fork 的设置页在 `SettingsTab.slug` 里按 case 名补上，fork 的命令在 `DeepLinkConsentPolicy` 里单列两个 case——读屏幕、删文件、改代理或动网络的要先问，只打开 Tinycast 界面的不问 |
+| 更新与签名 | `ReleaseFeed.repository` 指向 fork（见"给熟人分发"）；`RootPaletteView` 的「更新日志」菜单项打开 fork 的 Releases，因为上游 #1817 起应用不再显示更新说明；`UpdateReadiness` 多一个 `.cleaning`（清理中不安装更新）；`Scripts/verify-signature.sh` 多一个 `SELF_SIGNED=<身份>` 模式，把上游"带时间戳的 Developer ID"检查换成"由该身份签名"，`release-fork.sh` 以 `Tinycast Self-Signed` 调用它 |
 | Disk Cleanup | 磁盘清理（部分改编自 Purge，MIT，见 `NOTICE.md`）；源码在 `Tinycast/Features/Cleanup/`，约束见 [Disk Cleanup](features/cleanup.md)。动过的上游文件：`AppCore`、`PaletteMode`、`PaletteScreen`、`RootPaletteView`、`UninstallScreen`、`UpdateReadiness`、`CommandID`、`CommandCatalog`、`LauncherCoordinator`、`SettingsTab`、`SettingsAnchor`、`SettingsSearchCatalog`、`SettingsDetailView`、`SettingsFileKey`、`SettingsFileSchema`、`AppSettingsKey`、`SettingsBackupCoverage`、`MenuBarItem`（低空间时的「释放空间」行）、`ToolRunner`（新增环境变量、工作目录、关闭 stdin 与取消终止）、`DialogController`（确认框的「取消」默认值改为本地化，由 `AppCore.confirm` 提供）。设置页的完全磁盘访问权限行是有意从 File Search 复制的 |
 | Clipboard | 参照 Maccy 的改进与富文本后续方案见 [剪贴板 Plan](plans/clipboard-plan.md)。动过的上游文件：`ClipboardStore`（`content_hash` 与 `rich_path` 列、FTS 前缀索引迁移、图片与 RTF 的过期检查）、`ClipboardManager`（忽略类型、JPEG/HEIC、RTF 捕获、暂停记录）、`Paster`（RTF 写回、纯文本粘贴只写 `.string`）、`ASCIIKeyboardLayout`（⌘V 跟随布局）、`ClipboardCoordinator`、`ClipboardScreen`、`PaletteWindowController`（从 Tinycast 自己的窗口唤出后收起时，把键盘焦点和正在编辑的输入框连同光标还给原来的窗口：否则 AppKit 交给主窗口而跳过其上的编辑面板，SwiftUI 输入框在启动器持有焦点时也会丢掉编辑状态，剪贴板粘贴因此落空）、`ClipboardView`（命中高亮）、`ClipboardSettingsView`（占用空间、确认框）、`CommandID`、`CommandCatalog`、`LauncherCoordinator`，以及 `RootPaletteView`（剪贴板与文件搜索筛选器标题改为本地化显示；隐藏时返回主搜索不再给搜索框设焦点，否则 SwiftUI 会抢走其他窗口里正在编辑的输入框）；`GeneralSettingsView`、`MCPSettingsSection`、`AIProvidersPanel` 的系统确认框改为 `core.confirm` |
 | WebP | 用户批准的官方 libwebp 依赖及短生命周期 helper；版本、校验和、更新规则见 [Vendor/README.md](../Vendor/README.md) |
@@ -267,8 +268,11 @@ codesign --verify --deep --strict /Applications/Tinycast.app && open /Applicatio
 - **更新源是 fork**：`ReleaseFeed.repository` 为 `dnw3/tinycast`，应用只看本仓库的 Releases。
   指回上游会让熟人的副本被"更新"成不含 Capture / Translation 的上游版，CI 的
   *Updates come from the fork* 步骤会拦下这种改动；同步上游时若此处冲突，保留 `dnw3/tinycast`。
-- **签名是信任根**：更新器接受与运行中副本叶证书相同的包，所以每个版本都必须由本机钥匙串里的
-  `Tinycast Self-Signed` 签名。证书丢失后，所有熟人都要手动重装新签名的版本并重新授权，
+- **签名是信任根**：更新器（上游 #1808）只接受两种包：附带上游发布密钥 Ed25519 签名（`.sig`）且有
+  Developer ID 签名的，或满足运行中副本自身签名要求（designated requirement）的。fork 的发布只有自签名、
+  不附 `.sig`，走后一条，要求是 `identifier "com.tinycast.app"` 加叶证书哈希，所以每个版本都必须由本机
+  钥匙串里的 `Tinycast Self-Signed` 签名。合并 #1808 之前的副本用旧更新器，同样比对叶证书，能直接升上来。
+  验证过的更新先暂存，退出 Tinycast 时才替换。证书丢失后，所有熟人都要手动重装新签名的版本并重新授权，
   按"新机器或新会话"备份 `.p12`。
 - **通道是 `com.tinycast.app` 正式版**：版本号独立编号、只用 `X.Y.Z`，从 1.0.0 起，每次发版递增；
   一般每合并一轮上游加次版本号，仅修复加修订号。不能和上游安装并存，安装说明会提示先卸载上游版。
@@ -282,8 +286,9 @@ git switch main && git pull --ff-only
 ```
 
 脚本要求 `main` 干净且与 `origin/main` 一致，版本号大于上一个 Release；构建只含 arm64，并核对版本、
-bundle ID、各可执行文件架构和签名叶证书。说明以 `<!-- tinycast:install -->` 分隔：上半部分是更新内容，
-显示在应用的更新窗口；下半部分是首次安装步骤（卸载上游版、解压拖入、系统设置里"仍要打开"）和源码链接，
+bundle ID、各可执行文件架构和签名叶证书，并以 `SELF_SIGNED` 模式运行 `verify-signature.sh`。说明以
+`<!-- tinycast:install -->` 分隔：上半部分是更新内容，只显示在 GitHub 的 Release 页面（应用自上游 #1817 起
+只在启动器里显示更新提示条，「更新日志」菜单打开 fork 的 Releases）；下半部分是首次安装步骤（卸载上游版、解压拖入、系统设置里"仍要打开"）和源码链接，
 满足 AGPL 提供源码的要求。脚本写的更新内容只是提交标题，`--publish` 时还会重新生成；发布后用
 `gh release edit vX.Y.Z -R dnw3/tinycast --notes-file <文件>` 换成写给熟人的中文说明，安装部分保留
 脚本生成的原文（v1.5.1 起都这样发）。发布是公开操作，执行 `--publish` 前须经用户确认。
@@ -306,16 +311,16 @@ Dev 不通过应用内更新器更新，继续使用本分支的新代码需要�
 
 ## 最近一次源码同步
 
-| 项目 | 2026-11-02 记录 |
+| 项目 | 2026-11-06 记录 |
 | --- | --- |
-| 上游基线 | `cc96c2dc`（上一轮同日 `e3f813c7`） |
-| 同步方式 | 同步 PR #8（9 个上游提交）在 `RootPaletteView` 有 1 个冲突文件，本地 merge `origin/upstream-main` 后推送 `main` |
-| 吸收的上游改动 | 输入法组字时 ←/→、Tab、Escape 交给输入法（#1761）；Apple Intelligence 不可用时不再说成在下载，并给出打开系统设置的入口（#1724）；扩展：登录任务取消时收尾（#1708）、向扩展提供进程 uid/gid/groups 与 stat 属主（#1733）、运行时支持 SharedArrayBuffer 与有限等待（#1738）、URLSession 不走 AppSSO（#1739）、缺少偏好设置时直接给出配置入口（#1754）；搜索范围选择器可选文件夹（#1759）；Xcode 27 文档与 issue 模板 |
-| 主要适配 | `RootPaletteView` 的 ←/→ 先按上游判断组字，再走 fork 的 `navigateHorizontally`，之后才是上游的 `moveCompactSelection` 与 `moveHorizontally`；fork 改过的 `AIProvidersPanel`、`AISettingsView`、`Scripts/run-tests.sh` 自动合并，上游新增的「打开系统设置」按钮用 `NSWorkspace` 打开，不涉及对话框 |
-| 自动检查 | 141 个 harness 中 139 个通过（含上游新增的 `ext-sign-in-test`），`form-input-test`、`cleanup-walk-test` 为本机已知失败；Debug 构建通过，Swift 警告 0；lint、本地化（`sync-strings.sh` 无改动）与 Model 纯度检查通过 |
-| 原生验收 | 未在本机界面上验证输入法组字时的方向键、扩展登录与 Apple Intelligence 的设置入口；上一轮遗留：滚动截图控制条的可交互 glass 贴着窗口四边，轮廓是否被切仍待目测 |
+| 上游基线 | `c6da716a`（上一轮 2026-11-02 `cc96c2dc`） |
+| 同步方式 | 同步 PR #9（20 个上游提交）有 21 个冲突文件，本地 merge `origin/upstream-main` 后推送 `main` |
+| 吸收的上游改动 | 更新：Developer ID 签名与公证（#1803）、经发布密钥或运行中副本的签名要求信任更新并在退出时安装（#1808）、更新窗口换成启动器里的提示条、应用不再显示更新说明（#1817）；链接（deeplinks）：带输入、首次询问、Debug 用 `tinycast-dev`（#1753）；AI：「展开思考过程」设置（#1766）、OpenAI MCP 工具调用修复（#1773）、OpenCode 用 Tinycast 配置的 MCP 服务器（#1795）；剪贴板记录只有 HTML 或 RTF 的复制（#1787）；代码审计修复（#1772）；窗口移到屏幕边缘、全屏窗口跨显示器（#1781、#1785）；计算器自然语言日期、时区、复利与分账（#1771）；扩展的 os.networkInterfaces 与 AES-GCM（#1765、#1767）；文本框宽度探测崩溃、外观切换提示、退出码 127 提示等修复（#1818、#1806、#1788）；文档与网站 |
+| 主要适配 | 更新：`ReleaseFeed` 保留 `dnw3/tinycast`；fork 发布无 `.sig`，走运行中副本的签名要求，用 1.5.5 发布包按新更新器的严格校验实测通过；`verify-signature.sh` 新增的 Developer ID 检查会挡住每次 fork 发版，加 `SELF_SIGNED` 模式由 `release-fork.sh` 使用；「更新日志」菜单改指 fork 的 Releases；`UpdateReadiness` 随上游删去 `message`，保留 `.cleaning`；`AppCore` 退出时先停代理再替换暂存的更新。AI：fork 的 Agent 会话（Codex、Claude）与上游的 `AIToolSession`（OpenCode）两套参数并存，`InstalledCLIProvider` 两边的状态与收尾都保留；审批应答照上游丢弃 `send` 的返回值。剪贴板：保留 fork 的存储实现（去重、`isWanted` 复查），`historyGeneration` 改名 `captureGeneration` 并可在编码前记下，吸收上游的代际保护；只有 RTF 的复制也保存 RTF 原文。链接：fork 的设置页补 slug，fork 的命令在 `DeepLinkConsentPolicy` 里归类。`TextTranslator` 保持删除（上游那行取消检查 fork 的翻译服务不需要）。本地化按键三方合并，恢复了上游删除但 fork 代理页仍在用的 "Update Now" |
+| 自动检查 | 144 个 harness 中 142 个通过，`form-input-test`、`cleanup-walk-test` 为本机已知失败；上游新增的 `ai-responses-test` 补上 fork 的 `ChatMessage`、`ChatToolDetail` 后通过；Debug 构建通过，Swift 警告 0；lint、本地化与 Model 纯度检查通过 |
+| 原生验收 | 未在本机界面上验证更新提示条、退出时安装、链接的首次询问与剪贴板的 HTML/RTF 记录；上一轮遗留：滚动截图控制条的可交互 glass 贴着窗口四边，轮廓是否被切仍待目测 |
 | 证据 | 合并提交说明 |
-| 发布 | 同日发布 [v1.5.5](https://github.com/dnw3/tinycast/releases/tag/v1.5.5)（`01f7074a`，arm64 zip 34 MB，CI 通过）：只含本轮上游改动，fork 自有功能无变化；本机已换装同一构建 |
-| 后续 | 同日发布 [v1.1.0](https://github.com/dnw3/tinycast/releases/tag/v1.1.0)（`68813796`，arm64 zip 11 MB，CI 通过）：主程序与 4 个 helper（含 `FileIndexHelper`）均由 `Tinycast Self-Signed` 签名并启用 hardened runtime；本机经应用内更新升级到 1.1.0，签名叶证书不变、无隔离标记。2026-10-18 发布 [v1.2.0](https://github.com/dnw3/tinycast/releases/tag/v1.2.0)（`2e519584`，arm64 zip 11 MB）：新增 Disk Cleanup，统一截图与翻译界面；仓库 Actions 被停用，此版未经 CI，以本机全量 harness、lint 与 Debug / Release 构建为准；发版前 `Tinycast Self-Signed` 的代码签名信任曾丢失，已重新设为受信任。同日发布 [v1.2.1](https://github.com/dnw3/tinycast/releases/tag/v1.2.1)（`f268b752`，arm64 zip 11 MB，CI 通过）：清理 / 截图 / 翻译的体验打磨、参照 Maccy 的剪贴板改进与富文本、「语言」设置行；Actions 已重新启用。2026-10-20 发布 [v1.3.0](https://github.com/dnw3/tinycast/releases/tag/v1.3.0)（`655f90a3`，arm64 zip 11 MB，未同步上游）：AI Chat 的 Agent 模式（Claude Code / Codex，内联审批、等待提醒、步骤详情），长截图重写滚动拼接并支持 Tinycast 自身窗口，截图结果编辑器改版；本机全量 harness 122/124（`form-input-test`、`cleanup-walk-test` 为已知失败）、lint 与 Release 构建通过。2026-10-30 发布 [v1.5.1](https://github.com/dnw3/tinycast/releases/tag/v1.5.1)（`96721067`，arm64 zip 34 MB，CI 通过），本机换装同一构建、签名 designated requirement 不变；同日发布 [v1.5.2](https://github.com/dnw3/tinycast/releases/tag/v1.5.2)（`e0d83f01`，arm64 zip 34 MB，CI 通过）：紧凑模式快捷操作新增截图、翻译、选择代理节点、磁盘清理与 AI 聊天，本机已换装。v1.5.1 发版后按 [migrations.md](migrations.md) 删除已随 v1.5.1 发出的 `CompactFavoritesMigration`；上游以后改动或删除它时接受删除。2026-11-02 发布 [v1.5.3](https://github.com/dnw3/tinycast/releases/tag/v1.5.3)（`abe83c16`，arm64 zip 34 MB，CI 通过）：本轮上游的原生 glass、紧凑模式阴影与自定义命令提示末行，以及 Capture 表面统一；脚本生成的说明发布后换成手写中文版；本机已换装同一构建，签名 designated requirement 不变、无隔离标记。同日发布 [v1.5.4](https://github.com/dnw3/tinycast/releases/tag/v1.5.4)（`bf6bbd3e`，arm64 zip 34 MB）：截图画布原先只加载可见的前四个分块，长截图按宽度缩放时大半落在低清预览上，改为按显示精度加载全部可见分块；结果窗口的截图 / 长截图切换改用图标。CI 首次只因上游的 `file-search-session-test` 计时断言失败，重跑通过；本机已换装同一构建 |
+| 发布 | 尚未发版 |
+| 后续 | 同日发布 [v1.1.0](https://github.com/dnw3/tinycast/releases/tag/v1.1.0)（`68813796`，arm64 zip 11 MB，CI 通过）：主程序与 4 个 helper（含 `FileIndexHelper`）均由 `Tinycast Self-Signed` 签名并启用 hardened runtime；本机经应用内更新升级到 1.1.0，签名叶证书不变、无隔离标记。2026-10-18 发布 [v1.2.0](https://github.com/dnw3/tinycast/releases/tag/v1.2.0)（`2e519584`，arm64 zip 11 MB）：新增 Disk Cleanup，统一截图与翻译界面；仓库 Actions 被停用，此版未经 CI，以本机全量 harness、lint 与 Debug / Release 构建为准；发版前 `Tinycast Self-Signed` 的代码签名信任曾丢失，已重新设为受信任。同日发布 [v1.2.1](https://github.com/dnw3/tinycast/releases/tag/v1.2.1)（`f268b752`，arm64 zip 11 MB，CI 通过）：清理 / 截图 / 翻译的体验打磨、参照 Maccy 的剪贴板改进与富文本、「语言」设置行；Actions 已重新启用。2026-10-20 发布 [v1.3.0](https://github.com/dnw3/tinycast/releases/tag/v1.3.0)（`655f90a3`，arm64 zip 11 MB，未同步上游）：AI Chat 的 Agent 模式（Claude Code / Codex，内联审批、等待提醒、步骤详情），长截图重写滚动拼接并支持 Tinycast 自身窗口，截图结果编辑器改版；本机全量 harness 122/124（`form-input-test`、`cleanup-walk-test` 为已知失败）、lint 与 Release 构建通过。2026-10-30 发布 [v1.5.1](https://github.com/dnw3/tinycast/releases/tag/v1.5.1)（`96721067`，arm64 zip 34 MB，CI 通过），本机换装同一构建、签名 designated requirement 不变；同日发布 [v1.5.2](https://github.com/dnw3/tinycast/releases/tag/v1.5.2)（`e0d83f01`，arm64 zip 34 MB，CI 通过）：紧凑模式快捷操作新增截图、翻译、选择代理节点、磁盘清理与 AI 聊天，本机已换装。v1.5.1 发版后按 [migrations.md](migrations.md) 删除已随 v1.5.1 发出的 `CompactFavoritesMigration`；上游以后改动或删除它时接受删除。2026-11-02 发布 [v1.5.3](https://github.com/dnw3/tinycast/releases/tag/v1.5.3)（`abe83c16`，arm64 zip 34 MB，CI 通过）：本轮上游的原生 glass、紧凑模式阴影与自定义命令提示末行，以及 Capture 表面统一；脚本生成的说明发布后换成手写中文版；本机已换装同一构建，签名 designated requirement 不变、无隔离标记。同日发布 [v1.5.4](https://github.com/dnw3/tinycast/releases/tag/v1.5.4)（`bf6bbd3e`，arm64 zip 34 MB）：截图画布原先只加载可见的前四个分块，长截图按宽度缩放时大半落在低清预览上，改为按显示精度加载全部可见分块；结果窗口的截图 / 长截图切换改用图标。CI 首次只因上游的 `file-search-session-test` 计时断言失败，重跑通过；本机已换装同一构建。2026-11-02 同步上游 `cc96c2dc`（PR #8），发布 [v1.5.5](https://github.com/dnw3/tinycast/releases/tag/v1.5.5)（`01f7074a`，arm64 zip 34 MB，CI 通过）：只含本轮上游改动，fork 自有功能无变化；本机已换装同一构建 |
 
 下次同步时更新本节的日期、上游 SHA、改动摘要、验证范围与证据链接；旧证据文件保留，便于回溯。
