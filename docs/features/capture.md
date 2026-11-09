@@ -76,7 +76,7 @@ Bars hold only icons and the commit action, so their width stays put as the stat
 such as Preparing image…, Click a window or Add below ↵ sit in a notice under the bar. Start Recording and
 Start Scrolling read like the palette's primary pill, text plus ↵, and ↵ runs the same action. Every bar is
 `CaptureChrome.barShape` padded by `xs`, with tools in the concentric `toolShape`; notices and review cards
-are native glass with no backing, as the bars are.
+take `panelScrim` under their glass, as HUDs do, while the bars stay bare interactive glass.
 Before and while dragging a new region, a pointer loupe shows original pixels, sRGB HEX and top-left pixel coordinates.
 It hides over controls and after completing selection and never writes the clipboard.
 

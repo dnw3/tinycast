@@ -470,11 +470,11 @@ the bar's width never jumps. Hints are `.tooltip`, never `.help`.
 
 `CaptureChrome` keeps the shapes concentric: the bar is `radius.row` with an `xs` inset, and a tool
 inside it is `radius.row - spacing.xs`, derived rather than tokenised so the two cannot drift. Four
-finishes cover every surface: `captureBar` (frosted), `captureCard` (glass, for cards over a
-screenshot), `captureNotice` (a glass capsule) and `captureField` (`cardFill` + hairline
-`border`). None of that glass carries a backing, unlike a HUD's. The selection's size label and the
-colour loupe share `CaptureSelectionLoupe`'s dark fill, since both sit over arbitrary pixels in
-either appearance.
+finishes cover every surface: `captureBar` (frosted, bare like the palette's floating controls),
+`captureCard` (`panelScrim` + glass, for cards over a screenshot), `captureNotice` (`panelScrim` +
+a glass capsule, as a HUD pill) and `captureField` (`cardFill` + hairline `border`). The selection's
+size label and the colour loupe share `CaptureSelectionLoupe`'s dark fill, since both sit over
+arbitrary pixels in either appearance.
 
 The capture windows — editor, recording, history preview and toolbar customization — take
 `AppWindowController`'s app-window recipe through `CaptureChrome.adopt`: full-size content under a

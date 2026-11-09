@@ -105,7 +105,8 @@ extension View {
     }
 
     func captureGlass(_ metrics: InterfaceMetrics) -> some View {
-        background(GlassEffectView()).clipShape(CaptureChrome.barShape(metrics))
+        background(Theme.Colors.panelScrim).background(GlassEffectView())
+            .clipShape(CaptureChrome.barShape(metrics))
     }
 
     /// A compact field sized for the tool bars, in the form field's fill and border.
@@ -119,7 +120,7 @@ extension View {
     func captureNotice(_ metrics: InterfaceMetrics) -> some View {
         font(metrics.typography.bar)
             .padding(.horizontal, metrics.spacing.md).padding(.vertical, metrics.spacing.sm)
-            .background(GlassEffectView())
+            .background(Theme.Colors.panelScrim).background(GlassEffectView())
             .clipShape(Capsule())
     }
 }
