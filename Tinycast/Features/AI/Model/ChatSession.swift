@@ -10,11 +10,14 @@ struct ChatSession: Equatable, Sendable {
     /// The folder an agent route works in, and how freely; none keeps it an ordinary chat.
     var agent: AgentWorkspace?
     var agentThread: AgentThread?
+    /// The preset that started the chat; it can change only until the first message is sent.
+    var preset: ChatPreset.Stamp?
 
     init(
         id: UUID = UUID(), createdAt: Date = Date(), updatedAt: Date? = nil,
         messages: [ChatMessage] = [], model: AIModelSelection? = nil,
-        agent: AgentWorkspace? = nil, agentThread: AgentThread? = nil
+        agent: AgentWorkspace? = nil, agentThread: AgentThread? = nil,
+        preset: ChatPreset.Stamp? = nil
     ) {
         self.id = id
         self.createdAt = createdAt
@@ -23,6 +26,7 @@ struct ChatSession: Equatable, Sendable {
         self.model = model
         self.agent = agent
         self.agentThread = agentThread
+        self.preset = preset
     }
 
     var title: String {

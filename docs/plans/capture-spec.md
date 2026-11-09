@@ -84,7 +84,7 @@ Macshot 是算法、交互与回归样本的参考；移入代码时保留来源
 | Translation 文本面板的 Capture 会话 | TranslationCoordinator；CaptureCoordinator 保留来源 | 取字/修正原文/翻译共用同一面板；未固定时失焦关闭并释放，固定后保留 |
 | 截图历史 | CaptureCoordinator / palette | 复用 palette 列表语言；选择条目后在独立编辑器打开 |
 
-所有长期状态从 AppCore 持有。编辑器使用现有 ActivationPolicy 的 windowDidOpen/Close；不自行切换 Dock 策略。
+所有长期状态从 AppCore 持有。编辑器使用现有 ActivationPolicy 的 windowWillOpen/DidOpen/Close；不自行切换 Dock 策略。
 会话保存原应用用于结束时恢复焦点；用户已经主动切换到其他应用时不抢回旧应用。
 对话框经 DialogController，通知经 HUDPresenter。标准文件选择仍使用异步 NSSavePanel，不使用 NSAlert 或 NSPopover。
 

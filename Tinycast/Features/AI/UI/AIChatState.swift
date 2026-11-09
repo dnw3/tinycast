@@ -148,6 +148,22 @@ final class AIChatState {
         await replyTask?.value
     }
 
+    /// Only an empty chat takes one; nil hands the chat back to the default model and every tool.
+    @discardableResult
+    func usePreset(_ preset: ChatPreset?) -> Bool {
+        guard session.messages.isEmpty, !isStreaming else { return false }
+        session.preset = preset?.stamp
+        session.model = preset?.model
+        toolScope = preset?.toolScope ?? ChatToolScope()
+        return true
+    }
+
+    /// An empty chat follows its preset's edits and deletion; a started one keeps its stamp.
+    func followPreset(id: UUID, to preset: ChatPreset?) {
+        guard session.preset?.presetID == id else { return }
+        usePreset(preset)
+    }
+
     /// Asks again for the last reply; the question and its attachments go out as they first did.
     @discardableResult
     func regenerate(
@@ -171,6 +187,7 @@ final class AIChatState {
             messages: session.requestMessages(textBudget: contextBudget), webSearch: webSearch,
             conversationID: session.id)
         session.append(ChatMessage(role: .assistant, text: "", state: .streaming))
+        session.preset?.toolScope = toolScope
         isStreaming = true
         isThinking = false
         replyStartedAt = Date()
@@ -254,6 +271,12 @@ final class AIChatState {
 
     func startNewChat() {
         cancel()
+        clearSession()
+    }
+
+    /// A preset's tools belong to its chat, so the plain chat after it starts with every server on.
+    private func clearSession() {
+        if session.preset != nil { toolScope = ChatToolScope() }
         session = ChatSession()
         notice = nil
         clearStaging()
@@ -264,8 +287,14 @@ final class AIChatState {
     func open(id: UUID) -> Bool {
         if session.id == id, !session.messages.isEmpty { return true }
         guard let loaded = history.session(id: id) else { return false }
+        let leavesPreset = session.preset != nil
         cancel()
         session = loaded
+        if let preset = loaded.preset {
+            toolScope = preset.toolScope
+        } else if leavesPreset {
+            toolScope = ChatToolScope()
+        }
         notice = nil
         clearStaging()
         return true
@@ -274,9 +303,7 @@ final class AIChatState {
     func delete(id: UUID) {
         if session.id == id {
             cancel()
-            session = ChatSession()
-            notice = nil
-            clearStaging()
+            clearSession()
         }
         history.remove(id: id)
     }

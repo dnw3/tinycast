@@ -43,6 +43,7 @@ struct TranslationView: View {
         )
         .fixedSize(horizontal: false, vertical: true)
         .foregroundStyle(Theme.Colors.textPrimary)
+        .background(Theme.Colors.panelScrim)
         .background(GlassEffectView())
         .clipShape(RoundedRectangle(cornerRadius: metrics.radius.panel, style: .continuous))
         .panelEntrance()

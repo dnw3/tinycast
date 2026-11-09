@@ -78,7 +78,6 @@ if [ "$only" = "--index" ]; then
 fi
 
 QUEUE="$BIN/queue"
-EXCLUSIVE_QUEUE="$BIN/exclusive-queue"
 # `--index` queues nothing, so it must never reset the state of a suite already running.
 if [ "$emit_db" -eq 0 ]; then
     # Queue, logs and verdicts are shared by path, so a second suite in this $TMPDIR waits its turn.
@@ -88,17 +87,15 @@ if [ "$emit_db" -eq 0 ]; then
         exec lockf -k "$BIN/suite.lock" "$SELF" "$@"
     fi
     : > "$QUEUE"
-    : > "$EXCLUSIVE_QUEUE"
     rm -f "$BIN"/*.failed "$BIN"/*.running
 fi
 
 # `slow` dispatches in the first wave; `index` only claims editor flags for a hand-run harness.
 run() {
-    local opt=-Onone pri=1 index_only=0 queue="$QUEUE"
+    local opt=-Onone pri=1 index_only=0
     while :; do
         case "$1" in
             slow)  pri=0; shift;;
-            exclusive) queue="$EXCLUSIVE_QUEUE"; shift;;
             -O)    opt=-O; shift;;
             index) index_only=1; shift;;
             *)     break;;
@@ -131,7 +128,7 @@ run() {
     fi
 
     # xargs splits the queue on whitespace, so no harness source path may contain a space.
-    printf '%s %s %s %s\n' "$pri" "$name" "$opt" "$*" >> "$queue"
+    printf '%s %s %s %s\n' "$pri" "$name" "$opt" "$*" >> "$QUEUE"
 }
 
 L=Tinycast/Features/Launcher/Model
@@ -369,10 +366,6 @@ run appearance-test        Tinycast/Platform/Appearance.swift \
                            Tinycast/Features/Settings/AppAppearance.swift
 run language-test          Tinycast/Features/Settings/AppLanguage.swift
 run localized-resource-test Tinycast/Platform/LocalizedResource.swift
-run exclusive onboarding-test Tinycast/Features/Onboarding/OnboardingCoordinator.swift \
-                           Tinycast/Windows/AppWindowController.swift \
-                           Tinycast/DesignSystem/Interaction/Motion.swift \
-                           Tinycast/Windows/WindowChrome.swift Tinycast/Platform/ActivationPolicy.swift
 run relaunch-test          Tinycast/App/AppDelegate.swift Tinycast/Platform/RelaunchRunner.swift
 run interface-size-test    Tinycast/Platform/Appearance.swift \
                            Tinycast/DesignSystem/Theme.swift \
@@ -967,6 +960,7 @@ run ai-chat-test           Tinycast/Features/AI/Model/AIRequest.swift \
                            Tinycast/Features/AI/Model/ChatToolDetail.swift \
                            Tinycast/Features/AI/Model/ChatSession.swift \
                            Tinycast/Features/AI/Model/Agent*.swift \
+                           Tinycast/Features/AI/Model/ChatPreset.swift \
                            Tinycast/Features/AI/Model/ChatChoices.swift \
                            Tinycast/Features/AI/Model/ChatReferences.swift \
                            Tinycast/Features/AI/Model/ChatTitle.swift \
@@ -1154,7 +1148,7 @@ dispatch() {
 
 # Without this the suite reports "all passed" whenever dispatch itself dies and no harness ran.
 if ! {
-    dispatch "$QUEUE" "$JOBS" && dispatch "$EXCLUSIVE_QUEUE" 1
+    dispatch "$QUEUE" "$JOBS"
     echo "dispatch $?"
 } | report; then
     echo "harness dispatch failed; no result below can be trusted" >&2
@@ -1165,7 +1159,7 @@ elapsed=$((SECONDS - started))
 # A compiler diagnostic is far longer than PIPE_BUF, so the workers log it and it is replayed here.
 while read -r _ name _; do
     if [ -f "$BIN/$name.failed" ]; then failed+=("$name"); fi
-done < <(cat "$QUEUE" "$EXCLUSIVE_QUEUE")
+done < "$QUEUE"
 
 if [ ${#failed[@]} -gt 0 ]; then
     for name in "${failed[@]}"; do

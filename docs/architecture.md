@@ -176,7 +176,8 @@ put on it is AI Chat's blue dot while an agent waits on the reader. Extension me
   settings. Translation borrows the AI provider layer and the validated text-delivery queue.
   See [features/translation.md](features/translation.md).
 - **Dialogs** — borderless `DialogPanel`s driven by `DialogController`, the app's only presenter for
-  confirmations, failure reports and value prompts. Presentation is `async`, so nothing blocks the main
+  confirmations, failure reports and value prompts outside Settings, whose panes ask with SwiftUI's
+  sheet-style `confirmationDialog` or `alert`. Presentation is `async`, so nothing blocks the main
   actor, and the presenter refuses a second dialog while one is up — that, not a flag, is what stops a
   held hotkey stacking dialogs.
 - **Support** — a titled `AppWindowController` window owned by `SupportCoordinator`, sized to the

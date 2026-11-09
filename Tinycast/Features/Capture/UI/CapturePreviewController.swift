@@ -21,6 +21,7 @@ final class CapturePreviewController: NSObject, NSWindowDelegate {
         let size = CGSize(
             width: metrics.scaled(Theme.Size.captureEditor.width),
             height: metrics.scaled(Theme.Size.captureEditor.height))
+        activation.windowWillOpen()
         let window = Window(
             contentRect: CGRect(origin: .zero, size: size),
             styleMask: [.titled, .closable, .resizable], backing: .buffered, defer: false)

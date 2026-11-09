@@ -14,7 +14,7 @@ struct HUDCapsule: ViewModifier {
     func body(content: Content) -> some View {
         content
             .background { glow }
-            .background(isLit ? Theme.Colors.controlHover : .clear)
+            .background(isLit ? Theme.Colors.controlHover : Theme.Colors.panelScrim)
             .background(GlassEffectView())
             .clipShape(Capsule())
             .overlay { rim }

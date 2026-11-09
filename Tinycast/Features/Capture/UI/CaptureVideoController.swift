@@ -16,6 +16,7 @@ final class CaptureVideoController: NSObject, NSWindowDelegate {
         let size = CGSize(
             width: metrics.scaled(Theme.Size.captureEditor.width),
             height: metrics.scaled(Theme.Size.captureEditor.height))
+        activation.windowWillOpen()
         let window = NSWindow(
             contentRect: CGRect(origin: .zero, size: size),
             styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
@@ -56,6 +57,7 @@ final class CaptureVideoController: NSObject, NSWindowDelegate {
     }
 
     func present(_ panel: NSSavePanel) async -> NSApplication.ModalResponse {
+        activation.windowWillOpen()
         activation.windowDidOpen(panel)
         defer { activation.windowDidClose(panel) }
         NSApp.activate()

@@ -87,6 +87,7 @@ final class AppCore {
     let translationSettings = TranslationSettingsStore()
     let translation = TranslationState()
     let customQuickActions = CustomQuickActionStore()
+    let chatPresets = ChatPresetStore()
     let chatGPTSubscription = ChatGPTSubscriptionManager()
     let installedAI = InstalledAIManager()
     @ObservationIgnored private var appliedLaunchRevisions: [InstalledAIKind: Int] = [:]
