@@ -217,7 +217,8 @@ git push origin main
 ```sh
 git switch main && git pull --ff-only
 # 不注入版本号会构建成 project.yml 的 0.1.0，应用内更新随即提示用 Releases 覆盖本地构建。
-VERSION=$(git describe --tags --abbrev=0 --match 'v[0-9]*' | sed 's/^v//')
+# 取 fork 最新 Release 的版本：本地标签混有上游合进来的 v0.12.x，git describe 会取到它。
+VERSION=$(gh release view -R dnw3/tinycast --json tagName -q .tagName | sed 's/^v//')
 xcodebuild -project Tinycast.xcodeproj -scheme Tinycast -configuration Release \
   -derivedDataPath build/InstallRelease \
   MARKETING_VERSION="$VERSION" CURRENT_PROJECT_VERSION="$(git rev-list --count HEAD)" build
