@@ -6,43 +6,74 @@ import Observation
 @Observable
 final class CleanupSettingsStore {
     private let defaults: UserDefaults
+    @ObservationIgnored private var isReloading = false
 
     var deletionMode: CleanupDeletionMode {
-        didSet { defaults.set(deletionMode.rawValue, forKey: AppSettingsKey.cleanupDeletionMode.rawValue) }
+        didSet {
+            if !isReloading { defaults.set(deletionMode.rawValue, forKey: AppSettingsKey.cleanupDeletionMode.rawValue) }
+        }
     }
     /// Tilde-abbreviated, so the settings file reads the same on any account.
     var exclusions: [String] {
-        didSet { defaults.set(exclusions, forKey: AppSettingsKey.cleanupExclusions.rawValue) }
+        didSet {
+            if !isReloading { defaults.set(exclusions, forKey: AppSettingsKey.cleanupExclusions.rawValue) }
+        }
     }
 
     /// A project untouched this long has its rebuildable folders offered.
     var projectIdleDays: Int {
-        didSet { defaults.set(projectIdleDays, forKey: AppSettingsKey.cleanupProjectIdleDays.rawValue) }
+        didSet {
+            if !isReloading { defaults.set(projectIdleDays, forKey: AppSettingsKey.cleanupProjectIdleDays.rawValue) }
+        }
     }
 
     /// Files at least this big are offered as large files.
     var largeFileThresholdMB: Int {
-        didSet { defaults.set(largeFileThresholdMB, forKey: AppSettingsKey.cleanupLargeFileThreshold.rawValue) }
+        didSet {
+            if !isReloading { defaults.set(largeFileThresholdMB, forKey: AppSettingsKey.cleanupLargeFileThreshold.rawValue) }
+        }
     }
 
     /// Grants unattended deletion, so it is switched on only in the app, after a confirmation, and
     /// never carried by a backup or the settings file.
     var scheduleEnabled: Bool {
-        didSet { defaults.set(scheduleEnabled, forKey: AppSettingsKey.cleanupScheduleEnabled.rawValue) }
+        didSet {
+            if !isReloading { defaults.set(scheduleEnabled, forKey: AppSettingsKey.cleanupScheduleEnabled.rawValue) }
+        }
     }
     var scheduleInterval: CleanupScheduleInterval {
-        didSet { defaults.set(scheduleInterval.rawValue, forKey: AppSettingsKey.cleanupScheduleInterval.rawValue) }
+        didSet {
+            if !isReloading { defaults.set(scheduleInterval.rawValue, forKey: AppSettingsKey.cleanupScheduleInterval.rawValue) }
+        }
     }
     var lowSpaceAlertEnabled: Bool {
-        didSet { defaults.set(lowSpaceAlertEnabled, forKey: AppSettingsKey.cleanupLowSpaceAlert.rawValue) }
+        didSet {
+            if !isReloading { defaults.set(lowSpaceAlertEnabled, forKey: AppSettingsKey.cleanupLowSpaceAlert.rawValue) }
+        }
     }
     var lowSpaceThresholdGB: Int {
-        didSet { defaults.set(lowSpaceThresholdGB, forKey: AppSettingsKey.cleanupLowSpaceThreshold.rawValue) }
+        didSet {
+            if !isReloading { defaults.set(lowSpaceThresholdGB, forKey: AppSettingsKey.cleanupLowSpaceThreshold.rawValue) }
+        }
     }
 
     static let largeFileChoicesMB = CleanupFilePolicy.largeThresholdChoices.map { Int($0 >> 20) }
 
     var largeFileThreshold: Int64 { Int64(largeFileThresholdMB) << 20 }
+
+    func reload() {
+        isReloading = true
+        defer { isReloading = false }
+        let stored = CleanupSettingsStore(defaults: defaults)
+        if deletionMode != stored.deletionMode { deletionMode = stored.deletionMode }
+        if exclusions != stored.exclusions { exclusions = stored.exclusions }
+        if projectIdleDays != stored.projectIdleDays { projectIdleDays = stored.projectIdleDays }
+        if largeFileThresholdMB != stored.largeFileThresholdMB { largeFileThresholdMB = stored.largeFileThresholdMB }
+        if scheduleEnabled != stored.scheduleEnabled { scheduleEnabled = stored.scheduleEnabled }
+        if scheduleInterval != stored.scheduleInterval { scheduleInterval = stored.scheduleInterval }
+        if lowSpaceAlertEnabled != stored.lowSpaceAlertEnabled { lowSpaceAlertEnabled = stored.lowSpaceAlertEnabled }
+        if lowSpaceThresholdGB != stored.lowSpaceThresholdGB { lowSpaceThresholdGB = stored.lowSpaceThresholdGB }
+    }
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults

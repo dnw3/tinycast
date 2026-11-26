@@ -8,6 +8,7 @@ struct SettingsDetailView: View {
         Group {
             switch navigation.tab {
             case .general: GeneralSettingsView()
+            case .iCloudSync: CloudSyncSettingsView()
             case .applications: ApplicationsSettingsView()
             case .systemSettings: SystemSettingsSettingsView()
             case .systemActions: SystemActionsSettingsView()
@@ -17,7 +18,7 @@ struct SettingsDetailView: View {
             case .fallbacks: FallbacksSettingsView()
             case .ai: AISettingsView()
             case .quickActions: QuickActionsSettingsView()
-            case .proxy: ProxySettingsView()
+            case .proxy: ProxySettingsLauncherView()
             case .dictation: DictationSettingsView()
             case .capture: CaptureSettingsView()
             case .translation: TranslationSettingsView()

@@ -2,8 +2,9 @@ import SwiftUI
 
 struct GeneralSettingsView: View {
     @Environment(AppCore.self) private var core
+    @Environment(MainAppLink.self) private var mainApp
     @Environment(AppSettings.self) private var settings
-    private var launcherRanking: LauncherRankingStore { core.launcherRanking }
+    @State private var confirmingRankingReset = false
     @State private var inputSources: [InputSourceSwitcher.Option] = []
 
     var body: some View {
@@ -76,6 +77,13 @@ struct GeneralSettingsView: View {
                 } label: {
                     SettingsRowTitle(.generalAppearance, "Appearance")
                 }
+                Picker(selection: $settings.iconStyle) {
+                    ForEach(IconStyle.allCases) { style in
+                        Text(style.title).tag(style)
+                    }
+                } label: {
+                    SettingsRowTitle(.generalAppearance, "Icon style")
+                }
                 Toggle(isOn: $settings.animationsEnabled) {
                     SettingsRowTitle(.generalAppearance, "Show animations")
                 }
@@ -129,8 +137,10 @@ struct GeneralSettingsView: View {
                     Text("A lower value allows less exact matches.")
                 }
                 LabeledContent {
-                    Button("Reset…", role: .destructive, action: confirmRankingReset)
-                    .disabled(launcherRanking.isEmpty)
+                    Button("Reset…", role: .destructive) {
+                        confirmingRankingReset = true
+                    }
+                    .disabled(mainApp.status.launcherRankingIsEmpty)
                 } label: {
                     SettingsRowTitle(.generalSearch, "Learned ranking")
                     Text("Learned privately from the results you pick.")
@@ -143,25 +153,24 @@ struct GeneralSettingsView: View {
         }
         .formStyle(.grouped)
         .settingsScrollTarget(.general)
+        .confirmationDialog(
+            "Reset learned launcher ranking?",
+            isPresented: $confirmingRankingReset,
+            titleVisibility: .visible
+        ) {
+            Button("Reset Ranking", role: .destructive) {
+                mainApp.send(.resetLauncherRanking)
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Tinycast will relearn your preferred results as you use the launcher.")
+        }
         .onAppear(perform: refreshInputSources)
         .onReceive(
             DistributedNotificationCenter.default().publisher(
                 for: InputSourceSwitcher.sourcesDidChange)
         ) { _ in
             refreshInputSources()
-        }
-    }
-
-    private func confirmRankingReset() {
-        Task {
-            guard
-                await core.confirm(
-                    title: String(localized: "Reset learned launcher ranking?"),
-                    message: String(
-                        localized: "Tinycast will relearn your preferred results as you use the launcher."),
-                    symbol: "arrow.counterclockwise", confirmTitle: String(localized: "Reset Ranking"))
-            else { return }
-            launcherRanking.resetAll()
         }
     }
 

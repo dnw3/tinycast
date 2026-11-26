@@ -82,6 +82,7 @@ final class QuicklinkCoordinator {
     /// The only entry that seeds an argument from the selection.
     func openQuicklinkFromHotKey(id: UUID) {
         guard let quicklink = openableQuicklink(id: id) else { return }
+        guard !isPrompting(for: quicklink) else { return paletteCoordinator.hidePalette() }
         let attempt = makeAttempt(quicklink, values: [:], forcingDefaultApp: false)
         guard let argument = selectedTextArgument(for: quicklink) else { return open(attempt) }
         guard attempt.context.selection.isEmpty, let app = attempt.copySource else {
@@ -101,6 +102,13 @@ final class QuicklinkCoordinator {
             return openQuicklink(id: id)
         }
         openQuicklink(id: id, values: [target.name: seed])
+    }
+
+    private func isPrompting(for quicklink: Quicklink) -> Bool {
+        guard paletteCoordinator.isShowing(.quicklinks) else { return false }
+        let rows = store.enabled(matching: core.palette.query)
+        let selection = core.palette.selection
+        return rows.indices.contains(selection) && rows[selection].id == quicklink.id
     }
 
     private func openableQuicklink(id: UUID) -> Quicklink? {
@@ -280,6 +288,15 @@ final class QuicklinkCoordinator {
                     confirmTitle: String(localized: "Delete"))
             else { return }
         }
+        if let mainApp = core.mainApp {
+            mainApp.send(.deleteQuicklink(id))
+        } else {
+            await removeQuicklink(id: id)
+        }
+    }
+
+    func removeQuicklink(id: UUID) async {
+        guard let quicklink = store.quicklink(id: id) else { return }
         // Unwound only once the row is gone: a failed delete must not strand its references.
         do {
             try store.remove(id: id)

@@ -3,15 +3,15 @@ import UniformTypeIdentifiers
 
 struct ClipboardSettingsView: View {
     @Environment(AppCore.self) private var core
+    @Environment(MainAppLink.self) private var mainApp
     @Environment(AppSettings.self) private var settings
     @State private var diskUsage: Int64?
-    /// With the feature off a clear leaves `items` empty either way, so it bumps this instead.
-    @State private var clears = 0
+    @State private var confirmingClear = false
 
     private var usageKey: UsageKey {
         UsageKey(
-            count: core.clipboardStore.items.count, newest: core.clipboardStore.items.first?.id,
-            clears: clears)
+            count: mainApp.status.clipboardCount, newest: mainApp.status.clipboardNewest,
+            clears: mainApp.status.clipboardHistoryClears)
     }
 
     var body: some View {
@@ -69,10 +69,7 @@ struct ClipboardSettingsView: View {
                                 .foregroundStyle(.secondary)
                         }
                         Button("Clear…", role: .destructive) {
-                            Task {
-                                await core.clipboardCoordinator.deleteAllClips()
-                                clears += 1
-                            }
+                            confirmingClear = true
                         }
                     }
                 } label: {
@@ -91,6 +88,22 @@ struct ClipboardSettingsView: View {
             }.value
             guard !Task.isCancelled else { return }
             diskUsage = usage
+        }
+        .confirmationDialog(
+            "Clear clipboard history?",
+            isPresented: $confirmingClear,
+            titleVisibility: .visible
+        ) {
+            Button("Clear History", role: .destructive) {
+                mainApp.send(.clearClipboardHistory)
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            if mainApp.status.syncsClipboard {
+                Text("This also clears your other Macs and can't be undone.")
+            } else {
+                Text("This can't be undone.")
+            }
         }
     }
 }

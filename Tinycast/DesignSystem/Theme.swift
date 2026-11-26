@@ -2,6 +2,12 @@ import SwiftUI
 
 /// Central design tokens; every dark colour is the literal the forced-dark build shipped.
 enum Theme {
+    /// macOS 26 glass casts its own shadow; on 27 bare glass has none and needs the window's.
+    static var glassCastsShadow: Bool {
+        if #available(macOS 27, *) { return false }
+        return true
+    }
+
     enum Spacing {
         static let xxs: CGFloat = 2
         static let dictationWaveGap: CGFloat = 3
@@ -25,12 +31,14 @@ enum Theme {
         static let sectionSpacing: CGFloat = 12
         /// Emoji tiles need a little more separation so adjacent category grids stay distinct.
         static let emojiSectionSpacing: CGFloat = 14
+        static let planUsageRow: CGFloat = 16
+        static let planUsageSectionBottom: CGFloat = 16
     }
 
     enum Radius {
         static let panel: CGFloat = 26
         static let row: CGFloat = 10
-        static let formField: CGFloat = 12
+        static let formField: CGFloat = 10
         /// Emoji tiles are roomier than list rows, so their corners take one larger step.
         static let emojiCell: CGFloat = 12
         static let menu: CGFloat = 6
@@ -150,7 +158,7 @@ enum Theme {
         /// Fixed so the recorder can't resize as its binding changes.
         static let shortcutRecorder: CGFloat = 120
         static let shortcutPopoverLine: CGFloat = 14
-        /// Summed from the laid-out bands; the width is pinned by `callout-test`.
+        /// Summed from the laid-out bands; the width is pinned by `CalloutTests`.
         static let shortcutPopover = CGSize(
             width: 176,
             height: Spacing.sm * 2 + heroKeyCap + Spacing.sm + shortcutPopoverLine * 2 + Spacing.sm
@@ -196,7 +204,6 @@ enum Theme {
         static let menuSectionHeader: CGFloat = 16
         /// Five rows and half of the sixth, so a capped menu reads as scrollable, not clipped.
         static let menuVisibleRows: CGFloat = 5.5
-        static let appMenuVisibleRows: CGFloat = 4.5
         /// Rounded: a half-row of an odd pitch lands the glass edge on a half pixel.
         static var menuRowsMaxHeight: CGFloat {
             (menuVisibleRows * (menuRowHeight + menuRowSpacing)).rounded()
@@ -223,8 +230,8 @@ enum Theme {
         static let previewAspectRatio: CGFloat = 16 / 9
         /// Opening size and resize floor: the Quick Actions row's width, the sidebar's full height.
         static let settingsWindow = CGSize(width: 900, height: 700)
-        /// Settings sidebar: a fixed column, wide enough for "Window Management".
-        static let settingsSidebar: CGFloat = 215
+        /// Settings sidebar: a fixed column, as wide as System Settings' own.
+        static let settingsSidebar: CGFloat = 232
         /// The narrowest the pane column may get before a grouped row's control starts colliding.
         static let settingsDetailMinimum: CGFloat = 420
         static let settingsRowIcon: CGFloat = 20
@@ -290,6 +297,13 @@ enum Theme {
         static let aiVariableName: CGFloat = 170
         /// A Codex usage window's meter, beside its "72% left" readout.
         static let aiUsageBar: CGFloat = 110
+        static let planUsageMenuWidth: CGFloat = 320
+        static let planUsageMenuInset: CGFloat = 16
+        static let planUsageMeter: CGFloat = 4
+        static let planUsagePaceMark = CGSize(width: 2, height: 8)
+        static let planUsageGauge: CGFloat = 18
+        static let planUsageGaugeLine: CGFloat = 2
+        static let planUsageGaugeGlyph: CGFloat = 10
         /// Settings editor modals (Custom Commands, Snippets): fixed width, intrinsic height.
         static let editorSheetWidth: CGFloat = 480
         /// The multi-line box inside those modals; it scrolls rather than grows the panel.
@@ -399,6 +413,8 @@ enum Theme {
         static let glyphDelay: TimeInterval = 0.24
         static let glyphFade: TimeInterval = 0.16
         static let glyphBlur: CGFloat = 4
+        /// Both springs rest within this, so the window's shadow is recut from the settled shapes.
+        static let settle: TimeInterval = 0.9
         /// Past the window's own close animation, so parking the buttons is never seen.
         static let parkAfterHide: TimeInterval = 0.3
         /// The capsule undershoots as it shortens, then settles.
@@ -411,6 +427,10 @@ enum Theme {
         /// Starts promptly and eases gently into the chevron's final direction.
         static let chevronAnimation = Animation.timingCurve(
             0.16, 1, 0.3, 1, duration: Theme.Duration.menuChevron)
+    }
+
+    enum SlotChordMotion {
+        static let reveal = Animation.easeOut(duration: 0.15)
     }
 
     enum Typography {
@@ -582,13 +602,88 @@ enum Theme {
             private static func pair(dark: UInt32, light: UInt32) -> Color {
                 adaptive(dark: rgb(dark), light: rgb(light))
             }
+        }
+    }
 
-            private static func rgb(_ hex: UInt32) -> NSColor {
-                NSColor(
-                    srgbRed: CGFloat((hex >> 16) & 0xFF) / 255, green: CGFloat((hex >> 8) & 0xFF) / 255,
-                    blue: CGFloat(hex & 0xFF) / 255, alpha: 1)
+    enum IconTile {
+        static let glyphRatio: CGFloat = 0.6
+        static let edgeLightRatio: CGFloat = 0.02
+        static let edgeLight = LinearGradient(
+            stops: [
+                .init(color: .white.opacity(0.26), location: 0),
+                .init(color: .white.opacity(0.03), location: 0.6)
+            ], startPoint: .top, endPoint: .bottom)
+
+        static let whiteInk = vertical(.white, .white)
+        static let darkGround = ramp(0x2E2E31, 0x0F0F10)
+        /// Measured off the system's Clear icons, which `NSWorkspace` flattens onto an opaque ground.
+        static let clearDarkGround = ramp(0x2B2B2B, 0x2B2B2B)
+        static let clearDarkInk = ramp(0xF7F7F7, 0xC8C8C8)
+        static let clearLightGround = ramp(0x7D7D7D, 0x7D7D7D)
+        static let clearLightInk = ramp(0xFCFCFC, 0xDCDCDC)
+        static func tinted(_ tint: SystemIconTheme.Tint, isDark: Bool) -> LinearGradient {
+            let color: Color
+            switch tint {
+            case .accent:
+                color = .accentColor
+            case .preset(let preset):
+                color = Color(nsColor: rgb(tintSwatch(preset, isDark: isDark)))
+            case .custom(let red, let green, let blue, let opacity):
+                color = Color(.sRGB, red: red, green: green, blue: blue, opacity: opacity)
+            }
+            return vertical(color.mix(with: .white, by: 0.2), color)
+        }
+
+        private static func tintSwatch(_ preset: SystemIconTheme.Tint.Preset, isDark: Bool) -> UInt32 {
+            switch preset {
+            case .red: isDark ? 0xFF5257 : 0xE0383E
+            case .orange: 0xF7821B
+            case .yellow: isDark ? 0xFFC600 : 0xFFC726
+            case .green: 0x62BA46
+            case .blue: 0x007AFF
+            case .purple: isDark ? 0xA550A7 : 0x953D96
+            case .pink: 0xF74F9E
+            case .graphite: isDark ? 0x8C8C8C : 0x989898
             }
         }
+
+        /// Fixed in both appearances: a saturated tile carries its own contrast against white ink.
+        static func fill(_ tint: IconTint) -> LinearGradient {
+            switch tint {
+            case .gray: ramp(0xA9A9AF, 0x77777D)
+            case .graphite: ramp(0x55555B, 0x1F1F22)
+            case .blue: ramp(0x4AA3FF, 0x0B6BF5)
+            case .cyan: ramp(0x5CC8F7, 0x1B9BE0)
+            case .mint: ramp(0x56D6C4, 0x12B2A0)
+            case .green: ramp(0x5FDD70, 0x2DBB49)
+            case .yellow: ramp(0xFFD43B, 0xF5AB00)
+            case .orange: ramp(0xFFAD42, 0xFF8600)
+            case .red: ramp(0xFF6A60, 0xEE3B31)
+            case .pink: ramp(0xFF6B87, 0xF52E57)
+            case .purple: ramp(0xC96BF7, 0xA235DB)
+            case .indigo: ramp(0x8583FF, 0x5451E0)
+            case .brown: ramp(0xC2A07A, 0x96744F)
+            }
+        }
+
+        /// Graphite's ramp is the dark ground's own, so there its glyph lifts to gray.
+        static func darkInk(_ tint: IconTint) -> LinearGradient {
+            fill(tint == .graphite ? .gray : tint)
+        }
+
+        private static func ramp(_ top: UInt32, _ bottom: UInt32) -> LinearGradient {
+            vertical(Color(nsColor: rgb(top)), Color(nsColor: rgb(bottom)))
+        }
+
+        private static func vertical(_ top: Color, _ bottom: Color) -> LinearGradient {
+            LinearGradient(colors: [top, bottom], startPoint: .top, endPoint: .bottom)
+        }
+    }
+
+    private static func rgb(_ hex: UInt32) -> NSColor {
+        NSColor(
+            srgbRed: CGFloat((hex >> 16) & 0xFF) / 255, green: CGFloat((hex >> 8) & 0xFF) / 255,
+            blue: CGFloat(hex & 0xFF) / 255, alpha: 1)
     }
 }
 

@@ -263,7 +263,10 @@ final class AIChatCoordinator {
 
     /// A finished chat may be named; an agent's turn that ended out of the reader's sight says so.
     private func replyEnded(_ chat: AIChatState, _ state: ChatMessage.State) {
-        if state == .complete { nameIfNeeded(chat) }
+        if state == .complete {
+            nameIfNeeded(chat)
+            core.planUsageCoordinator.replyFinished(on: model(for: chat))
+        }
         guard isAgentChat(chat), !(isWindowKey && chats.window === chat) else { return }
         let title = title(of: chat)
         guard state == .complete else {

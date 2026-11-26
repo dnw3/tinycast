@@ -17,7 +17,6 @@ struct ProxyGeneralPage: View {
         ProxyCoreSection(manager: manager)
         updates
         advanced
-        FeatureCommandsSection(owner: .proxy, anchor: .proxyCommands)
     }
 
     // MARK: - Connection

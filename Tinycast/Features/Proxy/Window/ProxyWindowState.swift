@@ -7,6 +7,7 @@ enum ProxyWindowPage: String, CaseIterable, Identifiable, Sendable {
     case routes
     case sources
     case activity
+    case settings
 
     var id: String { rawValue }
 
@@ -17,6 +18,7 @@ enum ProxyWindowPage: String, CaseIterable, Identifiable, Sendable {
         case .routes: "Routing"
         case .sources: "Subscriptions"
         case .activity: "Activity"
+        case .settings: "Settings"
         }
     }
 
@@ -27,6 +29,7 @@ enum ProxyWindowPage: String, CaseIterable, Identifiable, Sendable {
         case .routes: "arrow.triangle.branch"
         case .sources: "link"
         case .activity: "waveform.path.ecg"
+        case .settings: "gearshape"
         }
     }
 }

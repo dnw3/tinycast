@@ -45,6 +45,7 @@ struct AIProvidersPanel: View {
     @Environment(AISettingsStore.self) private var settings
     @Environment(ChatGPTSubscriptionManager.self) private var subscription
     @Environment(InstalledAIManager.self) private var installedAI
+    @Environment(MainAppLink.self) private var mainApp
 
     let onDone: () -> Void
 
@@ -154,7 +155,7 @@ struct AIProvidersPanel: View {
     }
 
     private var listActions: some View {
-        HStack(spacing: Theme.Spacing.xs) {
+        HStack(spacing: 0) {
             Menu {
                 ForEach(AIProviderKind.allCases) { provider in
                     Button(provider.title) {
@@ -175,7 +176,12 @@ struct AIProvidersPanel: View {
             Button {
                 if let selectedConnection { confirmRemoval(of: selectedConnection) }
             } label: {
+                // A borderless button hits only its glyph's bounds, and a minus is a hairline.
                 Image(systemName: "minus")
+                    .frame(
+                        width: Theme.Size.settingsRowButton, height: Theme.Size.settingsRowButton
+                    )
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.borderless)
             .disabled(selectedConnection == nil)
@@ -184,7 +190,7 @@ struct AIProvidersPanel: View {
             Spacer(minLength: 0)
         }
         .padding(.horizontal, Theme.Spacing.xl)
-        .padding(.vertical, Theme.Spacing.md)
+        .padding(.vertical, Theme.Spacing.xxs)
     }
 
     // MARK: - Detail
@@ -351,10 +357,10 @@ struct AIProvidersPanel: View {
         case .idle, .starting:
             checkingRow("Codex")
         case .signedOut:
-            signInRow(.codex, check: { subscription.refresh() })
+            signInRow(.codex, check: { refresh(.codex) })
         case .connected:
             LabeledContent {
-                Button("Refresh") { subscription.refresh() }
+                Button("Refresh") { refresh(.codex) }
             } label: {
                 Text("Ready")
                 Text("\(subscription.models.count) models available")
@@ -376,20 +382,13 @@ struct AIProvidersPanel: View {
                     }
                 }
             }
-            if let limits = subscription.rateLimits {
-                if let primary = limits.primary {
-                    usageRow(primary, fallbackTitle: String(localized: "Primary window"))
-                }
-                if let secondary = limits.secondary {
-                    usageRow(secondary, fallbackTitle: String(localized: "Secondary window"))
-                }
-            }
+            ForEach(subscription.usage?.windows ?? []) { usageRow($0) }
             if let executable = subscription.executable { commandRow(executable) }
         case .unavailable(let message):
             LabeledContent {
                 HStack(spacing: Theme.Spacing.sm) {
                     Button("Install Codex CLI…") { NSWorkspace.shared.open(InstalledAIKind.codex.installURL) }
-                    Button("Check Again") { subscription.refresh() }
+                    Button("Check Again") { refresh(.codex) }
                 }
                 .fixedSize()
             } label: {
@@ -397,7 +396,7 @@ struct AIProvidersPanel: View {
                 Text(message)
             }
         case .failed(let message):
-            failedRow(message, retry: { subscription.refresh() })
+            failedRow(message, retry: { refresh(.codex) })
         }
     }
 
@@ -409,19 +408,19 @@ struct AIProvidersPanel: View {
             checkingRow(kind.title)
         case .ready:
             LabeledContent {
-                Button("Refresh") { installedAI.refresh(kind: kind) }
+                Button("Refresh") { refresh(kind) }
             } label: {
                 Text("Ready")
                 Text("\(status.models.count) models available")
             }
             if let account = status.account { accountRow(account, kind: kind) }
         case .signInRequired:
-            signInRow(kind, check: { installedAI.refresh(kind: kind) })
+            signInRow(kind, check: { refresh(kind) })
         case .notInstalled:
             LabeledContent {
                 HStack(spacing: Theme.Spacing.sm) {
                     Button("Install…") { NSWorkspace.shared.open(kind.installURL) }
-                    Button("Check Again") { installedAI.refresh(kind: kind) }
+                    Button("Check Again") { refresh(kind) }
                 }
                 .fixedSize()
             } label: {
@@ -429,7 +428,7 @@ struct AIProvidersPanel: View {
                 Text("Tinycast could not find the \(kind.command) command.")
             }
         case .failed(let message):
-            failedRow(message, retry: { installedAI.refresh(kind: kind) })
+            failedRow(message, retry: { refresh(kind) })
         }
         if let executable = status.executable { commandRow(executable) }
     }
@@ -472,6 +471,12 @@ struct AIProvidersPanel: View {
         }
     }
 
+    /// Both processes check: this one shows the answer, and the main app is the one using the tool.
+    private func refresh(_ kind: InstalledAIKind) {
+        if kind == .codex { subscription.refresh() } else { installedAI.refresh(kind: kind) }
+        mainApp.send(.refreshInstalledAI(kind))
+    }
+
     private func signInRow(_ kind: InstalledAIKind, check: @escaping () -> Void) -> some View {
         LabeledContent {
             HStack(spacing: Theme.Spacing.sm) {
@@ -495,18 +500,17 @@ struct AIProvidersPanel: View {
         }
     }
 
-    private func usageRow(
-        _ window: ChatGPTSubscription.UsageWindow, fallbackTitle: String
-    ) -> some View {
-        LabeledContent {
+    private func usageRow(_ window: PlanUsage.Window) -> some View {
+        let remaining = Int((100 - window.usedPercent).rounded())
+        return LabeledContent {
             HStack(spacing: Theme.Spacing.md) {
-                ProgressView(value: Double(window.remainingPercent), total: 100)
+                ProgressView(value: Double(remaining), total: 100)
                     .frame(width: Theme.Size.aiUsageBar)
-                Text("\(window.remainingPercent)% left")
+                Text("\(remaining)% left")
                     .monospacedDigit()
             }
         } label: {
-            Text(usageTitle(window, fallback: fallbackTitle))
+            Text(window.title)
             if let reset = window.resetsAt {
                 Text("Resets \(reset, style: .relative)")
             }
@@ -864,15 +868,6 @@ struct AIProvidersPanel: View {
     private func copySignInCommand(_ kind: InstalledAIKind) {
         Paster.copyPlainText(kind.signInCommand)
         core.showMessage(String(localized: "Copied \(kind.signInCommand)"))
-    }
-
-    private func usageTitle(
-        _ window: ChatGPTSubscription.UsageWindow, fallback: String
-    ) -> String {
-        guard let minutes = window.durationMinutes else { return fallback }
-        if minutes >= 1_440 { return String(localized: "\(minutes / 1_440)-day window") }
-        if minutes >= 60 { return String(localized: "\(minutes / 60)-hour window") }
-        return String(localized: "\(minutes)-minute window")
     }
 
     private func loadKeyStatuses() {

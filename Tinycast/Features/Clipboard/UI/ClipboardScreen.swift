@@ -141,7 +141,7 @@ struct ClipboardScreen: PaletteScreen {
             let selected = item(at: selection)
             HStack(spacing: 0) {
                 ClipboardList(
-                    results: rows,
+                    results: rows, query: vm.query,
                     isRecordingPaused: pausedNotice != nil,
                     selectedID: selected?.id,
                     scroll: scroll,

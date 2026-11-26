@@ -24,6 +24,7 @@ final class NotesCoordinator {
     @ObservationIgnored private var loadTask: Task<Void, Never>?
     @ObservationIgnored private var issueTask: Task<Void, Never>?
     @ObservationIgnored private var operationTask: Task<Void, Never>?
+    @ObservationIgnored private var wordCountTask: Task<Void, Never>?
     @ObservationIgnored private var operationID = 0
     @ObservationIgnored private var pendingIssue: NotesStore.Issue?
     private var pendingPresentation: Presentation?
@@ -32,8 +33,10 @@ final class NotesCoordinator {
     private(set) var switcherSelection: NoteID?
     private(set) var switcherFocusRevision = 0
     private(set) var characterCount = 0
+    private(set) var wordCount = 0
     private(set) var formatting = NoteFormatting.plain
     private(set) var isFormattingBarExpanded: Bool
+    private(set) var fitsWindowToNote: Bool
     private(set) var isHeadingMenuPresented = false
     /// A press closes the menu before its button fires, so the button must not reopen it.
     @ObservationIgnored private var headingMenuWasOpenAtPress = false
@@ -43,6 +46,7 @@ final class NotesCoordinator {
     private var presentationGeneration = 0
 
     @ObservationIgnored private let saveFormattingBarExpanded: @Sendable (Bool) -> Void
+    @ObservationIgnored private let saveFitsWindowToNote: @Sendable (Bool) -> Void
 
     init(
         store: NotesStore,
@@ -50,7 +54,9 @@ final class NotesCoordinator {
         appIndex: AppIndex,
         core: AppCore,
         isFormattingBarExpanded: Bool = false,
-        saveFormattingBarExpanded: @escaping @Sendable (Bool) -> Void = { _ in }
+        saveFormattingBarExpanded: @escaping @Sendable (Bool) -> Void = { _ in },
+        fitsWindowToNote: Bool = true,
+        saveFitsWindowToNote: @escaping @Sendable (Bool) -> Void = { _ in }
     ) {
         self.store = store
         self.settings = settings
@@ -58,6 +64,8 @@ final class NotesCoordinator {
         self.core = core
         self.isFormattingBarExpanded = isFormattingBarExpanded
         self.saveFormattingBarExpanded = saveFormattingBarExpanded
+        self.fitsWindowToNote = fitsWindowToNote
+        self.saveFitsWindowToNote = saveFitsWindowToNote
         store.onIssue = { [weak self] issue in self?.present(issue) }
     }
 
@@ -72,6 +80,9 @@ final class NotesCoordinator {
     /// UTF-16 units, straight off the text storage: the only length TextKit hands back in O(1).
     var characterCountLabel: String {
         String(localized: "\(characterCount) characters")
+    }
+    var wordCountLabel: String {
+        String(localized: "\(wordCount) words")
     }
 
     var searchQueryBinding: Binding<String> {
@@ -347,14 +358,33 @@ final class NotesCoordinator {
         windowController.moveToTopRight()
     }
 
+    func keepWindowHeight() {
+        guard fitsWindowToNote else { return }
+        fitsWindowToNote = false
+        saveFitsWindowToNote(false)
+    }
+
+    func fitWindowToNote() {
+        guard !fitsWindowToNote else { return }
+        fitsWindowToNote = true
+        saveFitsWindowToNote(true)
+        windowController.fitToEditor()
+    }
+
     func updateSource(_ source: String) {
         closeHeadingMenu()
         store.updateSource(source)
     }
 
-    func updateCharacterCount(_ input: NoteEditorInput, _ count: Int) {
+    func updateCounts(_ input: NoteEditorInput, _ characterCount: Int) {
         guard input == editorInput else { return }
-        characterCount = count
+        self.characterCount = characterCount
+        wordCountTask?.cancel()
+        wordCountTask = Task { [weak self] in
+            let wordCount = await NoteWordCount.count(in: input.source)
+            guard let self, !Task.isCancelled, input == editorInput else { return }
+            self.wordCount = wordCount
+        }
     }
 
     /// Id and epoch, not the whole input: comparing a long source on every caret move is not free.

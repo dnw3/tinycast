@@ -73,8 +73,9 @@ bar, the launcher and the window. See the [Spec](../plans/proxy-spec.md) and
 - **Launcher**: the status card (exit, mode, connection) and commands owned by Settings › Proxy, each
   listed only when it applies. Its target and node screens list region strategies in a section of
   their own, under their flags.
-- **Settings › Proxy**: preferences only — the feature switch, the window, connection, menu bar, TUN,
-  DNS, core, subscription updates, advanced and commands.
+- **Settings › Proxy** holds the feature switch, window shortcuts and launcher commands. The Proxy
+  window’s Settings page owns connection, menu bar, TUN, DNS, core, subscription updates and advanced
+  controls in the main app process. Searching Settings for one of these controls opens that page.
 
 ## Testing
 

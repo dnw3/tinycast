@@ -1,0 +1,31 @@
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        > [!IMPORTANT]
+        > Many ideas have already been declined on purpose. Read [What Tinycast Won't Do](https://github.com/abue-ammar/tinycast/blob/main/docs/not-planned.md) first.
+        >
+        > **Like an idea that's already here? Upvote it instead of opening a new one.**
+  - type: textarea
+    id: what
+    attributes:
+      label: What should it do?
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why does it belong in Tinycast?
+      description: >
+        Tinycast stays minimal on purpose — quality over quantity. "Another app has it" is not a
+        reason on its own. Tell us why this is worth its weight.
+    validations:
+      required: true
+  - type: checkboxes
+    id: acknowledge
+    attributes:
+      label: "I confirm that:"
+      options:
+        - label: I wrote this in my own words. If I used AI, I checked and edited the text myself ([AI usage](https://github.com/abue-ammar/tinycast/blob/main/CODE_OF_CONDUCT.md#ai-usage)).
+          required: true

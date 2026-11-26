@@ -80,4 +80,9 @@ enum JSONValue: Equatable, Sendable {
         else { return "" }
         return text
     }
+
+    var doubleValue: Double? {
+        guard case .number(let value) = self, value.isFinite else { return nil }
+        return value
+    }
 }

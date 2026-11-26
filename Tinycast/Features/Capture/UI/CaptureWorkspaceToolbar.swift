@@ -92,7 +92,7 @@ struct CaptureWorkspaceToolbar: View {
         } else if workspace.displays != nil {
             return Text("Drag across displays")
         } else if let pending = coordinator.pendingCapture {
-            let key = KeyCapChip.inlineText(["↵"])
+            let key = Text(verbatim: "↵").font(metrics.typography.keyCap)
             return pending.axis == .vertical ? Text("Add below  \(key)") : Text("Add to the right  \(key)")
         } else if coordinator.editor == nil || workspace.selectingTarget,
             workspace.choosingElement || workspace.choosingWindow

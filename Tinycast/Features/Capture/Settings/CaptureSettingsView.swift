@@ -3,13 +3,14 @@ import SwiftUI
 
 struct CaptureSettingsView: View {
     @Environment(CaptureCoordinator.self) private var coordinator
+    @Environment(MainAppLink.self) private var mainApp
 
     var body: some View {
         @Bindable var store = coordinator.settings
         Form {
             Section {
                 Toggle(
-                    isOn: Binding(get: { store.preferences.enabled }, set: { coordinator.setEnabled($0) })
+                    isOn: Binding(get: { store.preferences.enabled }, set: { mainApp.send(.setCaptureEnabled($0)) })
                 ) {
                     SettingsFeatureToggleLabel(
                         anchor: .captureCapture, title: "Enable Capture",
@@ -42,7 +43,7 @@ struct CaptureSettingsView: View {
                         Text("Click to reopen, or drag the final file.")
                     }
                     .onChange(of: store.showsCompletionThumbnail) { _, enabled in
-                        if !enabled { coordinator.completionThumbnail.close() }
+                        if !enabled { mainApp.send(.closeCaptureCompletionThumbnail) }
                     }
                     Toggle("Include mouse pointer", isOn: $store.preferences.includesCursor)
                 } header: {
@@ -71,7 +72,7 @@ struct CaptureSettingsView: View {
                     Toggle(isOn: $store.keepsOriginals) {
                         SettingsRowTitle(.captureHistory, "Keep editable originals")
                     }
-                    Button("Open Capture History") { coordinator.open(.captureHistory) }
+                    Button("Open Capture History") { mainApp.send(.showCaptureHistory) }
                 } header: {
                     SettingsSectionHeader(.captureHistory)
                 } footer: {

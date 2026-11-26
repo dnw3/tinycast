@@ -68,6 +68,7 @@ struct ProxyWindowRootView: View {
         case .routes: ProxyRoutesPane(manager: manager)
         case .sources: ProxySourcesPane(manager: manager)
         case .activity: ProxyActivityPane(manager: manager)
+        case .settings: ProxySettingsView()
         }
     }
 

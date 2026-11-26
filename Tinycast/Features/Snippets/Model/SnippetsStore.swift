@@ -129,8 +129,51 @@ final class SnippetsStore {
         scheduleReload(after: .zero)
     }
 
+    // MARK: - Sync
+
+    /// Each file's bytes by name; nil unless the store is running and its folder has listed.
+    func syncedFiles() async -> [String: Data]? {
+        guard isStarted, state == .ready else { return nil }
+        let repository = repository
+        return await Task.detached(priority: .utility) { try? repository.files() }.value
+    }
+
+    func syncedFile(named name: String) async -> Data? {
+        guard isStarted else { return nil }
+        let url = snippetsDirectory.appendingPathComponent(name)
+        return await Task.detached(priority: .utility) { try? Data(contentsOf: url) }.value
+    }
+
+    /// Writes and trashes what another Mac changed; false when the folder refused.
+    func applySynced(_ files: [String: Data], trashing names: Set<String>) async -> Bool {
+        guard isStarted else { return false }
+        let succeeded =
+            (try? await performMutation { try $0.apply(writing: files, trashing: names) }) != nil
+        scheduleReload(after: .zero)
+        return succeeded
+    }
+
+    func setAside(_ name: String) async -> Bool {
+        guard isStarted else { return false }
+        let succeeded = (try? await performMutation { try $0.setAside(fileName: name) }) != nil
+        scheduleReload(after: .zero)
+        return succeeded
+    }
+
     func record(id: StoredSnippet.ID) -> StoredSnippet? {
         snippets.first(where: { $0.id == id })
+    }
+
+    /// A disabled snippet is off everywhere, so the browser lists exactly what the launcher does.
+    func browserRows(matching query: String) -> [StoredSnippet] {
+        let query = query.trimmingCharacters(in: .whitespaces)
+        let matches = snippets.filter { record in
+            record.snippet.isEnabled
+                && (query.isEmpty
+                    || record.snippet.name.localizedCaseInsensitiveContains(query)
+                    || record.snippet.keyword?.localizedCaseInsensitiveContains(query) == true)
+        }
+        return matches.filter(\.snippet.isPinned) + matches.filter { !$0.snippet.isPinned }
     }
 
     private enum RepositoryResult<Value: Sendable>: Sendable {

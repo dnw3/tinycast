@@ -5,6 +5,7 @@ struct ClipboardList: View {
 
     @Environment(\.metrics) private var metrics
     let results: [ClipboardItem]
+    let query: String
     /// Shown as one quiet line above the rows rather than a banner.
     let isRecordingPaused: Bool
     let selectedID: ClipboardItem.ID?
@@ -74,7 +75,7 @@ struct ClipboardList: View {
                             ClipboardRow(
                                 item: item, selected: item.id == selectedID,
                                 imageURL: store.imageURL(for: item),
-                                ownsImage: store.ownsImage(of: item), slot: slot
+                                ownsImage: store.ownsImage(of: item), slot: slot, query: query
                             )
                             .selectionFrame(item.id == selectedID)
                             .contentShape(Rectangle())
@@ -144,7 +145,7 @@ private struct ClipboardRow: View {
     let ownsImage: Bool
     /// This row's ⌘-digit, or nil when it is not among the first ten visible pins.
     let slot: Character?
-    @Environment(PaletteState.self) private var palette
+    let query: String
     @State private var hovered = false
 
     /// Selection wins over hover when a row is both; otherwise hover shows its fainter layer.
@@ -164,12 +165,7 @@ private struct ClipboardRow: View {
                 .lineLimit(1)
                 .truncationMode(.tail)
             Spacer(minLength: 0)
-            if let slot, palette.commandHeld {
-                HStack(spacing: metrics.spacing.xxs) {
-                    KeyCapChip(text: "⌘", style: .outline)
-                    KeyCapChip(text: String(slot), style: .outline)
-                }
-            }
+            SlotChordReveal(slot: slot)
         }
         .padding(.horizontal, metrics.spacing.md)
         .padding(.vertical, metrics.spacing.sm)
@@ -181,7 +177,7 @@ private struct ClipboardRow: View {
     }
 
     private var title: AttributedString {
-        let query = palette.query.trimmingCharacters(in: .whitespaces)
+        let query = query.trimmingCharacters(in: .whitespaces)
         switch item.kind {
         case .text:
             let text = item.text ?? ""

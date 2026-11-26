@@ -422,6 +422,11 @@ final class ProxyCoordinator {
         window.show(page: page, edit: edit)
     }
 
+    func showProxySettings(revealing target: SettingsTarget?) {
+        dismissPalette()
+        window.show(page: .settings, revealing: target)
+    }
+
     func focusExistingWindow() -> Bool {
         window.focusExisting()
     }

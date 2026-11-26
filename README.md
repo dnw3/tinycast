@@ -4,7 +4,7 @@
 </h1>
 
 <p align="center">
-  A native macOS launcher for everyday productivity. Lightweight and open source.
+  A native macOS launcher built for productivity. Fast, lightweight, and open source.
 </p>
 
 <p align="center">
@@ -34,7 +34,7 @@ no telemetry. It runs your Raycast extensions, too.
 
 [Explore all features →](https://tinycast.dev/#features)
 
-For anything private, feel free to email [iabueammar@gmail.com](mailto:iabueammar@gmail.com).
+For anything private, feel free to email [hello@tinycast.dev](mailto:hello@tinycast.dev).
 
 This fork adds **Capture** — region, window and full-screen capture, scrolling screenshots,
 annotations, pins and OCR — and **Translation** of selected or typed text, and maintains both on

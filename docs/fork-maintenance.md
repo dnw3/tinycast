@@ -101,7 +101,7 @@ CI runner 使用它上面最新的 Xcode（2026-10 为 Xcode 26.6 / Swift 6.3）
 因为 Swift 6.3 遇到带默认值的 `private` 存储属性会把逐成员初始化器变成 private；上游删掉这些属性或
 GitHub runner 换上 Xcode 27 后可去掉。
 `ci.yml` 的 `HOST_DEPENDENT` 列出结果取决于主机的 harness：`capture-ocr-test` 逐字比对小字 OCR，
-Vision 识别器随 macOS 版本变化；`form-input-test` 检查离屏渲染的字形像素，runner 上画不出来；
+Vision 识别器随 macOS 版本变化；`FormInputTests` 检查离屏渲染的字形像素，runner 上画不出来；
 `capture-video-test` 依赖视频编码，runner 虚拟机的虚拟化编码器偶尔挂住直到 300 秒超时。
 它们在 CI 失败只记警告并写进运行摘要，合并前须在本机跑通；其他 harness 失败一律判红。
 
@@ -129,7 +129,7 @@ Read and write，然后存入仓库 Settings → Secrets and variables → Actio
    正文列出上游提交和预演出的冲突文件。
 2. 看 CI：`gh pr checks <号> -R dnw3/tinycast`；排队较久时等它结束，不在 CI 未完成时合并。
 3. 按情况处理：
-   - **无冲突、CI 绿**：运行摘要里有 `capture-ocr-test` / `form-input-test` 的警告时，先在本机
+   - **无冲突、CI 绿**：运行摘要里有 `capture-ocr-test` / `FormInputTests` 的警告时，先在本机
      `./Scripts/run-tests.sh <名字>` 跑通；再 `gh pr merge <号> -R dnw3/tinycast --merge`。
      只能用 `--merge`，不加 `--delete-branch`。
    - **无冲突、CI 红**：读失败步骤的日志（`gh run view <run> -R dnw3/tinycast --log-failed`）。
@@ -311,6 +311,17 @@ Dev 不通过应用内更新器更新，继续使用本分支的新代码需要�
 面向更多人的正式分发还需要 Developer ID 签名与公证、独立的应用名和 bundle ID，目前不做；现有机制见 [updates](features/updates.md) 与 [release](release.md)。
 
 ## 最近一次源码同步
+
+| 项目 | 2026-11-26 记录 |
+| --- | --- |
+| 上游基线 | `ed7c2917`（上一轮 `58168bf7`） |
+| 同步方式 | [PR #11](https://github.com/dnw3/tinycast/pull/11) 的 51 个上游提交在本地合并，处理 36 个冲突文件 |
+| 上游改动 | Settings 独立进程，iCloud Sync 和剪贴板同步，AI 套餐用量菜单栏，文件路径搜索，计算器扩展，窗口房间快捷键，Notes 字数，以及主进程仅注册已启用功能的热键 |
+| Fork 适配 | 保留 `com.tinycast.app` 和 `com.tinycast.app.dev` 的数据目录、系统授权与更新通道。自签名包使用原有签名，iCloud Sync 需要单独配置 CloudKit 权限及描述文件。截图、磁盘清理和代理的运行操作交给主进程，代理的连接及高级设置移入代理窗口。剪贴板保留内容去重和本机 RTF，远端删除时清理本机附属文件 |
+| 自动检查 | Xcode 27.2 Debug / Release 构建，147 个 harness，lint、本地化、Model 纯度和生成工程检查 |
+| 原生验收 | 独立标识符的临时副本成功启动 Settings 子进程。窗口检查超时，未完成代理设置交互及系统权限验收 |
+
+### 2026-11-09 同步记录
 
 | 项目 | 2026-11-09 记录 |
 | --- | --- |

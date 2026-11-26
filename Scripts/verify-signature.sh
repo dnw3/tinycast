@@ -78,7 +78,23 @@ for PAIR in "${RESOURCE_ENTITLEMENTS[@]}"; do
         fail "$NAME.app: $USAGE is declared but $ENTITLEMENT is not"
 done
 
+entitlement() { /usr/libexec/PlistBuddy -c "Print :$1" "$ENTITLEMENTS" 2>/dev/null; }
+if [ -n "${SELF_SIGNED:-}" ]; then
+    if entitlement com.apple.developer.icloud-services >/dev/null; then
+        fail "$NAME.app: a self-signed release cannot carry CloudKit entitlements"
+    fi
+elif [ ! -f "$APP/Contents/embedded.provisionprofile" ]; then
+    fail "$NAME.app: no embedded provisioning profile"
+else
+    [ "$(entitlement com.apple.developer.icloud-container-identifiers:0)" = "iCloud.$APP_ID" ] ||
+        fail "$NAME.app: its iCloud container is not iCloud.$APP_ID"
+    [ "$(entitlement com.apple.developer.icloud-container-environment)" = Production ] ||
+        fail "$NAME.app: iCloud is not set to Production"
+    [ "$(entitlement com.apple.developer.aps-environment)" = production ] ||
+        fail "$NAME.app: push is not set to production"
+fi
+
 if [ "$STATUS" -eq 0 ]; then
-    echo "✓ $NAME.app is notarizable and its prompts are entitled"
+    echo "✓ $NAME.app passed signature and entitlement verification"
 fi
 exit "$STATUS"

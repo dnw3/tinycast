@@ -3,13 +3,13 @@ import Combine
 import SwiftUI
 
 struct CleanupSettingsView: View {
-    @Environment(AppCore.self) private var core
+    @Environment(MainAppLink.self) private var mainApp
 
     var body: some View {
         Form {
             Section {
                 LabeledContent {
-                    Button("Open Disk Cleanup") { core.cleanupCoordinator.show() }
+                    Button("Open Disk Cleanup") { mainApp.send(.showDiskCleanup) }
                 } label: {
                     SettingsFeatureToggleLabel(
                         anchor: .cleanupCleanup, title: "Disk Cleanup",
@@ -200,17 +200,18 @@ private struct CleanupFilesSection: View {
 }
 
 private struct CleanupAutomationSection: View {
+    @Environment(MainAppLink.self) private var mainApp
     @Environment(AppCore.self) private var core
 
     private var scheduleBinding: Binding<Bool> {
         Binding(
             get: { core.cleanupSettings.scheduleEnabled },
-            set: { core.cleanupCoordinator.setScheduleEnabled($0) })
+            set: { mainApp.send(.setCleanupScheduleEnabled($0)) })
     }
 
     var body: some View {
         @Bindable var settings = core.cleanupSettings
-        let schedule = core.cleanupSchedule
+        let history = mainApp.status.cleanupHistory
         return Section {
             Toggle(isOn: scheduleBinding) {
                 VStack(alignment: .leading, spacing: Theme.Spacing.xxs) {
@@ -243,12 +244,12 @@ private struct CleanupAutomationSection: View {
             }
             .settingsEnabled(settings.lowSpaceAlertEnabled)
             LabeledContent {
-                Button("Clear History") { schedule.clearHistory() }
-                    .settingsEnabled(!schedule.history.isEmpty)
+                Button("Clear History") { mainApp.send(.clearCleanupHistory) }
+                    .settingsEnabled(history.count != 0)
             } label: {
                 VStack(alignment: .leading, spacing: Theme.Spacing.xxs) {
                     SettingsRowTitle(.cleanupAutomation, "History")
-                    Text(historySummary(schedule))
+                    Text(historySummary(history))
                         .foregroundStyle(.secondary)
                 }
             }
@@ -257,10 +258,10 @@ private struct CleanupAutomationSection: View {
         }
     }
 
-    private func historySummary(_ schedule: CleanupScheduleStore) -> String {
-        guard let last = schedule.lastRun else { return String(localized: "Nothing cleaned yet.") }
-        let total = CleanupCoordinator.format(schedule.totalFreed)
-        let date = last.date.formatted(date: .abbreviated, time: .shortened)
-        return String(localized: "\(total) freed in \(schedule.history.count) runs · last on \(date)")
+    private func historySummary(_ history: MainAppStatus.CleanupHistory) -> String {
+        guard let lastDate = history.lastDate else { return String(localized: "Nothing cleaned yet.") }
+        let total = CleanupCoordinator.format(history.totalFreed)
+        let date = lastDate.formatted(date: .abbreviated, time: .shortened)
+        return String(localized: "\(total) freed in \(history.count) runs · last on \(date)")
     }
 }

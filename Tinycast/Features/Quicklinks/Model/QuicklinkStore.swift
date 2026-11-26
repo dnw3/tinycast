@@ -70,6 +70,12 @@ final class QuicklinkStore {
     /// A disabled quicklink is offered nowhere, so every surface lists this, not `quicklinks`.
     var enabled: [Quicklink] { quicklinks.filter(\.isEnabled) }
 
+    func enabled(matching query: String) -> [Quicklink] {
+        let query = query.trimmingCharacters(in: .whitespaces)
+        guard !query.isEmpty else { return enabled }
+        return enabled.filter { $0.name.localizedCaseInsensitiveContains(query) }
+    }
+
     func quicklink(id: UUID) -> Quicklink? {
         quicklinks.first { $0.id == id }
     }
@@ -267,11 +273,6 @@ final class QuicklinkStore {
                 == SQLITE_OK,
             sqlite3_exec(db, Self.schema, nil, nil, nil) == SQLITE_OK
         else { return false }
-        // `IF NOT EXISTS` leaves an older table as it was, so its new column is added by hand.
-        sqlite3_exec(
-            db, "ALTER TABLE quicklinks ADD COLUMN is_enabled INTEGER NOT NULL DEFAULT 1", nil, nil,
-            nil)
-        // After the schema, so a column added later can be indexed the same way.
         sqlite3_exec(
             db,
             "CREATE INDEX IF NOT EXISTS quicklinks_pinned_at ON quicklinks(pinned_at) WHERE pinned_at IS NOT NULL",

@@ -30,11 +30,13 @@ enum SettingsBackupCoverage {
         "openOnCursorScreen": .openOnCursorScreen,
         "paletteDraggable": .paletteDraggable,
         "animationsEnabled": .animationsEnabled,
+        "iconStyle": .iconStyle,
         "fileSearchEnabled": .fileSearchEnabled,
         "fileSearchScopes": .fileSearchScopes,
         "fileSearchIgnorePatterns": .fileSearchIgnorePatterns,
         "fileSearchRemovedDefaultPatterns": .fileSearchRemovedDefaultPatterns,
         "fileSearchShowInLauncher": .fileSearchShowInLauncher,
+        "fileSearchIncludesHiddenFiles": .fileSearchIncludesHiddenFiles,
         "notesEnabled": .notesEnabled,
         "notesRendersMarkdown": .notesRendersMarkdown,
         "notesShowsFormattingBar": .notesShowsFormattingBar,
@@ -42,6 +44,7 @@ enum SettingsBackupCoverage {
         "customCommandsEnabled": .customCommandsEnabled,
         "customCommandsShowInLauncher": .customCommandsShowInLauncher,
         "snippetsShowInLauncher": .snippetsShowInLauncher,
+        "snippetDefaultAction": .snippetDefaultAction,
         "navigationEnabled": .navigationEnabled,
         "menuSearchDisabledApps": .menuSearchDisabledApps,
         "menuSearchShowsAppleMenu": .menuSearchShowsAppleMenu,
@@ -156,6 +159,10 @@ enum SettingsBackupCoverage {
         AppSettingsKey.aiExpandsReasoning.rawValue:
             "How much of a reply a reader sees unasked is this Mac's own choice, and no other AI "
             + "setting travels.",
+        AppSettingsKey.aiUsageMenuBar.rawValue:
+            "Reads the limits of commands signed in on this Mac, and no other AI setting travels.",
+        AppSettingsKey.aiUsageAlerts.rawValue:
+            "Accompanies the menu bar switch it serves, which stays on the Mac that set it.",
         AppSettingsKey.aiSystemPrompt.rawValue:
             "Standing instructions to a model are the one AI setting that changes every answer; an "
             + "import must not carry them onto another Mac unseen.",
@@ -229,6 +236,12 @@ enum SettingsBackupCoverage {
         AppSettingsKey.cleanupLowSpaceAlert.rawValue:
             "Kept with the other Disk Cleanup preferences, none of which a backup carries.",
         AppSettingsKey.cleanupLowSpaceThreshold.rawValue:
-            "Sized to this Mac's disk; another Mac's may be a different size."
+            "Sized to this Mac's disk; another Mac's may be a different size.",
+        AppSettingsKey.iCloudSyncEnabled.rawValue:
+            "Sends this Mac's data to iCloud; only the iCloud Sync pane may turn that on.",
+        AppSettingsKey.iCloudSyncDisabledCategories.rawValue:
+            "Which categories sync is each Mac's own choice, made in its iCloud Sync pane.",
+        AppSettingsKey.iCloudSyncOptedInCategories.rawValue:
+            "Which categories sync is each Mac's own choice, made in its iCloud Sync pane."
     ]
 }

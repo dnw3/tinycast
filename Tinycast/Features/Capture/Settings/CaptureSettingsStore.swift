@@ -5,10 +5,12 @@ import Observation
 @Observable
 final class CaptureSettingsStore {
     private let defaults: UserDefaults
+    @ObservationIgnored private var isReloading = false
     private var regions: [CaptureSavedRegion]
     private(set) var uploadDestination: CaptureUploadDestination?
     private(set) var presentationPresets: [CapturePresentationPreset] {
         didSet {
+            if isReloading { return }
             if let data = try? JSONEncoder().encode(presentationPresets) {
                 defaults.set(data, forKey: AppSettingsKey.capturePresentationPresets.rawValue)
             }
@@ -17,23 +19,44 @@ final class CaptureSettingsStore {
     var toolbarItems: Set<CaptureToolbarItem> { toolbarConfiguration.items }
     private(set) var toolbarConfiguration: CaptureToolbarConfiguration {
         didSet {
+            if isReloading { return }
             if let data = try? JSONEncoder().encode(toolbarConfiguration) {
                 defaults.set(data, forKey: AppSettingsKey.captureToolbarItems.rawValue)
             }
         }
     }
     var showsCompletionThumbnail: Bool {
-        didSet { defaults.set(showsCompletionThumbnail, forKey: AppSettingsKey.captureCompletionThumbnail.rawValue) }
+        didSet {
+            if !isReloading { defaults.set(showsCompletionThumbnail, forKey: AppSettingsKey.captureCompletionThumbnail.rawValue) }
+        }
     }
     var preferences: CapturePreferences {
         didSet {
+            if isReloading { return }
             if let data = try? JSONEncoder().encode(preferences) {
                 defaults.set(data, forKey: AppSettingsKey.capturePreferences.rawValue)
             }
         }
     }
     var keepsOriginals: Bool {
-        didSet { defaults.set(keepsOriginals, forKey: AppSettingsKey.captureKeepsOriginals.rawValue) }
+        didSet {
+            if !isReloading { defaults.set(keepsOriginals, forKey: AppSettingsKey.captureKeepsOriginals.rawValue) }
+        }
+    }
+
+    func reload() {
+        isReloading = true
+        defer { isReloading = false }
+        let stored = CaptureSettingsStore(defaults: defaults)
+        if presentationPresets != stored.presentationPresets { presentationPresets = stored.presentationPresets }
+        if toolbarConfiguration != stored.toolbarConfiguration { toolbarConfiguration = stored.toolbarConfiguration }
+        if showsCompletionThumbnail != stored.showsCompletionThumbnail {
+            showsCompletionThumbnail = stored.showsCompletionThumbnail
+        }
+        if uploadDestination != stored.uploadDestination { uploadDestination = stored.uploadDestination }
+        regions = stored.regions
+        if preferences != stored.preferences { preferences = stored.preferences }
+        if keepsOriginals != stored.keepsOriginals { keepsOriginals = stored.keepsOriginals }
     }
 
     init(defaults: UserDefaults = .standard) {

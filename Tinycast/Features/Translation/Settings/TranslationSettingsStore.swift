@@ -5,12 +5,25 @@ import Observation
 @Observable
 final class TranslationSettingsStore {
     private let defaults: UserDefaults
+    @ObservationIgnored private var isReloading = false
 
     var preferences: TranslationPreferences {
-        didSet { save(preferences, key: .translationPreferences) }
+        didSet {
+            if !isReloading { save(preferences, key: .translationPreferences) }
+        }
     }
     var model: AIModelSelection? {
-        didSet { save(model, key: .translationModel) }
+        didSet {
+            if !isReloading { save(model, key: .translationModel) }
+        }
+    }
+
+    func reload() {
+        isReloading = true
+        defer { isReloading = false }
+        let stored = TranslationSettingsStore(defaults: defaults)
+        if preferences != stored.preferences { preferences = stored.preferences }
+        if model != stored.model { model = stored.model }
     }
 
     init(defaults: UserDefaults = .standard) {

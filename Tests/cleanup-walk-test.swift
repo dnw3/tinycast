@@ -115,7 +115,9 @@ struct CleanupWalkTests {
         expect(states == ["com.old.App"], "only saved state untouched for 30 days is offered")
         let container = byPath["Library/Containers/com.tinyspeck.slackmacgap/Data/Library/Caches"]
         expect(container?.match.pattern.contentsOnly == true, "a container's cache folder is emptied, not removed")
-        expect(items.allSatisfy { $0.size == nil }, "discovery leaves every size pending")
+        for path in ["Library/Caches/com.raycast.macos", "Library/Logs/app.log", derivedData] {
+            expect(byPath[path]?.size == nil, "catalog discovery defers sizing: \(path)")
+        }
 
         let batches = Mutex<[[CleanupItem]]>([])
         await CleanupScanner.discover(environment()) { batch in batches.withLock { $0.append(batch) } }

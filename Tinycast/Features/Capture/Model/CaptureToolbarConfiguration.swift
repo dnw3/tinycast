@@ -1,6 +1,6 @@
 import Foundation
 
-struct CaptureToolbarConfiguration: Codable, Sendable {
+struct CaptureToolbarConfiguration: Codable, Equatable, Sendable {
     var items: Set<CaptureToolbarItem>
     var order: [CaptureToolbarItem]
 

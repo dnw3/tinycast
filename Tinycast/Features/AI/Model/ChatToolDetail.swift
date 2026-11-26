@@ -1,7 +1,7 @@
 import Foundation
 
 /// What a tool step was given and gave back, beyond the one line its row shows.
-struct ChatToolDetail: Equatable, Hashable, Sendable {
+struct ChatToolDetail: Codable, Equatable, Hashable, Sendable {
     /// Past this, the start of a command or diff is what says what it was.
     static let inputLimit = 16_384
     /// Past this, the end of a log is where a failure says why.

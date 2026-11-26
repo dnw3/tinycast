@@ -2,6 +2,8 @@ import SwiftUI
 
 struct NotesView: View {
     @Environment(NotesCoordinator.self) private var notes
+    /// Measured, since the capsule scales with Interface Size and grows a button while fitting is off.
+    @State private var actionsWidth: CGFloat = 0
 
     var body: some View {
         VStack(spacing: 0) {
@@ -25,6 +27,7 @@ struct NotesView: View {
             Color.clear
                 .overlay { NoteTitlebarDragRegion(onDoubleClick: notes.moveToTopRight) }
             NoteTitlebarActions()
+                .onGeometryChange(for: CGFloat.self, of: \.size.width) { actionsWidth = $0 }
         }
         .frame(height: Theme.Size.noteTitlebar)
         .overlay { title }
@@ -35,8 +38,12 @@ struct NotesView: View {
             .font(Theme.Typography.noteTitle)
             .lineLimit(1)
             .truncationMode(.tail)
-            .padding(.horizontal, Theme.Size.noteTitleInset)
+            .padding(.horizontal, titleInset)
             .allowsHitTesting(false)
+    }
+
+    private var titleInset: CGFloat {
+        max(Theme.Size.noteTitleInset, actionsWidth + Theme.Spacing.md)
     }
 
     @ViewBuilder
@@ -54,7 +61,7 @@ struct NotesView: View {
                 input: notes.editorInput,
                 rendersMarkdown: notes.rendersMarkdown,
                 onSourceChange: notes.updateSource,
-                onCharacterCountChange: notes.updateCharacterCount,
+                onCharacterCountChange: notes.updateCounts,
                 onFormattingChange: notes.updateFormatting,
                 onReady: notes.editorReady
             )
@@ -70,7 +77,7 @@ struct NotesView: View {
     private var formattingBand: some View {
         HStack(spacing: Theme.Spacing.md) {
             ViewThatFits(in: .horizontal) {
-                characterCount
+                counts
                 Color.clear.frame(width: 0, height: 0)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -101,17 +108,23 @@ struct NotesView: View {
     }
 
     private var footer: some View {
-        characterCount
+        counts
             .frame(maxWidth: .infinity)
             .frame(height: Theme.Size.noteFooterHeight)
     }
 
-    private var characterCount: some View {
-        Text(notes.characterCountLabel)
-            .font(Theme.Typography.rowTrailing)
-            .foregroundStyle(Theme.Colors.textTertiary)
-            .lineLimit(1)
-            .accessibilityLabel("\(notes.characterCount) characters in this note")
+    private var counts: some View {
+        HStack(spacing: Theme.Spacing.xs) {
+            Text(notes.wordCountLabel)
+                .accessibilityLabel("\(notes.wordCount) words in this note")
+            Text(verbatim: "·")
+                .accessibilityHidden(true)
+            Text(notes.characterCountLabel)
+                .accessibilityLabel("\(notes.characterCount) characters in this note")
+        }
+        .font(Theme.Typography.rowTrailing)
+        .foregroundStyle(Theme.Colors.textTertiary)
+        .lineLimit(1)
     }
 }
 
@@ -156,6 +169,11 @@ private struct NoteTitlebarActions: View {
 
     var body: some View {
         HStack(spacing: Theme.Spacing.xxs) {
+            if !notes.fitsWindowToNote {
+                action(
+                    "arrow.up.and.down.text.horizontal", String(localized: "Fit Window to Note"),
+                    String(localized: "Fit Window to Note"), notes.fitWindowToNote)
+            }
             action(
                 "plus", String(localized: "Create Note"), String(localized: "Create Note  ⌘N"),
                 notes.createNote)

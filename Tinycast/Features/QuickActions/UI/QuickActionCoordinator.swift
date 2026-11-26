@@ -1,7 +1,6 @@
 import AppKit
 import Observation
 
-/// The single funnel for every Quick Action, however it was started.
 @MainActor
 @Observable
 final class QuickActionCoordinator {
@@ -60,7 +59,6 @@ final class QuickActionCoordinator {
         self.core = core
     }
 
-    /// Launcher rows come and go with the switch; the Carbon bindings stay registered.
     func applyEnabled() {
         appIndex.setCommandsVisible(Self.launcherCommands, settings.quickActionsEnabled)
         applyCustomQuickActionsPresence()
@@ -141,6 +139,14 @@ final class QuickActionCoordinator {
                 message: String(localized: "Its instructions, shortcut and learned ranking go with it."),
                 symbol: action.symbol, confirmTitle: String(localized: "Delete"))
         else { return }
+        if let mainApp = core.mainApp {
+            mainApp.send(.deleteCustomQuickAction(id))
+        } else {
+            removeCustomQuickAction(id: id)
+        }
+    }
+
+    func removeCustomQuickAction(id: UUID) {
         // Unwound only once the row is gone, so a kept record never loses its shortcut.
         do {
             guard let removed = try customActions.remove(id: id) else { return }

@@ -80,7 +80,8 @@ struct RootPaletteView: View {
                 store: snippets, core: core, vm: vm, openActions: openActions)
         case .snippetEditor:
             return SnippetEditorScreen(
-                coordinator: core.snippetCoordinator, openInputMenu: openInputOptions)
+                coordinator: core.snippetCoordinator, openMenuCorner: menuCorner,
+                openInputMenu: openInputOptions)
         case .emoji:
             return EmojiScreen(
                 index: emojiIndex, frequent: frequentEmoji, pinned: core.pinnedEmoji, core: core, vm: vm,
@@ -242,6 +243,11 @@ struct RootPaletteView: View {
             header: title,
             items: [
                 PopoverMenuItem(
+                    title: String(localized: "Check for Updates"), systemImage: "arrow.down.circle"
+                ) {
+                    core.updateCoordinator.checkForUpdates()
+                },
+                PopoverMenuItem(
                     title: String(localized: "Changelog"),
                     systemImage: "clock.arrow.trianglehead.2.counterclockwise.rotate.90"
                 ) {
@@ -249,7 +255,10 @@ struct RootPaletteView: View {
                         openURL(url)
                     }
                 },
-                PopoverMenuItem(title: String(localized: "About Tinycast"), systemImage: "info.circle") {
+                PopoverMenuItem(
+                    title: String(localized: "About Tinycast"), systemImage: "info.circle",
+                    startsSection: true
+                ) {
                     core.settingsCoordinator.showAbout()
                 },
                 PopoverMenuItem(title: String(localized: "Support Tinycast"), systemImage: "heart") {
@@ -263,7 +272,7 @@ struct RootPaletteView: View {
                 PopoverMenuItem(
                     title: String(localized: "Quit \(appName)"),
                     systemImage: "rectangle.portrait.and.arrow.right",
-                    isDestructive: true
+                    startsSection: true, isDestructive: true
                 ) {
                     NSApp.terminate(nil)
                 }
@@ -283,7 +292,6 @@ struct RootPaletteView: View {
             let filtered = appMenuContent.matching(ActionMenuSearchQuery(vm.menuQuery))
             return PaletteMenuContent(
                 popover: filtered.content, selection: $menuSelection,
-                visibleRows: Theme.Size.appMenuVisibleRows,
                 search: PopoverMenu.Search(
                     placeholder: String(localized: "Search for actions…"), placement: .bottom),
                 onActivate: activateMenuItem, preferredSelection: filtered.bestMatch)
@@ -594,17 +602,19 @@ struct RootPaletteView: View {
                 if vm.isControlListOpen { return .ignored }
                 if menuOpen { return .handled }
                 if vm.isComposing { return .ignored }
-                if navigateHorizontally(-1) { return .handled }
+                if press.modifiers.isDisjoint(with: [.command, .control, .option, .shift]),
+                    navigateHorizontally(-1) { return .handled }
                 if moveCompactSelection(-1, modifiers: press.modifiers) { return .handled }
-                return moveHorizontally(-1) ? .handled : .ignored
+                return moveHorizontally(-1, modifiers: press.modifiers) ? .handled : .ignored
             }
             .onKeyPress(keys: [.rightArrow], phases: [.down, .repeat]) { press in
                 if vm.isControlListOpen { return .ignored }
                 if menuOpen { return .handled }
                 if vm.isComposing { return .ignored }
-                if navigateHorizontally(1) { return .handled }
+                if press.modifiers.isDisjoint(with: [.command, .control, .option, .shift]),
+                    navigateHorizontally(1) { return .handled }
                 if moveCompactSelection(1, modifiers: press.modifiers) { return .handled }
-                return moveHorizontally(1) ? .handled : .ignored
+                return moveHorizontally(1, modifiers: press.modifiers) ? .handled : .ignored
             }
             // Plain ↵ runs an open menu's row or non-form selection; ⌘↵ submits forms.
             .onKeyPress(keys: [.return, KeyEquivalent("\u{3}")], phases: .down) { press in
@@ -769,7 +779,7 @@ struct RootPaletteView: View {
                 if isCollapsed {
                     CompactBar(
                         commands: compactCommands, selection: compactSelection.command,
-                        onRun: runCompactCommand)
+                        onRun: runCompactCommand, onSettled: { hostWindow?.invalidateShadow() })
                 }
             }
             // Next turn, once the show's `land()` and search refocus are done, so neither undoes it.
@@ -1452,8 +1462,9 @@ struct RootPaletteView: View {
         return screen.navigateHorizontally(delta, at: selection(in: screen))
     }
 
-    /// ←/→: consumed only by a horizontally navigating screen, else the caret keeps them.
-    private func moveHorizontally(_ delta: Int) -> Bool {
+    /// Bare ←/→ only, on a horizontally navigating screen; ⇧⌥⌘ chords always edit the search text.
+    private func moveHorizontally(_ delta: Int, modifiers: EventModifiers) -> Bool {
+        guard modifiers.isDisjoint(with: [.command, .control, .option, .shift]) else { return false }
         let screen = screen
         guard let next = screen.move(delta, axis: .horizontal, from: selection(in: screen)) else {
             return false

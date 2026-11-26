@@ -9,6 +9,7 @@ final class ProxyWindowController {
     private unowned let core: AppCore
     /// The open window's state; its view tree owns it, so this self-nils when the window closes.
     private weak var state: ProxyWindowState?
+    private weak var navigation: SettingsNavigationState?
     private weak var editorPresenter: SettingsEditorPresenter?
 
     init(core: AppCore) {
@@ -19,9 +20,12 @@ final class ProxyWindowController {
     }
 
     /// An open window moves to `page`, and opens `edit` over it; a nil page keeps the one it shows.
-    func show(page: ProxyWindowPage? = nil, edit: ProxyEditRequest.Kind? = nil) {
+    func show(
+        page: ProxyWindowPage? = nil, edit: ProxyEditRequest.Kind? = nil, revealing target: SettingsTarget? = nil
+    ) {
         if window.focus(), let state {
             if let page { state.page = page }
+            if let target { navigation?.select(.proxy, revealing: target) }
             if let edit { state.editRequest = ProxyEditRequest(kind: edit) }
             return
         }
@@ -29,6 +33,8 @@ final class ProxyWindowController {
         state.editRequest = edit.map { ProxyEditRequest(kind: $0) }
         // Its own navigation, so an editor here never moves Settings to another pane.
         let navigation = SettingsNavigationState(tab: .proxy)
+        if let target { navigation.select(.proxy, revealing: target) }
+        self.navigation = navigation
         let editorPresenter = SettingsEditorPresenter(core: core, navigation: navigation)
         self.state = state
         self.editorPresenter = editorPresenter
